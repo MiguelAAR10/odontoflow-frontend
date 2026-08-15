@@ -1,0 +1,136 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2200" height="1000" viewBox="0 0 2200 1000">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#475569"/>
+    </marker>
+    <style>
+      .title{font:700 34px Arial,sans-serif;fill:#0f172a}.sub{font:18px Arial,sans-serif;fill:#475569}
+      .lane-title{font:700 18px Arial,sans-serif;fill:#0f172a}.label{font:16px Arial,sans-serif;fill:#0f172a;text-anchor:middle}
+      .small{font:14px Arial,sans-serif;fill:#475569;text-anchor:middle}.edge-label{font:13px Arial,sans-serif;fill:#475569}
+      .task{fill:#fff;stroke:#334155;stroke-width:2;rx:10}.manual{fill:#fff7ed;stroke:#c2410c;stroke-width:2;rx:10}
+      .data{fill:#eff6ff;stroke:#2563eb;stroke-width:2;rx:10}.gateway{fill:#fefce8;stroke:#a16207;stroke-width:2}
+      .event{fill:#fff;stroke:#0f766e;stroke-width:4}.end{fill:#fff;stroke:#0f766e;stroke-width:7}
+      .flow{fill:none;stroke:#475569;stroke-width:2.2;marker-end:url(#arrow)}.loop{fill:none;stroke:#c2410c;stroke-width:2;stroke-dasharray:8 6;marker-end:url(#arrow)}
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="2200" height="1000" fill="#ffffff"/>
+  <text x="60" y="55" class="title">BPMN AS-IS — Captación, calificación y agendamiento de un lead</text>
+  <text x="60" y="88" class="sub">Alcance: desde el primer contacto hasta una cita agendada, seguimiento pendiente o descarte comercial.</text>
+
+  <g id="pool">
+    <rect x="40" y="120" width="2120" height="800" fill="none" stroke="#334155" stroke-width="3"/>
+    <rect x="40" y="120" width="2120" height="160" fill="#f8fafc" stroke="#cbd5e1"/>
+    <rect x="40" y="280" width="2120" height="160" fill="#ffffff" stroke="#cbd5e1"/>
+    <rect x="40" y="440" width="2120" height="160" fill="#f8fafc" stroke="#cbd5e1"/>
+    <rect x="40" y="600" width="2120" height="160" fill="#ffffff" stroke="#cbd5e1"/>
+    <rect x="40" y="760" width="2120" height="160" fill="#f8fafc" stroke="#cbd5e1"/>
+    <line x1="210" y1="120" x2="210" y2="920" stroke="#334155" stroke-width="2"/>
+    <text x="125" y="195" class="lane-title" text-anchor="middle">PACIENTE / LEAD</text>
+    <text x="125" y="355" class="lane-title" text-anchor="middle">COMERCIAL</text>
+    <text x="125" y="515" class="lane-title" text-anchor="middle">RECEPCIÓN</text>
+    <text x="125" y="675" class="lane-title" text-anchor="middle">DOCTOR / ESPECIALISTA</text>
+    <text x="125" y="835" class="lane-title" text-anchor="middle">HERRAMIENTAS / REGISTRO</text>
+  </g>
+
+  <!-- Inicio y contacto -->
+  <circle cx="260" cy="200" r="25" class="event"/>
+  <text x="260" y="250" class="small">Interés generado</text>
+  <rect x="320" y="155" width="190" height="90" class="task"/>
+  <text x="415" y="190" class="label"><tspan x="415">Escribe por WhatsApp</tspan><tspan x="415" dy="22">o llega referido</tspan></text>
+  <path d="M285 200 H320" class="flow"/>
+
+  <rect x="550" y="315" width="210" height="90" class="manual"/>
+  <text x="655" y="345" class="label"><tspan x="655">Identificar origen,</tspan><tspan x="655" dy="22">promoción y tratamiento</tspan></text>
+  <path d="M510 200 H535 V360 H550" class="flow"/>
+
+  <polygon points="820,315 865,360 820,405 775,360" class="gateway"/>
+  <text x="820" y="355" class="label"><tspan x="820">¿Viene</tspan><tspan x="820" dy="20">referido?</tspan></text>
+  <path d="M760 360 H775" class="flow"/>
+
+  <rect x="900" y="315" width="220" height="90" class="manual"/>
+  <text x="1010" y="345" class="label"><tspan x="1010">Validar recomendador</tspan><tspan x="1010" dy="22">y posible beneficio</tspan></text>
+  <path d="M865 360 H900" class="flow"/>
+  <text x="878" y="346" class="edge-label">Sí</text>
+
+  <rect x="1160" y="315" width="220" height="90" class="manual"/>
+  <text x="1270" y="345" class="label"><tspan x="1270">Conversación inicial:</tspan><tspan x="1270" dy="22">dudas y persuasión</tspan></text>
+  <path d="M1120 360 H1160" class="flow"/>
+  <path d="M820 405 V425 H1140 V390 H1160" class="flow"/>
+  <text x="850" y="423" class="edge-label">No</text>
+
+  <!-- Calificación -->
+  <polygon points="1450,315 1495,360 1450,405 1405,360" class="gateway"/>
+  <text x="1450" y="355" class="label"><tspan x="1450">¿Datos</tspan><tspan x="1450" dy="20">suficientes?</tspan></text>
+  <path d="M1380 360 H1405" class="flow"/>
+
+  <rect x="1370" y="155" width="200" height="90" class="task"/>
+  <text x="1470" y="185" class="label"><tspan x="1470">Responder preguntas</tspan><tspan x="1470" dy="22">y brindar datos faltantes</tspan></text>
+  <path d="M1450 315 V245" class="loop"/>
+  <path d="M1370 200 H1335 V315 H1405" class="loop"/>
+  <text x="1462" y="292" class="edge-label">No</text>
+
+  <rect x="1540" y="315" width="220" height="90" class="manual"/>
+  <text x="1650" y="345" class="label"><tspan x="1650">Calificar tratamiento,</tspan><tspan x="1650" dy="22">urgencia y sede</tspan></text>
+  <path d="M1495 360 H1540" class="flow"/>
+  <text x="1510" y="346" class="edge-label">Sí</text>
+
+  <!-- Disponibilidad -->
+  <rect x="1535" y="475" width="230" height="90" class="manual"/>
+  <text x="1650" y="505" class="label"><tspan x="1650">Consultar agenda,</tspan><tspan x="1650" dy="22">precio y sede disponible</tspan></text>
+  <path d="M1650 405 V475" class="flow"/>
+
+  <polygon points="1840,475 1885,520 1840,565 1795,520" class="gateway"/>
+  <text x="1840" y="515" class="label"><tspan x="1840">¿Requiere</tspan><tspan x="1840" dy="20">especialista?</tspan></text>
+  <path d="M1765 520 H1795" class="flow"/>
+
+  <rect x="1740" y="635" width="210" height="90" class="task"/>
+  <text x="1845" y="665" class="label"><tspan x="1845">Validar evaluación</tspan><tspan x="1845" dy="22">y disponibilidad clínica</tspan></text>
+  <path d="M1840 565 V635" class="flow"/>
+  <text x="1852" y="605" class="edge-label">Sí</text>
+
+  <rect x="1940" y="475" width="190" height="90" class="manual"/>
+  <text x="2035" y="505" class="label"><tspan x="2035">Proponer horario</tspan><tspan x="2035" dy="22">y condiciones</tspan></text>
+  <path d="M1885 520 H1940" class="flow"/>
+  <text x="1902" y="505" class="edge-label">No</text>
+  <path d="M1950 680 H2070 V565" class="flow"/>
+
+  <!-- Resultado comercial: continuación en segunda línea -->
+  <polygon points="2035,315 2080,360 2035,405 1990,360" class="gateway"/>
+  <text x="2035" y="355" class="label"><tspan x="2035">¿Acepta</tspan><tspan x="2035" dy="20">la cita?</tspan></text>
+  <path d="M2035 475 V405" class="flow"/>
+
+  <rect x="1900" y="795" width="210" height="90" class="data"/>
+  <text x="2005" y="825" class="label"><tspan x="2005">Registrar cita en</tspan><tspan x="2005" dy="22">Google Calendar / Excel</tspan></text>
+  <path d="M2080 360 H2140 V770 H2005 V795" class="flow"/>
+  <text x="2092" y="346" class="edge-label">Sí</text>
+
+  <rect x="1620" y="795" width="220" height="90" class="data"/>
+  <text x="1730" y="825" class="label"><tspan x="1730">Registrar compromiso</tspan><tspan x="1730" dy="22">de seguimiento en Excel</tspan></text>
+  <path d="M2035 405 V750 H1730 V795" class="flow"/>
+  <text x="1965" y="740" class="edge-label">“Después / fin de mes”</text>
+
+  <rect x="1290" y="795" width="230" height="90" class="manual"/>
+  <text x="1405" y="825" class="label"><tspan x="1405">Intentar nuevamente:</tspan><tspan x="1405" dy="22">WhatsApp y llamada</tspan></text>
+  <path d="M1990 360 H1965 V740 H1405 V795" class="loop"/>
+  <text x="1830" y="725" class="edge-label">No responde</text>
+
+  <circle cx="2140" cy="840" r="28" class="end"/>
+  <text x="2140" y="900" class="small">Cita agendada y derivada</text>
+  <path d="M2110 840 H2112" class="flow"/>
+
+  <circle cx="1580" cy="840" r="28" class="end"/>
+  <text x="1580" y="900" class="small">Lead pendiente</text>
+  <path d="M1840 840 H1552" class="flow"/>
+
+  <circle cx="1220" cy="840" r="28" class="end"/>
+  <text x="1220" y="900" class="small">Sin respuesta / recaptación</text>
+  <path d="M1290 840 H1248" class="flow"/>
+
+  <circle cx="2140" cy="200" r="28" class="end"/>
+  <text x="2140" y="250" class="small">No interesado</text>
+  <path d="M2035 315 V200 H2112" class="flow"/>
+  <text x="2048" y="272" class="edge-label">No interesado</text>
+
+  <text x="60" y="965" class="sub">Naranja = actividad manual · Azul = registro/herramienta · Línea discontinua = reintento o retorno.</text>
+</svg>
