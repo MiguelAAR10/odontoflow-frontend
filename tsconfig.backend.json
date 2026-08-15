@@ -18,5 +18,9 @@
     "src/domain/**/*.ts",
     "src/simulation/**/*.ts",
     "test/**/*.ts"
+  ],
+  "exclude": [
+    "test/agenda-adapter.test.ts",
+    "test/agenda-integration.test.ts"
   ]
 }

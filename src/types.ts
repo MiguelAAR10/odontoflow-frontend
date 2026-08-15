@@ -23,7 +23,7 @@ export interface Appointment {
   treatment: string;
   doctor: string;
   branch: string;
-  status: "Confirmada" | "Por confirmar" | "No respondió";
+  status: "Confirmada" | "Por confirmar" | "No respondió" | "Cancelada";
 }
 
 export interface AgentActivity {
