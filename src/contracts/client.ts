@@ -16,6 +16,7 @@ export type LocationRead = components["schemas"]["LocationRead"];
 export type ServiceRead = components["schemas"]["ServiceRead"];
 export type PractitionerRead = components["schemas"]["PractitionerRead"];
 export type SlotResult = components["schemas"]["SlotResult"];
+export type PatientRead = components["schemas"]["PatientRead"];
 
 type AppointmentsPath = paths["/appointments"];
 
@@ -55,6 +56,21 @@ export function toApiError(error: unknown): ApiError {
     return new ApiError(error.response?.status ?? 0, "NETWORK", "Error de conexión con el servidor.");
   }
   return new ApiError(0, "UNKNOWN", error instanceof Error ? error.message : "Error desconocido.");
+}
+
+export async function listPatients(search?: string): Promise<PatientRead[]> {
+  const response = await http.get<PatientRead[]>("/patients", { params: search ? { search } : undefined });
+  return response.data;
+}
+
+export async function createPatient(
+  input: { full_name: string; dni?: string | null; phone?: string | null },
+  idempotencyKey: string,
+): Promise<PatientRead> {
+  const response = await http.post<PatientRead>("/patients", input, {
+    headers: { "Idempotency-Key": idempotencyKey },
+  });
+  return response.data;
 }
 
 export async function listAppointments(params: {

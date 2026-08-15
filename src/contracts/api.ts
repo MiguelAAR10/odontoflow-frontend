@@ -39,6 +39,94 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/patients": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Patients Route */
+        get: operations["list_patients_route_patients_get"];
+        put?: never;
+        /** Create Patient Route */
+        post: operations["create_patient_route_patients_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/patients/{patient_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Patient Route */
+        get: operations["get_patient_route_patients__patient_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/visits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Visits Route */
+        get: operations["list_visits_route_visits_get"];
+        put?: never;
+        /** Create Visit Route */
+        post: operations["create_visit_route_visits_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/visits/{visit_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Visit Route */
+        get: operations["get_visit_route_visits__visit_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/visits/{visit_id}/executions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Visit Executions Route */
+        get: operations["list_visit_executions_route_visits__visit_id__executions_get"];
+        put?: never;
+        /** Create Service Execution Route */
+        post: operations["create_service_execution_route_visits__visit_id__executions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/leads": {
         parameters: {
             query?: never;
@@ -68,6 +156,128 @@ export interface paths {
         get: operations["get_lead_route_leads__lead_id__get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Products Route */
+        get: operations["list_products_route_products_get"];
+        put?: never;
+        /** Create Product Route */
+        post: operations["create_product_route_products_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/products/{product_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Product Route */
+        get: operations["get_product_route_products__product_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/executions/{execution_id}/consumptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Service Consumptions Route */
+        get: operations["list_service_consumptions_route_executions__execution_id__consumptions_get"];
+        put?: never;
+        /** Create Service Consumption Route */
+        post: operations["create_service_consumption_route_executions__execution_id__consumptions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/executions/{execution_id}/charges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Charge Route */
+        post: operations["create_charge_route_executions__execution_id__charges_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/charges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Charges Route */
+        get: operations["list_charges_route_charges_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/charges/{charge_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Charge Route */
+        get: operations["get_charge_route_charges__charge_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/charges/{charge_id}/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Payments Route */
+        get: operations["list_payments_route_charges__charge_id__payments_get"];
+        put?: never;
+        /** Create Payment Route */
+        post: operations["create_payment_route_charges__charge_id__payments_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -437,6 +647,29 @@ export interface components {
             /** Is Active */
             is_active: boolean;
         };
+        /** ChargeCreate */
+        ChargeCreate: {
+            /** Amount */
+            amount?: number | string | null;
+        };
+        /** ChargeRead */
+        ChargeRead: {
+            /** Id */
+            id: number;
+            /** Service Execution Id */
+            service_execution_id: number;
+            /** Amount */
+            amount: string;
+            /** Paid */
+            paid: string;
+            /** Outstanding */
+            outstanding: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -493,6 +726,57 @@ export interface components {
             /** Is Active */
             is_active: boolean;
         };
+        /** PatientCreate */
+        PatientCreate: {
+            /** Full Name */
+            full_name: string;
+            /** Dni */
+            dni?: string | null;
+            /** Sexo */
+            sexo?: ("M" | "F" | "O") | null;
+            /** Phone */
+            phone?: string | null;
+            /** Birth Date */
+            birth_date?: string | null;
+        };
+        /** PatientRead */
+        PatientRead: {
+            /** Id */
+            id: number;
+            /** Full Name */
+            full_name: string;
+            /** Dni */
+            dni: string | null;
+            /** Sexo */
+            sexo: string | null;
+            /** Phone */
+            phone: string | null;
+            /** Birth Date */
+            birth_date: string | null;
+        };
+        /** PaymentCreate */
+        PaymentCreate: {
+            /** Amount */
+            amount: number | string;
+            /** Method */
+            method: string;
+        };
+        /** PaymentRead */
+        PaymentRead: {
+            /** Id */
+            id: number;
+            /** Charge Id */
+            charge_id: number;
+            /** Amount */
+            amount: string;
+            /** Method */
+            method: string;
+            /**
+             * Paid At
+             * Format: date-time
+             */
+            paid_at: string;
+        };
         /** PractitionerCreate */
         PractitionerCreate: {
             /** Display Name */
@@ -509,6 +793,31 @@ export interface components {
             id: number;
             /** Display Name */
             display_name: string;
+            /** Is Active */
+            is_active: boolean;
+        };
+        /** ProductCreate */
+        ProductCreate: {
+            /** Name */
+            name: string;
+            /** Unit */
+            unit: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "consumible" | "reventa";
+        };
+        /** ProductRead */
+        ProductRead: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /** Unit */
+            unit: string;
+            /** Kind */
+            kind: string;
             /** Is Active */
             is_active: boolean;
         };
@@ -548,6 +857,37 @@ export interface components {
              */
             end_utc: string;
         };
+        /** ServiceConsumptionCreate */
+        ServiceConsumptionCreate: {
+            /** Product Id */
+            product_id: number;
+            /** Quantity */
+            quantity: number | string;
+            /** Unit Price */
+            unit_price: number | string;
+        };
+        /** ServiceConsumptionRead */
+        ServiceConsumptionRead: {
+            /** Id */
+            id: number;
+            /** Service Execution Id */
+            service_execution_id: number;
+            /** Product Id */
+            product_id: number;
+            /** Product Name */
+            product_name: string;
+            /** Quantity */
+            quantity: string;
+            /** Unit Price */
+            unit_price: string;
+            /** Amount */
+            amount: string;
+            /**
+             * Consumed At
+             * Format: date-time
+             */
+            consumed_at: string;
+        };
         /** ServiceCreate */
         ServiceCreate: {
             /** Name */
@@ -559,6 +899,31 @@ export interface components {
              * @default true
              */
             is_active: boolean;
+        };
+        /** ServiceExecutionCreate */
+        ServiceExecutionCreate: {
+            /** Service Id */
+            service_id: number;
+            /** Executed Price */
+            executed_price: number | string;
+        };
+        /** ServiceExecutionRead */
+        ServiceExecutionRead: {
+            /** Id */
+            id: number;
+            /** Visit Id */
+            visit_id: number;
+            /** Service Id */
+            service_id: number;
+            /** Service Name */
+            service_name: string;
+            /** Executed Price */
+            executed_price: string;
+            /**
+             * Executed At
+             * Format: date-time
+             */
+            executed_at: string;
         };
         /** ServiceRead */
         ServiceRead: {
@@ -615,6 +980,67 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /** VisitCreate */
+        VisitCreate: {
+            /** Patient Id */
+            patient_id: number;
+            /** Appointment Id */
+            appointment_id?: number | null;
+            /** Practitioner Id */
+            practitioner_id?: number | null;
+            /** Location Id */
+            location_id?: number | null;
+        };
+        /** VisitDetailRead */
+        VisitDetailRead: {
+            /** Id */
+            id: number;
+            /** Patient Id */
+            patient_id: number;
+            /** Patient Name */
+            patient_name: string;
+            /** Appointment Id */
+            appointment_id: number | null;
+            /** Practitioner Id */
+            practitioner_id: number;
+            /** Practitioner Name */
+            practitioner_name: string;
+            /** Location Id */
+            location_id: number;
+            /** Location Name */
+            location_name: string;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /** Executions */
+            executions: components["schemas"]["ServiceExecutionRead"][];
+        };
+        /** VisitRead */
+        VisitRead: {
+            /** Id */
+            id: number;
+            /** Patient Id */
+            patient_id: number;
+            /** Patient Name */
+            patient_name: string;
+            /** Appointment Id */
+            appointment_id: number | null;
+            /** Practitioner Id */
+            practitioner_id: number;
+            /** Practitioner Name */
+            practitioner_name: string;
+            /** Location Id */
+            location_id: number;
+            /** Location Name */
+            location_name: string;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
         };
     };
     responses: never;
@@ -687,6 +1113,262 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ServiceRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_patients_route_patients_get: {
+        parameters: {
+            query?: {
+                search?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatientRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_patient_route_patients_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatientCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatientRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_patient_route_patients__patient_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                patient_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PatientRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_visits_route_visits_get: {
+        parameters: {
+            query?: {
+                patient_id?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VisitRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_visit_route_visits_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VisitCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VisitRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_visit_route_visits__visit_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                visit_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VisitDetailRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_visit_executions_route_visits__visit_id__executions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                visit_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceExecutionRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_service_execution_route_visits__visit_id__executions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                visit_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ServiceExecutionCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceExecutionRead"];
                 };
             };
             /** @description Validation Error */
@@ -783,6 +1465,331 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LeadRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_products_route_products_get: {
+        parameters: {
+            query?: {
+                search?: string | null;
+                kind?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_product_route_products_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProductCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_product_route_products__product_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_service_consumptions_route_executions__execution_id__consumptions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                execution_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceConsumptionRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_service_consumption_route_executions__execution_id__consumptions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                execution_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ServiceConsumptionCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServiceConsumptionRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_charge_route_executions__execution_id__charges_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                execution_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChargeCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChargeRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_charges_route_charges_get: {
+        parameters: {
+            query?: {
+                execution_id?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChargeRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_charge_route_charges__charge_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                charge_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChargeRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_payments_route_charges__charge_id__payments_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                charge_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_payment_route_charges__charge_id__payments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                charge_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaymentCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentRead"];
                 };
             };
             /** @description Validation Error */

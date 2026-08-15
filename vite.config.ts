@@ -11,6 +11,6 @@ export default defineConfig({
     outDir: "dist-web",
   },
   test: {
-    exclude: ["node_modules/**", "dist/**", "test/agenda-integration.test.ts"],
+    exclude: ["node_modules/**", "dist/**", "test/agenda-integration.test.ts", "test/patients-integration.test.ts"],
   },
 });

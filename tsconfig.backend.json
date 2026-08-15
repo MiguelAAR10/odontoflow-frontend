@@ -21,6 +21,8 @@
   ],
   "exclude": [
     "test/agenda-adapter.test.ts",
-    "test/agenda-integration.test.ts"
+    "test/agenda-integration.test.ts",
+    "test/patients-adapter.test.ts",
+    "test/patients-integration.test.ts"
   ]
 }

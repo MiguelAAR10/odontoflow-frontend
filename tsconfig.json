@@ -32,6 +32,8 @@
     "src/contracts/**/*.ts",
     "test/agenda-adapter.test.ts",
     "test/agenda-integration.test.ts",
-    "vite.config.ts"
+    "vite.config.ts",
+    "test/patients-adapter.test.ts",
+    "test/patients-integration.test.ts"
   ]
 }

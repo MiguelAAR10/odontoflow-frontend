@@ -13,11 +13,13 @@ import {
   ApiError,
   bookAppointment as bookAppointmentReal,
   cancelAppointment as cancelAppointmentReal,
+  createPatient as createPatientReal,
   getAppointment as getAppointmentReal,
   listAppointments as listAppointmentsReal,
   listEligiblePractitioners as listEligiblePractitionersReal,
   listLeads as listLeadsReal,
   listLocations as listLocationsReal,
+  listPatients as listPatientsReal,
   listServices as listServicesReal,
   newIdempotencyKey,
   querySlots as querySlotsReal,
@@ -27,6 +29,7 @@ import {
   type AppointmentRead,
   type LeadRead,
   type LocationRead,
+  type PatientRead,
   type PractitionerRead,
   type ServiceRead,
   type SlotResult,
@@ -122,19 +125,64 @@ export function currentWeekWindow(timeZone = "America/Lima"): { from: string; to
 
 export const getPatients = () => getOrMock<Patient[]>("/patients", patients);
 
-export async function createPatient(input: Omit<Patient, "id" | "initials" | "tone">): Promise<Patient> {
-  if (!useMocks) {
-    const response = await api.post<Patient>("/patients", input);
-    return response.data;
-  }
-  const saved: Patient = {
-    ...input,
-    id: `patient-${Date.now()}`,
-    initials: input.name.split(" ").slice(0, 2).map((part) => part[0]).join("").toUpperCase(),
+/** Map the backend PatientRead into the UI patient view model. */
+export function toUiPatient(row: {
+  id: number;
+  full_name: string;
+  dni: string | null;
+  sexo: string | null;
+  phone: string | null;
+  birth_date: string | null;
+}): Patient {
+  const name = row.full_name;
+  return {
+    id: String(row.id),
+    initials: name.split(" ").slice(0, 2).map((part) => part[0]).join("").toUpperCase(),
+    name,
+    dni: row.dni ?? "",
+    phone: row.phone ?? "",
+    branch: "",
+    nextAppointment: "Sin cita",
+    treatment: "Por definir",
+    status: "Activo",
     tone: "cyan",
+    origin: "Registro clínico",
+    interest: "Por validar",
   };
-  patients.unshift(saved);
-  return copy(saved);
+}
+
+export async function loadPatients(search?: string): Promise<Patient[]> {
+  if (useMocks) return copy(patients);
+  const rows = await listPatientsReal(search);
+  return rows.map(toUiPatient);
+}
+
+export async function createPatient(input: Omit<Patient, "id" | "initials" | "tone"> & { idempotencyKey?: string }): Promise<Patient> {
+  if (useMocks) {
+    const saved: Patient = {
+      id: `patient-${Date.now()}`,
+      initials: input.name.split(" ").slice(0, 2).map((part) => part[0]).join("").toUpperCase(),
+      name: input.name,
+      dni: input.dni,
+      phone: input.phone,
+      branch: input.branch,
+      nextAppointment: input.nextAppointment,
+      treatment: input.treatment,
+      status: input.status,
+      tone: "cyan",
+      origin: input.origin,
+      interest: input.interest,
+    };
+    patients.unshift(saved);
+    return copy(saved);
+  }
+  // Real mode: only the backend-supported fields are sent; the rest of the UI
+  // shape is derived (no invented Patient fields).
+  const created = await createPatientReal(
+    { full_name: input.name, dni: input.dni || null, phone: input.phone || null },
+    input.idempotencyKey ?? newIdempotencyKey(),
+  );
+  return toUiPatient(created);
 }
 
 export const getAppointments = () => getOrMock<Appointment[]>("/appointments", appointments);

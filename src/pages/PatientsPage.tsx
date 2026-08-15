@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { ChevronDown, Eye, Plus, Search, UserRoundPlus, Users } from "lucide-react";
 import { useLocation } from "react-router-dom";
-import { createPatient, getPatients } from "../api";
+import { createPatient, getPatients, loadPatients, newIdempotencyKey, toApiError, useMocks } from "../api";
 import { Badge, statusTone } from "../components/Badge";
 import { Button } from "../components/Button";
 import { type Column, DataTable } from "../components/DataTable";
@@ -17,12 +17,18 @@ export function PatientsPage() {
   const [status, setStatus] = useState("Todos los estados");
   const [selected, setSelected] = useState<Patient | null>(null);
   const [newOpen, setNewOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  useEffect(() => { void getPatients().then((data) => {
-    setPatients(data);
-    const patientId = new URLSearchParams(location.search).get("patient");
-    if (patientId) setSelected(data.find((item) => item.id === patientId) ?? null);
-  }); }, [location.search]);
+  useEffect(() => {
+    setLoading(true);
+    setError("");
+    void (useMocks ? getPatients() : loadPatients()).then((data) => {
+      setPatients(data);
+      const patientId = new URLSearchParams(location.search).get("patient");
+      if (patientId) setSelected(data.find((item) => item.id === patientId) ?? null);
+    }).catch((caught) => setError(toApiError(caught).message)).finally(() => setLoading(false));
+  }, [location.search]);
 
   const visible = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -36,12 +42,18 @@ export function PatientsPage() {
   const submitPatient = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const saved = await createPatient({
-      name: String(form.get("name")), dni: String(form.get("dni")), phone: String(form.get("phone")),
-      branch: String(form.get("branch")), status: "Activo", nextAppointment: "Sin cita", treatment: "Por definir", origin: "Registro manual", interest: "Por validar",
-    });
-    setPatients((current) => [saved, ...current]);
-    setNewOpen(false);
+    setError("");
+    try {
+      const saved = await createPatient({
+        name: String(form.get("name")), dni: String(form.get("dni")), phone: String(form.get("phone")),
+        branch: String(form.get("branch")), status: "Activo", nextAppointment: "Sin cita", treatment: "Por definir", origin: "Registro manual", interest: "Por validar",
+        idempotencyKey: newIdempotencyKey(),
+      });
+      setPatients((current) => [saved, ...current]);
+      setNewOpen(false);
+    } catch (caught) {
+      setError(toApiError(caught).message);
+    }
   };
 
   const columns: Column<Patient>[] = [
@@ -69,7 +81,9 @@ export function PatientsPage() {
           <label className="select-control"><select value={status} onChange={(event) => setStatus(event.target.value)} aria-label="Filtrar por estado"><option>Todos los estados</option><option>Activo</option><option>Lead</option><option>Pendiente</option></select><ChevronDown size={16} /></label>
           <span className="result-count">{visible.length} pacientes</span>
         </div>
-        <DataTable columns={columns} rows={visible} rowKey={(patient) => patient.id} />
+        {error && <div className="form-error" role="alert">{error}</div>}
+        {loading && <div className="table-loading" role="status">Cargando pacientes…</div>}
+        {!loading && <DataTable columns={columns} rows={visible} rowKey={(patient) => patient.id} />}
         <div className="pagination"><span>Mostrando {visible.length} de 1,284 pacientes</span><div><button disabled>‹</button><button className="page-active">1</button><button>2</button><button>3</button><button>›</button></div><select aria-label="Filas por página"><option>25 por página</option><option>50 por página</option></select></div>
       </section>
 
