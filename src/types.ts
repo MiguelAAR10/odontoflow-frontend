@@ -54,17 +54,30 @@ export interface Automation {
   state: "done" | "pending" | "scheduled" | "automatic";
 }
 
-export interface CashMovement {
+/** A recorded payment against a charge (PaymentRead mapped). */
+export interface Payment {
   id: string;
-  time: string;
+  amount: number;
+  method: string;
+  paidAt: string; // ISO instant from the backend
+}
+
+/** Cash-visible economic state: a charge and its payments (ChargeRead mapped).
+ * The branch/party/concept/owner fields are mock-mode only — the backend
+ * projects no location/party/owner, so real mode always renders them empty. */
+export interface Charge {
+  id: string;
+  serviceExecutionId: number;
+  amount: number;
+  paid: number;
+  outstanding: number;
+  createdAt: string; // ISO instant from the backend
+  payments: Payment[];
+  status: "Pagado" | "Parcial" | "Pendiente";
   branch: string;
   party: string;
   concept: string;
-  method: string;
-  amount: number;
   owner: string;
-  status: "Pagado" | "Egreso" | "Pendiente";
-  type: "income" | "expense" | "pending";
 }
 
 export interface Product {

@@ -2,7 +2,7 @@ import type {
   AgentActivity,
   Appointment,
   Automation,
-  CashMovement,
+  Charge,
   Conversation,
   HumanQueueItem,
   Patient,
@@ -47,13 +47,12 @@ export const automations: Automation[] = [
   { time: "1 h antes", title: "Reconfirmación final", note: "Automático", state: "automatic" },
 ];
 
-export const cashMovements: CashMovement[] = [
-  { id: "mov-1", time: "09:15", branch: "Lince", party: "Ana Torres", concept: "Limpieza dental", method: "Yape", amount: 180, owner: "Carla R.", status: "Pagado", type: "income" },
-  { id: "mov-2", time: "09:48", branch: "Jesús María", party: "Carlos Rojas", concept: "Adelanto ortodoncia", method: "Tarjeta", amount: 500, owner: "Miguel P.", status: "Pagado", type: "income" },
-  { id: "mov-3", time: "10:25", branch: "Magdalena", party: "Lucía Pérez", concept: "Control de ortodoncia", method: "Efectivo", amount: 120, owner: "Sofía M.", status: "Pagado", type: "income" },
-  { id: "mov-4", time: "11:10", branch: "Lince", party: "DentalPro Perú", concept: "Compra de resina", method: "Transferencia", amount: 350, owner: "Carla R.", status: "Egreso", type: "expense" },
-  { id: "mov-5", time: "12:05", branch: "Jesús María", party: "María Flores", concept: "Endodoncia · sesión 1", method: "Plin", amount: 450, owner: "Miguel P.", status: "Pagado", type: "income" },
-  { id: "mov-6", time: "13:20", branch: "Magdalena", party: "Diego Salazar", concept: "Evaluación dental", method: "Link de pago", amount: 100, owner: "Sofía M.", status: "Pendiente", type: "pending" },
+export const mockCharges: Charge[] = [
+  { id: "1", serviceExecutionId: 101, amount: 180, paid: 180, outstanding: 0, createdAt: "2026-08-14T14:15:00Z", payments: [{ id: "p1", amount: 180, method: "Yape", paidAt: "2026-08-14T14:15:00Z" }], status: "Pagado", branch: "Lince", party: "Ana Torres", concept: "Limpieza dental", owner: "Carla R." },
+  { id: "2", serviceExecutionId: 102, amount: 500, paid: 200, outstanding: 300, createdAt: "2026-08-14T14:48:00Z", payments: [{ id: "p2", amount: 200, method: "Tarjeta", paidAt: "2026-08-14T14:48:00Z" }], status: "Parcial", branch: "Jesús María", party: "Carlos Rojas", concept: "Adelanto ortodoncia", owner: "Miguel P." },
+  { id: "3", serviceExecutionId: 103, amount: 120, paid: 120, outstanding: 0, createdAt: "2026-08-14T15:25:00Z", payments: [{ id: "p3", amount: 120, method: "Efectivo", paidAt: "2026-08-14T15:25:00Z" }], status: "Pagado", branch: "Magdalena", party: "Lucía Pérez", concept: "Control de ortodoncia", owner: "Sofía M." },
+  { id: "4", serviceExecutionId: 104, amount: 100, paid: 0, outstanding: 100, createdAt: "2026-08-14T16:20:00Z", payments: [], status: "Pendiente", branch: "Lince", party: "Diego Salazar", concept: "Evaluación dental", owner: "Carla R." },
+  { id: "5", serviceExecutionId: 105, amount: 450, paid: 450, outstanding: 0, createdAt: "2026-08-14T17:05:00Z", payments: [{ id: "p4", amount: 450, method: "Plin", paidAt: "2026-08-14T17:05:00Z" }], status: "Pagado", branch: "Jesús María", party: "María Flores", concept: "Endodoncia · sesión 1", owner: "Miguel P." },
 ];
 
 export const products: Product[] = [

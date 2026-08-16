@@ -17,6 +17,8 @@ export type ServiceRead = components["schemas"]["ServiceRead"];
 export type PractitionerRead = components["schemas"]["PractitionerRead"];
 export type SlotResult = components["schemas"]["SlotResult"];
 export type PatientRead = components["schemas"]["PatientRead"];
+export type ChargeRead = components["schemas"]["ChargeRead"];
+export type PaymentRead = components["schemas"]["PaymentRead"];
 
 type AppointmentsPath = paths["/appointments"];
 
@@ -166,6 +168,38 @@ export async function cancelAppointment(
 
 export function newIdempotencyKey(): string {
   return crypto.randomUUID();
+}
+
+// --- cash vertical (real economic surface, M4 Phase 1) ----------------------
+
+/** The charge list IS the cash-visible economic state. */
+export async function listCharges(params?: { execution_id?: number }): Promise<ChargeRead[]> {
+  const response = await http.get<ChargeRead[]>("/charges", {
+    params: params?.execution_id ? { execution_id: params.execution_id } : undefined,
+  });
+  return response.data;
+}
+
+export async function getCharge(chargeId: number): Promise<ChargeRead> {
+  const response = await http.get<ChargeRead>(`/charges/${chargeId}`);
+  return response.data;
+}
+
+export async function listPayments(chargeId: number): Promise<PaymentRead[]> {
+  const response = await http.get<PaymentRead[]>(`/charges/${chargeId}/payments`);
+  return response.data;
+}
+
+/** Record a payment against a charge; idempotency is per payment intent. */
+export async function createPayment(
+  chargeId: number,
+  input: { amount: number; method: string },
+  idempotencyKey: string,
+): Promise<PaymentRead> {
+  const response = await http.post<PaymentRead>(`/charges/${chargeId}/payments`, input, {
+    headers: { "Idempotency-Key": idempotencyKey },
+  });
+  return response.data;
 }
 
 export type { paths };

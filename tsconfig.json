@@ -34,6 +34,8 @@
     "test/agenda-integration.test.ts",
     "vite.config.ts",
     "test/patients-adapter.test.ts",
-    "test/patients-integration.test.ts"
+    "test/patients-integration.test.ts",
+    "test/cash-adapter.test.ts",
+    "test/cash-transport.test.ts"
   ]
 }

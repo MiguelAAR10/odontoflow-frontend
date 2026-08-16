@@ -3,9 +3,9 @@ import {
   agentActivity,
   appointments,
   automations,
-  cashMovements,
   conversations,
   humanQueue,
+  mockCharges,
   patients,
   products,
 } from "./mockData";
@@ -14,12 +14,15 @@ import {
   bookAppointment as bookAppointmentReal,
   cancelAppointment as cancelAppointmentReal,
   createPatient as createPatientReal,
+  createPayment as createPaymentReal,
   getAppointment as getAppointmentReal,
   listAppointments as listAppointmentsReal,
+  listCharges as listChargesReal,
   listEligiblePractitioners as listEligiblePractitionersReal,
   listLeads as listLeadsReal,
   listLocations as listLocationsReal,
   listPatients as listPatientsReal,
+  listPayments as listPaymentsReal,
   listServices as listServicesReal,
   newIdempotencyKey,
   querySlots as querySlotsReal,
@@ -27,20 +30,23 @@ import {
   toApiError,
   type AppointmentListItem,
   type AppointmentRead,
+  type ChargeRead,
   type LeadRead,
   type LocationRead,
   type PatientRead,
+  type PaymentRead,
   type PractitionerRead,
   type ServiceRead,
   type SlotResult,
 } from "./contracts/client";
 import type {
   Appointment,
-  CashMovement,
+  Charge,
   ChatMessage,
   Conversation,
   NewAppointmentInput,
   Patient,
+  Payment,
   Product,
 } from "./types";
 
@@ -305,22 +311,107 @@ export async function getAgentDashboard() {
   return copy({ activity: agentActivity, queue: humanQueue, automations });
 }
 
-export const getCashMovements = () => getOrMock<CashMovement[]>("/cash/movements", cashMovements);
+// --- real cash view model (M4 Phase 1: charges + payments only) -------------
 
-export async function createCashMovement(input: Omit<CashMovement, "id" | "time" | "owner" | "status">): Promise<CashMovement> {
-  if (!useMocks) {
-    const response = await api.post<CashMovement>("/cash/movements", input);
-    return response.data;
-  }
-  const saved: CashMovement = {
-    ...input,
-    id: `movement-${Date.now()}`,
-    time: new Date().toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit", hour12: false }),
-    owner: "Leonardo P.",
-    status: input.type === "expense" ? "Egreso" : "Pagado",
+const round2 = (value: number): number => Math.round(value * 100) / 100;
+
+/** Parse the backend decimal string into a 2-decimal number. */
+export function toMoneyNumber(value: string | number): number {
+  return round2(Number(value));
+}
+
+/** Map the backend PaymentRead into the UI payment view model. */
+export function toUiPayment(row: PaymentRead): Payment {
+  return { id: String(row.id), amount: toMoneyNumber(row.amount), method: row.method, paidAt: row.paid_at };
+}
+
+/** Map the backend ChargeRead (+ its payments) into the UI charge view model.
+ * Status is derived from the real paid/outstanding values — never mocked. */
+export function toUiCharge(row: ChargeRead, payments: PaymentRead[] = []): Charge {
+  const amount = toMoneyNumber(row.amount);
+  const paid = toMoneyNumber(row.paid);
+  const outstanding = toMoneyNumber(row.outstanding);
+  return {
+    id: String(row.id),
+    serviceExecutionId: row.service_execution_id,
+    amount,
+    paid,
+    outstanding,
+    createdAt: row.created_at,
+    payments: payments.map(toUiPayment),
+    status: outstanding <= 0.004 ? "Pagado" : paid <= 0.004 ? "Pendiente" : "Parcial",
+    // Mock-only columns: the backend projects no location/party/owner, so real
+    // mode always renders these empty (the page hides them via `useMocks`).
+    branch: "",
+    party: "",
+    concept: "",
+    owner: "",
   };
-  cashMovements.unshift(saved);
-  return copy(saved);
+}
+
+/** 'Por cobrar': the real derived KPI, Σ outstanding across charges. */
+export function sumOutstanding(charges: Charge[]): number {
+  return round2(charges.reduce((total, charge) => total + charge.outstanding, 0));
+}
+
+/** 'Cobrado': Σ paid across charges (replaces the fake daily income KPI). */
+export function sumPaid(charges: Charge[]): number {
+  return round2(charges.reduce((total, charge) => total + charge.paid, 0));
+}
+
+export async function loadCharges(): Promise<Charge[]> {
+  if (useMocks) return copy(mockCharges);
+  const rows = await listChargesReal();
+  const withPayments = await Promise.all(
+    rows.map(async (charge) => [charge, await listPaymentsReal(charge.id)] as const),
+  );
+  return withPayments.map(([charge, payments]) => toUiCharge(charge, payments));
+}
+
+export async function loadChargePayments(chargeId: string): Promise<Payment[]> {
+  if (useMocks) {
+    const charge = mockCharges.find((item) => item.id === chargeId);
+    return copy(charge?.payments ?? []);
+  }
+  return (await listPaymentsReal(Number(chargeId))).map(toUiPayment);
+}
+
+/** Register a payment against a charge. Idempotency-Key is per payment intent;
+ * the backend rejects overpayments and the envelope is surfaced as-is. */
+export async function registerPayment(
+  chargeId: string,
+  input: { amount: number; method: string },
+  idempotencyKey: string,
+): Promise<Payment> {
+  if (!useMocks) {
+    const created = await createPaymentReal(Number(chargeId), input, idempotencyKey);
+    return toUiPayment(created);
+  }
+  // Mock mode simulates the backend's money-correctness rules (reject
+  // overpayment / invalid amount) so the UI flow is identical in both modes.
+  if (!Number.isFinite(input.amount) || input.amount <= 0) {
+    throw new ApiError(422, "INVALID_INPUT", "El monto debe ser un número mayor a cero.");
+  }
+  const charge = mockCharges.find((item) => item.id === chargeId);
+  if (!charge) throw new ApiError(404, "CHARGE_NOT_FOUND", "El cargo no existe.");
+  if (input.amount > charge.outstanding + 0.004) {
+    throw new ApiError(
+      422,
+      "PAYMENT_EXCEEDS_OUTSTANDING",
+      `El pago (S/ ${round2(input.amount).toFixed(2)}) supera el saldo pendiente del cargo (S/ ${charge.outstanding.toFixed(2)}).`,
+    );
+  }
+  const payment: Payment = {
+    id: `payment-${Date.now()}`,
+    amount: round2(input.amount),
+    method: input.method,
+    paidAt: new Date().toISOString(),
+  };
+  charge.payments.push(payment);
+  charge.paid = round2(charge.paid + payment.amount);
+  charge.outstanding = round2(Math.max(0, charge.amount - charge.paid));
+  charge.status = charge.outstanding <= 0.004 ? "Pagado" : "Parcial";
+  return copy(payment);
 }
 
 export const getProducts = () => getOrMock<Product[]>("/inventory/products", products);
