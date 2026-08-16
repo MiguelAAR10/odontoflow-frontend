@@ -2,7 +2,7 @@
 
 SPA de gestión clínica (React + TypeScript + Vite) + harness de simulación aislado para
 agenda, confirmaciones y recordatorios de citas. Repositorio hermano de
-[`odontosmart-backend`](../odontosmart-backend/) (la autoridad de dominio).
+[`odontoflow-backend`](../odontoflow-backend/) (la autoridad de dominio).
 
 > **Estado**: MVP de simulación funcional. La integración con el backend real está definida por contrato
 > (ver [Integración](#integración)); el primer vertical es **Agenda ↔ Scheduling**.
@@ -90,10 +90,10 @@ psql postgresql://simulator:simulator@localhost:5432/odonto_simulator -v CONFIRM
 El contrato con el backend (matriz acción → endpoint, mapeo de tipos/errores, idempotencia, primer vertical
 **Agenda ↔ Scheduling**) está definido en:
 
-- [`odontosmart-backend/docs/integration/frontend-current-state.md`](../odontosmart-backend/docs/integration/frontend-current-state.md)
-- [`odontosmart-backend/docs/integration/frontend-backend-contract.md`](../odontosmart-backend/docs/integration/frontend-backend-contract.md)
-- [`odontosmart-backend/docs/integration/module-integration-map.md`](../odontosmart-backend/docs/integration/module-integration-map.md)
-- [`odontosmart-backend/docs/integration/data-flow.md`](../odontosmart-backend/docs/integration/data-flow.md)
+- [`odontoflow-backend/docs/integration/frontend-current-state.md`](../odontoflow-backend/docs/integration/frontend-current-state.md)
+- [`odontoflow-backend/docs/integration/frontend-backend-contract.md`](../odontoflow-backend/docs/integration/frontend-backend-contract.md)
+- [`odontoflow-backend/docs/integration/module-integration-map.md`](../odontoflow-backend/docs/integration/module-integration-map.md)
+- [`odontoflow-backend/docs/integration/data-flow.md`](../odontoflow-backend/docs/integration/data-flow.md)
 
 Principios: FastAPI/PostgreSQL es la autoridad de dominio; el diseño visual React se conserva; los tipos de
 API se generan desde OpenAPI; las pantallas sin autoridad de backend (Caja, Inventario, Chat, Agente)
