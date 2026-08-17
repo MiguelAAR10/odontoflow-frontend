@@ -56,14 +56,20 @@ See `.env.example`.
 ## Quick start
 
 ```bash
+nvm use                      # Node 24 (see .nvmrc)
 npm install
-npm run dev          # SPA at http://127.0.0.1:5173 (mock mode by default)
+npm run dev                  # SPA at http://127.0.0.1:5173 (mock mode by default)
+
+# Regenerate TS contracts after the backend OpenAPI changes
+npm run openapi:generate
 
 # Verify everything (unit + types + build)
 npm run typecheck
 npm test
 npm run build
 ```
+
+> Full environment reference (Node pin, vars, dependency approach): [`ENVIRONMENT.md`](../../ENVIRONMENT.md).
 
 ### Real mode + E2E (requires the backend)
 
