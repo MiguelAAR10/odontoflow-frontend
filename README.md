@@ -1,100 +1,117 @@
-# OdontoSmart Frontend
+# OdontoFlow Frontend
 
-SPA de gestión clínica (React + TypeScript + Vite) + harness de simulación aislado para
-agenda, confirmaciones y recordatorios de citas. Repositorio hermano de
-[`odontoflow-backend`](../odontoflow-backend/) (la autoridad de dominio).
+React SPA for OdontoFlow, a deterministic, multi-tenant clinic operations platform. This repo is the UI
+that **adapts to the backend contract** — the backend (`../odontoflow-backend`, FastAPI + PostgreSQL) is
+the domain authority: prices, durations, stock, payments and availability are decided there, never here.
 
-> **Estado**: MVP de simulación funcional. La integración con el backend real está definida por contrato
-> (ver [Integración](#integración)); el primer vertical es **Agenda ↔ Scheduling**.
+> **Status (M4 Pilot Fit CLOSED):** Agenda, Patients, Cash and Inventory are **REAL** against the live
+> backend. Chat and Agent remain prototypes. With `VITE_USE_MOCKS=false` the app consumes **zero** mock
+> business data — proven by the no-mock pilot E2E (`test/pilot-e2e.test.ts`).
+
+## What each screen does (and where its truth lives)
+
+| Screen | State | Backend authority |
+|---|---|---|
+| Agenda | REAL | `/appointments` (+book/reschedule/cancel), `/slots/query`, `/locations`, `/leads`, `/services`, `/practitioners/eligible` |
+| Patients | REAL | `/patients` |
+| Cash | REAL | `/charges`, `/charges/{id}`, `/charges/{id}/payments` (paid/outstanding derived; 'Por cobrar' = Σ outstanding) |
+| Inventory | REAL | `/products`, `/locations`, `/products/{id}/balance?location_id`, `/movements`, `/entries`, `/adjustments`, `/transfers` |
+| Chat | PROTOTYPE | — (no backend authority yet) |
+| Agent | PROTOTYPE | — (no backend authority yet) |
+
+The UI never invents domain values: no fake branch/party/owner on charges, no category/minimum/supplier/
+KPIs on products, no client-side money math that hides a backend rejection. What the backend does not
+project, the UI hides or derives from real data.
+
+## Mental model
+
+- **Product is not stock.** Creating a product (`{name, unit, kind}`) and adding stock (an entry at a
+  location) are separate actions, exactly as the backend models them.
+- **Stock lives per Product × Location.** Balance is read per location; movements (kardex), entries,
+  adjustments and transfers all carry a location.
+- **Dual-mode adapter seam.** Every data function goes through `src/api.ts`: with `VITE_USE_MOCKS=true`
+  (default for design work) it serves typed mock data; with `false` it calls the real FastAPI endpoints.
+  Real mode is the mode that matters — tests assert it by construction.
 
 ## Stack
 
-| Capa | Elección |
+| Layer | Choice |
 |---|---|
-| SPA | React 18 + TypeScript + Vite + TailwindCSS |
-| Navegación | React Router (`/agenda`, `/agente`, `/pacientes`, `/caja`, `/inventario`, `/chat`) |
-| HTTP | Axios (`src/api.ts`, `baseURL = VITE_BACKEND_URL`) |
-| Simulación | Node + PostgreSQL dedicado (`db/`, puerto 5432 local de simulación) — ver [Simulador](#simulador) |
-| Tests | Vitest (`test/`) + script visual (`npm run test:visual`) |
+| SPA | React 18 + TypeScript + Vite (+ Tailwind for styles) |
+| Routing | React Router (`/agenda`, `/pacientes`, `/caja`, `/inventario`, `/chat`, `/agente`) |
+| HTTP | Axios (`src/contracts/client.ts`, `baseURL = VITE_BACKEND_URL`) |
+| Contracts | Generated from backend OpenAPI via `openapi-typescript` → `src/contracts/api.ts` (never handwritten) |
+| Tests | Vitest — unit/adapter tests (`npm test`) + real-backend integration & pilot E2E (`npm run test:e2e`) |
+| Simulator | Node + dedicated PostgreSQL (legacy follow-up harness, reference only — see `docs/`) |
 
-## Requisitos
+## Environment
 
-- Node.js 20+
-- PostgreSQL 16+ (opcional: solo para ejecutar la simulación)
+| Variable | Default | Purpose |
+|---|---|---|
+| `VITE_BACKEND_URL` | `http://127.0.0.1:8010` | Base URL of the real FastAPI backend |
+| `VITE_USE_MOCKS` | `true` | `true` → typed mocks from `src/mockData.ts`; `false` → real HTTP calls |
 
-## Inicio rápido
+See `.env.example`.
+
+## Quick start
 
 ```bash
 npm install
-npm test        # vitest: simulación + recordatorios + e2e followup
+npm run dev          # SPA at http://127.0.0.1:5173 (mock mode by default)
+
+# Verify everything (unit + types + build)
 npm run typecheck
-npm run dev     # SPA en http://127.0.0.1:5173
+npm test
+npm run build
 ```
 
-Mientras `VITE_USE_MOCKS=true`, la SPA usa los datos tipados de `src/mockData.ts` (clonados por llamada).
-La conexión futura al backend queda centralizada en `src/api.ts` mediante `VITE_BACKEND_URL`.
+### Real mode + E2E (requires the backend)
 
-## Variables de entorno
+1. Start PostgreSQL on :5434 and migrate the backend to HEAD 0008.
+2. Run FastAPI on :8010 against a database with fixtures (see the backend README).
+3. Run the no-mock proof — one deterministic journey (Patient → Appointment → Visit → Execution →
+   Consumption → Charge → Payment → Cash/Inventory state → Transfer):
 
-| Variable | Default | Uso |
-|---|---|---|
-| `VITE_BACKEND_URL` | `http://localhost:8080` | Base URL del backend real (ver contrato de integración) |
-| `VITE_USE_MOCKS` | `true` | `true` → todo desde `mockData.ts`; `false` → llamadas HTTP reales |
+```bash
+VITE_USE_MOCKS=false VITE_BACKEND_URL=http://127.0.0.1:8010 \
+  npx vitest run --config vitest.e2e.config.ts test/pilot-e2e.test.ts
 
-Ver `.env.example`.
+# reproducible from zero: resets odontoflow_e2e, migrates, boots the backend, runs the pilot
+./scripts/pilot-e2e.sh
+```
 
-## Estructura
+## Repository layout
 
 ```
 src/
-  App.tsx           # rutas SPA
-  api.ts            # cliente HTTP + fallback mock (punto de integración)
-  types.ts          # tipos de UI (los tipos de API se generarán desde OpenAPI)
-  mockData.ts       # datos ficticios (diseño/prototipo, nunca autoritativos)
-  pages/            # Agenda, Agente, Pacientes, Caja, Inventario, Chat
-  components/       # AppShell, Header, Badge, DataTable, KpiCard, Modal, ...
-  domain/           # tipos/ports del dominio de simulación (independiente de la UI)
-  simulation/       # FollowupEngine, ReminderScheduler, SimulationClock, adapters
-  server.ts         # harness HTTP de simulación (127.0.0.1:3000)
-test/               # vitest (simulation, reminder-flow, end-to-end-followup, ui)
-db/                 # schema + seeds de la simulación (PostgreSQL dedicado)
-docs/               # architecture.md (FollowupEngine = referencia), run-demo.md
+  App.tsx              # SPA routes
+  api.ts               # the adapter seam: toUi* view models + real/mock dispatch
+  contracts/
+    api.ts             # GENERATED from backend OpenAPI (openapi-typescript)
+    client.ts          # typed HTTP client + ApiError envelope (never hand-typed endpoints)
+  types.ts             # UI view models (typed over the generated contract)
+  mockData.ts          # design-time mocks — never consumed in real mode
+  pages/               # AgendaPage, PatientsPage, CashPage, InventoryPage, ChatPage, AgentPage
+  components/          # AppShell, Badge, Button, DataTable, KpiCard, Modal, Header, Navbar
+  domain/  simulation/ # legacy simulator (reference only)
+  server.ts            # legacy simulation harness (reference only)
+test/                  # unit/adapter tests + integration + pilot-e2e (see docs/frontend-architecture.md)
+scripts/pilot-e2e.sh   # deterministic E2E harness (reset → migrate → boot → run)
+docs/                  # architecture & run guides
 ```
 
-## Simulador (referencia, no integrable)
+## Rules for contributors
 
-El harness (`src/server.ts`, puerto 3000, con su propia base PostgreSQL `odonto_simulator`) simula el ciclo
-de confirmación de citas: reloj virtual en hora de Lima, motor de seguimiento (`FollowupEngine`:
-recordatorio día antes 09:00, llamadas 12:00/16:00, mismo día 09:00, una hora antes), scheduler de
-recordatorios y procesador de eventos (confirmar/cancelar/reprogramar/sin respuesta), con persistencia
-idempotente por sesión.
+1. **Contracts are generated, never written.** After the backend OpenAPI changes: regenerate
+   `src/contracts/api.ts` and add typed client functions in `src/contracts/client.ts` matching the
+   existing style. Verify the regenerated diff before writing adapters.
+2. **The backend is authority.** Never send fields the contract does not define (`extra=forbid`), never
+   call paths that don't exist, never invent domain values in the UI.
+3. **One envelope.** All errors map through `toApiError` → `ApiError {code, message, httpStatus}` and are
+   rendered from `message`.
+4. **Mock mode mirrors the real rules** (reject overpayment, insufficient stock, zero adjustments…) so
+   design work behaves like production — but real mode is what ships.
+5. **Keep regressions green:** `npm run typecheck`, `npm test`, `npm run build`, and after backend
+   changes the real-backend integration suite.
 
-**Decisión de arquitectura**: este comportamiento es **referencia** para un futuro módulo de seguimiento en
-el backend; **no se copia** a OdontoFlow ni se conecta a la SPA real.
-
-```bash
-# Base local de simulación
-docker compose up -d db
-psql postgresql://simulator:simulator@localhost:5432/odonto_simulator -f db/migrations/001_initial.sql
-psql postgresql://simulator:simulator@localhost:5432/odonto_simulator -f db/migrations/002_simulated_channels.sql
-psql postgresql://simulator:simulator@localhost:5432/odonto_simulator -f db/migrations/003_end_to_end_followup.sql
-psql postgresql://simulator:simulator@localhost:5432/odonto_simulator -f db/seeds/001_simulated.sql
-psql postgresql://simulator:simulator@localhost:5432/odonto_simulator -f db/seeds/002_end_to_end_demo.sql
-
-# Borrar y recrear solo esa base de simulación
-psql postgresql://simulator:simulator@localhost:5432/odonto_simulator -v CONFIRM_SIMULATION_RESET=true -f db/reset.sql
-```
-
-## Integración
-
-El contrato con el backend (matriz acción → endpoint, mapeo de tipos/errores, idempotencia, primer vertical
-**Agenda ↔ Scheduling**) está definido en:
-
-- [`odontoflow-backend/docs/integration/frontend-current-state.md`](../odontoflow-backend/docs/integration/frontend-current-state.md)
-- [`odontoflow-backend/docs/integration/frontend-backend-contract.md`](../odontoflow-backend/docs/integration/frontend-backend-contract.md)
-- [`odontoflow-backend/docs/integration/module-integration-map.md`](../odontoflow-backend/docs/integration/module-integration-map.md)
-- [`odontoflow-backend/docs/integration/data-flow.md`](../odontoflow-backend/docs/integration/data-flow.md)
-
-Principios: FastAPI/PostgreSQL es la autoridad de dominio; el diseño visual React se conserva; los tipos de
-API se generan desde OpenAPI; las pantallas sin autoridad de backend (Caja, Inventario, Chat, Agente)
-permanecen como prototipo mock.
+Full detail: [`docs/frontend-architecture.md`](docs/frontend-architecture.md) and [`AGENTS.md`](AGENTS.md).
