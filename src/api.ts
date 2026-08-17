@@ -5,9 +5,12 @@ import {
   automations,
   conversations,
   humanQueue,
+  mockBalances,
   mockCharges,
+  mockLocations,
+  mockMovements,
+  mockProducts,
   patients,
-  products,
 } from "./mockData";
 import {
   ApiError,
@@ -15,35 +18,50 @@ import {
   cancelAppointment as cancelAppointmentReal,
   createPatient as createPatientReal,
   createPayment as createPaymentReal,
+  createProduct as createProductReal,
   getAppointment as getAppointmentReal,
+  getBalance as getBalanceReal,
   listAppointments as listAppointmentsReal,
   listCharges as listChargesReal,
   listEligiblePractitioners as listEligiblePractitionersReal,
   listLeads as listLeadsReal,
   listLocations as listLocationsReal,
+  listMovements as listMovementsReal,
   listPatients as listPatientsReal,
   listPayments as listPaymentsReal,
+  listProducts as listProductsReal,
   listServices as listServicesReal,
   newIdempotencyKey,
   querySlots as querySlotsReal,
+  registerAdjustment as registerAdjustmentReal,
+  registerEntry as registerEntryReal,
+  registerTransfer as registerTransferReal,
   rescheduleAppointment as rescheduleAppointmentReal,
   toApiError,
   type AppointmentListItem,
   type AppointmentRead,
+  type BalanceRead,
   type ChargeRead,
   type LeadRead,
   type LocationRead,
+  type MovementRead,
   type PatientRead,
   type PaymentRead,
   type PractitionerRead,
+  type ProductRead,
   type ServiceRead,
   type SlotResult,
+  type TransferRead,
 } from "./contracts/client";
 import type {
   Appointment,
   Charge,
   ChatMessage,
   Conversation,
+  InventoryBalance,
+  InventoryLocation,
+  InventoryMovement,
+  InventoryTransfer,
   NewAppointmentInput,
   Patient,
   Payment,
@@ -397,7 +415,7 @@ export async function registerPayment(
   if (input.amount > charge.outstanding + 0.004) {
     throw new ApiError(
       422,
-      "PAYMENT_EXCEEDS_OUTSTANDING",
+      "INVALID_INPUT",
       `El pago (S/ ${round2(input.amount).toFixed(2)}) supera el saldo pendiente del cargo (S/ ${charge.outstanding.toFixed(2)}).`,
     );
   }
@@ -414,34 +432,259 @@ export async function registerPayment(
   return copy(payment);
 }
 
-export const getProducts = () => getOrMock<Product[]>("/inventory/products", products);
+// --- real inventory view model (M4.3: Product × Location stock) -------------
 
-export async function createProduct(input: Omit<Product, "id" | "status" | "tone" | "updated">): Promise<Product> {
-  if (!useMocks) {
-    const response = await api.post<Product>("/inventory/products", input);
-    return response.data;
-  }
-  const saved: Product = {
-    ...input,
-    id: `product-${Date.now()}`,
-    status: input.stock <= input.minimum ? "Stock bajo" : "Disponible",
-    tone: input.stock <= input.minimum ? "amber" : "green",
-    updated: "14 ago 2026",
+/** Map the backend ProductRead into the UI product view model. The backend
+ * projects no category/branch/stock/minimum — only name/unit/kind/is_active. */
+export function toUiProduct(row: ProductRead): Product {
+  return {
+    id: String(row.id),
+    name: row.name,
+    unit: row.unit,
+    kind: row.kind as Product["kind"],
+    status: row.is_active ? "Activo" : "Inactivo",
   };
-  products.unshift(saved);
-  return copy(saved);
 }
 
-export async function registerPurchase(productId: string, quantity: number): Promise<Product> {
-  if (!useMocks) {
-    const response = await api.post<Product>("/inventory/purchases", { productId, quantity });
-    return response.data;
+/** Map the backend LocationRead into the UI location view model. */
+export function toUiLocation(row: LocationRead): InventoryLocation {
+  return { id: String(row.id), name: row.name, timezone: row.timezone, isActive: row.is_active };
+}
+
+/** Map the backend BalanceRead (decimal string available) into the UI balance. */
+export function toUiBalance(row: BalanceRead): InventoryBalance {
+  return { productId: String(row.product_id), locationId: String(row.location_id), available: toMoneyNumber(row.available) };
+}
+
+/** Map the backend MovementRead into the UI kardex view model. */
+export function toUiMovement(row: MovementRead): InventoryMovement {
+  return {
+    id: String(row.id),
+    productId: String(row.product_id),
+    locationId: String(row.location_id),
+    type: row.type as InventoryMovement["type"],
+    quantity: toMoneyNumber(row.quantity),
+    unitPrice: row.unit_price != null ? toMoneyNumber(row.unit_price) : null,
+    reason: row.reason,
+    transferId: row.transfer_id,
+    movedAt: row.moved_at,
+  };
+}
+
+/** Map the backend TransferRead into the UI transfer view model. */
+export function toUiTransfer(row: TransferRead): InventoryTransfer {
+  return {
+    transferId: row.transfer_id,
+    productId: String(row.product_id),
+    originLocationId: String(row.origin_location_id),
+    destinationLocationId: String(row.destination_location_id),
+    quantity: toMoneyNumber(row.quantity),
+    reason: row.reason,
+    outMovementId: row.out_movement_id,
+    inMovementId: row.in_movement_id,
+  };
+}
+
+/** 'Unidades en stock' KPI: Σ available over the real balances. */
+export function sumAvailable(balances: InventoryBalance[]): number {
+  return round2(balances.reduce((total, balance) => total + balance.available, 0));
+}
+
+export async function loadInventoryData(): Promise<{ products: Product[]; locations: InventoryLocation[] }> {
+  if (useMocks) return copy({ products: mockProducts, locations: mockLocations });
+  const [productRows, locationRows] = await Promise.all([listProductsReal(), listLocationsReal()]);
+  return { products: productRows.map(toUiProduct), locations: locationRows.map(toUiLocation) };
+}
+
+export async function loadProductBalance(productId: string, locationId: string): Promise<InventoryBalance> {
+  if (useMocks) {
+    const balance = mockBalances.find((item) => item.productId === productId && item.locationId === locationId);
+    return copy(balance ?? { productId, locationId, available: 0 });
   }
-  const product = products.find((item) => item.id === productId);
-  if (!product) throw new Error("Producto no encontrado");
-  product.stock += quantity;
-  product.status = product.stock > product.minimum ? "Disponible" : "Stock bajo";
-  return copy(product);
+  return toUiBalance(await getBalanceReal(Number(productId), Number(locationId)));
+}
+
+/** Kardex of one product at one location, newest first (same in both modes). */
+export async function loadMovements(productId: string, locationId: string): Promise<InventoryMovement[]> {
+  const sortNewest = (rows: InventoryMovement[]): InventoryMovement[] =>
+    [...rows].sort((a, b) => b.movedAt.localeCompare(a.movedAt));
+  if (useMocks) {
+    const rows = mockMovements.filter((item) => item.productId === productId && item.locationId === locationId);
+    return copy(sortNewest(rows));
+  }
+  return sortNewest((await listMovementsReal(Number(productId), Number(locationId))).map(toUiMovement));
+}
+
+export async function createProduct(
+  input: { name: string; unit: string; kind: Product["kind"] },
+  idempotencyKey: string,
+): Promise<Product> {
+  if (useMocks) {
+    if (input.kind !== "consumible" && input.kind !== "reventa") {
+      throw new ApiError(422, "INVALID_INPUT", "El tipo de producto debe ser consumible o reventa.");
+    }
+    const saved: Product = { id: `product-${Date.now()}`, name: input.name, unit: input.unit, kind: input.kind, status: "Activo" };
+    mockProducts.unshift(saved);
+    return copy(saved);
+  }
+  return toUiProduct(await createProductReal({ name: input.name, unit: input.unit, kind: input.kind }, idempotencyKey));
+}
+
+function mockFindProduct(productId: string): Product {
+  const product = mockProducts.find((item) => item.id === productId);
+  if (!product) throw new ApiError(404, "PRODUCT_NOT_FOUND", "El producto no existe.");
+  return product;
+}
+
+function mockFindLocation(locationId: number): InventoryLocation {
+  const location = mockLocations.find((item) => item.id === String(locationId));
+  if (!location) throw new ApiError(404, "LOCATION_NOT_FOUND", "La sede no existe.");
+  return location;
+}
+
+function mockBalanceRef(productId: string, locationId: number): InventoryBalance {
+  const existing = mockBalances.find((item) => item.productId === productId && item.locationId === String(locationId));
+  if (existing) return existing;
+  const created: InventoryBalance = { productId, locationId: String(locationId), available: 0 };
+  mockBalances.push(created);
+  return created;
+}
+
+/** Mock-store ids are numeric strings so TransferRead's integer movement ids
+ * map back onto the rows (the real backend assigns integer ids). */
+let mockMovementSeq = 100;
+const nextMockMovementId = (): string => String(++mockMovementSeq);
+
+/** Stock entry (purchase/initial input) at one location; idempotency per intent. */
+export async function registerEntry(
+  productId: string,
+  input: { location_id: number; quantity: number; unit_price?: number | null },
+  idempotencyKey: string,
+): Promise<InventoryMovement> {
+  if (useMocks) {
+    if (!Number.isFinite(input.quantity) || input.quantity <= 0) {
+      throw new ApiError(422, "INVALID_INPUT", "La cantidad debe ser un número mayor a cero.");
+    }
+    mockFindProduct(productId);
+    mockFindLocation(input.location_id);
+    const balance = mockBalanceRef(productId, input.location_id);
+    balance.available = round2(balance.available + input.quantity);
+    const movement: InventoryMovement = {
+      id: nextMockMovementId(),
+      productId,
+      locationId: String(input.location_id),
+      type: "ENTRADA",
+      quantity: round2(input.quantity),
+      unitPrice: input.unit_price != null && Number.isFinite(input.unit_price) ? round2(input.unit_price) : null,
+      reason: null,
+      transferId: null,
+      movedAt: new Date().toISOString(),
+    };
+    mockMovements.unshift(movement);
+    return copy(movement);
+  }
+  return toUiMovement(await registerEntryReal(Number(productId), input, idempotencyKey));
+}
+
+/** Reason-required signed correction at one location (mock mirrors the real
+ * rules: nonzero quantity, reason required, negative needs enough stock). */
+export async function registerAdjustment(
+  productId: string,
+  input: { location_id: number; quantity: number; reason: string },
+  idempotencyKey: string,
+): Promise<InventoryMovement> {
+  if (useMocks) {
+    if (!Number.isFinite(input.quantity) || input.quantity === 0) {
+      throw new ApiError(422, "INVALID_INPUT", "La cantidad del ajuste no puede ser cero.");
+    }
+    if (!input.reason?.trim()) {
+      throw new ApiError(422, "INVALID_INPUT", "El ajuste requiere un motivo.");
+    }
+    mockFindProduct(productId);
+    mockFindLocation(input.location_id);
+    const balance = mockBalanceRef(productId, input.location_id);
+    if (input.quantity < 0 && balance.available < -input.quantity) {
+      throw new ApiError(422, "INVALID_INPUT", "Stock insuficiente para el movimiento solicitado.");
+    }
+    balance.available = round2(balance.available + input.quantity);
+    const movement: InventoryMovement = {
+      id: nextMockMovementId(),
+      productId,
+      locationId: String(input.location_id),
+      type: "ADJUSTMENT",
+      quantity: round2(input.quantity),
+      unitPrice: null,
+      reason: input.reason,
+      transferId: null,
+      movedAt: new Date().toISOString(),
+    };
+    mockMovements.unshift(movement);
+    return copy(movement);
+  }
+  return toUiMovement(await registerAdjustmentReal(Number(productId), input, idempotencyKey));
+}
+
+/** Move stock between two locations (mock mirrors the real rules: distinct
+ * origins, positive quantity, origin floor). */
+export async function registerTransfer(
+  productId: string,
+  input: { origin_location_id: number; destination_location_id: number; quantity: number; reason?: string | null },
+  idempotencyKey: string,
+): Promise<InventoryTransfer> {
+  if (useMocks) {
+    if (!Number.isFinite(input.quantity) || input.quantity <= 0) {
+      throw new ApiError(422, "INVALID_INPUT", "La cantidad debe ser un número mayor a cero.");
+    }
+    if (input.origin_location_id === input.destination_location_id) {
+      throw new ApiError(422, "INVALID_INPUT", "El origen y el destino de la transferencia deben ser sedes distintas.");
+    }
+    mockFindProduct(productId);
+    mockFindLocation(input.origin_location_id);
+    mockFindLocation(input.destination_location_id);
+    const origin = mockBalanceRef(productId, input.origin_location_id);
+    if (origin.available < input.quantity) {
+      throw new ApiError(422, "INVALID_INPUT", "Stock insuficiente para el movimiento solicitado.");
+    }
+    const destination = mockBalanceRef(productId, input.destination_location_id);
+    origin.available = round2(origin.available - input.quantity);
+    destination.available = round2(destination.available + input.quantity);
+
+    const transferId = `t-${Date.now()}`;
+    const outMovement: InventoryMovement = {
+      id: nextMockMovementId(),
+      productId,
+      locationId: String(input.origin_location_id),
+      type: "TRANSFER_OUT",
+      quantity: round2(input.quantity),
+      unitPrice: null,
+      reason: input.reason ?? null,
+      transferId,
+      movedAt: new Date().toISOString(),
+    };
+    const inMovement: InventoryMovement = {
+      id: nextMockMovementId(),
+      productId,
+      locationId: String(input.destination_location_id),
+      type: "TRANSFER_IN",
+      quantity: round2(input.quantity),
+      unitPrice: null,
+      reason: input.reason ?? null,
+      transferId,
+      movedAt: outMovement.movedAt,
+    };
+    mockMovements.unshift(inMovement, outMovement);
+    return copy({
+      transferId,
+      productId,
+      originLocationId: String(input.origin_location_id),
+      destinationLocationId: String(input.destination_location_id),
+      quantity: round2(input.quantity),
+      reason: input.reason ?? null,
+      outMovementId: Number(outMovement.id),
+      inMovementId: Number(inMovement.id),
+    });
+  }
+  return toUiTransfer(await registerTransferReal(Number(productId), input, idempotencyKey));
 }
 
 export const getConversations = () => getOrMock<Conversation[]>("/conversations", conversations);

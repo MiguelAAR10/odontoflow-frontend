@@ -90,7 +90,7 @@ describe("cash real-mode transport (mocked axios)", () => {
 
   it("surfaces the backend overpayment rejection via the envelope", async () => {
     mockPost.mockRejectedValueOnce(
-      envelopeError("PAYMENT_EXCEEDS_OUTSTANDING", "El pago supera el saldo pendiente del cargo."),
+      envelopeError("INVALID_INPUT", "The payment exceeds the outstanding amount of the charge."),
     );
 
     const error = await api
@@ -98,9 +98,9 @@ describe("cash real-mode transport (mocked axios)", () => {
       .then(() => null)
       .catch((caught) => api.toApiError(caught));
     expect(error).not.toBeNull();
-    expect(error!.code).toBe("PAYMENT_EXCEEDS_OUTSTANDING");
+    expect(error!.code).toBe("INVALID_INPUT");
     expect(error!.httpStatus).toBe(422);
-    expect(error!.message).toBe("El pago supera el saldo pendiente del cargo.");
+    expect(error!.message).toBe("The payment exceeds the outstanding amount of the charge.");
   });
 
   it("maps a network failure to the NETWORK error state", async () => {

@@ -19,6 +19,13 @@ export type SlotResult = components["schemas"]["SlotResult"];
 export type PatientRead = components["schemas"]["PatientRead"];
 export type ChargeRead = components["schemas"]["ChargeRead"];
 export type PaymentRead = components["schemas"]["PaymentRead"];
+export type ProductRead = components["schemas"]["ProductRead"];
+export type BalanceRead = components["schemas"]["BalanceRead"];
+export type MovementRead = components["schemas"]["MovementRead"];
+export type TransferRead = components["schemas"]["TransferRead"];
+export type EntryCreate = components["schemas"]["EntryCreate"];
+export type AdjustmentCreate = components["schemas"]["AdjustmentCreate"];
+export type TransferCreate = components["schemas"]["TransferCreate"];
 
 type AppointmentsPath = paths["/appointments"];
 
@@ -197,6 +204,78 @@ export async function createPayment(
   idempotencyKey: string,
 ): Promise<PaymentRead> {
   const response = await http.post<PaymentRead>(`/charges/${chargeId}/payments`, input, {
+    headers: { "Idempotency-Key": idempotencyKey },
+  });
+  return response.data;
+}
+
+// --- inventory vertical (location-aware stock surface, M4.3) ----------------
+
+export async function listProducts(params?: { search?: string; kind?: string }): Promise<ProductRead[]> {
+  const response = await http.get<ProductRead[]>("/products", { params });
+  return response.data;
+}
+
+export async function getProduct(productId: number): Promise<ProductRead> {
+  const response = await http.get<ProductRead>(`/products/${productId}`);
+  return response.data;
+}
+
+export async function createProduct(
+  input: { name: string; unit: string; kind: "consumible" | "reventa" },
+  idempotencyKey: string,
+): Promise<ProductRead> {
+  const response = await http.post<ProductRead>("/products", input, {
+    headers: { "Idempotency-Key": idempotencyKey },
+  });
+  return response.data;
+}
+
+export async function getBalance(productId: number, locationId: number): Promise<BalanceRead> {
+  const response = await http.get<BalanceRead>(`/products/${productId}/balance`, {
+    params: { location_id: locationId },
+  });
+  return response.data;
+}
+
+export async function listMovements(productId: number, locationId: number): Promise<MovementRead[]> {
+  const response = await http.get<MovementRead[]>(`/products/${productId}/movements`, {
+    params: { location_id: locationId },
+  });
+  return response.data;
+}
+
+/** Stock entry (purchase/initial input) at one location. */
+export async function registerEntry(
+  productId: number,
+  input: EntryCreate,
+  idempotencyKey: string,
+): Promise<MovementRead> {
+  const response = await http.post<MovementRead>(`/products/${productId}/entries`, input, {
+    headers: { "Idempotency-Key": idempotencyKey },
+  });
+  return response.data;
+}
+
+/** Reason-required signed correction at one location. */
+export async function registerAdjustment(
+  productId: number,
+  input: AdjustmentCreate,
+  idempotencyKey: string,
+): Promise<MovementRead> {
+  const response = await http.post<MovementRead>(`/products/${productId}/adjustments`, input, {
+    headers: { "Idempotency-Key": idempotencyKey },
+  });
+  return response.data;
+}
+
+/** Move stock between two locations of the same organization. */
+export async function registerTransfer(
+  productId: number,
+  input: TransferCreate,
+  idempotencyKey: string,
+): Promise<TransferRead> {
+  const response = await http.post<TransferRead>(`/products/${productId}/transfers`, input, {
     headers: { "Idempotency-Key": idempotencyKey },
   });
   return response.data;

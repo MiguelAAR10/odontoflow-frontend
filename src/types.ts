@@ -80,17 +80,59 @@ export interface Charge {
   owner: string;
 }
 
+/** A product as the backend knows it: no category/branch/stock/minimum are
+ * projected (ProductRead). Stock lives on the ledger per Location. */
 export interface Product {
   id: string;
   name: string;
-  category: string;
-  branch: string;
-  stock: number;
   unit: string;
-  minimum: number;
-  status: "Disponible" | "Stock bajo" | "Crítico";
-  tone: Tone;
-  updated: string;
+  kind: "consumible" | "reventa";
+  status: "Activo" | "Inactivo"; // derived from is_active
+}
+
+/** A clinic location (LocationRead). Named InventoryLocation to avoid the
+ * DOM-global `Location` type. */
+export interface InventoryLocation {
+  id: string;
+  name: string;
+  timezone: string;
+  isActive: boolean;
+}
+
+/** Real stock of a product at one location (BalanceRead mapped). */
+export interface InventoryBalance {
+  productId: string;
+  locationId: string;
+  available: number; // decimal parsed
+}
+
+export type MovementType = "ENTRADA" | "SALIDA" | "ADJUSTMENT" | "TRANSFER_OUT" | "TRANSFER_IN";
+
+/** One kardex row (MovementRead mapped). Quantity is signed: ENTRADA/SALIDA/
+ * TRANSFER_IN/TRANSFER_OUT are positive as stored (SALIDA/TRANSFER_OUT
+ * subtract from the balance); ADJUSTMENT carries its own sign. */
+export interface InventoryMovement {
+  id: string;
+  productId: string;
+  locationId: string;
+  type: MovementType;
+  quantity: number;
+  unitPrice: number | null;
+  reason: string | null;
+  transferId: string | null;
+  movedAt: string; // ISO instant
+}
+
+/** A transfer between two locations (TransferRead mapped). */
+export interface InventoryTransfer {
+  transferId: string;
+  productId: string;
+  originLocationId: string;
+  destinationLocationId: string;
+  quantity: number;
+  reason: string | null;
+  outMovementId: number;
+  inMovementId: number;
 }
 
 export interface ChatMessage {

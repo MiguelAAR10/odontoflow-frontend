@@ -209,6 +209,8 @@ h1, h2, h3, p { margin-top: 0; }
 .person-cell > span:last-child { display: grid; gap: 2px; }.person-cell small { color: var(--muted); }
 .product-icon { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 6px; font-weight: 600; }
 .row-menu { width: 30px; height: 30px; border: 0; color: #0a2343; background: transparent; font-size: 22px; }
+.row-actions { display: flex; gap: 6px; }.row-actions .button { padding-inline: 9px; }
+.text-danger { color: #d51331; }
 .pagination { min-height: 61px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 20px; padding: 0 16px; border-top: 1px solid var(--line); color: #263c59; font-size: 13px; }
 .pagination > div { display: flex; gap: 8px; }.pagination button { min-width: 39px; height: 39px; border: 1px solid transparent; border-radius: 5px; color: #10213f; background: white; }.pagination button:hover:not(:disabled), .pagination button.page-active { color: #006f9d; border-color: #62c5df; }.pagination select { justify-self: end; min-height: 39px; padding: 0 13px; border: 1px solid var(--line); border-radius: 7px; background: white; }
 .amount { white-space: nowrap; }.amount--income { color: #069b4b; }.amount--expense { color: #e11c34; }.amount--pending { color: #e78300; }

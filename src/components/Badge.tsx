@@ -10,5 +10,6 @@ export function statusTone(status: string): Tone {
   if (["Por confirmar", "Esperando", "Pendiente", "Stock bajo"].includes(status)) return "amber";
   if (["No respondió", "Crítico", "Egreso", "Cancelada"].includes(status)) return "red";
   if (["Requiere atención", "Plin", "Yape"].includes(status)) return "purple";
+  if (["Inactivo"].includes(status)) return "slate";
   return "cyan";
 }

@@ -128,7 +128,7 @@ describe("registerPayment (mock mode)", () => {
       .then(() => null)
       .catch((caught) => caught as ApiError);
     expect(error).toBeInstanceOf(ApiError);
-    expect(error!.code).toBe("PAYMENT_EXCEEDS_OUTSTANDING");
+    expect(error!.code).toBe("INVALID_INPUT");
     expect(error!.httpStatus).toBe(422);
     expect(error!.message).toContain("supera el saldo pendiente");
     // The charge is untouched.

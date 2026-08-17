@@ -284,6 +284,91 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/products/{product_id}/entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Register Entry Route */
+        post: operations["register_entry_route_products__product_id__entries_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/products/{product_id}/adjustments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Register Adjustment Route */
+        post: operations["register_adjustment_route_products__product_id__adjustments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/products/{product_id}/transfers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Register Transfer Route */
+        post: operations["register_transfer_route_products__product_id__transfers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/products/{product_id}/movements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Movements Route */
+        get: operations["list_movements_route_products__product_id__movements_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/products/{product_id}/balance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Balance Route */
+        get: operations["get_balance_route_products__product_id__balance_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/locations": {
         parameters: {
             query?: never;
@@ -486,6 +571,18 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /**
+         * AdjustmentCreate
+         * @description A reason-required correction at one location (a movement row, always).
+         */
+        AdjustmentCreate: {
+            /** Location Id */
+            location_id: number;
+            /** Quantity */
+            quantity: number | string;
+            /** Reason */
+            reason: string;
+        };
+        /**
          * AppointmentCancel
          * @description Empty by design: the appointment is identified by the path, and nothing
          *     about the cancellation is caller-supplied. ``extra='forbid'`` keeps a
@@ -620,6 +717,15 @@ export interface components {
              */
             end_local: string;
         };
+        /** BalanceRead */
+        BalanceRead: {
+            /** Product Id */
+            product_id: number;
+            /** Location Id */
+            location_id: number;
+            /** Available */
+            available: string;
+        };
         /** CapabilityCreate */
         CapabilityCreate: {
             /** Practitioner Id */
@@ -669,6 +775,18 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+        };
+        /**
+         * EntryCreate
+         * @description A purchase/initial stock input, targeted at one location.
+         */
+        EntryCreate: {
+            /** Location Id */
+            location_id: number;
+            /** Quantity */
+            quantity: number | string;
+            /** Unit Price */
+            unit_price?: number | string | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -725,6 +843,32 @@ export interface components {
             timezone: string;
             /** Is Active */
             is_active: boolean;
+        };
+        /** MovementRead */
+        MovementRead: {
+            /** Id */
+            id: number;
+            /** Product Id */
+            product_id: number;
+            /** Location Id */
+            location_id: number;
+            /** Type */
+            type: string;
+            /** Quantity */
+            quantity: string;
+            /** Unit Price */
+            unit_price: string | null;
+            /** Reason */
+            reason: string | null;
+            /** Id Consumo Origen */
+            id_consumo_origen: number | null;
+            /** Transfer Id */
+            transfer_id: string | null;
+            /**
+             * Moved At
+             * Format: date-time
+             */
+            moved_at: string;
         };
         /** PatientCreate */
         PatientCreate: {
@@ -967,6 +1111,39 @@ export interface components {
              * Format: date-time
              */
             end: string;
+        };
+        /**
+         * TransferCreate
+         * @description Move stock between two locations of the same organization.
+         */
+        TransferCreate: {
+            /** Origin Location Id */
+            origin_location_id: number;
+            /** Destination Location Id */
+            destination_location_id: number;
+            /** Quantity */
+            quantity: number | string;
+            /** Reason */
+            reason?: string | null;
+        };
+        /** TransferRead */
+        TransferRead: {
+            /** Transfer Id */
+            transfer_id: string;
+            /** Product Id */
+            product_id: number;
+            /** Origin Location Id */
+            origin_location_id: number;
+            /** Destination Location Id */
+            destination_location_id: number;
+            /** Quantity */
+            quantity: string;
+            /** Reason */
+            reason: string | null;
+            /** Out Movement Id */
+            out_movement_id: number;
+            /** In Movement Id */
+            in_movement_id: number;
         };
         /** ValidationError */
         ValidationError: {
@@ -1790,6 +1967,179 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PaymentRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    register_entry_route_products__product_id__entries_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EntryCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MovementRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    register_adjustment_route_products__product_id__adjustments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdjustmentCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MovementRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    register_transfer_route_products__product_id__transfers_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransferCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_movements_route_products__product_id__movements_get: {
+        parameters: {
+            query: {
+                /** @description The location whose kardex is read. */
+                location_id: number;
+            };
+            header?: never;
+            path: {
+                product_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MovementRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_balance_route_products__product_id__balance_get: {
+        parameters: {
+            query: {
+                /** @description The location whose balance is read. */
+                location_id: number;
+            };
+            header?: never;
+            path: {
+                product_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BalanceRead"];
                 };
             };
             /** @description Validation Error */

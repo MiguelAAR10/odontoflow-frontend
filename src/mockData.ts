@@ -5,6 +5,9 @@ import type {
   Charge,
   Conversation,
   HumanQueueItem,
+  InventoryBalance,
+  InventoryLocation,
+  InventoryMovement,
   Patient,
   Product,
 } from "./types";
@@ -55,17 +58,6 @@ export const mockCharges: Charge[] = [
   { id: "5", serviceExecutionId: 105, amount: 450, paid: 450, outstanding: 0, createdAt: "2026-08-14T17:05:00Z", payments: [{ id: "p4", amount: 450, method: "Plin", paidAt: "2026-08-14T17:05:00Z" }], status: "Pagado", branch: "Jesús María", party: "María Flores", concept: "Endodoncia · sesión 1", owner: "Miguel P." },
 ];
 
-export const products: Product[] = [
-  { id: "prd-1", name: "Guantes de nitrilo", category: "Insumos", branch: "Todas las sedes", stock: 240, unit: "cajas", minimum: 80, status: "Disponible", tone: "blue", updated: "14 ago 2026" },
-  { id: "prd-2", name: "Resina compuesta A2", category: "Material restaurador", branch: "Lince", stock: 12, unit: "unidades", minimum: 15, status: "Stock bajo", tone: "amber", updated: "14 ago 2026" },
-  { id: "prd-3", name: "Anestesia lidocaína 2%", category: "Medicamentos", branch: "Jesús María", stock: 28, unit: "cartuchos", minimum: 20, status: "Disponible", tone: "green", updated: "13 ago 2026" },
-  { id: "prd-4", name: "Mascarillas quirúrgicas", category: "Bioseguridad", branch: "Magdalena", stock: 45, unit: "cajas", minimum: 50, status: "Stock bajo", tone: "purple", updated: "13 ago 2026" },
-  { id: "prd-5", name: "Ácido fosfórico 37%", category: "Material restaurador", branch: "Lince", stock: 8, unit: "jeringas", minimum: 10, status: "Crítico", tone: "red", updated: "12 ago 2026" },
-  { id: "prd-6", name: "Hilo de sutura 4-0", category: "Cirugía", branch: "Jesús María", stock: 62, unit: "unidades", minimum: 30, status: "Disponible", tone: "green", updated: "12 ago 2026" },
-  { id: "prd-7", name: "Alginato cromático", category: "Impresión", branch: "Magdalena", stock: 14, unit: "bolsas", minimum: 18, status: "Stock bajo", tone: "cyan", updated: "11 ago 2026" },
-  { id: "prd-8", name: "Flúor neutro", category: "Preventivo", branch: "Todas las sedes", stock: 38, unit: "frascos", minimum: 15, status: "Disponible", tone: "blue", updated: "11 ago 2026" },
-];
-
 export const conversations: Conversation[] = [
   { id: "conv-ana", patientId: "ana", name: "Ana Torres", initials: "AT", preview: "Sí, deseo confirmar mi cita", time: "10:42", unread: 2, tag: "Paciente", tone: "cyan", messages: [
     { id: "m1", from: "patient", text: "Hola, quisiera confirmar mi cita de mañana.", time: "10:38" },
@@ -76,4 +68,47 @@ export const conversations: Conversation[] = [
   { id: "conv-lucia", patientId: "lucia", name: "Lucía Pérez", initials: "LP", preview: "Gracias por el recordatorio", time: "09:55", unread: 0, tag: "Paciente", tone: "purple", messages: [{ id: "m5", from: "agent", text: "Te recordamos tu control de ortodoncia de mañana.", time: "09:52" }, { id: "m6", from: "patient", text: "Gracias por el recordatorio", time: "09:55" }] },
   { id: "conv-diego", patientId: "diego", name: "Diego Salazar", initials: "DS", preview: "Quisiera una evaluación", time: "Ayer", unread: 0, tag: "Lead", tone: "green", messages: [{ id: "m7", from: "patient", text: "Quisiera una evaluación dental, por favor.", time: "Ayer" }] },
   { id: "conv-maria", patientId: "maria", name: "María Flores", initials: "MF", preview: "Necesito reprogramar", time: "Ayer", unread: 0, tag: "Paciente", tone: "pink", messages: [{ id: "m8", from: "patient", text: "Necesito reprogramar mi cita de endodoncia.", time: "Ayer" }] },
+];
+
+// --- inventory mock store (real OpenAPI shapes only) ------------------------
+// Used only when VITE_USE_MOCKS=true. Real mode (false) reads the backend and
+// consumes ZERO of these rows.
+
+export const mockLocations: InventoryLocation[] = [
+  { id: "1", name: "Lince", timezone: "America/Lima", isActive: true },
+  { id: "2", name: "Jesús María", timezone: "America/Lima", isActive: true },
+  { id: "3", name: "Magdalena", timezone: "America/Lima", isActive: true },
+];
+
+export const mockProducts: Product[] = [
+  { id: "1", name: "Guantes de nitrilo", unit: "cajas", kind: "consumible", status: "Activo" },
+  { id: "2", name: "Resina compuesta A2", unit: "unidades", kind: "consumible", status: "Activo" },
+  { id: "3", name: "Anestesia lidocaína 2%", unit: "cartuchos", kind: "consumible", status: "Activo" },
+  { id: "4", name: "Mascarillas quirúrgicas", unit: "cajas", kind: "consumible", status: "Activo" },
+  { id: "5", name: "Cepillos interdentales", unit: "unidades", kind: "reventa", status: "Activo" },
+  { id: "6", name: "Hilo dental", unit: "cajas", kind: "reventa", status: "Inactivo" },
+];
+
+/** Ledger-derived balances per Product × Location (BalanceRead mapped). */
+export const mockBalances: InventoryBalance[] = [
+  { productId: "1", locationId: "1", available: 180 },
+  { productId: "1", locationId: "2", available: 60 },
+  { productId: "2", locationId: "1", available: 12 },
+  { productId: "3", locationId: "2", available: 28 },
+  { productId: "4", locationId: "3", available: 45 },
+  { productId: "5", locationId: "1", available: 30 },
+  { productId: "5", locationId: "2", available: 10 },
+];
+
+/** Kardex rows (MovementRead mapped), newest first. */
+export const mockMovements: InventoryMovement[] = [
+  { id: "1", productId: "1", locationId: "1", type: "ENTRADA", quantity: 240, unitPrice: 25, reason: null, transferId: null, movedAt: "2026-08-14T09:00:00Z" },
+  { id: "2", productId: "1", locationId: "1", type: "TRANSFER_OUT", quantity: 60, unitPrice: null, reason: "Reabastecimiento a Jesús María", transferId: "t-1", movedAt: "2026-08-14T10:00:00Z" },
+  { id: "3", productId: "1", locationId: "2", type: "TRANSFER_IN", quantity: 60, unitPrice: null, reason: "Reabastecimiento desde Lince", transferId: "t-1", movedAt: "2026-08-14T10:00:00Z" },
+  { id: "4", productId: "2", locationId: "1", type: "ENTRADA", quantity: 15, unitPrice: 80, reason: null, transferId: null, movedAt: "2026-08-13T15:30:00Z" },
+  { id: "5", productId: "2", locationId: "1", type: "ADJUSTMENT", quantity: -3, unitPrice: null, reason: "Rotura de envase", transferId: null, movedAt: "2026-08-14T11:00:00Z" },
+  { id: "6", productId: "3", locationId: "2", type: "ENTRADA", quantity: 28, unitPrice: 12.5, reason: null, transferId: null, movedAt: "2026-08-13T09:00:00Z" },
+  { id: "7", productId: "4", locationId: "3", type: "ENTRADA", quantity: 45, unitPrice: 10, reason: null, transferId: null, movedAt: "2026-08-12T16:00:00Z" },
+  { id: "8", productId: "5", locationId: "1", type: "ENTRADA", quantity: 30, unitPrice: 6, reason: null, transferId: null, movedAt: "2026-08-12T10:00:00Z" },
+  { id: "9", productId: "5", locationId: "2", type: "ENTRADA", quantity: 10, unitPrice: 6, reason: null, transferId: null, movedAt: "2026-08-11T12:00:00Z" },
 ];
