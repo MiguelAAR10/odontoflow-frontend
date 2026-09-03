@@ -27,6 +27,7 @@
   "include": [
     "src/**/*.tsx",
     "src/api.ts",
+    "src/voice.ts",
     "src/mockData.ts",
     "src/types.ts",
     "src/contracts/**/*.ts",
@@ -37,6 +38,7 @@
     "test/patients-integration.test.ts",
     "test/cash-adapter.test.ts",
     "test/cash-transport.test.ts",
-    "test/inventory-adapter.test.ts"
+    "test/inventory-adapter.test.ts",
+    "test/voice-adapter.test.ts"
   ]
 }

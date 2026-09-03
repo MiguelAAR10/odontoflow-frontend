@@ -707,3 +707,23 @@ export async function sendMessage(conversationId: string, text: string): Promise
   conversation.time = message.time;
   return copy(message);
 }
+
+/* ---------------------------------------------------------------------------
+ * Voice assistant — re-exported so pages keep importing from `../api`, the
+ * single façade convention every other page follows. The implementation and
+ * the feature gate live in `./voice`; see that file for the contract and for
+ * the provenance of the contributed calls (Alejandro Marcelo).
+ * ------------------------------------------------------------------------- */
+export {
+  VOICE_DEFAULT_URL,
+  VoiceUnavailableError,
+  editVoiceField,
+  getVoiceHealth,
+  isVoiceUnavailable,
+  restartVoiceSession,
+  sendVoiceAudio,
+  sendVoiceText,
+  voiceBaseUrl,
+  voiceEnabled,
+  voiceLive,
+} from "./voice";

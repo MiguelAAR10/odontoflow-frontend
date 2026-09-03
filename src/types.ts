@@ -155,6 +155,83 @@ export interface Conversation {
   messages: ChatMessage[];
 }
 
+
+/* ---------------------------------------------------------------------------
+ * Voice assistant wire types.
+ *
+ * Contributed VERBATIM by Alejandro Marcelo (AlejandroMarceloCh), ported from
+ * alejandro/feat/asistente-voz (c0f418d). They mirror odontoflow-voice's
+ * CONTRATO-API.md exactly, which is why the field names stay Spanish
+ * (paciente_ref, cantidad_consumida, total_bruto, metodos_pago): they describe
+ * the voice service's wire format. Renaming them here would hide the contract —
+ * translation to OdontoFlow's own domain names belongs in an adapter, not in
+ * the type. Do not "tidy" these.
+ * ------------------------------------------------------------------------- */
+
+export interface VoiceHealth {
+  estado: string;
+  insumos_en_catalogo: number;
+}
+
+export interface VoiceTranscription {
+  texto: string;
+  segundos_audio: number;
+  segundos_proceso: number;
+  modelo: string;
+}
+
+export interface VoiceStockRow {
+  codigo: string;
+  nombre: string;
+  anterior: number | null;
+  contado: number | null;
+  diferencia: number | null;
+  estado: "contado" | "pendiente";
+}
+
+export interface VoiceStockSummary {
+  tipo: "inventario";
+  filas: VoiceStockRow[];
+  contados: number;
+  total: number;
+}
+
+export interface VoiceVisitSummary {
+  tipo: "consulta";
+  paciente_ref: string | null;
+  servicios: { codigo: string; nombre: string; cantidad: number | null }[];
+  consumo: { codigo: string; nombre: string; cantidad_consumida: number | null }[];
+  total_bruto: number | null;
+  metodos_pago: string[];
+  observaciones: string | null;
+}
+
+export type VoiceAttachment = VoiceStockSummary | VoiceVisitSummary;
+
+export interface VoiceMessage {
+  de: "bot" | "medico";
+  texto: string;
+  ts: string;
+  adjunto: VoiceAttachment | null;
+}
+
+export interface VoiceReply {
+  sesion_id: string;
+  flujo: "consulta" | "inventario" | null;
+  terminado: boolean;
+  paso: number;
+  total_pasos: number;
+  pasos: string[];
+  pregunta: string | null;
+  mensajes: VoiceMessage[];
+  transcripcion: VoiceTranscription | null;
+}
+
+export interface VoiceTurn extends VoiceMessage {
+  id: string;
+  audio: VoiceTranscription | null;
+}
+
 export interface NewAppointmentInput {
   patient: string;
   treatment: string;

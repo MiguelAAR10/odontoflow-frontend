@@ -27,6 +27,7 @@
     "test/cash-adapter.test.ts",
     "test/cash-transport.test.ts",
     "test/inventory-adapter.test.ts",
-    "test/pilot-e2e.test.ts"
+    "test/pilot-e2e.test.ts",
+    "test/voice-adapter.test.ts"
   ]
 }

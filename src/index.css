@@ -302,3 +302,131 @@ h1, h2, h3, p { margin-top: 0; }
 }
 
 .table-loading { padding: 1.25rem 1.5rem; color: var(--text-2, #64748b); font-size: 0.875rem; }
+
+/* ===========================================================================
+ * Voice assistant view — contributed by Alejandro Marcelo (AlejandroMarceloCh),
+ * ported from alejandro/feat/asistente-voz (c0f418d). The .voz-* rules below
+ * are the donor's, verbatim.
+ *
+ * ADAPTED: the donor also rewrote .main-nav__links and .nav-link GLOBALLY to
+ * fit a 7th nav item (min-width 160->118, gap 27->15; 135->104 / gap 8 at the
+ * 1450px breakpoint), verified by the author at 1280 and 1440. Since the voice
+ * item is now opt-in, that squeeze is scoped to .main-nav__links--dense so the
+ * default 6-item layout keeps its original geometry. Same numbers, narrower blast
+ * radius. The author explicitly offered alternatives (overflow menu, nesting
+ * under /chat) — see VOICE_CONTRIBUTION_INTEGRATION_MAP.md if this is revisited.
+ * ========================================================================= */
+
+.main-nav__links--dense { gap: 15px; }
+.main-nav__links--dense .nav-link { min-width: 118px; }
+
+/* Asistente de voz */
+.voz-page { --voz-radio: 16px; }
+.voz-titulo { display: flex; align-items: center; gap: 14px; margin-bottom: 21px; }
+.voz-titulo h1 { margin: 0; font-size: 31px; font-weight: 700; letter-spacing: -.03em; color: #0a1e3d; }
+.voz-estado { display: inline-flex; align-items: center; gap: 8px; color: var(--green); font-size: 13px; font-weight: 600; }
+.voz-estado i { width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
+.voz-estado--caido { color: var(--amber); }
+.voz-reiniciar { margin-left: auto; display: inline-flex; align-items: center; gap: 7px; padding: 8px 15px; border: 1px solid var(--line); border-radius: 9px; color: var(--muted); background: #fff; font-size: 13px; font-weight: 600; cursor: pointer; }
+.voz-reiniciar:hover { color: #0a1e3d; border-color: #bfcedd; }
+
+.voz-grid { display: grid; grid-template-columns: minmax(520px, 1.42fr) minmax(360px, 1fr); gap: 22px; align-items: start; }
+.voz-principal { display: grid; gap: 18px; }
+.voz-tarjeta { border: 1px solid #e8eef5; border-radius: var(--voz-radio); background: #fff; box-shadow: 0 1px 3px rgba(10,30,58,.03); }
+.voz-escena { display: flex; flex-direction: column; align-items: center; padding: 30px 34px 26px; }
+
+/* stepper */
+.voz-stepper { display: flex; align-items: flex-start; gap: 0; margin: 0 0 26px; padding: 0; list-style: none; width: 100%; }
+.voz-step { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 9px; }
+.voz-step:not(:last-child)::after { content: ""; position: absolute; top: 17px; left: calc(50% + 22px); right: calc(-50% + 22px); height: 2px; background: #dde6ef; }
+.voz-step--hecho:not(:last-child)::after { background: var(--cyan-500); }
+.voz-step__marca { width: 35px; height: 35px; display: grid; place-items: center; border: 2px solid #dde6ef; border-radius: 50%; color: #98a8bd; background: #fff; font-size: 14px; font-weight: 700; }
+.voz-step--hecho .voz-step__marca { border-color: var(--cyan-500); color: #fff; background: var(--cyan-500); }
+.voz-step--activo .voz-step__marca { border-color: var(--cyan-500); color: var(--cyan-600); }
+.voz-step__etiqueta { color: #7b8aa1; font-size: 12.5px; font-weight: 600; }
+.voz-step--hecho .voz-step__etiqueta, .voz-step--activo .voz-step__etiqueta { color: #21344f; }
+
+/* microfono hero */
+.voz-hero { position: relative; width: 246px; height: 246px; display: grid; place-items: center; margin: 6px 0 4px; border: 0; background: none; cursor: pointer; }
+.voz-hero:disabled { cursor: progress; }
+.voz-hero__anillo { position: absolute; inset: 0; border: 2px dashed #cfe9f2; border-radius: 50%; }
+.voz-hero__halo { position: absolute; inset: 26px; border-radius: 50%; background: #d6f2f9; }
+.voz-hero__centro { position: relative; width: 172px; height: 172px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: linear-gradient(160deg, #22c2de 0%, var(--cyan-600) 100%); box-shadow: 0 10px 26px rgba(3,159,193,.28); transition: transform .18s; }
+.voz-hero:hover:not(:disabled) .voz-hero__centro { transform: scale(1.02); }
+.voz-hero--activo .voz-hero__halo { animation: voz-pulso 1.8s ease-out infinite; }
+.voz-hero--activo .voz-hero__centro { background: linear-gradient(160deg, #f2617a 0%, var(--red) 100%); box-shadow: 0 10px 26px rgba(229,28,58,.26); }
+.voz-hero--ocupado .voz-hero__centro { opacity: .72; }
+@keyframes voz-pulso { 0% { transform: scale(1); opacity: .85; } 100% { transform: scale(1.16); opacity: 0; } }
+
+.voz-onda { position: absolute; bottom: 52px; display: flex; align-items: center; gap: 3px; height: 22px; }
+.voz-onda i { width: 3px; height: 5px; border-radius: 2px; background: rgba(255,255,255,.92); }
+.voz-hero--activo .voz-onda i { animation: voz-barra 1s ease-in-out infinite; }
+@keyframes voz-barra { 0%, 100% { height: 5px; } 50% { height: 20px; } }
+
+.voz-contador { margin: 16px 0 0; color: var(--cyan-600); font-size: 16px; font-weight: 700; }
+.voz-pregunta { max-width: 430px; margin: 9px 0 0; font-size: 23px; font-weight: 700; line-height: 1.32; letter-spacing: -.02em; text-align: center; color: #0d2038; }
+.voz-pista { margin: 11px 0 0; color: #8b99ad; font-size: 14px; }
+
+/* ultima interaccion */
+.voz-ultima { width: 100%; margin-top: 24px; border: 1px solid #e8eef5; border-radius: 11px; overflow: hidden; }
+.voz-ultima__cabecera { width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 11px 15px; border: 0; color: #4a5b73; background: #fafcfe; font-size: 13px; font-weight: 600; cursor: pointer; }
+.voz-girado { transform: rotate(180deg); }
+.voz-ultima__cuerpo { display: grid; gap: 9px; padding: 13px 15px; border-top: 1px solid #eef3f8; }
+.voz-ultima__cuerpo p { display: grid; grid-template-columns: 9px 62px 1fr; align-items: baseline; gap: 9px; margin: 0; font-size: 12.5px; line-height: 1.5; }
+.voz-ultima__cuerpo b { font-weight: 600; }
+.voz-ultima__cuerpo span { color: #40506a; }
+.voz-ultima__cuerpo em { color: #93a1b5; font-style: normal; font-size: 11px; }
+.voz-punto { width: 8px; height: 8px; border-radius: 50%; }
+.voz-punto--bot { background: var(--cyan-500); }
+.voz-punto--yo { background: var(--green); }
+.voz-ultima__cuerpo p:first-child b { color: var(--cyan-600); }
+.voz-ultima__cuerpo p:last-child b { color: #0f8a4a; }
+.voz-aviso { width: 100%; margin: 15px 0 0; padding: 10px 14px; border-radius: 9px; color: #96590a; background: #fdf4e6; font-size: 12.5px; }
+
+/* barra inferior */
+.voz-barra { display: grid; grid-template-columns: 48px 1fr auto; gap: 13px; align-items: center; padding: 15px 17px; }
+.voz-mic { width: 48px; height: 48px; display: grid; place-items: center; border: 0; border-radius: 50%; color: #fff; background: var(--cyan-600); cursor: pointer; transition: background .15s; }
+.voz-mic:hover:not(:disabled) { background: var(--cyan-500); }
+.voz-mic:disabled { opacity: .45; cursor: not-allowed; }
+.voz-mic--activo { background: var(--red); }
+.voz-barra input { height: 47px; padding: 0 17px; border: 1px solid #e3eaf2; border-radius: 11px; background: #f9fbfd; font-size: 14px; }
+.voz-barra input::placeholder { color: #9aa8bb; }
+.voz-cta { display: inline-flex; align-items: center; gap: 8px; height: 47px; padding: 0 23px; border: 0; border-radius: 11px; color: #fff; background: var(--cyan-600); font-size: 14.5px; font-weight: 700; cursor: pointer; transition: background .15s; }
+.voz-cta:hover:not(:disabled) { background: var(--cyan-500); }
+.voz-cta:disabled { opacity: .42; cursor: not-allowed; }
+
+/* resumen */
+.voz-resumen { padding: 24px 22px 22px; }
+.voz-resumen > h2 { margin: 0 0 17px; font-size: 20px; font-weight: 700; letter-spacing: -.02em; color: #0d2038; }
+.voz-campos { display: grid; gap: 11px; }
+.voz-campo { display: grid; grid-template-columns: 42px 1fr auto 26px; align-items: center; gap: 13px; padding: 13px 14px; border: 1px solid #eef3f8; border-radius: 13px; }
+.voz-campo__icono { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 12px; }
+.voz-campo__icono--azul { color: #2a7fd4; background: #e8f2fd; }
+.voz-campo__icono--morado { color: #7a52d0; background: #f0eafd; }
+.voz-campo__icono--verde { color: #0d9350; background: #e6f7ee; }
+.voz-campo__icono--ambar { color: #cf7c07; background: #fdf2e0; }
+.voz-campo__icono--gris { color: #5c7290; background: #eef2f7; }
+.voz-campo__etiqueta { color: #8b99ad; font-size: 13.5px; }
+.voz-campo__valor { text-align: right; font-size: 13.5px; font-weight: 700; color: #14263f; line-height: 1.45; }
+.voz-campo__editor { width: 100%; height: 34px; padding: 0 10px; border: 1px solid var(--cyan-500); border-radius: 8px; font-size: 13px; text-align: right; }
+.voz-campo__lapiz { width: 26px; height: 26px; display: grid; place-items: center; border: 0; border-radius: 7px; color: #a9b6c8; background: none; font-size: 14px; cursor: pointer; }
+.voz-campo__lapiz:hover { color: var(--cyan-600); background: #eef8fb; }
+.voz-listo { display: flex; align-items: center; justify-content: center; gap: 9px; margin: 15px 0 0; padding: 15px; border-radius: 12px; color: #0f8a4a; background: #eafaf1; font-size: 14px; font-weight: 700; }
+.voz-vacio { display: grid; place-items: center; gap: 12px; padding: 46px 22px; color: #93a1b5; text-align: center; }
+.voz-vacio p { max-width: 250px; margin: 0; font-size: 13px; line-height: 1.55; }
+
+@media (prefers-reduced-motion: reduce) {
+  .voz-hero--activo .voz-hero__halo, .voz-hero--activo .voz-onda i { animation: none; }
+}
+
+
+/* Donor's 1450px breakpoint values, scoped the same way. */
+@media (max-width: 1450px) {
+  .main-nav__links--dense { gap: 8px; }
+  .main-nav__links--dense .nav-link { min-width: 104px; }
+}
+
+/* Donor's narrow-viewport rule for the assistant grid. */
+@media (max-width: 1100px) {
+  .voz-grid { grid-template-columns: 1fr; }
+}
