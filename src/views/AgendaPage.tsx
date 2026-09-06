@@ -391,7 +391,7 @@ export function AgendaPage() {
           {error && <div className="form-error" role="alert">{error}</div>}
           <div className="form-actions appointment-detail__actions">
             <Button onClick={closeDetail}>Cerrar</Button>
-            {!useMocks && detailState === "Confirmada" && <>
+            {!useMocks && detailState !== "Cancelada" && <>
               <Button onClick={() => void startReschedule()} disabled={busy || detailLoading}>Reprogramar</Button>
               <Button variant="danger" onClick={() => { setError(""); setCancelOpen(true); }} disabled={busy || detailLoading}>Cancelar cita</Button>
             </>}
