@@ -1,19 +1,60 @@
 import assert from "node:assert/strict";
-import { mkdir } from "node:fs/promises";
-import { join } from "node:path";
+import { access, mkdir, readdir } from "node:fs/promises";
+import { homedir } from "node:os";
+import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
 import { createServer } from "vite";
 
 const baseUrl = process.env.VISUAL_BASE_URL ?? "http://127.0.0.1:5189";
-const screenshotDir = fileURLToPath(new URL("../screenshots/", import.meta.url));
+const screenshotDir = process.env.VISUAL_SCREENSHOT_DIR
+  ? resolve(process.env.VISUAL_SCREENSHOT_DIR)
+  : fileURLToPath(new URL("../screenshots/", import.meta.url));
 await mkdir(screenshotDir, { recursive: true });
 const vite = await createServer({ server: { host: "127.0.0.1", port: 5189, strictPort: true } });
 await vite.listen();
 
+const findChromiumExecutable = async () => {
+  if (process.env.VISUAL_BROWSER_PATH) return process.env.VISUAL_BROWSER_PATH;
+
+  const expectedPath = chromium.executablePath();
+  try {
+    await access(expectedPath);
+    return expectedPath;
+  } catch {
+    // The npm package and the shared Playwright browser cache can be on
+    // different revisions in this WSL workspace. Fall through to an
+    // installed Chromium revision before asking callers for an override.
+  }
+
+  const configuredCache = process.env.PLAYWRIGHT_BROWSERS_PATH;
+  const browserCache = configuredCache && configuredCache !== "0"
+    ? configuredCache
+    : join(homedir(), ".cache", "ms-playwright");
+  let entries = [];
+  try {
+    entries = await readdir(browserCache, { withFileTypes: true });
+  } catch {
+    // The final error below includes the supported override.
+  }
+  const candidates = entries
+    .filter((entry) => entry.isDirectory() && /^chromium-\d+$/.test(entry.name))
+    .map((entry) => join(browserCache, entry.name, "chrome-linux", "chrome"))
+    .sort((left, right) => right.localeCompare(left, undefined, { numeric: true }));
+  for (const candidate of candidates) {
+    try {
+      await access(candidate);
+      return candidate;
+    } catch {
+      // Try the next installed revision.
+    }
+  }
+  throw new Error(`No Chromium executable found. Set VISUAL_BROWSER_PATH (expected ${expectedPath}).`);
+};
+
 const browser = await chromium.launch({
   headless: true,
-  executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  executablePath: await findChromiumExecutable(),
 });
 const context = await browser.newContext({ viewport: { width: 1692, height: 929 }, deviceScaleFactor: 1 });
 const page = await context.newPage();
