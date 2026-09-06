@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Bell, ChevronDown, HeartPulse, Menu, Plus, Search, X } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { getPatients } from "../api";
 import type { Patient } from "../types";
 import { Navbar } from "./Navbar";
 
 export function Header({ onNewAppointment }: { onNewAppointment: () => void }) {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -20,7 +20,7 @@ export function Header({ onNewAppointment }: { onNewAppointment: () => void }) {
 
   const openPatient = (patient: Patient) => {
     setQuery("");
-    navigate(`/pacientes?patient=${patient.id}`);
+    router.push(`/pacientes?patient=${patient.id}`);
   };
 
   return (
@@ -29,7 +29,7 @@ export function Header({ onNewAppointment }: { onNewAppointment: () => void }) {
         <button className="mobile-menu" onClick={() => setMobileOpen((value) => !value)} aria-label="Abrir navegación" aria-expanded={mobileOpen}>
           {mobileOpen ? <X /> : <Menu />}
         </button>
-        <button className="brand" onClick={() => navigate("/agenda")} aria-label="Ir a la agenda">
+        <button className="brand" onClick={() => router.push("/agenda")} aria-label="Ir a la agenda">
           <span className="brand__mark"><HeartPulse size={27} strokeWidth={2.1} /></span>
           <span>ODONTO<strong>SMART</strong></span><small className="demo-label">DEMO</small>
         </button>

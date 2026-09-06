@@ -4,7 +4,7 @@ Operating contract for every agent (human or AI) working in this repository. Rea
 
 ## 1. What this repo is (and is not)
 
-- It is the **React SPA** for OdontoFlow, a deterministic, multi-tenant clinic operations platform.
+- It is the **React + Next.js App Router frontend** for OdontoFlow, a deterministic, multi-tenant clinic operations platform.
 - It is an **adapter layer over a real backend contract** — the backend
   (`../odontoflow-backend`, FastAPI + PostgreSQL) is the domain authority. Prices, durations, stock,
   payments, availability and permissions live there. This repo decides **presentation and view models only**.
@@ -24,7 +24,7 @@ Operating contract for every agent (human or AI) working in this repository. Rea
      supplier/expiry/KPIs on products, no client-side money math that hides a backend rejection.
    - If a screen shows data the backend doesn't project, hide it or derive it from real values — never fake it.
 3. **Dual mode must stay honest.** Every data function goes through the `useMocks` seam in `src/api.ts`.
-   With `VITE_USE_MOCKS=false` the app must consume **zero** mock business data. Mock mode exists for
+   With `NEXT_PUBLIC_USE_MOCKS=false` the app must consume **zero** mock business data. Mock mode exists for
    design work and must mirror the real rules (overpayment rejected, insufficient stock rejected,
    adjustments require a reason) so behavior matches.
 4. **One error envelope.** All failures map through `toApiError` → `ApiError {code, message, httpStatus}`
@@ -49,17 +49,17 @@ Operating contract for every agent (human or AI) working in this repository. Rea
 
 ```bash
 npm run typecheck                          # both tsconfigs
-npm test                                   # unit + adapter suites (83 tests)
-npm run build                              # vite build + tsc backend
+npm test                                   # unit + adapter suites (91 tests)
+npm run build                              # Next.js build + tsc backend
 ./scripts/pilot-e2e.sh                     # deterministic real-backend E2E (needs :5434 + backend venv)
 # or manually:
-VITE_USE_MOCKS=false VITE_BACKEND_URL=http://127.0.0.1:8010 \
+NEXT_PUBLIC_USE_MOCKS=false NEXT_PUBLIC_BACKEND_URL=http://127.0.0.1:8010 \
   npx vitest run --config vitest.e2e.config.ts   # pilot + agenda + patients integration
 ```
 
 ## 5. Test wiring (why some tests are excluded)
 
-`vite.config.ts` `test.exclude` keeps integration specs out of `npm test` (they need a live backend):
+`vitest.config.ts` `test.exclude` keeps integration specs out of `npm test` (they need a live backend):
 `test/agenda-integration.test.ts`, `test/patients-integration.test.ts`, `test/pilot-e2e.test.ts`.
 `vitest.e2e.config.ts` includes exactly those three. `tsconfig.backend.json` (NodeNext) excludes them the
 same way. A new integration spec must be registered in all three places.

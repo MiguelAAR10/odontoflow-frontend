@@ -1,15 +1,15 @@
 /**
  * Agenda E2E proof: the real frontend adapter against a live FastAPI +
- * PostgreSQL backend. Runs ONLY with VITE_USE_MOCKS=false and a real
- * VITE_BACKEND_URL — every assertion below proves the data came from the
+ * PostgreSQL backend. Runs ONLY with NEXT_PUBLIC_USE_MOCKS=false and a real
+ * NEXT_PUBLIC_BACKEND_URL — every assertion below proves the data came from the
  * backend (no mockData), by construction of the module under test.
  *
- * Requires: backend up at VITE_BACKEND_URL with seeded fixture data
+ * Requires: backend up at NEXT_PUBLIC_BACKEND_URL with seeded fixture data
  * (service, location, practitioner, capability, availability, lead).
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
-const BACKEND_URL = process.env.VITE_BACKEND_URL ?? "http://127.0.0.1:8010";
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://127.0.0.1:8010";
 
 let api: typeof import("../src/api");
 let client: typeof import("../src/contracts/client");
@@ -32,11 +32,11 @@ async function loadSelectors() {
 
 beforeAll(async () => {
   // Set the real-mode flags BEFORE the modules load (they read env at import).
-  process.env.VITE_USE_MOCKS = "false";
-  process.env.VITE_BACKEND_URL = BACKEND_URL;
+  process.env.NEXT_PUBLIC_USE_MOCKS = "false";
+  process.env.NEXT_PUBLIC_BACKEND_URL = BACKEND_URL;
   api = await import("../src/api");
   client = await import("../src/contracts/client");
-  if (api.useMocks) throw new Error("E2E must run with VITE_USE_MOCKS=false");
+  if (api.useMocks) throw new Error("E2E must run with NEXT_PUBLIC_USE_MOCKS=false");
   await loadSelectors();
 });
 

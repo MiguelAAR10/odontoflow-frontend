@@ -2,7 +2,7 @@
 
 ## Qué es este repo
 
-**La SPA real de OdontoFlow.** React + Vite + TypeScript. Construida
+**La aplicación real de OdontoFlow.** React + Next.js App Router + TypeScript. Construida
 originalmente por **Leonardo Panduro** (commit `8769f12`, "Implement ODONTO
 SMART frontend") — todo lo que hay encima, incluido este archivo, se apoya en
 ese trabajo.
@@ -14,13 +14,13 @@ Pilot E2E 12/12 contra el backend real. Detalle sin filtrar en
 ## Función de desarrollo — la regla que organiza todo el repo
 
 Cada página se gatea con `useMocks` (de `src/api.ts`, controlado por
-`VITE_USE_MOCKS`):
+`NEXT_PUBLIC_USE_MOCKS`):
 
 | Página | Estado |
 |---|---|
-| Agenda, Pacientes, Caja, Inventario | **REAL** — llaman al backend de verdad cuando `VITE_USE_MOCKS=false` |
+| Agenda, Pacientes, Caja, Inventario | **REAL** — llaman al backend de verdad cuando `NEXT_PUBLIC_USE_MOCKS=false` |
 | Chat, Agente IA | **PROTOTIPO** — datos mock siempre, incluso el llamado "modo real" apunta a endpoints (`/conversations`, `/agent/dashboard`) que **no existen en el backend todavía** |
-| Asistente de voz | **PARCIAL** — detrás de `VITE_ENABLE_VOICE` (apagado por defecto), nunca hace HTTP en modo mock, produce solo borradores |
+| Asistente de voz | **PARCIAL** — detrás de `NEXT_PUBLIC_ENABLE_VOICE` (apagado por defecto), nunca hace HTTP en modo mock, produce solo borradores |
 
 Desarrollar acá significa: si tu feature toca datos de negocio reales, síguele
 el patrón `useMocks` a una página que ya lo hace bien (`CashPage.tsx` o
@@ -47,7 +47,7 @@ Cuando se portó la vista de voz de Alejandro (PR externo, rama
 2. Portar archivo por archivo, decidiendo caso a caso: directo, con
    adaptador, o solo como referencia de diseño.
 3. La adaptación real que hizo falta: el donante no respetaba el gate
-   `VITE_USE_MOCKS` — se corrigió en `src/voice.ts` antes de portar la UI.
+   `NEXT_PUBLIC_USE_MOCKS` — se corrigió en `src/voice.ts` antes de portar la UI.
 4. El commit final acredita al autor original con `Co-authored-by`.
 
 Detalle completo en `.audit/voice-v1/voice-ui-port.md`. Si vas a portar tu

@@ -33,8 +33,8 @@ describe("cash real-mode transport (mocked axios)", () => {
   let api: typeof import("../src/api");
 
   beforeAll(async () => {
-    vi.stubEnv("VITE_USE_MOCKS", "false");
-    vi.stubEnv("VITE_BACKEND_URL", "http://backend.test");
+    vi.stubEnv("NEXT_PUBLIC_USE_MOCKS", "false");
+    vi.stubEnv("NEXT_PUBLIC_BACKEND_URL", "http://backend.test");
     api = await import("../src/api");
   });
 

@@ -1,6 +1,8 @@
+"use client";
+
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { ChevronDown, Eye, Plus, Search, UserRoundPlus, Users } from "lucide-react";
-import { useLocation } from "react-router-dom";
+import { useSearchParams } from "next/navigation";
 import { createPatient, getPatients, loadPatients, newIdempotencyKey, toApiError, useMocks } from "../api";
 import { Badge, statusTone } from "../components/Badge";
 import { Button } from "../components/Button";
@@ -10,7 +12,8 @@ import { Modal } from "../components/Modal";
 import type { Patient } from "../types";
 
 export function PatientsPage() {
-  const location = useLocation();
+  const searchParams = useSearchParams();
+  const patientQuery = searchParams.get("patient");
   const [patients, setPatients] = useState<Patient[]>([]);
   const [query, setQuery] = useState("");
   const [branch, setBranch] = useState("Todas las sedes");
@@ -25,10 +28,9 @@ export function PatientsPage() {
     setError("");
     void (useMocks ? getPatients() : loadPatients()).then((data) => {
       setPatients(data);
-      const patientId = new URLSearchParams(location.search).get("patient");
-      if (patientId) setSelected(data.find((item) => item.id === patientId) ?? null);
+      if (patientQuery) setSelected(data.find((item) => item.id === patientQuery) ?? null);
     }).catch((caught) => setError(toApiError(caught).message)).finally(() => setLoading(false));
-  }, [location.search]);
+  }, [patientQuery]);
 
   const visible = useMemo(() => {
     const normalized = query.trim().toLowerCase();

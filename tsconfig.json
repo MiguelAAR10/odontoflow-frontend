@@ -20,11 +20,19 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "types": [
-      "vite/client",
       "node"
-    ]
+    ],
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "incremental": true
   },
   "include": [
+    "next-env.d.ts",
+    ".next/types/**/*.ts",
+    "app/**/*.tsx",
     "src/**/*.tsx",
     "src/api.ts",
     "src/voice.ts",
@@ -33,12 +41,17 @@
     "src/contracts/**/*.ts",
     "test/agenda-adapter.test.ts",
     "test/agenda-integration.test.ts",
-    "vite.config.ts",
     "test/patients-adapter.test.ts",
     "test/patients-integration.test.ts",
     "test/cash-adapter.test.ts",
     "test/cash-transport.test.ts",
     "test/inventory-adapter.test.ts",
-    "test/voice-adapter.test.ts"
+    "test/voice-adapter.test.ts",
+    "vitest.config.ts",
+    "next.config.ts",
+    ".next/dev/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
   ]
 }

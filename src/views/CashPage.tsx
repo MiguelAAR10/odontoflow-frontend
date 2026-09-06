@@ -1,3 +1,5 @@
+"use client";
+
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { ArrowUpRight, ChevronDown, Clock3, Plus, Receipt, Search } from "lucide-react";
 import { loadCharges, newIdempotencyKey, registerPayment, sumOutstanding, sumPaid, toApiError, useMocks } from "../api";
@@ -96,7 +98,7 @@ export function CashPage() {
   };
 
   // Mock-only columns: the backend projects no location/party/owner on
-  // charges, so real mode (VITE_USE_MOCKS=false) never renders them.
+  // charges, so real mode (NEXT_PUBLIC_USE_MOCKS=false) never renders them.
   const mockColumns: Column<Charge>[] = useMocks ? [
     { key: "branch", header: "Sede", render: (charge) => charge.branch },
     { key: "party", header: "Paciente", width: "15%", render: (charge) => charge.party },

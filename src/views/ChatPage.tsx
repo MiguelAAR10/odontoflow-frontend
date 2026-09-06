@@ -1,6 +1,8 @@
+"use client";
+
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Bot, CalendarCheck, Check, Clock3, MessageCircle, MoreVertical, Paperclip, Search, Send, Smile, UserRoundCheck } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { createAppointment, getConversations, getPatients, sendMessage } from "../api";
 import { Badge } from "../components/Badge";
 import { Button } from "../components/Button";
@@ -10,7 +12,7 @@ import type { Conversation, Patient } from "../types";
 const filters = ["Todos", "Leads", "Con cita", "Sin cita", "Pacientes"];
 
 export function ChatPage() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [selectedId, setSelectedId] = useState("conv-ana");
@@ -65,7 +67,7 @@ export function ChatPage() {
           <div className="agent-strip"><span>{human ? <UserRoundCheck /> : <Bot />} {human ? "Atención humana activa" : "Agente automático activo"}</span><Button compact onClick={() => setHuman((value) => !value)}>{human ? "Devolver al agente" : "Transferir a humano"}</Button></div>
           <div className="message-history">
             {selected.messages.map((item) => <div key={item.id} className={`message-bubble message-bubble--${item.from}`}><p>{item.text}</p><time>{item.time}</time>{item.from !== "patient" && <small>{item.from === "agent" ? "Agente" : "Leonardo"}</small>}</div>)}
-            {selected.patientId === "ana" && <div className="appointment-confirmation"><Check /><div><strong>Cita confirmada</strong><span>15 agosto 2026 · 10:30 a. m.</span><span>Sede Lince</span><Button compact onClick={() => navigate("/agenda")}>Ver en agenda</Button></div><time>10:42</time></div>}
+            {selected.patientId === "ana" && <div className="appointment-confirmation"><Check /><div><strong>Cita confirmada</strong><span>15 agosto 2026 · 10:30 a. m.</span><span>Sede Lince</span><Button compact onClick={() => router.push("/agenda")}>Ver en agenda</Button></div><time>10:42</time></div>}
           </div>
           <form className="message-composer" onSubmit={submitMessage}><button type="button" aria-label="Adjuntar archivo"><Paperclip /></button><input value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Escribe un mensaje" aria-label="Mensaje" /><button type="button" aria-label="Insertar emoji"><Smile /></button><button className="send-button" type="submit" disabled={!message.trim()} aria-label="Enviar mensaje"><Send /></button></form>
         </section> : <section className="message-panel empty-state">Selecciona una conversación</section>}
@@ -77,7 +79,7 @@ export function ChatPage() {
             <div className="patient-facts"><div><span>DNI</span><strong>{patient.dni}</strong></div><div><span>Teléfono</span><strong>{patient.phone}</strong></div><div><span>Origen</span><strong>{patient.origin}</strong></div><div><span>Interés</span><strong>{patient.interest}</strong></div><div><span>Sede preferida</span><strong>{patient.branch}</strong></div></div>
             <h2 className="patient-panel__next-title">Próxima cita</h2>
             <div className="next-appointment"><span><CalendarCheck /></span><div><strong>{patient.nextAppointment}</strong><small>{patient.treatment}</small><Badge tone="green">Confirmada</Badge></div></div>
-            <div className="patient-panel__actions"><Button onClick={() => navigate(`/pacientes?patient=${patient.id}`)}>Ver ficha</Button><Button variant="primary" onClick={() => setAppointmentOpen(true)}>Crear cita</Button></div>
+            <div className="patient-panel__actions"><Button onClick={() => router.push(`/pacientes?patient=${patient.id}`)}>Ver ficha</Button><Button variant="primary" onClick={() => setAppointmentOpen(true)}>Crear cita</Button></div>
           </>}
         </aside>
       </div>

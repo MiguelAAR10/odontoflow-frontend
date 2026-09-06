@@ -3,7 +3,7 @@
 #
 # Resets the dedicated odontoflow_e2e database (DROP SCHEMA + alembic upgrade
 # head), starts FastAPI on :8010 against it, and runs the pilot E2E spec with
-# VITE_USE_MOCKS=false. Every run starts from the same empty migrated schema,
+# NEXT_PUBLIC_USE_MOCKS=false. Every run starts from the same empty migrated schema,
 # so the pilot's absolute assertions are reproducible.
 #
 # Prereqs: PostgreSQL on :5434 (user odontoflow/odontoflow), backend venv at
@@ -38,6 +38,6 @@ done
 curl -sf --max-time 2 "http://127.0.0.1:$PORT/health" >/dev/null \
   || { echo "backend failed to start"; tail -20 /tmp/opencode/uvicorn-e2e.log; exit 1; }
 
-echo "== running pilot E2E (VITE_USE_MOCKS=false) =="
-(cd "$FRONTEND_DIR" && VITE_USE_MOCKS=false VITE_BACKEND_URL="http://127.0.0.1:$PORT" \
+echo "== running pilot E2E (NEXT_PUBLIC_USE_MOCKS=false) =="
+(cd "$FRONTEND_DIR" && NEXT_PUBLIC_USE_MOCKS=false NEXT_PUBLIC_BACKEND_URL="http://127.0.0.1:$PORT" \
   npx vitest run --config vitest.e2e.config.ts test/pilot-e2e.test.ts)

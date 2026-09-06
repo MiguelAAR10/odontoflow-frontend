@@ -1,18 +1,45 @@
 import assert from "node:assert/strict";
+import { spawn } from "node:child_process";
 import { access, mkdir, readdir } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
-import { createServer } from "vite";
 
 const baseUrl = process.env.VISUAL_BASE_URL ?? "http://127.0.0.1:5189";
 const screenshotDir = process.env.VISUAL_SCREENSHOT_DIR
   ? resolve(process.env.VISUAL_SCREENSHOT_DIR)
   : fileURLToPath(new URL("../screenshots/", import.meta.url));
 await mkdir(screenshotDir, { recursive: true });
-const vite = await createServer({ server: { host: "127.0.0.1", port: 5189, strictPort: true } });
-await vite.listen();
+
+const nextBin = fileURLToPath(new URL("../node_modules/next/dist/bin/next", import.meta.url));
+const runNext = (args) => new Promise((resolveRun, rejectRun) => {
+  const child = spawn(process.execPath, [nextBin, ...args], { stdio: "inherit", env: process.env });
+  child.once("error", rejectRun);
+  child.once("exit", (code, signal) => {
+    if (code === 0) resolveRun();
+    else rejectRun(new Error(`next ${args.join(" ")} exited with ${code ?? signal}`));
+  });
+});
+
+const waitForServer = async () => {
+  const deadline = Date.now() + 30_000;
+  while (Date.now() < deadline) {
+    try {
+      const response = await fetch(`${baseUrl}/agenda`);
+      if (response.status >= 200 && response.status < 500) return;
+    } catch {
+      // The Next process is still starting.
+    }
+    await new Promise((resolveWait) => setTimeout(resolveWait, 250));
+  }
+  throw new Error(`Next server did not become ready at ${baseUrl}`);
+};
+
+await runNext(["build"]);
+const nextServer = spawn(process.execPath, [nextBin, "start", "-p", "5189", "-H", "127.0.0.1"], { stdio: "inherit", env: process.env });
+process.once("exit", () => { if (nextServer.exitCode === null) nextServer.kill("SIGTERM"); });
+await waitForServer();
 
 const findChromiumExecutable = async () => {
   if (process.env.VISUAL_BROWSER_PATH) return process.env.VISUAL_BROWSER_PATH;
@@ -39,7 +66,7 @@ const findChromiumExecutable = async () => {
   }
   const candidates = entries
     .filter((entry) => entry.isDirectory() && /^chromium-\d+$/.test(entry.name))
-    .map((entry) => join(browserCache, entry.name, "chrome-linux", "chrome"))
+    .flatMap((entry) => ["chrome-linux", "chrome-linux64"].map((platformDirectory) => join(browserCache, entry.name, platformDirectory, "chrome")))
     .sort((left, right) => right.localeCompare(left, undefined, { numeric: true }));
   for (const candidate of candidates) {
     try {
@@ -122,42 +149,40 @@ await test("Pacientes: búsqueda, filtros, ficha y registro", async () => {
   await page.getByText("Elena Soto", { exact: true }).waitFor();
 });
 
-await test("Caja: pestañas, búsqueda y formularios", async () => {
-  await openAndCapture("/caja", "caja.png", "Control de caja");
-  await page.getByRole("button", { name: "Comisiones", exact: true }).click();
-  await page.getByRole("heading", { name: "Comisiones", exact: true }).waitFor();
-  await page.getByRole("button", { name: "Movimientos", exact: true }).click();
-  await page.getByRole("textbox", { name: "Buscar movimiento" }).fill("Ana");
+await test("Caja: búsqueda y cobro", async () => {
+  await openAndCapture("/caja", "caja.png", "Cobros");
+  await page.getByRole("textbox", { name: "Buscar cargo", exact: true }).fill("#2");
   assert.equal(await page.locator("tbody tr").count(), 1);
-  await page.getByRole("textbox", { name: "Buscar movimiento" }).fill("");
-  await page.getByRole("button", { name: "Nuevo ingreso" }).click();
-  await page.getByLabel("Paciente", { exact: true }).fill("Paciente de caja");
-  await page.getByLabel("Concepto").fill("Evaluación");
-  await page.getByLabel("Monto (S/)").fill("90");
-  await page.getByRole("button", { name: "Guardar movimiento" }).click();
-  await page.getByText("Paciente de caja", { exact: true }).waitFor();
-  await page.getByRole("button", { name: "Cerrar caja" }).click();
-  await page.getByRole("heading", { name: "Cerrar caja" }).waitFor();
-  await page.getByRole("button", { name: "Cancelar" }).click();
+  await page.getByRole("textbox", { name: "Buscar cargo", exact: true }).fill("");
+  const chargeRow = page.locator("tbody tr").filter({ hasText: "#2" });
+  await chargeRow.getByRole("button", { name: "Cobrar", exact: true }).click();
+  await page.getByRole("heading", { name: "Cobrar cargo #2", exact: true }).waitFor();
+  const chargeDialog = page.getByRole("dialog");
+  await chargeDialog.getByRole("button", { name: "Pagar todo", exact: true }).click();
+  await chargeDialog.getByRole("button", { name: "Registrar pago", exact: true }).click();
+  await page.getByRole("heading", { name: "Cobrar cargo #2", exact: true }).waitFor({ state: "detached" });
 });
 
-await test("Inventario: filtros, paginación, producto y compra", async () => {
+await test("Inventario: filtros, producto y entrada de stock", async () => {
   await openAndCapture("/inventario", "inventario.png", "Gestión de inventario");
-  await page.getByRole("combobox", { name: "Sede", exact: true }).last().selectOption("Lince");
+  const locationFilter = page.getByRole("combobox", { name: "Sede", exact: true }).last();
+  const linceValue = await locationFilter.locator("option", { hasText: "Lince" }).getAttribute("value");
+  assert.ok(linceValue, "La sede Lince debe exponer un valor de opción");
+  await locationFilter.selectOption(linceValue);
   assert.ok(await page.locator("tbody tr").count() >= 1);
-  await page.getByRole("combobox", { name: "Sede", exact: true }).last().selectOption("Todas las sedes");
-  await page.getByRole("button", { name: "2", exact: true }).click();
+  const jesusMariaValue = await locationFilter.locator("option", { hasText: "Jesús María" }).getAttribute("value");
+  assert.ok(jesusMariaValue, "La sede Jesús María debe exponer un valor de opción");
+  await locationFilter.selectOption(jesusMariaValue);
   assert.ok(await page.locator("tbody tr").count() >= 1);
   await page.getByRole("button", { name: "Nuevo producto" }).click();
   await page.getByLabel("Nombre del producto").fill("Cemento temporal");
-  await page.getByLabel("Stock inicial").fill("25");
-  await page.getByLabel("Stock mínimo").fill("10");
   await page.getByLabel("Unidad de medida").fill("unidades");
   await page.getByRole("button", { name: "Guardar producto" }).click();
   await page.getByText("Cemento temporal", { exact: true }).waitFor();
-  await page.getByRole("button", { name: "Registrar compra" }).click();
-  await page.getByLabel("Cantidad recibida").fill("5");
-  await page.getByRole("dialog").getByRole("button", { name: "Registrar compra", exact: true }).click();
+  const productRow = page.locator("tbody tr").filter({ hasText: "Cemento temporal" });
+  await productRow.getByRole("button", { name: "Entrada", exact: true }).click();
+  await page.getByRole("dialog").getByLabel("Cantidad", { exact: true }).fill("5");
+  await page.getByRole("dialog").getByRole("button", { name: "Registrar entrada", exact: true }).click();
 });
 
 await test("Chat: selección, filtros, transferencia y mensaje local", async () => {
@@ -189,7 +214,7 @@ await test("Responsive: 1024 px y móvil 390 px", async () => {
 });
 
 await browser.close();
-await vite.close();
+if (nextServer.exitCode === null) nextServer.kill("SIGTERM");
 const failed = results.filter((result) => result.status === "failed");
 console.log(JSON.stringify({ results, pageErrors }, null, 2));
 if (failed.length || pageErrors.length) process.exitCode = 1;

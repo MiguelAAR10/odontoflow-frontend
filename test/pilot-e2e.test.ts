@@ -2,7 +2,7 @@
  * M4 Pilot E2E — one deterministic real journey.
  *
  * real React adapters (src/api) + real FastAPI + real PostgreSQL.
- * Runs ONLY with VITE_USE_MOCKS=false and a live backend at VITE_BACKEND_URL
+ * Runs ONLY with NEXT_PUBLIC_USE_MOCKS=false and a live backend at NEXT_PUBLIC_BACKEND_URL
  * (default http://127.0.0.1:8010) whose database is migrated to HEAD (0008)
  * with a seeded bootstrap organization (migration 0002).
  *
@@ -19,7 +19,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import type { MovementRead } from "../src/contracts/client";
 
-const BACKEND_URL = process.env.VITE_BACKEND_URL ?? "http://127.0.0.1:8010";
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://127.0.0.1:8010";
 
 let api: typeof import("../src/api");
 let client: typeof import("../src/contracts/client");
@@ -73,11 +73,11 @@ function nextDay(): { y: number; m: number; d: number } {
 }
 
 beforeAll(async () => {
-  process.env.VITE_USE_MOCKS = "false";
-  process.env.VITE_BACKEND_URL = BACKEND_URL;
+  process.env.NEXT_PUBLIC_USE_MOCKS = "false";
+  process.env.NEXT_PUBLIC_BACKEND_URL = BACKEND_URL;
   api = await import("../src/api");
   client = await import("../src/contracts/client");
-  if (api.useMocks) throw new Error("Pilot E2E must run with VITE_USE_MOCKS=false");
+  if (api.useMocks) throw new Error("Pilot E2E must run with NEXT_PUBLIC_USE_MOCKS=false");
 
   // ---- seed: locations, service, practitioner, capability, availability ----
   const locations = await client.listLocations();

@@ -1,22 +1,22 @@
 /**
  * Patients E2E proof: the real frontend adapter against a live FastAPI +
- * PostgreSQL backend with VITE_USE_MOCKS=false — no mockData in this path.
+ * PostgreSQL backend with NEXT_PUBLIC_USE_MOCKS=false — no mockData in this path.
  *
- * Requires: backend up at VITE_BACKEND_URL with the migrated schema.
+ * Requires: backend up at NEXT_PUBLIC_BACKEND_URL with the migrated schema.
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
-const BACKEND_URL = process.env.VITE_BACKEND_URL ?? "http://127.0.0.1:8010";
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://127.0.0.1:8010";
 
 let api: typeof import("../src/api");
 let client: typeof import("../src/contracts/client");
 
 beforeAll(async () => {
-  process.env.VITE_USE_MOCKS = "false";
-  process.env.VITE_BACKEND_URL = BACKEND_URL;
+  process.env.NEXT_PUBLIC_USE_MOCKS = "false";
+  process.env.NEXT_PUBLIC_BACKEND_URL = BACKEND_URL;
   api = await import("../src/api");
   client = await import("../src/contracts/client");
-  if (api.useMocks) throw new Error("E2E must run with VITE_USE_MOCKS=false");
+  if (api.useMocks) throw new Error("E2E must run with NEXT_PUBLIC_USE_MOCKS=false");
 });
 
 describe("Patients ↔ FastAPI ↔ PostgreSQL (no mocks)", () => {

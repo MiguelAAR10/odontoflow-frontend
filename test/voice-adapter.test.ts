@@ -11,7 +11,7 @@
  * genuinely dispatched the spy would record it — this is stronger than spying
  * on `.get`/`.post`, which a refactor could route around.
  *
- * `src/voice.ts` reads `import.meta.env` at module load, so every case stubs
+ * `src/voice.ts` reads the public env accessor at module load, so every case stubs
  * the env and re-imports the module fresh.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -21,9 +21,9 @@ const VOICE_URL = "http://127.0.0.1:9999";
 /** Load a fresh copy of the module under a specific flag combination. */
 async function loadVoice(env: Record<string, string>) {
   vi.resetModules();
-  vi.stubEnv("VITE_ENABLE_VOICE", env.VITE_ENABLE_VOICE ?? "");
-  vi.stubEnv("VITE_USE_MOCKS", env.VITE_USE_MOCKS ?? "");
-  if (env.VITE_VOICE_URL !== undefined) vi.stubEnv("VITE_VOICE_URL", env.VITE_VOICE_URL);
+  vi.stubEnv("NEXT_PUBLIC_ENABLE_VOICE", env.NEXT_PUBLIC_ENABLE_VOICE ?? "");
+  vi.stubEnv("NEXT_PUBLIC_USE_MOCKS", env.NEXT_PUBLIC_USE_MOCKS ?? "");
+  if (env.NEXT_PUBLIC_VOICE_URL !== undefined) vi.stubEnv("NEXT_PUBLIC_VOICE_URL", env.NEXT_PUBLIC_VOICE_URL);
   const mod = await import("../src/voice");
   // Any real dispatch lands here and gets recorded instead of hitting the network.
   const adapter = vi.fn(async (config: { baseURL?: string; url?: string }) => ({
@@ -49,9 +49,9 @@ afterEach(() => {
 describe("mock mode never contacts the voice service", () => {
   it("rejects every call with reason 'mocks' and dispatches nothing", async () => {
     const { mod, adapter } = await loadVoice({
-      VITE_ENABLE_VOICE: "true",
-      VITE_USE_MOCKS: "true",
-      VITE_VOICE_URL: VOICE_URL,
+      NEXT_PUBLIC_ENABLE_VOICE: "true",
+      NEXT_PUBLIC_USE_MOCKS: "true",
+      NEXT_PUBLIC_VOICE_URL: VOICE_URL,
     });
 
     expect(mod.voiceEnabled).toBe(true);
@@ -76,8 +76,8 @@ describe("mock mode never contacts the voice service", () => {
     expect(adapter).not.toHaveBeenCalled();
   });
 
-  it("treats an absent VITE_USE_MOCKS as mocks ON (matching api.ts)", async () => {
-    const { mod, adapter } = await loadVoice({ VITE_ENABLE_VOICE: "true" });
+  it("treats an absent NEXT_PUBLIC_USE_MOCKS as mocks ON (matching api.ts)", async () => {
+    const { mod, adapter } = await loadVoice({ NEXT_PUBLIC_ENABLE_VOICE: "true" });
     expect(mod.voiceLive).toBe(false);
     await expect(mod.getVoiceHealth()).rejects.toMatchObject({ reason: "mocks" });
     expect(adapter).not.toHaveBeenCalled();
@@ -87,9 +87,9 @@ describe("mock mode never contacts the voice service", () => {
 describe("voice disabled never contacts the voice service", () => {
   it("rejects with reason 'disabled' even when mocks are off", async () => {
     const { mod, adapter } = await loadVoice({
-      VITE_ENABLE_VOICE: "false",
-      VITE_USE_MOCKS: "false",
-      VITE_VOICE_URL: VOICE_URL,
+      NEXT_PUBLIC_ENABLE_VOICE: "false",
+      NEXT_PUBLIC_USE_MOCKS: "false",
+      NEXT_PUBLIC_VOICE_URL: VOICE_URL,
     });
 
     expect(mod.voiceEnabled).toBe(false);
@@ -106,22 +106,22 @@ describe("voice disabled never contacts the voice service", () => {
   it("stays disabled for any value that is not exactly \"true\"", async () => {
     for (const value of ["", "1", "yes", "TRUE", "on"]) {
       const { mod, adapter } = await loadVoice({
-        VITE_ENABLE_VOICE: value,
-        VITE_USE_MOCKS: "false",
+        NEXT_PUBLIC_ENABLE_VOICE: value,
+        NEXT_PUBLIC_USE_MOCKS: "false",
       });
-      expect(mod.voiceEnabled, `VITE_ENABLE_VOICE=${value}`).toBe(false);
+      expect(mod.voiceEnabled, `NEXT_PUBLIC_ENABLE_VOICE=${value}`).toBe(false);
       await expect(mod.getVoiceHealth()).rejects.toMatchObject({ reason: "disabled" });
       expect(adapter).not.toHaveBeenCalled();
     }
   });
 });
 
-describe("voice enabled in real mode uses VITE_VOICE_URL", () => {
+describe("voice enabled in real mode uses NEXT_PUBLIC_VOICE_URL", () => {
   it("opens the gate and points the client at the configured URL", async () => {
     const { mod, adapter } = await loadVoice({
-      VITE_ENABLE_VOICE: "true",
-      VITE_USE_MOCKS: "false",
-      VITE_VOICE_URL: VOICE_URL,
+      NEXT_PUBLIC_ENABLE_VOICE: "true",
+      NEXT_PUBLIC_USE_MOCKS: "false",
+      NEXT_PUBLIC_VOICE_URL: VOICE_URL,
     });
 
     expect(mod.voiceLive).toBe(true);
@@ -138,7 +138,7 @@ describe("voice enabled in real mode uses VITE_VOICE_URL", () => {
   });
 
   it("falls back to the documented default only when no URL is configured", async () => {
-    const { mod } = await loadVoice({ VITE_ENABLE_VOICE: "true", VITE_USE_MOCKS: "false" });
+    const { mod } = await loadVoice({ NEXT_PUBLIC_ENABLE_VOICE: "true", NEXT_PUBLIC_USE_MOCKS: "false" });
     expect(mod.voiceBaseUrl).toBe(mod.VOICE_DEFAULT_URL);
     expect(mod.VOICE_DEFAULT_URL).toBe("http://127.0.0.1:8000");
   });
@@ -147,9 +147,9 @@ describe("voice enabled in real mode uses VITE_VOICE_URL", () => {
 describe("a disconnected voice service does not break the SPA", () => {
   it("surfaces a catchable rejection rather than throwing at import or on call", async () => {
     const { mod } = await loadVoice({
-      VITE_ENABLE_VOICE: "true",
-      VITE_USE_MOCKS: "false",
-      VITE_VOICE_URL: VOICE_URL,
+      NEXT_PUBLIC_ENABLE_VOICE: "true",
+      NEXT_PUBLIC_USE_MOCKS: "false",
+      NEXT_PUBLIC_VOICE_URL: VOICE_URL,
     });
 
     // Simulate the service being down at the transport layer.
@@ -174,7 +174,7 @@ describe("a disconnected voice service does not break the SPA", () => {
   });
 
   it("classifies only gate failures as VoiceUnavailableError", async () => {
-    const { mod } = await loadVoice({ VITE_ENABLE_VOICE: "true", VITE_USE_MOCKS: "true" });
+    const { mod } = await loadVoice({ NEXT_PUBLIC_ENABLE_VOICE: "true", NEXT_PUBLIC_USE_MOCKS: "true" });
     const gateError = await mod.getVoiceHealth().catch((error: unknown) => error);
 
     expect(mod.isVoiceUnavailable(gateError)).toBe(true);

@@ -1,12 +1,11 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { Outlet } from "react-router-dom";
+import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { createAppointment, getEligiblePractitioners, getLeads, getLocations, getServices, newIdempotencyKey, toApiError, useMocks } from "../api";
 import type { LeadRead, LocationRead, PractitionerRead, ServiceRead } from "../contracts/client";
 import { Button } from "./Button";
 import { Header } from "./Header";
 import { Modal } from "./Modal";
 
-export function AppShell() {
+export function AppShell({ children }: { children: ReactNode }) {
   const [appointmentOpen, setAppointmentOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState("");
@@ -100,7 +99,7 @@ export function AppShell() {
   return (
     <div className="app-shell">
       <Header onNewAppointment={() => setAppointmentOpen(true)} />
-      <main className="app-main"><Outlet /></main>
+      <main className="app-main">{children}</main>
       <Modal title="Nueva cita" open={appointmentOpen} onClose={() => setAppointmentOpen(false)}>
         <form id="new-appointment-form" className="form-grid" onSubmit={submitAppointment}>
           {useMocks ? (

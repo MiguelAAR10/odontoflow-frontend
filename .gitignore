@@ -1,7 +1,10 @@
 node_modules/
 dist/
-dist-web/
+.next/
+*.tsbuildinfo
+next-env.d.ts
 .env
+.env*.local
 coverage/
 *.log
 MediStock/

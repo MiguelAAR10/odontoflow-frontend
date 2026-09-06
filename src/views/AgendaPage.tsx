@@ -1,3 +1,5 @@
+"use client";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CalendarDays, CheckCircle2, ChevronDown, Clock3, MapPin, SlidersHorizontal, XCircle } from "lucide-react";
 import { cancelReal, currentWeekWindow, getAgendaDetail, getLocations, loadAgenda, newIdempotencyKey, rescheduleReal, toApiError, useMocks } from "../api";

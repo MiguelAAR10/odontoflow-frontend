@@ -1,0 +1,10 @@
+{
+  "errors": [],
+  "patientUrl": "/pacientes?patient=ana",
+  "profileOpen": true,
+  "navigation": {
+    "url": "/inventario",
+    "heading": "Gestión de inventario"
+  },
+  "appointmentToast": true
+}\n

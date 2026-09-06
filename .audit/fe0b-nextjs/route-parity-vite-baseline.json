@@ -1,0 +1,19 @@
+{
+  "mode": "mock",
+  "runtime": "Vite + React Router baseline",
+  "evidence": "Legacy route map at f31a66c and the FE0B before visual harness run; Vite history fallback serves each URL with 200 and BrowserRouter performs client redirects.",
+  "voiceOff": [
+    { "route": "/", "initialStatus": 200, "finalUrl": "/agenda", "heading": "Agenda de citas" },
+    { "route": "/agenda", "initialStatus": 200, "finalUrl": "/agenda", "heading": "Agenda de citas" },
+    { "route": "/agente", "initialStatus": 200, "finalUrl": "/agente", "heading": "Agente IA" },
+    { "route": "/pacientes", "initialStatus": 200, "finalUrl": "/pacientes", "heading": "Pacientes" },
+    { "route": "/caja", "initialStatus": 200, "finalUrl": "/caja", "heading": "Cobros" },
+    { "route": "/inventario", "initialStatus": 200, "finalUrl": "/inventario", "heading": "Gestión de inventario" },
+    { "route": "/chat", "initialStatus": 200, "finalUrl": "/chat", "heading": "Centro de conversaciones" },
+    { "route": "/unknown-fe0b/path", "initialStatus": 200, "finalUrl": "/agenda", "heading": "Agenda de citas" },
+    { "route": "/asistente", "initialStatus": 200, "finalUrl": "/agenda", "heading": "Agenda de citas" }
+  ],
+  "voiceOn": [
+    { "route": "/asistente", "initialStatus": 200, "finalUrl": "/asistente", "heading": "Asistente de voz" }
+  ]
+}

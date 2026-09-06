@@ -1,4 +1,5 @@
 import axios from "axios";
+import { BACKEND_URL, USE_MOCKS } from "./env";
 import {
   agentActivity,
   appointments,
@@ -69,10 +70,10 @@ import type {
 } from "./types";
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_BACKEND_URL,
+  baseURL: BACKEND_URL,
 });
 
-const useMocks = import.meta.env.VITE_USE_MOCKS !== "false";
+const useMocks = USE_MOCKS;
 export { useMocks, ApiError, toApiError, newIdempotencyKey };
 const copy = <T,>(value: T): T => structuredClone(value);
 

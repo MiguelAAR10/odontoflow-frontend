@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * Asistente de voz — the contributed voice assistant view.
  *
@@ -9,8 +11,8 @@
  * rewrite: only the two adaptations noted below were made.
  *
  * ADAPTATION 1 — unavailability is a first-class state. The donor assumed the
- * voice service was always reachable. It is now opt-in (VITE_ENABLE_VOICE) and
- * silent in mock mode (VITE_USE_MOCKS), so the page distinguishes "switched
+ * voice service was always reachable. It is now opt-in (NEXT_PUBLIC_ENABLE_VOICE) and
+ * silent in mock mode (NEXT_PUBLIC_USE_MOCKS), so the page distinguishes "switched
  * off" from "service down" and says which, instead of showing a generic error.
  *
  * ADAPTATION 2 — V1 produces DRAFTS. The summaries below are proposals for a
@@ -65,8 +67,8 @@ export function AsistenteVozPage() {
         // ADAPTATION 1: a closed gate is not a failure — name the reason.
         setApagado(isVoiceUnavailable(error)
           ? (error.reason === "mocks"
-              ? "Modo demo: el asistente de voz no se contacta. Para usarlo, arranca odontoflow-voice y define VITE_USE_MOCKS=false."
-              : "El asistente de voz está desactivado (VITE_ENABLE_VOICE).")
+              ? "Modo demo: el asistente de voz no se contacta. Para usarlo, arranca odontoflow-voice y define NEXT_PUBLIC_USE_MOCKS=false."
+              : "El asistente de voz está desactivado (NEXT_PUBLIC_ENABLE_VOICE).")
           : null);
       });
   }, []);

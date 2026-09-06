@@ -1,0 +1,105 @@
+{
+  "mode": "mock",
+  "voiceEnabled": false,
+  "routes": [
+    {
+      "route": "/",
+      "initialStatus": 307,
+      "initialLocation": "/agenda",
+      "finalStatus": 200,
+      "finalUrl": "/agenda",
+      "heading": "Agenda de citas",
+      "expected": "Agenda de citas",
+      "voiceRequests": 0,
+      "errors": []
+    },
+    {
+      "route": "/agenda",
+      "initialStatus": 200,
+      "initialLocation": null,
+      "finalStatus": 200,
+      "finalUrl": "/agenda",
+      "heading": "Agenda de citas",
+      "expected": "Agenda de citas",
+      "voiceRequests": 0,
+      "errors": []
+    },
+    {
+      "route": "/agente",
+      "initialStatus": 200,
+      "initialLocation": null,
+      "finalStatus": 200,
+      "finalUrl": "/agente",
+      "heading": "Agente IA",
+      "expected": "Agente IA",
+      "voiceRequests": 0,
+      "errors": []
+    },
+    {
+      "route": "/pacientes",
+      "initialStatus": 200,
+      "initialLocation": null,
+      "finalStatus": 200,
+      "finalUrl": "/pacientes",
+      "heading": "Pacientes",
+      "expected": "Pacientes",
+      "voiceRequests": 0,
+      "errors": []
+    },
+    {
+      "route": "/caja",
+      "initialStatus": 200,
+      "initialLocation": null,
+      "finalStatus": 200,
+      "finalUrl": "/caja",
+      "heading": "Cobros",
+      "expected": "Cobros",
+      "voiceRequests": 0,
+      "errors": []
+    },
+    {
+      "route": "/inventario",
+      "initialStatus": 200,
+      "initialLocation": null,
+      "finalStatus": 200,
+      "finalUrl": "/inventario",
+      "heading": "Gestión de inventario",
+      "expected": "Gestión de inventario",
+      "voiceRequests": 0,
+      "errors": []
+    },
+    {
+      "route": "/chat",
+      "initialStatus": 200,
+      "initialLocation": null,
+      "finalStatus": 200,
+      "finalUrl": "/chat",
+      "heading": "Centro de conversaciones",
+      "expected": "Centro de conversaciones",
+      "voiceRequests": 0,
+      "errors": []
+    },
+    {
+      "route": "/unknown-fe0b/path",
+      "initialStatus": 307,
+      "initialLocation": "/agenda",
+      "finalStatus": 200,
+      "finalUrl": "/agenda",
+      "heading": "Agenda de citas",
+      "expected": "Agenda de citas",
+      "voiceRequests": 0,
+      "errors": []
+    },
+    {
+      "route": "/asistente",
+      "initialStatus": 307,
+      "initialLocation": "/agenda",
+      "finalStatus": 200,
+      "finalUrl": "/agenda",
+      "heading": "Agenda de citas",
+      "expected": "Agenda de citas",
+      "voiceRequests": 0,
+      "errors": []
+    }
+  ]
+}\n

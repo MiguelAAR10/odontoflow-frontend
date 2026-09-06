@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useMemo, useState } from "react";
 import { Bot, CalendarDays, CheckCircle2, Clock3, MessageCircleMore, Settings, Users } from "lucide-react";
 import { getAgentDashboard } from "../api";

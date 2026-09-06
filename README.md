@@ -1,11 +1,11 @@
 # OdontoFlow Frontend
 
-React SPA for OdontoFlow, a deterministic, multi-tenant clinic operations platform. This repo is the UI
+React + Next.js App Router frontend for OdontoFlow, a deterministic, multi-tenant clinic operations platform. This repo is the UI
 that **adapts to the backend contract** — the backend (`../odontoflow-backend`, FastAPI + PostgreSQL) is
 the domain authority: prices, durations, stock, payments and availability are decided there, never here.
 
 > **Status (M4 Pilot Fit CLOSED):** Agenda, Patients, Cash and Inventory are **REAL** against the live
-> backend. Chat and Agent remain prototypes. With `VITE_USE_MOCKS=false` the app consumes **zero** mock
+> backend. Chat and Agent remain prototypes. With `NEXT_PUBLIC_USE_MOCKS=false` the app consumes **zero** mock
 > business data — proven by the no-mock pilot E2E (`test/pilot-e2e.test.ts`).
 
 ## What each screen does (and where its truth lives)
@@ -29,7 +29,7 @@ project, the UI hides or derives from real data.
   location) are separate actions, exactly as the backend models them.
 - **Stock lives per Product × Location.** Balance is read per location; movements (kardex), entries,
   adjustments and transfers all carry a location.
-- **Dual-mode adapter seam.** Every data function goes through `src/api.ts`: with `VITE_USE_MOCKS=true`
+- **Dual-mode adapter seam.** Every data function goes through `src/api.ts`: with `NEXT_PUBLIC_USE_MOCKS=true`
   (default for design work) it serves typed mock data; with `false` it calls the real FastAPI endpoints.
   Real mode is the mode that matters — tests assert it by construction.
 
@@ -37,9 +37,9 @@ project, the UI hides or derives from real data.
 
 | Layer | Choice |
 |---|---|
-| SPA | React 18 + TypeScript + Vite (+ Tailwind for styles) |
-| Routing | React Router (`/agenda`, `/pacientes`, `/caja`, `/inventario`, `/chat`, `/agente`) |
-| HTTP | Axios (`src/contracts/client.ts`, `baseURL = VITE_BACKEND_URL`) |
+| App | React 18 + TypeScript + Next.js App Router (+ Tailwind for styles) |
+| Routing | Next.js App Router (`/agenda`, `/pacientes`, `/caja`, `/inventario`, `/chat`, `/agente`) |
+| HTTP | Axios (`src/contracts/client.ts`, `baseURL = NEXT_PUBLIC_BACKEND_URL`) |
 | Contracts | Generated from backend OpenAPI via `openapi-typescript` → `src/contracts/api.ts` (never handwritten) |
 | Tests | Vitest — unit/adapter tests (`npm test`) + real-backend integration & pilot E2E (`npm run test:e2e`) |
 | Simulator | Node + dedicated PostgreSQL (legacy follow-up harness, reference only — see `docs/`) |
@@ -48,8 +48,8 @@ project, the UI hides or derives from real data.
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `VITE_BACKEND_URL` | `http://127.0.0.1:8010` | Base URL of the real FastAPI backend |
-| `VITE_USE_MOCKS` | `true` | `true` → typed mocks from `src/mockData.ts`; `false` → real HTTP calls |
+| `NEXT_PUBLIC_BACKEND_URL` | `http://127.0.0.1:8010` | Base URL of the real FastAPI backend |
+| `NEXT_PUBLIC_USE_MOCKS` | `true` | `true` → typed mocks from `src/mockData.ts`; `false` → real HTTP calls |
 
 See `.env.example`.
 
@@ -58,7 +58,7 @@ See `.env.example`.
 ```bash
 nvm use                      # Node 24 (see .nvmrc)
 npm install
-npm run dev                  # SPA at http://127.0.0.1:5173 (mock mode by default)
+npm run dev                  # Next.js app at http://127.0.0.1:5173 (mock mode by default)
 
 # Regenerate TS contracts after the backend OpenAPI changes
 npm run openapi:generate
@@ -79,7 +79,7 @@ npm run build
    Consumption → Charge → Payment → Cash/Inventory state → Transfer):
 
 ```bash
-VITE_USE_MOCKS=false VITE_BACKEND_URL=http://127.0.0.1:8010 \
+  NEXT_PUBLIC_USE_MOCKS=false NEXT_PUBLIC_BACKEND_URL=http://127.0.0.1:8010 \
   npx vitest run --config vitest.e2e.config.ts test/pilot-e2e.test.ts
 
 # reproducible from zero: resets odontoflow_e2e, migrates, boots the backend, runs the pilot
@@ -90,14 +90,14 @@ VITE_USE_MOCKS=false VITE_BACKEND_URL=http://127.0.0.1:8010 \
 
 ```
 src/
-  App.tsx              # SPA routes
+  app/                  # Next.js App Router layouts and route segments
   api.ts               # the adapter seam: toUi* view models + real/mock dispatch
   contracts/
     api.ts             # GENERATED from backend OpenAPI (openapi-typescript)
     client.ts          # typed HTTP client + ApiError envelope (never hand-typed endpoints)
   types.ts             # UI view models (typed over the generated contract)
   mockData.ts          # design-time mocks — never consumed in real mode
-  pages/               # AgendaPage, PatientsPage, CashPage, InventoryPage, ChatPage, AgentPage
+  views/                # AgendaPage, PatientsPage, CashPage, InventoryPage, ChatPage, AgentPage
   components/          # AppShell, Badge, Button, DataTable, KpiCard, Modal, Header, Navbar
   domain/  simulation/ # legacy simulator (reference only)
   server.ts            # legacy simulation harness (reference only)

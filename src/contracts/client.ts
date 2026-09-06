@@ -8,6 +8,7 @@
 
 import axios, { AxiosError } from "axios";
 import type { components, paths } from "./api";
+import { BACKEND_URL } from "../env";
 
 export type AppointmentListItem = components["schemas"]["AppointmentListItem"];
 export type AppointmentRead = components["schemas"]["AppointmentRead"];
@@ -30,7 +31,7 @@ export type TransferCreate = components["schemas"]["TransferCreate"];
 type AppointmentsPath = paths["/appointments"];
 
 const http = axios.create({
-  baseURL: import.meta.env.VITE_BACKEND_URL,
+  baseURL: BACKEND_URL,
 });
 
 export interface ApiErrorShape {

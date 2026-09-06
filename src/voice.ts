@@ -15,11 +15,11 @@
  * Two independent switches, and BOTH must allow it before a single byte
  * reaches the network:
  *
- * | `VITE_ENABLE_VOICE` | `VITE_USE_MOCKS` | behaviour |
+ * | `NEXT_PUBLIC_ENABLE_VOICE` | `NEXT_PUBLIC_USE_MOCKS` | behaviour |
  * |---|---|---|
  * | `false` (default) | anything | route hidden; every call rejects `disabled` |
  * | `true` | `true` (default) | page renders, **no HTTP ever**; calls reject `mocks` |
- * | `true` | `false` | live: requests go to `VITE_VOICE_URL` |
+ * | `true` | `false` | live: requests go to `NEXT_PUBLIC_VOICE_URL` |
  *
  * The donor version had no gate — it fired live HTTP even in mock mode, which
  * breaks the M4 guarantee the pilot E2E depends on. `guardVoiceCall()` below is
@@ -31,21 +31,22 @@
  * drafts a human confirms. In mock mode the page says so plainly instead.
  */
 import axios from "axios";
+import { USE_MOCKS, VOICE_ENABLED, VOICE_URL } from "./env";
 import type { VoiceHealth, VoiceReply, VoiceVisitSummary } from "./types";
 
 /** Fallback base URL: the port `odontoflow-voice` documents in its README. */
 export const VOICE_DEFAULT_URL = "http://127.0.0.1:8000";
 
 /** Opt-in feature flag. Absent or anything but `"true"` means off. */
-export const voiceEnabled = import.meta.env.VITE_ENABLE_VOICE === "true";
+export const voiceEnabled = VOICE_ENABLED;
 
 /** Mirrors `api.ts`: mocks are ON unless explicitly `"false"`. */
-const mocksOn = import.meta.env.VITE_USE_MOCKS !== "false";
+const mocksOn = USE_MOCKS;
 
 /** The only condition under which voice HTTP is permitted. */
 export const voiceLive = voiceEnabled && !mocksOn;
 
-export const voiceBaseUrl = import.meta.env.VITE_VOICE_URL ?? VOICE_DEFAULT_URL;
+export const voiceBaseUrl = VOICE_URL;
 
 export type VoiceUnavailableReason = "disabled" | "mocks";
 
@@ -61,8 +62,8 @@ export class VoiceUnavailableError extends Error {
   constructor(reason: VoiceUnavailableReason) {
     super(
       reason === "disabled"
-        ? "Voice is disabled (VITE_ENABLE_VOICE is not \"true\")."
-        : "Voice is unavailable in mock mode (VITE_USE_MOCKS is not \"false\").",
+        ? "Voice is disabled (NEXT_PUBLIC_ENABLE_VOICE is not \"true\")."
+        : "Voice is unavailable in mock mode (NEXT_PUBLIC_USE_MOCKS is not \"false\").",
     );
     this.name = "VoiceUnavailableError";
     this.reason = reason;

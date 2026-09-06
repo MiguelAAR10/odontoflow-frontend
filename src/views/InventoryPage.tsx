@@ -1,3 +1,5 @@
+"use client";
+
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { ArrowRightLeft, ArrowUpDown, Boxes, ChevronDown, ClipboardPen, MapPin, PackagePlus, Plus, Search, SlidersHorizontal } from "lucide-react";
 import { createProduct, loadInventoryData, loadMovements, loadProductBalance, newIdempotencyKey, registerAdjustment, registerEntry, registerTransfer, sumAvailable, toApiError } from "../api";

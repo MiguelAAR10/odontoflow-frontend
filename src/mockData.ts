@@ -71,7 +71,7 @@ export const conversations: Conversation[] = [
 ];
 
 // --- inventory mock store (real OpenAPI shapes only) ------------------------
-// Used only when VITE_USE_MOCKS=true. Real mode (false) reads the backend and
+// Used only when NEXT_PUBLIC_USE_MOCKS=true. Real mode (false) reads the backend and
 // consumes ZERO of these rows.
 
 export const mockLocations: InventoryLocation[] = [

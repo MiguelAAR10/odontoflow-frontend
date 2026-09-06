@@ -1,5 +1,6 @@
 import { Bot, Boxes, CalendarDays, MessageCircleMore, Mic, Users, WalletCards } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { voiceEnabled } from "../voice";
 
 const baseItems = [
@@ -17,6 +18,8 @@ const voiceItem = { to: "/asistente", label: "Asistente", icon: Mic };
 const items = voiceEnabled ? [...baseItems, voiceItem] : baseItems;
 
 export function Navbar({ mobileOpen, onNavigate }: { mobileOpen: boolean; onNavigate: () => void }) {
+  const pathname = usePathname();
+
   return (
     <nav className={`main-nav ${mobileOpen ? "main-nav--open" : ""}`} aria-label="Navegación principal">
       {/* The donor tightened .nav-link globally so a 7th item would fit below
@@ -24,10 +27,10 @@ export function Navbar({ mobileOpen, onNavigate }: { mobileOpen: boolean; onNavi
           globally, so the default 6-item layout is untouched when voice is off. */}
       <div className={`main-nav__links ${voiceEnabled ? "main-nav__links--dense" : ""}`}>
         {items.map(({ to, label, icon: Icon }) => (
-          <NavLink key={to} to={to} onClick={onNavigate} className={({ isActive }) => `nav-link ${isActive ? "nav-link--active" : ""}`}>
+          <Link key={to} href={to} onClick={onNavigate} className={`nav-link ${pathname === to ? "nav-link--active" : ""}`}>
             <Icon size={23} strokeWidth={1.9} aria-hidden="true" />
             <span>{label}</span>
-          </NavLink>
+          </Link>
         ))}
       </div>
     </nav>

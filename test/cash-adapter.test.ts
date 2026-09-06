@@ -1,6 +1,6 @@
 /**
  * Cash adapter unit tests — view-model mapping + mock-mode payment flows.
- * No network: the mock seam (VITE_USE_MOCKS default true under vitest)
+ * No network: the mock seam (NEXT_PUBLIC_USE_MOCKS default true under vitest)
  * exercises the same adapter functions the page calls.
  */
 import { beforeEach, describe, expect, it } from "vitest";

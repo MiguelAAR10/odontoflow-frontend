@@ -1,6 +1,6 @@
 /**
  * Inventory adapter unit tests — view-model mapping + mock-mode stock flows.
- * No network: the mock seam (VITE_USE_MOCKS default true under vitest)
+ * No network: the mock seam (NEXT_PUBLIC_USE_MOCKS default true under vitest)
  * exercises the same adapter functions the page calls, and the toUi*
  * mappers are mode-independent (they always consume the OpenAPI shapes).
  */
