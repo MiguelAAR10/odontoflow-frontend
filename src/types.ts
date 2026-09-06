@@ -24,6 +24,14 @@ export interface Appointment {
   doctor: string;
   branch: string;
   status: "Confirmada" | "Por confirmar" | "No respondió" | "Cancelada";
+  /** Real-mode scheduling identity used by filters and slot actions. */
+  leadId?: number;
+  serviceId?: number;
+  locationId?: number;
+  practitionerId?: number;
+  startUtc?: string;
+  endUtc?: string;
+  timeZone?: string;
 }
 
 export interface AgentActivity {

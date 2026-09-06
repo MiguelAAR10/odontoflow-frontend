@@ -21,6 +21,45 @@ Odonto Smart is premium health-tech with a human, editorial edge:
 The ERP should feel like the same brand as the public experience while being
 calmer, more legible, and more task-oriented.
 
+## Material language — owner decision
+
+OdontoFlow ERP uses **Odonto Smart branded claymorphism as the primary
+interactive material** and **restrained glassmorphism as a secondary layering
+material**. These are interaction and hierarchy tools, not a license to turn
+the workspace into a decorative effects surface.
+
+The four material classes are:
+
+| Class | Role | Allowed treatment |
+| --- | --- | --- |
+| `brand-dark` | identity shell, dark navigation, identity moments | `#0A0F1A`/`#1A0A2E`, controlled cyan/magenta radial depth, optional subtle grain; readable light text and visible focus |
+| `clay-interactive` | buttons, filters, summary cards and other actionable or glanceable controls | a light `surface`/`surface-soft` body, a small border and restrained directional shadow/highlight that communicates pressable depth; never status semantics |
+| `glass-overlay` | topbar context, drawers, popovers and overlays where a surface sits above another scene | translucent dark or light layer, controlled blur, solid fallback, strong border/scrim and readable content; only where content exists behind the layer |
+| `flat-data` | calendar, tables, dense forms and data grids | solid `surface`, `surface-muted` or `canvas`, borders and semantic status treatments; no blur, decorative glow or blanket shadow |
+
+Material rules:
+
+- Calendar, table and data-grid regions remain primarily `flat-data` so dates,
+  names, statuses and numeric values stay scannable.
+- Filters, buttons and summary cards may use `clay-interactive` for tactile
+  hierarchy. The depth must stay shallow and must not imply success, failure,
+  payment or clinical state.
+- The topbar, drawers and overlays may use restrained `glass-overlay`. A solid
+  background fallback is required, and the treatment must not hide focus,
+  labels or error copy.
+- Cyan and magenta remain brand accents, never status colors. Confirmed,
+  pending, cancelled, error and informational meaning always use semantic
+  tokens with text, not identity color alone.
+- Operational surfaces must remain WCAG-readable. Do not globally add blur,
+  glow, gradients or shadows to every component; borders and spacing carry the
+  majority of separation.
+
+The approved landing grain, radial depth and premium shell effects are allowed
+only on `brand-dark` identity surfaces and selected `glass-overlay` contexts.
+They are not allowed behind normal calendar/table rows, filters as decoration,
+or dense inventory and patient data. A material effect is successful only when
+it clarifies the layer or the action it belongs to.
+
 ## Landing → ERP translation
 
 | Public identity | ERP expression |
@@ -48,8 +87,10 @@ recolored/filtered logo artwork.
 Use `BrandLogo` and the verified transparent PNGs under
 `public/brand/odonto-smart/logos/`:
 
-- `logo-horizontal-marca-premium.png` for the desktop sidebar and topbar;
-- `logo-circular-emblema-marca.png` for compact/mobile identity;
+- `logo-horizontal-marca-premium.png` for the desktop sidebar and topbar,
+  including the compact mobile topbar lockup;
+- `logo-circular-emblema-marca.png` for a genuinely emblem-only compact
+  surface when one is introduced;
 - `logo-principal.png` only when a compact wordmark surface needs it.
 
 The official artwork is rendered as an image with explicit dimensions. Do not
@@ -114,6 +155,13 @@ success, or warning.
 Borders carry most separation. Shadows are sparse: small on cards, medium on
 the topbar/dropdowns, and large only for a drawer or modal.
 
+Material mapping for the ERP is explicit: shell and identity surfaces are
+`brand-dark`; actionable controls and compact summaries are
+`clay-interactive`; topbar context, drawers and overlays are
+`glass-overlay`; calendars, tables, forms and inventory grids are `flat-data`.
+When a component contains both data and an action, the data remains flat and
+only the action affordance receives clay depth.
+
 ## Texture, depth, spacing, radii, and shadows
 
 - The sidebar may use controlled cyan/magenta radial depth over `#0A0F1A`.
@@ -144,8 +192,8 @@ transitions and animation.
   wrapped page actions; content remains scrollable rather than squeezed into
   the top navigation.
 - Mobile: the sidebar becomes a drawer with a visible scrim and keyboard/
-  screen-reader close action; the topbar keeps menu, compact official logo,
-  local context, and a floating New Appointment action.
+  screen-reader close action; the topbar keeps menu, the compact horizontal
+  official logo lockup, local context, and a floating New Appointment action.
 - Calendar and wide tables may scroll within their data region. The shell and
   page body must not create accidental horizontal overflow.
 - Focus remains visible at every breakpoint and controls preserve a practical
@@ -270,6 +318,17 @@ FE1A evidence is stored outside the protected product screenshot directory:
 - final browser verification report: `.audit/fe1a-browser-verification.json`;
 - planning handoff: `../odontoflow-planning/docs/handoffs/plans/2026-09-06-fe1a-odonto-smart-visual-foundation.md`.
 
-The final handoff records the exact dimensions, route checks, console/page
-errors, official logo/font checks, and any deviations observed in the real
-browser.
+FE2 evidence is stored under `.audit/fe2-browser-real/`:
+
+- report: `.audit/fe2-browser-real.json`;
+- Agenda captures: `agenda-1440-after-create.png`, `agenda-1024.png`, and
+  `agenda-390.png`;
+- appointment captures: `appointment-drawer-1440.png`,
+  `appointment-after-reschedule.png`, `cancellation-confirmation.png`, and
+  `appointment-cancelled.png`;
+- shell/inventory captures: `shell-mobile-drawer-390.png` and
+  `inventory-1440.png`.
+
+The FE2 handoff records the exact dimensions, route checks, console/page
+errors, official logo/font checks, contract map, and any deviations observed
+in the real browser.

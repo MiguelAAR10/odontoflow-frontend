@@ -25,7 +25,7 @@ export function Topbar({ onNewAppointment, mobileOpen, onToggleSidebar }: { onNe
 
   return <header className="app-topbar">
     <button className="mobile-menu" type="button" onClick={onToggleSidebar} aria-label={mobileOpen ? "Cerrar navegación" : "Abrir navegación"} aria-expanded={mobileOpen}>{mobileOpen ? <X size={21} /> : <Menu size={21} />}</button>
-    <button className="topbar-brand" type="button" onClick={() => router.push("/agenda")} aria-label="Ir a la agenda"><BrandLogo variant="horizontal" /><span className="topbar-brand__compact"><BrandLogo variant="emblem" /></span></button>
+    <button className="topbar-brand" type="button" onClick={() => router.push("/agenda")} aria-label="Ir a la agenda"><BrandLogo variant="horizontal" /></button>
     <div className="global-search">
       <Search size={19} aria-hidden="true" /><input name="patient-search" autoComplete="off" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar paciente por DNI, nombre o teléfono" aria-label="Buscar paciente por DNI, nombre o teléfono" />
       {results.length > 0 && <div className="global-search__results">{results.map((patient) => <button key={patient.id} type="button" onClick={() => openPatient(patient)}><span className={`avatar avatar--${patient.tone}`}>{patient.initials}</span><span><strong>{patient.name}</strong><small>{patient.dni} · {patient.phone}</small></span></button>)}</div>}

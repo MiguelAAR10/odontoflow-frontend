@@ -1,0 +1,46 @@
+{
+  "base_url": "http://127.0.0.1:5189",
+  "mode": "real",
+  "viewport_checks": [
+    1440,
+    1024,
+    390
+  ],
+  "results": [
+    {
+      "name": "Agenda real desktop and slot-driven create",
+      "status": "passed"
+    },
+    {
+      "name": "Appointment drawer, slot query, reschedule and cancellation",
+      "status": "passed"
+    },
+    {
+      "name": "Global search and navigation",
+      "status": "passed"
+    },
+    {
+      "name": "Agenda tablet and mobile shell",
+      "status": "passed"
+    },
+    {
+      "name": "Inventory desktop remains navigable",
+      "status": "passed"
+    }
+  ],
+  "console_errors": [],
+  "page_errors": [],
+  "request_failures": [],
+  "screenshots": [
+    ".audit/fe2-browser-real/agenda-1024.png",
+    ".audit/fe2-browser-real/agenda-1440-after-create.png",
+    ".audit/fe2-browser-real/agenda-1440-before.png",
+    ".audit/fe2-browser-real/agenda-390.png",
+    ".audit/fe2-browser-real/appointment-after-reschedule.png",
+    ".audit/fe2-browser-real/appointment-cancelled.png",
+    ".audit/fe2-browser-real/appointment-drawer-1440.png",
+    ".audit/fe2-browser-real/cancellation-confirmation.png",
+    ".audit/fe2-browser-real/inventory-1440.png",
+    ".audit/fe2-browser-real/shell-mobile-drawer-390.png"
+  ]
+}

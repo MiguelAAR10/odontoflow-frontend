@@ -110,7 +110,7 @@ await test("Agenda: carga, filtros, detalle y nueva cita", async () => {
   assert.equal(await page.getByRole("button", { name: /Paciente de prueba/ }).count(), 0);
   await page.getByRole("button", { name: /09:00 Ana Torres/ }).click();
   await page.getByRole("heading", { name: "Detalle de la cita", exact: true }).waitFor();
-  await page.getByRole("button", { name: "Cerrar modal" }).click();
+  await page.locator(".drawer").getByRole("button", { name: "Cerrar detalle" }).click();
   await page.getByRole("combobox", { name: "Sede", exact: true }).first().selectOption("Lince");
   assert.equal(await page.getByRole("button", { name: /Ana Torres/ }).count(), 1);
   await page.getByRole("button", { name: "Nueva cita", exact: true }).click();

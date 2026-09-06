@@ -125,6 +125,13 @@ export function toUiAppointment(
     doctor: item.practitioner_name,
     branch: item.location_name,
     status: toUiStatus(item.state),
+    leadId: item.lead_id,
+    serviceId: item.service_id,
+    locationId: item.location_id,
+    practitionerId: item.practitioner_id,
+    startUtc: item.start_utc,
+    endUtc: item.end_utc,
+    timeZone,
   };
 }
 
@@ -148,7 +155,9 @@ export function currentWeekWindow(timeZone = "America/Lima"): { from: string; to
   return { from: monday.toISOString(), to: nextMonday.toISOString() };
 }
 
-export const getPatients = () => getOrMock<Patient[]>("/patients", patients);
+/** Patient search uses the typed contract in real mode so the topbar never
+ * receives raw PatientRead rows as if they were the UI view model. */
+export const getPatients = (): Promise<Patient[]> => (useMocks ? Promise.resolve(copy(patients)) : loadPatients());
 
 /** Map the backend PatientRead into the UI patient view model. */
 export function toUiPatient(row: {
@@ -214,11 +223,11 @@ export const getAppointments = () => getOrMock<Appointment[]>("/appointments", a
 
 /** Agenda read in real mode: the week window from the backend, mapped to the
  * grid view model. Mock mode keeps the original behaviour. */
-export async function loadAgenda(): Promise<Appointment[]> {
+export async function loadAgenda(filters?: { locationId?: number }): Promise<Appointment[]> {
   if (useMocks) return copy(appointments);
   const window = currentWeekWindow();
   const [rows, locations] = await Promise.all([
-    listAppointmentsReal({ from_date: window.from, to_date: window.to }),
+    listAppointmentsReal({ from_date: window.from, to_date: window.to, location_id: filters?.locationId }),
     listLocationsReal(),
   ]);
   const timeZoneByLocation = new Map(locations.map((l) => [l.id, l.timezone]));
