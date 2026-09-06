@@ -255,7 +255,7 @@ export function InventoryPage() {
         </div>
         {error && <div className="form-error" role="alert">{error}<Button compact onClick={() => void refresh()}>Reintentar</Button></div>}
         {loading && <div className="table-loading" role="status">Cargando inventario…</div>}
-        {!loading && <DataTable columns={columns} rows={filtered} rowKey={(product) => product.id} emptyMessage="No hay productos registrados" />}
+        {!loading && <DataTable className="inventory-table" columns={columns} rows={filtered} rowKey={(product) => product.id} emptyMessage="No hay productos registrados" />}
         <div className="pagination"><span>{filtered.length} productos · balance por sede</span><div /></div>
       </section>
 

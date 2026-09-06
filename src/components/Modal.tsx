@@ -24,7 +24,7 @@ export function Modal({ title, open, onClose, children, footer, size = "medium" 
       <section className={`modal modal--${size}`} role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <header className="modal__header">
           <h2 id="modal-title">{title}</h2>
-          <button className="icon-button" onClick={onClose} aria-label="Cerrar modal"><X size={21} /></button>
+          <button className="icon-button" type="button" onClick={onClose} aria-label="Cerrar modal"><X size={21} /></button>
         </header>
         <div className="modal__body">{children}</div>
         {footer && <footer className="modal__footer">{footer}</footer>}

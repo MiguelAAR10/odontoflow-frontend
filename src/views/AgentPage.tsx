@@ -7,6 +7,8 @@ import { Badge, statusTone } from "../components/Badge";
 import { Button } from "../components/Button";
 import { KpiCard } from "../components/KpiCard";
 import { Modal } from "../components/Modal";
+import { PageHeader } from "../components/PageHeader";
+import { Tabs } from "../components/Tabs";
 import type { AgentActivity, Automation, HumanQueueItem } from "../types";
 
 const activityIcons = { clock: Clock3, check: CheckCircle2, message: MessageCircleMore, users: Users };
@@ -30,10 +32,7 @@ export function AgentPage() {
 
   return (
     <section className="page">
-      <div className="page-heading page-heading--with-actions">
-        <div><h1>Agente IA</h1><p>Seguimiento automático de pacientes y citas</p></div>
-        <div className="heading-actions"><span className="agent-active"><i />Activo</span><Button icon={Settings} onClick={() => setConfigOpen(true)}>Configurar agente</Button></div>
-      </div>
+      <PageHeader title="Agente IA" description="Seguimiento automático de pacientes y citas" actions={<><span className="agent-active"><i />Activo</span><Button icon={Settings} onClick={() => setConfigOpen(true)}>Configurar agente</Button></>} />
       <div className="kpi-grid">
         <KpiCard icon={MessageCircleMore} value={24} label="Conversaciones hoy" tone="blue" />
         <KpiCard icon={CalendarDays} value={8} label="Citas generadas" tone="cyan" />
@@ -44,8 +43,8 @@ export function AgentPage() {
       <div className="agent-workspace">
         <div className="agent-left">
           <section className="panel agent-activity">
-            <div className="panel-header"><h2>Actividad del agente</h2><div className="tabs">{["Todas", "Citas", "Leads"].map((label) => <button key={label} onClick={() => setTab(label)} className={tab === label ? "tab--active" : ""}>{label}</button>)}</div><select value={day} onChange={(event) => setDay(event.target.value)} aria-label="Filtrar por fecha"><option>Hoy</option><option>Ayer</option><option>Esta semana</option></select></div>
-            <div className="activity-list">
+            <div className="panel-header"><h2>Actividad del agente</h2><Tabs items={["Todas", "Citas", "Leads"].map((label) => ({ id: label, label }))} value={tab} onChange={setTab} ariaLabel="Filtrar actividad del agente" panelId="agent-activity-panel" /><select value={day} onChange={(event) => setDay(event.target.value)} aria-label="Filtrar por fecha"><option>Hoy</option><option>Ayer</option><option>Esta semana</option></select></div>
+            <div className="activity-list" id="agent-activity-panel" role="tabpanel">
               {filtered.length ? filtered.map((item) => {
                 const Icon = activityIcons[item.icon];
                 return <div className="activity-row" key={`${item.time}-${item.patient}`}>

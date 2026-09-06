@@ -9,7 +9,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 export function Button({ variant = "secondary", icon: Icon, compact, className = "", children, ...props }: ButtonProps) {
   return (
-    <button className={`button button--${variant} ${compact ? "button--compact" : ""} ${className}`} {...props}>
+    <button className={`button button--${variant} ${compact ? "button--compact" : ""} ${className}`} {...props} type={props.type ?? "button"}>
       {Icon && <Icon size={18} strokeWidth={2} aria-hidden="true" />}
       {children}
     </button>

@@ -1,0 +1,59 @@
+{
+  "screenshots": [
+    {
+      "file": "agenda-1440.png",
+      "route": "/agenda",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "file": "agenda-1024.png",
+      "route": "/agenda",
+      "width": 1024,
+      "height": 900
+    },
+    {
+      "file": "agenda-390.png",
+      "route": "/agenda",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "file": "shell-mobile-drawer-390.png",
+      "route": "/agenda",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "file": "inventory-1440.png",
+      "route": "/inventario",
+      "width": 1440,
+      "height": 900
+    }
+  ],
+  "console_errors": [],
+  "page_errors": [],
+  "search_route": "http://127.0.0.1:5189/pacientes?patient=ana",
+  "new_appointment_open": true,
+  "navigation_route": "http://127.0.0.1:5189/inventario",
+  "official_logo_count": 3,
+  "official_logo_sources": [
+    "/_next/image?url=%2Fbrand%2Fodonto-smart%2Flogos%2Flogo-horizontal-marca-premium.png&w=828&q=75",
+    "/_next/image?url=%2Fbrand%2Fodonto-smart%2Flogos%2Flogo-horizontal-marca-premium.png&w=828&q=75",
+    "/_next/image?url=%2Fbrand%2Fodonto-smart%2Flogos%2Flogo-circular-emblema-marca.png&w=640&q=75"
+  ],
+  "fake_logo_mark_count": 0,
+  "leonardo_in_ui": false,
+  "voice_link_count": 0,
+  "heading_font": "\"Clash Display\", \"Arial Narrow\", sans-serif",
+  "body_font": "Satoshi, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+  "fontshare_clash_ready": true,
+  "fontshare_satoshi_ready": true,
+  "brand_tokens": {
+    "cyan": "#41d4cb",
+    "magenta": "#de1bce",
+    "deep": "#1a0a2e",
+    "canvas": "#fafbfc"
+  },
+  "unexpected_errors": false
+}

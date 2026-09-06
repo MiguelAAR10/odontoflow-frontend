@@ -1,0 +1,84 @@
+:root {
+  /* Brand primitives verified against ODONTO-SMART source files. */
+  --brand-cyan: #41d4cb;
+  --brand-cyan-strong: #2bb5ad;
+  --brand-magenta: #de1bce;
+  --brand-deep: #1a0a2e;
+  --brand-dark: #0a0f1a;
+
+  /* Accessible ink derivatives; saturated brand colors remain accents, not body text. */
+  --brand-cyan-ink: #0e6e68;
+  --brand-magenta-ink: #96108c;
+
+  --canvas: #fafbfc;
+  --surface: #ffffff;
+  --surface-soft: #f0fdfb;
+  --surface-sunken: #f4f7fa;
+  --surface-muted: #f8fafc;
+  --shell: var(--brand-dark);
+  --shell-raised: var(--brand-deep);
+  --shell-line: rgba(255, 255, 255, 0.14);
+  --text: #0f172a;
+  --text-muted: #475569;
+  --text-faint: #64748b;
+  --text-on-shell: #ffffff;
+  --line: #e2e8f0;
+  --line-strong: #cbd5e1;
+  --accent: var(--brand-cyan-strong);
+  --accent-ink: var(--brand-cyan-ink);
+  --accent-soft: #e8f9f7;
+  --accent-hover: #147f78;
+  --emphasis: var(--brand-magenta);
+  --focus-ring: rgba(43, 181, 173, 0.38);
+
+  --status-ok: #0a7f45;
+  --status-ok-surface: #e8f7ee;
+  --status-ok-line: #a6dcbd;
+  --status-warning: #b4690e;
+  --status-warning-surface: #fef4e4;
+  --status-warning-line: #f0ce97;
+  --status-danger: #c4183c;
+  --status-danger-surface: #fdecef;
+  --status-danger-line: #f2afbc;
+  --status-info: #1a6fc4;
+  --status-info-surface: #eaf3fd;
+  --status-info-line: #a9cdf0;
+  --status-neutral: #475569;
+  --status-neutral-surface: #f1f5f9;
+  --status-neutral-line: #cbd5e1;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 10px 26px rgba(15, 23, 42, 0.1);
+  --shadow-lg: 0 22px 60px rgba(10, 15, 26, 0.22);
+  --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-fast: 120ms;
+  --duration-standard: 180ms;
+  --font-display: "Clash Display", "Arial Narrow", sans-serif;
+  --font-body: "Satoshi", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  /* Compatibility aliases for the existing view styles while they migrate. */
+  --navy-950: var(--brand-dark);
+  --navy-900: var(--brand-deep);
+  --navy-800: #24133c;
+  --cyan-600: var(--brand-cyan-strong);
+  --cyan-500: var(--brand-cyan);
+  --muted: var(--text-muted);
+  --green: var(--status-ok);
+  --amber: var(--status-warning);
+  --red: var(--status-danger);
+  --purple: var(--brand-magenta-ink);
+}

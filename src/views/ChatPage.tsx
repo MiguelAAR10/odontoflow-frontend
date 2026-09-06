@@ -63,7 +63,7 @@ export function ChatPage() {
         </aside>
 
         {selected ? <section className="message-panel">
-          <header className="message-header"><span className={`avatar avatar--${selected.tone}`}>{selected.initials}<i /></span><div><h2>{selected.name}</h2><span>{patient?.phone ?? "+51 900 000 000"} <Badge tone={selected.tag === "Paciente" ? "green" : "blue"}>{selected.tag}</Badge></span></div><button className="icon-button"><Search /></button><button className="icon-button"><MoreVertical /></button></header>
+          <header className="message-header"><span className={`avatar avatar--${selected.tone}`}>{selected.initials}<i /></span><div><h2>{selected.name}</h2><span>{patient?.phone ?? "+51 900 000 000"} <Badge tone={selected.tag === "Paciente" ? "green" : "blue"}>{selected.tag}</Badge></span></div><button className="icon-button" type="button" aria-label="Buscar en la conversación"><Search /></button><button className="icon-button" type="button" aria-label="Más opciones"><MoreVertical /></button></header>
           <div className="agent-strip"><span>{human ? <UserRoundCheck /> : <Bot />} {human ? "Atención humana activa" : "Agente automático activo"}</span><Button compact onClick={() => setHuman((value) => !value)}>{human ? "Devolver al agente" : "Transferir a humano"}</Button></div>
           <div className="message-history">
             {selected.messages.map((item) => <div key={item.id} className={`message-bubble message-bubble--${item.from}`}><p>{item.text}</p><time>{item.time}</time>{item.from !== "patient" && <small>{item.from === "agent" ? "Agente" : "Leonardo"}</small>}</div>)}

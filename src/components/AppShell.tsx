@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { createAppointment, getEligiblePractitioners, getLeads, getLocations, getServices, newIdempotencyKey, toApiError, useMocks } from "../api";
 import type { LeadRead, LocationRead, PractitionerRead, ServiceRead } from "../contracts/client";
+import { AppSidebar } from "./AppSidebar";
 import { Button } from "./Button";
-import { Header } from "./Header";
 import { Modal } from "./Modal";
+import { Surface } from "./Surface";
+import { Topbar } from "./Topbar";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [appointmentOpen, setAppointmentOpen] = useState(false);
@@ -11,6 +13,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [toast, setToast] = useState("");
   const [error, setError] = useState("");
   const [key, setKey] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [leads, setLeads] = useState<LeadRead[]>([]);
   const [services, setServices] = useState<ServiceRead[]>([]);
@@ -98,8 +101,13 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="app-shell">
-      <Header onNewAppointment={() => setAppointmentOpen(true)} />
-      <main className="app-main">{children}</main>
+      <a className="skip-link" href="#main-content">Saltar al contenido</a>
+      <AppSidebar mobileOpen={sidebarOpen} onNavigate={() => setSidebarOpen(false)} />
+      <div className="app-workspace">
+        <Topbar onNewAppointment={() => setAppointmentOpen(true)} mobileOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen((value) => !value)} />
+        <Surface as="main" id="main-content" className="app-main">{children}</Surface>
+      </div>
+      {sidebarOpen && <button className="sidebar-backdrop" type="button" aria-label="Cerrar navegación" onClick={() => setSidebarOpen(false)} />}
       <Modal title="Nueva cita" open={appointmentOpen} onClose={() => setAppointmentOpen(false)}>
         <form id="new-appointment-form" className="form-grid" onSubmit={submitAppointment}>
           {useMocks ? (
