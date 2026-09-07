@@ -1,4 +1,10 @@
+import type {
+  PaymentMethod as ApiPaymentMethod,
+  PaymentVerificationStatus,
+} from "./contracts/client";
+
 export type Tone = "cyan" | "blue" | "green" | "amber" | "red" | "purple" | "pink" | "slate";
+export type PaymentMethod = ApiPaymentMethod;
 
 export interface Patient {
   id: string;
@@ -29,6 +35,9 @@ export interface Appointment {
   serviceId?: number;
   locationId?: number;
   practitionerId?: number;
+  /** Canonical patient projection when reception has already qualified it. */
+  patientId?: number | string;
+  patientName?: string;
   startUtc?: string;
   endUtc?: string;
   timeZone?: string;
@@ -65,14 +74,19 @@ export interface Automation {
 /** A recorded payment against a charge (PaymentRead mapped). */
 export interface Payment {
   id: string;
+  chargeId?: number;
   amount: number;
-  method: string;
+  method: PaymentMethod;
   paidAt: string; // ISO instant from the backend
+  reference?: string | null;
+  receiver?: string | null;
+  reconciliationNote?: string | null;
+  verificationStatus?: PaymentVerificationStatus;
+  verifiedAt?: string | null;
 }
 
 /** Cash-visible economic state: a charge and its payments (ChargeRead mapped).
- * The branch/party/concept/owner fields are mock-mode only — the backend
- * projects no location/party/owner, so real mode always renders them empty. */
+ * Every context field comes from the enriched backend projection. */
 export interface Charge {
   id: string;
   serviceExecutionId: number;
@@ -82,10 +96,54 @@ export interface Charge {
   createdAt: string; // ISO instant from the backend
   payments: Payment[];
   status: "Pagado" | "Parcial" | "Pendiente";
-  branch: string;
-  party: string;
-  concept: string;
-  owner: string;
+  visitId: number;
+  patientId: number;
+  patientName: string;
+  serviceId: number;
+  serviceName: string;
+  locationId: number;
+  locationName: string;
+  practitionerId: number;
+  practitionerName: string;
+  executedAt: string;
+  /** Derived from the canonical LocationRead used by the adapter. */
+  locationTimeZone?: string;
+}
+
+/** One canonical service execution in the attendance → charge chain. */
+export interface ServiceExecution {
+  id: string;
+  visitId: number | string;
+  serviceId: number;
+  serviceName: string;
+  executedPrice: number;
+  executedAt: string;
+  chargeId: number | null;
+  patientId: number | string;
+  patientName: string;
+  locationId: number;
+  locationName?: string;
+}
+
+/** One attended encounter, with executions when the detail endpoint is used. */
+export interface Visit {
+  id: string;
+  patientId: number | string;
+  patientName: string;
+  appointmentId: number | string | null;
+  practitionerId: number;
+  practitionerName: string;
+  locationId: number;
+  locationName: string;
+  startedAt: string;
+  executions: ServiceExecution[];
+}
+
+export interface ServiceOption {
+  id: number;
+  name: string;
+  durationMinutes: number;
+  isActive: boolean;
 }
 
 /** A product as the backend knows it: no category/branch/stock/minimum are

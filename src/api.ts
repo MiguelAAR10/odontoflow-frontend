@@ -8,20 +8,27 @@ import {
   humanQueue,
   mockBalances,
   mockCharges,
+  mockExecutions,
   mockLocations,
   mockMovements,
   mockProducts,
+  mockServices,
+  mockVisits,
   patients,
 } from "./mockData";
 import {
   ApiError,
   bookAppointment as bookAppointmentReal,
   cancelAppointment as cancelAppointmentReal,
+  createCharge as createChargeReal,
   createPatient as createPatientReal,
   createPayment as createPaymentReal,
   createProduct as createProductReal,
+  createServiceExecution as createServiceExecutionReal,
+  createVisit as createVisitReal,
   getAppointment as getAppointmentReal,
   getBalance as getBalanceReal,
+  getVisit as getVisitReal,
   listAppointments as listAppointmentsReal,
   listCharges as listChargesReal,
   listEligiblePractitioners as listEligiblePractitionersReal,
@@ -32,6 +39,8 @@ import {
   listPayments as listPaymentsReal,
   listProducts as listProductsReal,
   listServices as listServicesReal,
+  listVisitExecutions as listVisitExecutionsReal,
+  listVisits as listVisitsReal,
   newIdempotencyKey,
   querySlots as querySlotsReal,
   registerAdjustment as registerAdjustmentReal,
@@ -48,6 +57,11 @@ import {
   type MovementRead,
   type PatientRead,
   type PaymentRead,
+  type PaymentMethod,
+  type PaymentVerificationStatus,
+  type ServiceExecutionRead,
+  type VisitDetailRead,
+  type VisitRead,
   type PractitionerRead,
   type ProductRead,
   type ServiceRead,
@@ -67,6 +81,9 @@ import type {
   Patient,
   Payment,
   Product,
+  ServiceExecution,
+  ServiceOption,
+  Visit,
 } from "./types";
 
 export const api = axios.create({
@@ -120,7 +137,7 @@ export function toUiAppointment(
     id: String(item.id),
     day: slot.day,
     time: slot.time,
-    patient: item.lead_name,
+    patient: item.patient_name ?? item.lead_name,
     treatment: item.service_name,
     doctor: item.practitioner_name,
     branch: item.location_name,
@@ -129,6 +146,8 @@ export function toUiAppointment(
     serviceId: item.service_id,
     locationId: item.location_id,
     practitionerId: item.practitioner_id,
+    ...(item.patient_id != null ? { patientId: item.patient_id } : {}),
+    ...(item.patient_name != null ? { patientName: item.patient_name } : {}),
     startUtc: item.start_utc,
     endUtc: item.end_utc,
     timeZone,
@@ -186,9 +205,51 @@ export function toUiPatient(row: {
 }
 
 export async function loadPatients(search?: string): Promise<Patient[]> {
-  if (useMocks) return copy(patients);
+  if (useMocks) {
+    const normalized = search?.trim().toLowerCase();
+    return copy(normalized
+      ? patients.filter((patient) => [patient.name, patient.dni, patient.phone].some((value) => value.toLowerCase().includes(normalized)))
+      : patients);
+  }
   const rows = await listPatientsReal(search);
   return rows.map(toUiPatient);
+}
+
+/** Canonical patient create used by attendance qualification. */
+export async function createPatientRecord(input: {
+  full_name: string;
+  dni?: string;
+  phone?: string;
+}, idempotencyKey: string): Promise<Patient> {
+  if (useMocks) {
+    const fingerprint = `patient:${JSON.stringify(input)}`;
+    const replay = readMockReceipt<Patient>(idempotencyKey, fingerprint);
+    if (replay) return replay;
+    const name = input.full_name.trim();
+    if (!name) throw new ApiError(422, "INVALID_INPUT", "El nombre completo es obligatorio.");
+    const saved: Patient = {
+      id: `patient-${Date.now()}`,
+      initials: name.split(" ").filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase(),
+      name,
+      dni: input.dni?.trim() ?? "",
+      phone: input.phone?.trim() ?? "",
+      branch: "",
+      nextAppointment: "Sin cita",
+      treatment: "Por definir",
+      status: "Activo",
+      tone: "cyan",
+      origin: "Registro clínico",
+      interest: "Por validar",
+    };
+    patients.unshift(saved);
+    saveMockReceipt(idempotencyKey, fingerprint, saved);
+    return copy(saved);
+  }
+  return toUiPatient(await createPatientReal({
+    full_name: input.full_name,
+    ...(input.dni !== undefined ? { dni: input.dni } : {}),
+    ...(input.phone !== undefined ? { phone: input.phone } : {}),
+  }, idempotencyKey));
 }
 
 export async function createPatient(input: Omit<Patient, "id" | "initials" | "tone"> & { idempotencyKey?: string }): Promise<Patient> {
@@ -339,7 +400,7 @@ export async function getAgentDashboard() {
   return copy({ activity: agentActivity, queue: humanQueue, automations });
 }
 
-// --- real cash view model (M4 Phase 1: charges + payments only) -------------
+// --- FE3A service-to-cash view models and adapters --------------------------
 
 const round2 = (value: number): number => Math.round(value * 100) / 100;
 
@@ -350,12 +411,22 @@ export function toMoneyNumber(value: string | number): number {
 
 /** Map the backend PaymentRead into the UI payment view model. */
 export function toUiPayment(row: PaymentRead): Payment {
-  return { id: String(row.id), amount: toMoneyNumber(row.amount), method: row.method, paidAt: row.paid_at };
+  return {
+    id: String(row.id),
+    chargeId: row.charge_id,
+    amount: toMoneyNumber(row.amount),
+    method: row.method,
+    paidAt: row.paid_at,
+    reference: row.reference,
+    receiver: row.receiver,
+    reconciliationNote: row.reconciliation_note,
+    verificationStatus: row.verification_status,
+    verifiedAt: row.verified_at,
+  };
 }
 
-/** Map the backend ChargeRead (+ its payments) into the UI charge view model.
- * Status is derived from the real paid/outstanding values — never mocked. */
-export function toUiCharge(row: ChargeRead, payments: PaymentRead[] = []): Charge {
+/** Map a canonical ChargeRead (+ its payments) into a cash view model. */
+export function toUiCharge(row: ChargeRead, payments: PaymentRead[] = [], locationTimeZone?: string): Charge {
   const amount = toMoneyNumber(row.amount);
   const paid = toMoneyNumber(row.paid);
   const outstanding = toMoneyNumber(row.outstanding);
@@ -368,32 +439,239 @@ export function toUiCharge(row: ChargeRead, payments: PaymentRead[] = []): Charg
     createdAt: row.created_at,
     payments: payments.map(toUiPayment),
     status: outstanding <= 0.004 ? "Pagado" : paid <= 0.004 ? "Pendiente" : "Parcial",
-    // Mock-only columns: the backend projects no location/party/owner, so real
-    // mode always renders these empty (the page hides them via `useMocks`).
-    branch: "",
-    party: "",
-    concept: "",
-    owner: "",
+    visitId: row.visit_id,
+    patientId: row.patient_id,
+    patientName: row.patient_name,
+    serviceId: row.service_id,
+    serviceName: row.service_name,
+    locationId: row.location_id,
+    locationName: row.location_name,
+    practitionerId: row.practitioner_id,
+    practitionerName: row.practitioner_name,
+    executedAt: row.executed_at,
+    ...(locationTimeZone ? { locationTimeZone } : {}),
   };
 }
 
-/** 'Por cobrar': the real derived KPI, Σ outstanding across charges. */
+export function toUiExecution(row: ServiceExecutionRead, locationName?: string): ServiceExecution {
+  return {
+    id: String(row.id),
+    visitId: row.visit_id,
+    serviceId: row.service_id,
+    serviceName: row.service_name,
+    executedPrice: toMoneyNumber(row.executed_price),
+    executedAt: row.executed_at,
+    chargeId: row.charge_id,
+    patientId: row.patient_id,
+    patientName: row.patient_name,
+    locationId: row.location_id,
+    ...(locationName ? { locationName } : {}),
+  };
+}
+
+export function toUiVisit(row: VisitRead | VisitDetailRead): Visit {
+  const executions = "executions" in row ? row.executions.map((execution) => toUiExecution(execution)) : [];
+  return {
+    id: String(row.id),
+    patientId: row.patient_id,
+    patientName: row.patient_name,
+    appointmentId: row.appointment_id,
+    practitionerId: row.practitioner_id,
+    practitionerName: row.practitioner_name,
+    locationId: row.location_id,
+    locationName: row.location_name,
+    startedAt: row.started_at,
+    executions,
+  };
+}
+
+/** 'Por cobrar': a derived subtotal over canonical rows currently loaded. */
 export function sumOutstanding(charges: Charge[]): number {
   return round2(charges.reduce((total, charge) => total + charge.outstanding, 0));
 }
 
-/** 'Cobrado': Σ paid across charges (replaces the fake daily income KPI). */
+/** 'Cobrado': a derived subtotal over canonical rows currently loaded. */
 export function sumPaid(charges: Charge[]): number {
   return round2(charges.reduce((total, charge) => total + charge.paid, 0));
 }
 
-export async function loadCharges(): Promise<Charge[]> {
-  if (useMocks) return copy(mockCharges);
-  const rows = await listChargesReal();
-  const withPayments = await Promise.all(
-    rows.map(async (charge) => [charge, await listPaymentsReal(charge.id)] as const),
-  );
-  return withPayments.map(([charge, payments]) => toUiCharge(charge, payments));
+export async function loadCharges(params?: Parameters<typeof listChargesReal>[0]): Promise<Charge[]> {
+  if (useMocks) {
+    const rows = params?.execution_id == null
+      ? mockCharges
+      : mockCharges.filter((charge) => charge.serviceExecutionId === Number(params.execution_id));
+    return copy(rows);
+  }
+  const [rows, locations] = await Promise.all([listChargesReal(params), listLocationsReal()]);
+  const timeZoneByLocation = new Map(locations.map((location) => [location.id, location.timezone]));
+  const withPayments = await Promise.all(rows.map(async (charge) => [charge, await listPaymentsReal(charge.id)] as const));
+  return withPayments.map(([charge, payments]) => toUiCharge(charge, payments, timeZoneByLocation.get(charge.location_id)));
+}
+
+export async function loadVisit(visitId: string | number): Promise<Visit> {
+  if (useMocks) {
+    const visit = mockVisits.find((item) => item.id === String(visitId));
+    if (!visit) throw new ApiError(404, "NOT_FOUND", "Visit not found.");
+    return copy(visit);
+  }
+  return toUiVisit(await getVisitReal(Number(visitId)));
+}
+
+export async function loadVisits(params?: { patient_id?: number }): Promise<Visit[]> {
+  if (useMocks) {
+    const rows = params?.patient_id == null
+      ? mockVisits
+      : mockVisits.filter((visit) => String(visit.patientId) === String(params.patient_id));
+    return copy(rows);
+  }
+  return (await listVisitsReal(params)).map(toUiVisit);
+}
+
+export async function loadVisitExecutions(visitId: string | number): Promise<ServiceExecution[]> {
+  if (useMocks) {
+    const rows = mockExecutions.filter((execution) => String(execution.visitId) === String(visitId));
+    return copy(rows);
+  }
+  return (await listVisitExecutionsReal(Number(visitId))).map((row) => toUiExecution(row));
+}
+
+export async function loadServiceOptions(): Promise<ServiceOption[]> {
+  if (useMocks) return copy(mockServices);
+  return (await listServicesReal()).map((service) => ({ id: service.id, name: service.name, durationMinutes: service.duration_minutes, isActive: service.is_active }));
+}
+
+export async function createVisitRecord(
+  input: { patient_id: number | string; appointment_id?: number | string; practitioner_id?: number; location_id?: number },
+  idempotencyKey: string,
+): Promise<Visit> {
+  if (!useMocks) {
+    const realInput = {
+      patient_id: Number(input.patient_id),
+      ...(input.appointment_id !== undefined ? { appointment_id: Number(input.appointment_id) } : {}),
+      ...(input.practitioner_id !== undefined ? { practitioner_id: input.practitioner_id } : {}),
+      ...(input.location_id !== undefined ? { location_id: input.location_id } : {}),
+    };
+    return toUiVisit(await createVisitReal(realInput, idempotencyKey));
+  }
+  const replay = readMockReceipt<Visit>(idempotencyKey, `visit:${JSON.stringify(input)}`);
+  if (replay) return replay;
+  const patient = patients.find((item) => item.id === String(input.patient_id));
+  if (!patient) throw new ApiError(404, "NOT_FOUND", "Patient not found.");
+  let appointment: Appointment | undefined;
+  if (input.appointment_id !== undefined) {
+    appointment = appointments.find((item) => item.id === String(input.appointment_id));
+    if (!appointment) throw new ApiError(404, "NOT_FOUND", "Appointment not found.");
+    if (appointment.status !== "Confirmada") throw new ApiError(409, "ENTITY_INACTIVE", "Only a confirmed appointment can originate a visit.");
+    if (mockVisits.some((visit) => String(visit.appointmentId) === String(input.appointment_id))) {
+      throw new ApiError(422, "INVALID_INPUT", "The appointment already has a visit.");
+    }
+  }
+  const visit: Visit = {
+    id: String(++mockVisitSequence),
+    patientId: patient.id,
+    patientName: patient.name,
+    appointmentId: input.appointment_id ?? null,
+    practitionerId: appointment?.practitionerId ?? input.practitioner_id ?? 0,
+    practitionerName: appointment?.doctor ?? "",
+    locationId: appointment?.locationId ?? input.location_id ?? 0,
+    locationName: appointment?.branch ?? "",
+    startedAt: new Date().toISOString(),
+    executions: [],
+  };
+  mockVisits.push(visit);
+  saveMockReceipt(idempotencyKey, `visit:${JSON.stringify(input)}`, visit);
+  return copy(visit);
+}
+
+export async function createServiceExecutionRecord(
+  visitId: string | number,
+  input: { service_id: number; executed_price: number },
+  idempotencyKey: string,
+): Promise<ServiceExecution> {
+  if (!useMocks) return toUiExecution(await createServiceExecutionReal(Number(visitId), input, idempotencyKey));
+  const replay = readMockReceipt<ServiceExecution>(idempotencyKey, `execution:${visitId}:${JSON.stringify(input)}`);
+  if (replay) return replay;
+  const visit = mockVisits.find((item) => item.id === String(visitId));
+  if (!visit) throw new ApiError(404, "NOT_FOUND", "Visit not found.");
+  if (!Number.isFinite(input.executed_price) || input.executed_price < 0) throw new ApiError(422, "INVALID_INPUT", "The executed price must be zero or greater.");
+  if (!mockServices.some((service) => service.id === input.service_id && service.isActive)) throw new ApiError(404, "NOT_FOUND", "Service not found.");
+  if (visit.executions.some((execution) => execution.serviceId === input.service_id)) throw new ApiError(422, "INVALID_INPUT", "The service has already been executed for this visit.");
+  const execution: ServiceExecution = {
+    id: String(++mockExecutionSequence),
+    visitId: visit.id,
+    serviceId: input.service_id,
+    serviceName: mockServices.find((service) => service.id === input.service_id)?.name ?? "",
+    executedPrice: round2(input.executed_price),
+    executedAt: new Date().toISOString(),
+    chargeId: null,
+    patientId: visit.patientId,
+    patientName: visit.patientName,
+    locationId: visit.locationId,
+    locationName: visit.locationName,
+  };
+  visit.executions.push(execution);
+  mockExecutions.push(execution);
+  saveMockReceipt(idempotencyKey, `execution:${visitId}:${JSON.stringify(input)}`, execution);
+  return copy(execution);
+}
+
+export async function createChargeRecord(
+  executionId: string | number,
+  input: { amount?: number },
+  idempotencyKey: string,
+): Promise<Charge> {
+  if (!useMocks) return toUiCharge(await createChargeReal(Number(executionId), input, idempotencyKey));
+  const replay = readMockReceipt<Charge>(idempotencyKey, `charge:${executionId}:${JSON.stringify(input)}`);
+  if (replay) return replay;
+  const execution = mockExecutions.find((item) => item.id === String(executionId));
+  if (!execution) throw new ApiError(404, "NOT_FOUND", "Service execution not found.");
+  if (mockCharges.some((charge) => charge.serviceExecutionId === Number(executionId))) throw new ApiError(422, "INVALID_INPUT", "The execution already has a charge.");
+  const amount = input.amount ?? execution.executedPrice;
+  if (!Number.isFinite(amount) || amount <= 0) throw new ApiError(422, "INVALID_INPUT", "The charged amount must be positive.");
+  const visit = mockVisits.find((item) => item.id === String(execution.visitId));
+  if (!visit) throw new ApiError(404, "NOT_FOUND", "Visit not found.");
+  const charge: Charge = {
+    id: String(++mockChargeSequence),
+    serviceExecutionId: Number(executionId),
+    amount: round2(amount),
+    paid: 0,
+    outstanding: round2(amount),
+    createdAt: new Date().toISOString(),
+    payments: [],
+    status: "Pendiente",
+    visitId: Number(visit.id),
+    patientId: Number(visit.patientId) || 0,
+    patientName: visit.patientName,
+    serviceId: execution.serviceId,
+    serviceName: execution.serviceName,
+    locationId: visit.locationId,
+    locationName: visit.locationName,
+    practitionerId: visit.practitionerId,
+    practitionerName: visit.practitionerName,
+    executedAt: execution.executedAt,
+    locationTimeZone: mockLocations.find((location) => Number(location.id) === visit.locationId)?.timezone,
+  };
+  mockCharges.push(charge);
+  execution.chargeId = Number(charge.id);
+  saveMockReceipt(idempotencyKey, `charge:${executionId}:${JSON.stringify(input)}`, charge);
+  return copy(charge);
+}
+
+type MockReceipt = { fingerprint: string; value: unknown };
+const mockReceipts = new Map<string, MockReceipt>();
+let mockVisitSequence = 20;
+let mockExecutionSequence = 200;
+let mockChargeSequence = 20;
+
+function readMockReceipt<T>(key: string, fingerprint: string): T | null {
+  const receipt = mockReceipts.get(key);
+  if (!receipt) return null;
+  if (receipt.fingerprint !== fingerprint) throw new ApiError(409, "IDEMPOTENCY_KEY_REUSED", "The idempotency key was already used for a different request.");
+  return copy(receipt.value as T);
+}
+
+function saveMockReceipt(key: string, fingerprint: string, value: unknown): void {
+  mockReceipts.set(key, { fingerprint, value: copy(value) });
 }
 
 export async function loadChargePayments(chargeId: string): Promise<Payment[]> {
@@ -408,7 +686,7 @@ export async function loadChargePayments(chargeId: string): Promise<Payment[]> {
  * the backend rejects overpayments and the envelope is surfaced as-is. */
 export async function registerPayment(
   chargeId: string,
-  input: { amount: number; method: string },
+  input: { amount: number; method: PaymentMethod },
   idempotencyKey: string,
 ): Promise<Payment> {
   if (!useMocks) {

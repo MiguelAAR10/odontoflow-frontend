@@ -18,6 +18,9 @@ export type ServiceRead = components["schemas"]["ServiceRead"];
 export type PractitionerRead = components["schemas"]["PractitionerRead"];
 export type SlotResult = components["schemas"]["SlotResult"];
 export type PatientRead = components["schemas"]["PatientRead"];
+export type VisitRead = components["schemas"]["VisitRead"];
+export type VisitDetailRead = components["schemas"]["VisitDetailRead"];
+export type ServiceExecutionRead = components["schemas"]["ServiceExecutionRead"];
 export type ChargeRead = components["schemas"]["ChargeRead"];
 export type PaymentRead = components["schemas"]["PaymentRead"];
 export type ProductRead = components["schemas"]["ProductRead"];
@@ -178,13 +181,73 @@ export function newIdempotencyKey(): string {
   return crypto.randomUUID();
 }
 
-// --- cash vertical (real economic surface, M4 Phase 1) ----------------------
+// --- FE3A service-to-cash reads and commands -------------------------------
+
+export async function listVisits(params?: { patient_id?: number }): Promise<VisitRead[]> {
+  const response = await http.get<VisitRead[]>("/visits", { params });
+  return response.data;
+}
+
+export async function getVisit(visitId: number): Promise<VisitDetailRead> {
+  const response = await http.get<VisitDetailRead>(`/visits/${visitId}`);
+  return response.data;
+}
+
+export async function listVisitExecutions(visitId: number): Promise<ServiceExecutionRead[]> {
+  const response = await http.get<ServiceExecutionRead[]>(`/visits/${visitId}/executions`);
+  return response.data;
+}
+
+export async function createVisit(
+  input: {
+    patient_id: number;
+    appointment_id?: number;
+    practitioner_id?: number;
+    location_id?: number;
+  },
+  idempotencyKey: string,
+): Promise<VisitRead> {
+  const response = await http.post<VisitRead>("/visits", input, {
+    headers: { "Idempotency-Key": idempotencyKey },
+  });
+  return response.data;
+}
+
+export async function createServiceExecution(
+  visitId: number,
+  input: { service_id: number; executed_price: number },
+  idempotencyKey: string,
+): Promise<ServiceExecutionRead> {
+  const response = await http.post<ServiceExecutionRead>(`/visits/${visitId}/executions`, input, {
+    headers: { "Idempotency-Key": idempotencyKey },
+  });
+  return response.data;
+}
+
+export async function createCharge(
+  executionId: number,
+  input: { amount?: number },
+  idempotencyKey: string,
+): Promise<ChargeRead> {
+  const response = await http.post<ChargeRead>(`/executions/${executionId}/charges`, input, {
+    headers: { "Idempotency-Key": idempotencyKey },
+  });
+  return response.data;
+}
+
+// --- cash vertical (real economic surface) ---------------------------------
 
 /** The charge list IS the cash-visible economic state. */
-export async function listCharges(params?: { execution_id?: number }): Promise<ChargeRead[]> {
-  const response = await http.get<ChargeRead[]>("/charges", {
-    params: params?.execution_id ? { execution_id: params.execution_id } : undefined,
-  });
+export async function listCharges(params?: {
+  execution_id?: number;
+  patient_id?: number;
+  location_id?: number;
+  visit_id?: number;
+  status?: "unpaid" | "partial" | "paid";
+  created_from?: string;
+  created_to?: string;
+}): Promise<ChargeRead[]> {
+  const response = await http.get<ChargeRead[]>("/charges", { params });
   return response.data;
 }
 

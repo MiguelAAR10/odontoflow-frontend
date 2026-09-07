@@ -26,6 +26,7 @@ import {
   useMocks,
 } from "../api";
 import type { AppointmentListItem, LocationRead, SlotResult } from "../contracts/client";
+import { AttendancePanel } from "../components/AttendancePanel";
 import { Badge, statusTone } from "../components/Badge";
 import { Button } from "../components/Button";
 import { Drawer } from "../components/Drawer";
@@ -141,6 +142,8 @@ export function AgendaPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [selected, setSelected] = useState<Appointment | null>(null);
   const [detail, setDetail] = useState<AppointmentListItem | null>(null);
+  const [attendanceAppointment, setAttendanceAppointment] = useState<Appointment | null>(null);
+  const [attendanceDetail, setAttendanceDetail] = useState<AppointmentListItem | null>(null);
   const [locationFilter, setLocationFilter] = useState("all");
   const [practitionerFilter, setPractitionerFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -241,6 +244,12 @@ export function AgendaPage() {
     setCancelOpen(false);
     setRescheduleSlots([]);
     setRescheduleSlot("");
+  };
+
+  const canRecordAttendance = (appointment: Appointment): boolean => {
+    if (appointment.status !== "Confirmada") return false;
+    if (!appointment.startUtc) return true;
+    return new Date(appointment.startUtc).getTime() <= Date.now() + 15 * 60_000;
   };
 
   const startReschedule = async () => {
@@ -381,7 +390,7 @@ export function AgendaPage() {
       <Drawer title="Detalle de la cita" open={Boolean(selected)} onClose={closeDetail}>
         {selected && <div className="detail-list appointment-detail">
           {detailLoading && <div className="detail-loading" role="status">Actualizando detalle…</div>}
-          <div><span>Lead / contacto</span><strong>{detail?.lead_name ?? selected.patient}</strong></div>
+          <div><span>{selected.patientId ? "Patient canónico" : "Lead / contacto"}</span><strong>{detail?.patient_name ?? detail?.lead_name ?? selected.patient}</strong></div>
           <div><span>Servicio</span><strong>{detail?.service_name ?? selected.treatment}</strong></div>
           <div><span>Fecha y hora</span><strong>{formatAppointmentDateTime(detailStart, detailEnd, detailTimeZone)}</strong></div>
           {durationMinutes(detailStart, detailEnd) && <div><span>Duración</span><strong>{durationMinutes(detailStart, detailEnd)} min</strong></div>}
@@ -391,6 +400,7 @@ export function AgendaPage() {
           {error && <div className="form-error" role="alert">{error}</div>}
           <div className="form-actions appointment-detail__actions">
             <Button onClick={closeDetail}>Cerrar</Button>
+            {canRecordAttendance(selected) && <Button variant="primary" onClick={() => { setAttendanceAppointment(selected); setAttendanceDetail(detail); closeDetail(); }}>Registrar atención</Button>}
             {!useMocks && detailState !== "Cancelada" && <>
               <Button onClick={() => void startReschedule()} disabled={busy || detailLoading}>Reprogramar</Button>
               <Button variant="danger" onClick={() => { setError(""); setCancelOpen(true); }} disabled={busy || detailLoading}>Cancelar cita</Button>
@@ -398,6 +408,8 @@ export function AgendaPage() {
           </div>
         </div>}
       </Drawer>
+
+      <AttendancePanel appointment={attendanceAppointment} detail={attendanceDetail} onClose={() => { setAttendanceAppointment(null); setAttendanceDetail(null); }} />
 
       <Modal title="Reprogramar cita" open={rescheduleOpen} onClose={() => !busy && setRescheduleOpen(false)}>
         <div className="slot-picker slot-picker--reschedule" aria-live="polite">
