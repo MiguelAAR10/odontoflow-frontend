@@ -457,6 +457,57 @@ h1, h2, h3 { text-wrap: balance; }
 .sidebar-item--active svg { color: var(--brand-cyan); }
 .sidebar-footer { display: flex; align-items: center; gap: var(--space-2); margin-top: auto; padding: var(--space-4) var(--space-3) 0; color: rgba(255, 255, 255, .45); font-size: 11px; }
 .sidebar-footer__dot { width: 7px; height: 7px; border-radius: 50%; background: var(--brand-cyan); box-shadow: 0 0 0 4px rgba(65, 212, 203, .12); }
+.sidebar-admin { margin-top: auto; padding-top: 24px; }
+.sidebar-profile { display: flex; align-items: center; gap: 10px; padding: 18px 10px 4px; margin-top: 12px; border-top: 1px solid rgba(255,255,255,.1); color: #e8f2fa; }
+.sidebar-profile__avatar { flex: 0 0 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; background: #35556d; font-size: 12px; font-weight: 700; }
+.sidebar-profile > div { flex: 1; min-width: 0; }
+.sidebar-profile strong { display: block; font-size: 12px; font-weight: 500; }
+.sidebar-profile small { display: block; margin-top: 4px; color: #9ab4c9; font-size: 11px; }
+.sidebar-profile > svg { display: none; }
+.chat-page .message-header { grid-template-columns: 53px minmax(0,1fr) auto; }
+.chat-page .message-header > .icon-button:last-child { display: inline-flex; }
+.chat-patient-search { height: 38px; min-height: 38px; border-color: #b7d8e8; border-radius: 7px; color: #009bb5; }
+.chat-patient-search input::placeholder { color: #91b8c8; font-style: italic; }
+.chat-filter-toolbar { position: relative; display: flex; align-items: flex-start; gap: 6px; padding: 16px 15px; border-bottom: 1px solid var(--line); }
+.chat-filter-toolbar .chat-filters { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; gap: 5px; padding: 0; overflow: visible; border: 0; }
+.chat-filter-toolbar .chat-filters button { min-height: 26px; padding: 0 10px; font-size: 11px; border-color: #b7d8e8; color: #64859b; }
+.chat-filter-toolbar .chat-filters button.chat-filter--active { border-color: #008ba2; background: #008ba2; color: white; font-weight: 600; }
+.chat-more { flex-shrink: 0; }
+.chat-more__trigger { min-height: 26px; display: flex; align-items: center; gap: 4px; padding: 0 2px 0 8px; border: 0; background: transparent; color: #009bb5; font-size: 11px; }
+.chat-more__trigger--active { font-weight: 700; }
+.chat-more__trigger[aria-expanded="true"] svg { transform: rotate(180deg); }
+.chat-more__dropdown { position: absolute; right: 15px; top: 47px; z-index: 30; width: 235px; padding: 6px; background: white; border: 1px solid #d3e3ea; border-radius: 8px; box-shadow: 0 10px 30px rgba(29,58,82,.14); }
+.chat-more__dropdown > button { width: 100%; min-height: 38px; display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 9px 12px; border: 0; border-radius: 4px; background: white; color: #606675; text-align: left; font-size: 13px; line-height: 1.4; }
+.chat-more__dropdown > button:hover, .chat-more__dropdown > button[aria-pressed="true"] { color: #008ba2; background: #eef9fb; }
+.chat-more__dropdown > button:disabled { opacity: .5; cursor: default; background: white; color: #606675; }
+.chat-more__dropdown > p { margin: 4px 10px 6px; color: #8795a1; font-size: 11px; line-height: 1.5; }
+.chat-active-filter { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 10px 15px; padding: 6px 10px; border-radius: 6px; color: #008ba2; background: #edf9fb; font-size: 11px; }
+.chat-active-filter > button { display: grid; place-items: center; border: 0; background: transparent; color: inherit; padding: 3px; }
+.chat-filter-empty { padding: 24px 18px; margin: 0; text-align: center; color: #70849a; font-size: 13px; line-height: 1.6; }
+.app-sidebar { overflow-y: auto; }
+.patient-facts > div > span, .patient-facts strong { display: flex; align-items: center; gap: 9px; }
+.patient-facts > div > span { color: #61738e; white-space: nowrap; }
+.patient-facts > div > span > svg { color: #314969; flex-shrink: 0; }
+.patient-facts strong { justify-content: flex-end; }
+.fact-icon--instagram { color: #ec33aa; }
+.fact-icon--interest { color: #168aff; }
+.fact-icon--location { color: #0bb969; }
+.chat-page .patient-panel__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 20px 22px; }
+.chat-page .patient-panel__actions .button { flex: 1; justify-content: center; white-space: nowrap; }
+.chat-assignment-notice { padding: 10px 12px; border-radius: 8px; background: #e6f5f1; color: #236d5f; font-size: 12px; }
+.transfer-form { display: grid; gap: 18px; }
+.transfer-form > p { margin: 0; line-height: 1.6; }
+.transfer-form > p > svg { vertical-align: middle; margin-right: 8px; color: #33827d; }
+.transfer-demo-note { padding: 12px; background: #f3f7fa; border-radius: 8px; color: #61738e; font-size: 13px; }
+.settings-intro { display: flex; gap: 14px; padding: 20px; margin-bottom: 24px; border: 1px solid var(--line); border-radius: 12px; background: #f0faf9; }
+.settings-intro > svg { color: #238d87; flex-shrink: 0; }
+.settings-intro p { margin: 6px 0 0; color: #61738e; line-height: 1.6; }
+.settings-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(240px,1fr)); gap: 18px; }
+.settings-card { padding: 24px; border: 1px solid var(--line); border-radius: 12px; background: white; }
+.settings-card > svg { color: #258c86; }
+.settings-card h2 { font-size: 16px; margin: 16px 0 8px; }
+.settings-card p { color: #61738e; line-height: 1.6; font-size: 13px; }
+.settings-card > span { display: inline-block; color: #77889e; font-size: 11px; background: #f3f6f9; padding: 4px 8px; border-radius: 6px; }
 
 .app-topbar { min-height: 78px; position: sticky; inset-block-start: 0; z-index: 60; display: grid; grid-template-columns: auto minmax(164px, 208px) minmax(260px, 1fr) auto auto; align-items: center; gap: var(--space-4); padding: var(--space-3) var(--space-8); border-bottom: 1px solid var(--line); background: rgba(255, 255, 255, .96); box-shadow: var(--shadow-sm); }
 .mobile-menu { display: none; align-items: center; justify-content: center; width: 42px; height: 42px; padding: 0; border: 1px solid var(--line); border-radius: var(--radius-md); color: var(--text); background: var(--surface); }
@@ -725,4 +776,55 @@ h1, h2, h3 { text-wrap: balance; }
 
 @media (prefers-reduced-motion: reduce) {
   .skeleton, .drawer, .appointment-card, .slot-option { animation: none; transition: none; }
+}
+
+/* Agenda: date navigation, state selection and global notifications. */
+.agenda-mini-calendar { margin-bottom: 26px; padding-bottom: 22px; border-bottom: 1px solid var(--line); }
+.agenda-mini-calendar header { display: flex; align-items: center; gap: 8px; margin-bottom: 18px; }
+.agenda-mini-calendar header label { flex: 1; min-width: 0; }
+.agenda-mini-calendar input { width: 100%; padding: 0; border: 0; background: transparent; color: var(--text); font-size: 13px; }
+.agenda-mini-calendar header button { display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; background: transparent; color: #76838d; }
+.mini-calendar-weekdays, .mini-calendar-days { display: grid; grid-template-columns: repeat(7,minmax(0,1fr)); text-align: center; gap: 4px; }
+.mini-calendar-weekdays { padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid var(--line); font-size: 12px; color: #81909b; }
+.mini-calendar-days button { justify-self: center; width: 32px; height: 32px; border: 1px solid transparent; border-radius: 50%; background: transparent; color: var(--text); font-size: 13px; }
+.mini-calendar-days button:hover { background: #e0f3f5; }
+.mini-calendar-days button[aria-pressed="true"] { color: white; background: #4055c5; outline: 1px solid #4055c5; outline-offset: 2px; }
+.agenda-status-filter { position: relative; }
+.agenda-status-filter > button { cursor: pointer; color: var(--text); }
+.agenda-status-options { position: absolute; top: calc(100% + 8px); right: 0; z-index: 40; width: 340px; max-width: calc(100vw - 40px); border: 1px solid #b5dce8; background: white; border-radius: 8px; box-shadow: 0 10px 30px #19355020; overflow: hidden; }
+.agenda-status-options label { display: flex; align-items: center; gap: 12px; padding: 14px; font-size: 13px; color: #5f6d7c; }
+.agenda-status-options input { accent-color: #0098ae; width: 18px; height: 18px; }
+.agenda-status-all { background: #eef7fa; }
+.agenda-status-options > div { display: grid; grid-template-columns: 1fr 1fr; }
+.agenda-status-options footer { display: flex; justify-content: flex-end; gap: 8px; padding: 12px; border-top: 1px solid #b5dce8; }
+.agenda-add-user { display: flex; align-items: center; gap: 12px; width: 100%; margin-top: 20px; padding: 18px 0 0; border: 0; border-top: 1px solid var(--line); background: transparent; color: #55778c; font-size: 13px; }
+.agenda-added-user { display: flex; align-items: center; gap: 8px; margin-top: 12px; padding: 10px 12px; border-radius: 20px; color: white; background: #d91d67; font-size: 12px; }
+.agenda-added-user > span { flex: 1; }
+.agenda-added-user button { display: grid; place-items: center; padding: 0; border: 0; color: white; background: transparent; }
+.notification-tabs { display: flex; gap: 8px; border-bottom: 1px solid var(--line); }
+.notification-tabs button { flex: 1; padding: 12px 8px; border: 0; border-bottom: 4px solid transparent; background: transparent; color: #708c9a; font-size: 13px; }
+.notification-tabs button[aria-selected="true"] { color: #52616b; border-bottom-color: #59cfde; font-weight: 600; }
+.notification-empty { display: grid; justify-items: center; padding: 60px 15px; text-align: center; color: #8294a3; }
+.notification-empty h3 { margin: 20px 0 8px; font-size: 16px; color: #52616b; }
+.notification-empty p { font-size: 13px; line-height: 1.6; }
+.calendar-grid--week { grid-template-columns: 95px repeat(7,minmax(150px,1fr)); }
+@media (max-width: 850px) { .calendar-grid--week { grid-template-columns: 75px repeat(7,155px); } }
+.agenda-page .page-heading--with-actions { display: grid; gap: 12px; }
+.agenda-page .filter-row--heading { min-width: 0; max-width: 100%; flex-wrap: wrap; justify-content: flex-start; overflow: visible; }
+.agenda-page .calendar-grid { max-width: 100%; overflow-x: auto; }
+.agenda-page label.select-control { position: relative; padding: 0; }
+.agenda-page label.select-control select { width: 100%; min-height: 42px; padding: 0 36px 0 13px; cursor: pointer; border-radius: inherit; }
+.agenda-page label.select-control > svg:last-child { position: absolute; right: 13px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+.agenda-page label.select-control > svg:first-child { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+.agenda-page label.select-control:has(> svg:first-child) select { padding-left: 40px; }
+.app-topbar { grid-template-columns: minmax(220px, 1fr) auto auto; }
+@media (max-width: 850px) {
+  .app-topbar { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .app-topbar .global-search { display: flex; }
+  .app-topbar .notification-button { display: inline-flex; }
+}
+@media (max-width: 850px) {
+  .agenda-page .filter-row--heading { position: relative; }
+  .agenda-status-filter { position: static; }
+  .agenda-status-options { left: 0; right: auto; width: min(340px, calc(100vw - 32px)); }
 }

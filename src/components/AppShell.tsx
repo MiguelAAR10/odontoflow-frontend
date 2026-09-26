@@ -53,11 +53,21 @@ function formatSlotTime(instant: string, timeZone: string): string {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [appointmentOpen, setAppointmentOpen] = useState(false);
+  const [appointmentPatient, setAppointmentPatient] = useState("");
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState("");
   const [error, setError] = useState("");
   const [key, setKey] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    const openFromChat = (event: Event) => {
+      setAppointmentPatient((event as CustomEvent<{ patient: string }>).detail.patient);
+      setAppointmentOpen(true);
+    };
+    window.addEventListener("open-new-appointment", openFromChat);
+    return () => window.removeEventListener("open-new-appointment", openFromChat);
+  }, []);
 
   const [leads, setLeads] = useState<LeadRead[]>([]);
   const [services, setServices] = useState<ServiceRead[]>([]);
@@ -201,7 +211,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <a className="skip-link" href="#main-content">Saltar al contenido</a>
       <AppSidebar mobileOpen={sidebarOpen} onNavigate={() => setSidebarOpen(false)} />
       <div className="app-workspace">
-        <Topbar onNewAppointment={() => setAppointmentOpen(true)} mobileOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen((value) => !value)} />
+        <Topbar onNewAppointment={() => { setAppointmentPatient(""); setAppointmentOpen(true); }} mobileOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen((value) => !value)} />
         <Surface as="main" id="main-content" className="app-main">{children}</Surface>
       </div>
       {sidebarOpen && <button className="sidebar-backdrop" type="button" aria-label="Cerrar navegación" onClick={() => setSidebarOpen(false)} />}
@@ -209,7 +219,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <form id="new-appointment-form" className="form-grid" onSubmit={submitAppointment}>
           {useMocks ? (
             <>
-              <label className="field field--wide"><span>Paciente</span><input name="patient" required placeholder="Nombre del paciente" autoFocus /></label>
+              <label className="field field--wide"><span>Paciente</span><input name="patient" defaultValue={appointmentPatient} required placeholder="Nombre del paciente" autoFocus /></label>
               <label className="field"><span>Tratamiento</span><select name="treatment" defaultValue="Limpieza dental"><option>Limpieza dental</option><option>Evaluación</option><option>Ortodoncia</option><option>Endodoncia</option></select></label>
               <label className="field"><span>Odontólogo</span><select name="doctor"><option>Dra. Valeria Ruiz</option><option>Dr. Mateo León</option></select></label>
               <label className="field"><span>Sede</span><select name="branch"><option>Lince</option><option>Jesús María</option><option>Magdalena</option></select></label>

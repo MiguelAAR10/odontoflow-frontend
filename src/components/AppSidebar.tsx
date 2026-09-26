@@ -1,10 +1,11 @@
 "use client";
 
-import { Bot, Boxes, CalendarDays, MessageCircleMore, Mic, Users, WalletCards } from "lucide-react";
+import { Bot, Boxes, CalendarDays, ChevronRight, MessageCircleMore, Mic, Settings, Users, WalletCards } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { voiceEnabled } from "../voice";
+import { useMocks } from "../api";
 import { BrandLogo } from "./BrandLogo";
 
 type SidebarEntry = { to: string; label: string; icon: typeof CalendarDays };
@@ -33,6 +34,9 @@ export function AppSidebar({ mobileOpen, onNavigate }: { mobileOpen: boolean; on
     <nav className="sidebar-nav">
       {groups.map((group) => <SidebarSection key={group.label} label={group.label}>{group.items.map((item) => <SidebarItem key={item.to} item={item} onNavigate={onNavigate} />)}</SidebarSection>)}
     </nav>
-    <div className="sidebar-footer"><span className="sidebar-footer__dot" />OdontoFlow workspace</div>
+    <div className="sidebar-admin">
+      <SidebarItem item={{ to: "/configuracion", label: "Configuración", icon: Settings }} onNavigate={onNavigate} />
+      <div className="sidebar-profile"><span className="sidebar-profile__avatar">{useMocks ? "LP" : "AD"}</span><div><strong>{useMocks ? "Leonardo Panduro" : "Administrador"}</strong><small>Administrador{useMocks ? " · Demo" : ""}</small></div><ChevronRight size={16} aria-hidden="true" /></div>
+    </div>
   </aside>;
 }

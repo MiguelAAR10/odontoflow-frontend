@@ -223,11 +223,11 @@ export const getAppointments = () => getOrMock<Appointment[]>("/appointments", a
 
 /** Agenda read in real mode: the week window from the backend, mapped to the
  * grid view model. Mock mode keeps the original behaviour. */
-export async function loadAgenda(filters?: { locationId?: number }): Promise<Appointment[]> {
+export async function loadAgenda(filters?: { locationId?: number; from?: string; to?: string }): Promise<Appointment[]> {
   if (useMocks) return copy(appointments);
   const window = currentWeekWindow();
   const [rows, locations] = await Promise.all([
-    listAppointmentsReal({ from_date: window.from, to_date: window.to, location_id: filters?.locationId }),
+    listAppointmentsReal({ from_date: filters?.from ?? window.from, to_date: filters?.to ?? window.to, location_id: filters?.locationId }),
     listLocationsReal(),
   ]);
   const timeZoneByLocation = new Map(locations.map((l) => [l.id, l.timezone]));
@@ -240,7 +240,7 @@ export async function getAgendaDetail(appointmentId: number): Promise<Appointmen
 
 export async function createAppointment(input: NewAppointmentInput): Promise<Appointment> {
   if (useMocks) {
-    const day = Math.max(0, Math.min(5, new Date(`${input.date}T12:00:00`).getDay() - 1));
+    const day = (new Date(`${input.date}T12:00:00Z`).getUTCDay() + 6) % 7;
     const saved: Appointment = {
       id: `appointment-${Date.now()}`,
       patient: input.patient,
@@ -250,6 +250,8 @@ export async function createAppointment(input: NewAppointmentInput): Promise<App
       time: input.time,
       day,
       status: "Por confirmar",
+      startUtc: new Date(`${input.date}T${input.time}:00-05:00`).toISOString(),
+      timeZone: "America/Lima",
     };
     appointments.push(saved);
     return copy(saved);
@@ -287,6 +289,33 @@ export async function createAppointment(input: NewAppointmentInput): Promise<App
 }
 
 // --- real-mode selector data + mutations (Agenda vertical) ------------------
+
+/** Design-mode editing. Real mode exposes only the contracted reschedule/cancel actions. */
+export async function editDemoAppointment(id: string, input: NewAppointmentInput): Promise<Appointment> {
+  if (!useMocks) throw new Error("Usa reprogramar para modificar una cita conectada al backend.");
+  const appointment = appointments.find((item) => item.id === id);
+  if (!appointment) throw new Error("Cita no encontrada.");
+  const startUtc = new Date(`${input.date}T${input.time}:00-05:00`).toISOString();
+  if (appointments.some((item) => {
+    if (item.id === id || item.status === "Cancelada" || item.doctor !== input.doctor) return false;
+    const fixtureDate = new Date(new Date(currentWeekWindow().from).getTime() + item.day * 86400000).toISOString().slice(0, 10);
+    const otherStart = new Date(item.startUtc ?? `${fixtureDate}T${item.time}:00-05:00`).getTime();
+    const otherEnd = item.endUtc ? new Date(item.endUtc).getTime() : otherStart + 3600000;
+    const editedStart = new Date(startUtc).getTime();
+    return editedStart < otherEnd && editedStart + 3600000 > otherStart;
+  })) {
+    throw new Error("El odontólogo ya tiene una cita en este horario.");
+  }
+  Object.assign(appointment, { patient: input.patient, treatment: input.treatment, doctor: input.doctor, branch: input.branch, time: input.time, startUtc, timeZone: "America/Lima", day: (new Date(`${input.date}T12:00:00Z`).getUTCDay() + 6) % 7 });
+  return copy(appointment);
+}
+
+export async function deleteDemoAppointment(id: string): Promise<void> {
+  if (!useMocks) throw new Error("El backend permite cancelar citas, no eliminarlas.");
+  const index = appointments.findIndex((item) => item.id === id);
+  if (index < 0) throw new Error("Cita no encontrada.");
+  appointments.splice(index, 1);
+}
 
 export function getLeads(search?: string): Promise<LeadRead[]> {
   return listLeadsReal(search);

@@ -1,10 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
   CalendarDays,
   CheckCircle2,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  UserRoundPlus,
   Clock3,
   MapPin,
   SlidersHorizontal,
@@ -13,6 +16,8 @@ import {
 } from "lucide-react";
 import {
   cancelReal,
+  deleteDemoAppointment,
+  editDemoAppointment,
   currentWeekWindow,
   getAgendaDetail,
   getAppointments,
@@ -33,7 +38,18 @@ import { Modal } from "../components/Modal";
 import type { Appointment } from "../types";
 
 const HOURS = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00"];
-const WEEKDAY_LABELS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+const WEEKDAY_LABELS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+const AGENDA_STATES = ["Pendiente", "En espera", "Ausente", "Confirmada", "Cancelada", "En consulta", "Atendida", "Reprogramada"];
+
+function weekForDate(dateKey: string) {
+  const date = new Date(`${dateKey}T00:00:00Z`);
+  const monday = new Date(date.getTime() - ((date.getUTCDay() + 6) % 7) * 86400000);
+  return { from: monday.toISOString(), to: new Date(monday.getTime() + 7 * 86400000).toISOString() };
+}
+
+function agendaState(status: string) {
+  return status === "Por confirmar" || status === "No respondió" ? "Pendiente" : status;
+}
 
 type ViewMode = "week" | "day";
 
@@ -88,7 +104,7 @@ function durationMinutes(start: string | undefined, end: string | undefined): nu
 
 function localDayIndex(): number {
   const weekday = new Intl.DateTimeFormat("en-US", { timeZone: "America/Lima", weekday: "short" }).format(new Date());
-  const index = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(weekday);
+  const index = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].indexOf(weekday);
   return index >= 0 ? index : 0;
 }
 
@@ -105,7 +121,7 @@ function formatWeekDay(instant: string, offset: number): string {
 
 function formatWeekRange(instant: string): string {
   const start = new Date(instant);
-  const end = new Date(start.getTime() + 5 * 86_400_000);
+  const end = new Date(start.getTime() + 6 * 86_400_000);
   const formatter = new Intl.DateTimeFormat("es-PE", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
   return `${formatter.format(start)} – ${formatter.format(end)}`;
 }
@@ -143,7 +159,19 @@ export function AgendaPage() {
   const [detail, setDetail] = useState<AppointmentListItem | null>(null);
   const [locationFilter, setLocationFilter] = useState("all");
   const [practitionerFilter, setPractitionerFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState<string[]>([...AGENDA_STATES]);
+  const [statusDraft, setStatusDraft] = useState<string[]>([...AGENDA_STATES]);
+  const [statusOpen, setStatusOpen] = useState(false);
+  const statusFilterRef = useRef<HTMLDivElement>(null);
+  const statusTriggerRef = useRef<HTMLButtonElement>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [editDate, setEditDate] = useState("");
+  const [selectedDate, setSelectedDate] = useState(() => formatDateKey(new Date().toISOString(), "America/Lima"));
+  const [calendarMonth, setCalendarMonth] = useState(() => formatDateKey(new Date().toISOString(), "America/Lima").slice(0, 7));
+  const [userOpen, setUserOpen] = useState(false);
+  const [userName, setUserName] = useState("");
+  const [agendaUsers, setAgendaUsers] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>("week");
   const [activeDay, setActiveDay] = useState(localDayIndex);
   const [error, setError] = useState("");
@@ -156,9 +184,30 @@ export function AgendaPage() {
   const [cancelOpen, setCancelOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  const weekWindow = useMemo(() => currentWeekWindow(), []);
+  useEffect(() => {
+    if (!statusOpen) return;
+    const outside = (event: PointerEvent) => { if (!statusFilterRef.current?.contains(event.target as Node)) setStatusOpen(false); };
+    const escape = (event: KeyboardEvent) => { if (event.key === "Escape") { setStatusOpen(false); statusTriggerRef.current?.focus(); } };
+    document.addEventListener("pointerdown", outside);
+    document.addEventListener("keydown", escape);
+    return () => { document.removeEventListener("pointerdown", outside); document.removeEventListener("keydown", escape); };
+  }, [statusOpen]);
+
+  const weekWindow = useMemo(() => weekForDate(selectedDate), [selectedDate]);
   const weekDays = useMemo(() => WEEKDAY_LABELS.map((_, index) => formatWeekDay(weekWindow.from, index)), [weekWindow.from]);
-  const visibleDayIndexes = viewMode === "day" ? [activeDay] : [0, 1, 2, 3, 4, 5];
+  const visibleDayIndexes = viewMode === "day" ? [activeDay] : [0, 1, 2, 3, 4, 5, 6];
+  const monthDate = new Date(`${calendarMonth}-01T00:00:00Z`);
+  const monthStartOffset = (monthDate.getUTCDay() + 6) % 7;
+  const daysInMonth = new Date(Date.UTC(monthDate.getUTCFullYear(), monthDate.getUTCMonth() + 1, 0)).getUTCDate();
+  const selectDate = (dateKey: string) => {
+    setSelectedDate(dateKey); setCalendarMonth(dateKey.slice(0, 7));
+    setActiveDay((new Date(`${dateKey}T00:00:00Z`).getUTCDay() + 6) % 7);
+    setViewMode("day");
+  };
+  const moveMonth = (offset: number) => {
+    const next = new Date(Date.UTC(monthDate.getUTCFullYear(), monthDate.getUTCMonth() + offset, 1));
+    setCalendarMonth(next.toISOString().slice(0, 7));
+  };
 
   const refresh = useCallback(async (): Promise<Appointment[]> => {
     setLoading(true);
@@ -166,7 +215,7 @@ export function AgendaPage() {
     try {
       const rows = useMocks
         ? await getAppointments()
-        : await loadAgenda(locationFilter === "all" ? undefined : { locationId: Number(locationFilter) });
+        : await loadAgenda({ locationId: locationFilter === "all" ? undefined : Number(locationFilter), from: new Date(new Date(weekWindow.from).getTime() + 5 * 3600000).toISOString(), to: new Date(new Date(weekWindow.to).getTime() + 5 * 3600000).toISOString() });
       setAppointments(rows);
       return rows;
     } catch (caught) {
@@ -175,7 +224,7 @@ export function AgendaPage() {
     } finally {
       setLoading(false);
     }
-  }, [locationFilter]);
+  }, [locationFilter, weekWindow.from, weekWindow.to]);
 
   useEffect(() => {
     void refresh();
@@ -206,17 +255,16 @@ export function AgendaPage() {
     return Array.from(choices, ([value, label]) => ({ value, label }));
   }, [appointments]);
 
-  const statusChoices = useMemo(() => Array.from(new Set(appointments.map((appointment) => appointment.status).filter(Boolean))), [appointments]);
-
   const visible = useMemo(() => appointments.filter((appointment) => {
     const appointmentPractitioner = appointment.practitionerId != null ? String(appointment.practitionerId) : `name:${appointment.doctor}`;
     const appointmentLocation = useMocks ? appointment.branch : String(appointment.locationId ?? "");
     return (
+      (appointment.startUtc ? weekForDate(formatDateKey(appointment.startUtc, appointment.timeZone ?? "America/Lima")).from === weekWindow.from : useMocks && weekWindow.from === currentWeekWindow().from) &&
       (locationFilter === "all" || appointmentLocation === locationFilter) &&
       (practitionerFilter === "all" || appointmentPractitioner === practitionerFilter) &&
-      (statusFilter === "all" || appointment.status === statusFilter)
+      statusFilter.includes(agendaState(appointment.status))
     );
-  }), [appointments, locationFilter, practitionerFilter, statusFilter]);
+  }), [appointments, locationFilter, practitionerFilter, statusFilter, weekWindow.from]);
   const dayAppointments = useMemo(() => visible.filter((appointment) => appointment.day === activeDay), [activeDay, visible]);
 
   const inCell = (day: number, hour: string) => visible.filter((appointment) => appointment.day === day && Number(appointment.time.slice(0, 2)) === Number(hour.slice(0, 2)));
@@ -241,6 +289,39 @@ export function AgendaPage() {
     setCancelOpen(false);
     setRescheduleSlots([]);
     setRescheduleSlot("");
+    setEditOpen(false);
+    setDeleteOpen(false);
+  };
+
+  const openEdit = () => {
+    if (!selected) return;
+    setError("");
+    setEditDate(selected.startUtc ? formatDateKey(selected.startUtc, selected.timeZone ?? "America/Lima") : new Date(new Date(currentWeekWindow().from).getTime() + selected.day * 86400000).toISOString().slice(0, 10));
+    setEditOpen(true);
+  };
+
+  const submitEdit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!selected) return;
+    const form = new FormData(event.currentTarget);
+    setBusy(true); setError("");
+    try {
+      const updated = await editDemoAppointment(selected.id, { patient: String(form.get("patient")).trim(), treatment: String(form.get("treatment")).trim(), doctor: String(form.get("doctor")).trim(), branch: String(form.get("branch")).trim(), date: editDate, time: String(form.get("time")) });
+      setSelected(updated); selectDate(editDate); setEditOpen(false);
+      window.dispatchEvent(new Event("appointment-created"));
+    } catch (caught) { setError(toApiError(caught).message); }
+    finally { setBusy(false); }
+  };
+
+  const submitDelete = async () => {
+    if (!selected) return;
+    setBusy(true); setError("");
+    try {
+      await deleteDemoAppointment(selected.id);
+      setSelected(null); setDeleteOpen(false); setDetail(null);
+      window.dispatchEvent(new Event("appointment-created"));
+    } catch (caught) { setError(toApiError(caught).message); }
+    finally { setBusy(false); }
   };
 
   const startReschedule = async () => {
@@ -327,12 +408,14 @@ export function AgendaPage() {
             <p>{formatWeekRange(weekWindow.from)}</p>
           </div>
           <div className="filter-row filter-row--heading">
-            <Button icon={CalendarDays} onClick={() => setActiveDay(localDayIndex())}>Hoy</Button>
             <label className="select-control"><span className="sr-only">Periodo</span><select value={viewMode} onChange={(event) => setViewMode(event.target.value as ViewMode)}><option value="week">Semana</option><option value="day">Día</option></select><ChevronDown size={16} aria-hidden="true" /></label>
-            {viewMode === "day" && <label className="select-control"><span className="sr-only">Día de la semana</span><select value={String(activeDay)} onChange={(event) => setActiveDay(Number(event.target.value))}>{weekDays.map((day, index) => <option key={day} value={index}>{day}</option>)}</select><ChevronDown size={16} aria-hidden="true" /></label>}
+            {viewMode === "day" && <label className="select-control"><span className="sr-only">Día de la semana</span><select value={String(activeDay)} onChange={(event) => selectDate(new Date(new Date(weekWindow.from).getTime() + Number(event.target.value) * 86400000).toISOString().slice(0, 10))}>{weekDays.map((day, index) => <option key={day} value={index}>{day}</option>)}</select><ChevronDown size={16} aria-hidden="true" /></label>}
             <label className="select-control"><MapPin size={18} aria-hidden="true" /><span className="sr-only">Sede</span><select value={locationFilter} onChange={(event) => { setLocationFilter(event.target.value); setPractitionerFilter("all"); }}><option value="all">Todas las sedes</option>{locationChoices.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select><ChevronDown size={16} aria-hidden="true" /></label>
             {practitionerChoices.length > 0 && <label className="select-control"><UserRound size={18} aria-hidden="true" /><span className="sr-only">Odontólogo</span><select value={practitionerFilter} onChange={(event) => setPractitionerFilter(event.target.value)}><option value="all">Todos los odontólogos</option>{practitionerChoices.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select><ChevronDown size={16} aria-hidden="true" /></label>}
-            <label className="select-control"><SlidersHorizontal size={18} aria-hidden="true" /><span className="sr-only">Estado</span><select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="all">Todos los estados</option>{statusChoices.map((option) => <option key={option}>{option}</option>)}</select><ChevronDown size={16} aria-hidden="true" /></label>
+            <div className="agenda-status-filter" ref={statusFilterRef}>
+              <button ref={statusTriggerRef} type="button" className="select-control" aria-expanded={statusOpen} aria-controls="agenda-status-options" onClick={() => { setStatusDraft([...statusFilter]); setStatusOpen((value) => !value); }}><SlidersHorizontal size={18} /><span>Estado: {statusFilter.length === AGENDA_STATES.length ? "Todos" : `${statusFilter.length} seleccionados`}</span><ChevronDown size={16} /></button>
+              {statusOpen && <div className="agenda-status-options" id="agenda-status-options"><label className="agenda-status-all"><input type="checkbox" checked={statusDraft.length === AGENDA_STATES.length} onChange={(event) => setStatusDraft(event.target.checked ? [...AGENDA_STATES] : [])} />Todos</label><div>{AGENDA_STATES.map((state) => <label key={state}><input type="checkbox" checked={statusDraft.includes(state)} onChange={(event) => setStatusDraft((current) => event.target.checked ? [...current, state] : current.filter((item) => item !== state))} />{state}</label>)}</div><footer><Button compact onClick={() => setStatusOpen(false)}>Cerrar</Button><Button compact variant="primary" onClick={() => { setStatusFilter([...statusDraft]); setStatusOpen(false); }}>Aplicar</Button></footer></div>}
+            </div>
           </div>
         </div>
 
@@ -344,7 +427,7 @@ export function AgendaPage() {
           <>
             <div className={`calendar-grid calendar-grid--${viewMode}`} aria-label={viewMode === "week" ? "Agenda semanal" : "Agenda diaria"}>
               <div className="calendar-corner" />
-              {visibleDayIndexes.map((dayIndex) => <div key={weekDays[dayIndex]} className={`calendar-day ${dayIndex === localDayIndex() ? "calendar-day--today" : ""}`}>{weekDays[dayIndex]}</div>)}
+              {visibleDayIndexes.map((dayIndex) => <div key={weekDays[dayIndex]} className={`calendar-day ${dayIndex === activeDay ? "calendar-day--today" : ""}`}>{weekDays[dayIndex]}</div>)}
               {HOURS.map((hour) => [
                 <div key={`${hour}-label`} className="calendar-time">{Number(hour.slice(0, 2)) >= 12 ? `${Number(hour.slice(0, 2)) === 12 ? 12 : Number(hour.slice(0, 2)) - 12}:00 p. m.` : `${Number(hour.slice(0, 2))}:00 a. m.`}</div>,
                 ...visibleDayIndexes.map((dayIndex) => <div key={`${hour}-${dayIndex}`} className="calendar-cell">
@@ -358,12 +441,17 @@ export function AgendaPage() {
                 </div>),
               ])}
             </div>
-            {visible.length === 0 && <div className="empty-state agenda-empty" role="status"><CalendarDays size={24} aria-hidden="true" /><strong>No hay citas para estos filtros.</strong><span>Prueba otra sede, odontólogo o estado.</span></div>}
+            {(viewMode === "day" ? dayAppointments.length : visible.length) === 0 && <div className="empty-state agenda-empty" role="status"><CalendarDays size={24} aria-hidden="true" /><strong>No hay citas para esta fecha y filtros.</strong><span>Prueba otra fecha, sede, odontólogo o estado.</span></div>}
           </>
         )}
       </section>
 
       <aside className="day-summary">
+        <div className="agenda-mini-calendar">
+          <header><label><span className="sr-only">Mes del calendario</span><input type="month" value={calendarMonth} onChange={(event) => { if (event.target.value) setCalendarMonth(event.target.value); }} /></label><button type="button" aria-label="Mes anterior" onClick={() => moveMonth(-1)}><ChevronLeft size={18} /></button><button type="button" aria-label="Mes siguiente" onClick={() => moveMonth(1)}><ChevronRight size={18} /></button></header>
+          <div className="mini-calendar-weekdays">{["L", "M", "M", "J", "V", "S", "D"].map((label, index) => <span key={index}>{label}</span>)}</div>
+          <div className="mini-calendar-days">{Array.from({ length: monthStartOffset }, (_, index) => <span key={`blank-${index}`} />)}{Array.from({ length: daysInMonth }, (_, index) => { const dateKey = `${calendarMonth}-${String(index + 1).padStart(2, "0")}`; return <button key={dateKey} type="button" aria-label={`Ir al ${dateKey}`} aria-pressed={selectedDate === dateKey} onClick={() => selectDate(dateKey)}>{index + 1}</button>; })}</div>
+        </div>
         <h2>Resumen del día</h2><h3>{weekDays[activeDay] ?? "Hoy"}</h3>
         <div className="summary-stats">
           <div><CalendarDays className="text-blue" aria-hidden="true" /><strong>{dayAppointments.length}</strong><span>citas</span></div>
@@ -376,7 +464,11 @@ export function AgendaPage() {
         {practitionerChoices.map((practitioner) => (
           <button key={practitioner.value} className={`doctor-card doctor-card--blue ${practitionerFilter === practitioner.value ? "doctor-card--active" : ""}`} type="button" aria-pressed={practitionerFilter === practitioner.value} onClick={() => setPractitionerFilter(practitionerFilter === practitioner.value ? "all" : practitioner.value)}><span>{practitioner.label.slice(0, 2).toUpperCase()}</span><strong>{practitioner.label}</strong><b aria-hidden="true">›</b></button>
         ))}
+        {agendaUsers.map((name) => <div className="agenda-added-user" key={name}><CheckCircle2 size={18} /><span>{name}</span><button type="button" aria-label={`Quitar usuario ${name}`} onClick={() => setAgendaUsers((current) => current.filter((item) => item !== name))}><XCircle size={16} /></button></div>)}
+        <button className="agenda-add-user" type="button" onClick={() => setUserOpen(true)}><UserRoundPlus size={20} />Agregar usuario</button>
       </aside>
+
+      <Modal title="Agregar usuario a la agenda" open={userOpen} onClose={() => setUserOpen(false)} size="small"><form className="transfer-form" onSubmit={(event) => { event.preventDefault(); const name = userName.trim(); if (!useMocks || !name) return; setAgendaUsers((current) => current.includes(name) ? current : [...current, name]); setUserName(""); setUserOpen(false); }}><p>{useMocks ? "Vista previa: agrega un usuario a esta lista. No crea una cuenta ni permisos; se conserva mientras la agenda esté abierta." : "La creación de cuentas y permisos estará disponible en Configuración > Usuarios y roles."}</p>{useMocks && <label className="field"><span>Nombre del usuario</span><input value={userName} onChange={(event) => setUserName(event.target.value)} required autoFocus /></label>}<div className="form-actions"><Button type="button" onClick={() => setUserOpen(false)}>Cancelar</Button><Button type="submit" variant="primary" disabled={!useMocks || !userName.trim()}>Agregar usuario</Button></div></form></Modal>
 
       <Drawer title="Detalle de la cita" open={Boolean(selected)} onClose={closeDetail}>
         {selected && <div className="detail-list appointment-detail">
@@ -391,6 +483,7 @@ export function AgendaPage() {
           {error && <div className="form-error" role="alert">{error}</div>}
           <div className="form-actions appointment-detail__actions">
             <Button onClick={closeDetail}>Cerrar</Button>
+            {useMocks && <><Button onClick={openEdit}>Editar cita</Button><Button variant="danger" onClick={() => { setError(""); setDeleteOpen(true); }}>Eliminar cita</Button></>}
             {!useMocks && detailState !== "Cancelada" && <>
               <Button onClick={() => void startReschedule()} disabled={busy || detailLoading}>Reprogramar</Button>
               <Button variant="danger" onClick={() => { setError(""); setCancelOpen(true); }} disabled={busy || detailLoading}>Cancelar cita</Button>
@@ -398,6 +491,20 @@ export function AgendaPage() {
           </div>
         </div>}
       </Drawer>
+
+      <Modal title="Editar cita" open={editOpen} onClose={() => !busy && setEditOpen(false)}>
+        <form className="form-grid" onSubmit={submitEdit}>
+          <label className="field field--wide"><span>Paciente</span><input name="patient" defaultValue={selected?.patient} required autoFocus /></label>
+          <label className="field"><span>Tratamiento</span><input name="treatment" defaultValue={selected?.treatment} required /></label>
+          <label className="field"><span>Odontólogo</span><select name="doctor" defaultValue={selected?.doctor}>{practitionerChoices.map((choice) => <option key={choice.value}>{choice.label}</option>)}</select></label>
+          <label className="field"><span>Sede</span><select name="branch" defaultValue={selected?.branch}>{locationChoices.map((choice) => <option key={choice.value}>{choice.label}</option>)}</select></label>
+          <label className="field"><span>Fecha</span><input type="date" value={editDate} onChange={(event) => setEditDate(event.target.value)} required /></label>
+          <label className="field"><span>Hora</span><input name="time" type="time" defaultValue={selected?.time} required /></label>
+          {error && <p className="form-error field--wide" role="alert">{error}</p>}
+          <div className="form-actions field--wide"><Button type="button" onClick={() => setEditOpen(false)} disabled={busy}>Cancelar</Button><Button type="submit" variant="primary" disabled={busy}>{busy ? "Guardando…" : "Guardar cambios"}</Button></div>
+        </form>
+      </Modal>
+      <Modal title="Eliminar cita" open={deleteOpen} onClose={() => !busy && setDeleteOpen(false)} size="small"><div className="confirmation-message"><XCircle size={48} /><h3>¿Eliminar la cita de {selected?.patient}?</h3><p>La cita se quitará de la agenda de demostración. Esta acción no se puede deshacer.</p>{error && <p className="form-error" role="alert">{error}</p>}<div className="form-actions"><Button onClick={() => setDeleteOpen(false)} disabled={busy}>Mantener cita</Button><Button variant="danger" onClick={() => void submitDelete()} disabled={busy}>{busy ? "Eliminando…" : "Eliminar cita"}</Button></div></div></Modal>
 
       <Modal title="Reprogramar cita" open={rescheduleOpen} onClose={() => !busy && setRescheduleOpen(false)}>
         <div className="slot-picker slot-picker--reschedule" aria-live="polite">
