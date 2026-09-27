@@ -1,4 +1,6 @@
-# Ejecutar la demo end-to-end desde cero
+# Ejecutar el simulador histórico end-to-end desde cero
+
+Este procedimiento inicia `src/server.ts` y su interfaz de simulación. No inicia la aplicación Next.js actual. Para revisar el frontend operativo, usa las instrucciones de [README.md](../README.md).
 
 ## 1. Base aislada
 

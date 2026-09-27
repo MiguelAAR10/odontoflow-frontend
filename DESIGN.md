@@ -87,8 +87,8 @@ recolored/filtered logo artwork.
 Use `BrandLogo` and the verified transparent PNGs under
 `public/brand/odonto-smart/logos/`:
 
-- `logo-horizontal-marca-premium.png` for the desktop sidebar and topbar,
-  including the compact mobile topbar lockup;
+- `logo-horizontal-marca-premium.png` for the sidebar; the duplicate topbar
+  logo was removed;
 - `logo-circular-emblema-marca.png` for a genuinely emblem-only compact
   surface when one is introduced;
 - `logo-principal.png` only when a compact wordmark surface needs it.
@@ -192,8 +192,8 @@ transitions and animation.
   wrapped page actions; content remains scrollable rather than squeezed into
   the top navigation.
 - Mobile: the sidebar becomes a drawer with a visible scrim and keyboard/
-  screen-reader close action; the topbar keeps menu, the compact horizontal
-  official logo lockup, local context, and a floating New Appointment action.
+  screen-reader close action; the topbar keeps menu, patient search and
+  notifications, with a floating New Appointment action.
 - Calendar and wide tables may scroll within their data region. The shell and
   page body must not create accidental horizontal overflow.
 - Focus remains visible at every breakpoint and controls preserve a practical
@@ -208,11 +208,12 @@ fixed to the current product surface:
 - `GESTIÓN`: Caja, Inventario
 - `IA & CANALES`: Agente IA, Chat, and Asistente only when the existing voice
   flag is enabled
+- administrator footer: Configuración and the demo user/role label
 
-The topbar preserves working global patient search, a neutral location context
-slot, a notification slot, a clearly local/demo user slot, and New Appointment.
-Until FE1B/Clerk, the user slot says `Contexto local / Sin sesión`; it must not
-present a fictional authenticated person. The location label `Todas las sedes`
+The topbar preserves working global patient search, a neutral location context,
+notifications, and New Appointment. The sidebar footer shows an administrator
+label for design review; it is explicitly a demo identity, not an authenticated
+session. The location label `Todas las sedes`
 is a neutral workspace context and is not a replacement for backend location
 authority.
 
@@ -294,8 +295,8 @@ Brand/public data is limited to identity, assets, terminology reference, and
 public clinic context. It is not runtime business state. Operational data
 continues to flow browser → typed client → FastAPI → canonical PostgreSQL.
 Landing services/locations are not backend truth. Mock mode is permitted for
-development and visual evidence only and is always marked `DATOS DEMO` in the
-shell. Real-mode errors remain visible instead of being disguised as empty
+development and visual evidence only. The demo role is marked in the sidebar;
+there is no `DATOS DEMO` badge in the topbar. Real-mode errors remain visible instead of being disguised as empty
 success states.
 
 ## Do / don't
@@ -305,8 +306,8 @@ success states.
 | use the official transparent PNG through `BrandLogo` | draw a tooth with CSS or an icon and call it the logo |
 | put cyan on a primary action and magenta on a small identity moment | turn every card into a neon gradient |
 | keep tables white and calm | put noise, blur, or glow behind dense rows |
-| show `Contexto local / Sin sesión` before Clerk | hardcode Leonardo or any fictional signed-in person |
-| mark mock data visibly | make synthetic patients look like backend truth |
+| label the mock administrator as demo until authentication exists | present that label as a real signed-in user |
+| explain mock mode in setup and demo surfaces | make synthetic patients look like backend truth |
 | preserve existing Agenda/Inventory interactions | use a visual refresh to alter scheduling or stock behavior |
 
 ## Screenshot and evidence references

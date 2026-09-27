@@ -1,123 +1,63 @@
 # OdontoFlow Frontend
 
-React + Next.js App Router frontend for OdontoFlow, a deterministic, multi-tenant clinic operations platform. This repo is the UI
-that **adapts to the backend contract** — the backend (`../odontoflow-backend`, FastAPI + PostgreSQL) is
-the domain authority: prices, durations, stock, payments and availability are decided there, never here.
+Interfaz de operación clínica construida con Next.js App Router, React y TypeScript. El frontend adapta las respuestas del backend FastAPI; el backend es la autoridad para disponibilidad, precios, cobros, inventario y permisos.
 
-> **Status (M4 Pilot Fit CLOSED):** Agenda, Patients, Cash and Inventory are **REAL** against the live
-> backend. Chat and Agent remain prototypes. With `NEXT_PUBLIC_USE_MOCKS=false` the app consumes **zero** mock
-> business data — proven by the no-mock pilot E2E (`test/pilot-e2e.test.ts`).
+## Iniciar la interfaz
 
-## What each screen does (and where its truth lives)
-
-| Screen | State | Backend authority |
-|---|---|---|
-| Agenda | REAL | `/appointments` (+book/reschedule/cancel), `/slots/query`, `/locations`, `/leads`, `/services`, `/practitioners/eligible` |
-| Patients | REAL | `/patients` |
-| Cash | REAL | `/charges`, `/charges/{id}`, `/charges/{id}/payments` (paid/outstanding derived; 'Por cobrar' = Σ outstanding) |
-| Inventory | REAL | `/products`, `/locations`, `/products/{id}/balance?location_id`, `/movements`, `/entries`, `/adjustments`, `/transfers` |
-| Chat | PROTOTYPE | — (no backend authority yet) |
-| Agent | PROTOTYPE | — (no backend authority yet) |
-
-The UI never invents domain values: no fake branch/party/owner on charges, no category/minimum/supplier/
-KPIs on products, no client-side money math that hides a backend rejection. What the backend does not
-project, the UI hides or derives from real data.
-
-## Mental model
-
-- **Product is not stock.** Creating a product (`{name, unit, kind}`) and adding stock (an entry at a
-  location) are separate actions, exactly as the backend models them.
-- **Stock lives per Product × Location.** Balance is read per location; movements (kardex), entries,
-  adjustments and transfers all carry a location.
-- **Dual-mode adapter seam.** Every data function goes through `src/api.ts`: with `NEXT_PUBLIC_USE_MOCKS=true`
-  (default for design work) it serves typed mock data; with `false` it calls the real FastAPI endpoints.
-  Real mode is the mode that matters — tests assert it by construction.
-
-## Stack
-
-| Layer | Choice |
-|---|---|
-| App | React 18 + TypeScript + Next.js App Router (+ Tailwind for styles) |
-| Routing | Next.js App Router (`/agenda`, `/pacientes`, `/caja`, `/inventario`, `/chat`, `/agente`) |
-| HTTP | Axios (`src/contracts/client.ts`, `baseURL = NEXT_PUBLIC_BACKEND_URL`) |
-| Contracts | Generated from backend OpenAPI via `openapi-typescript` → `src/contracts/api.ts` (never handwritten) |
-| Tests | Vitest — unit/adapter tests (`npm test`) + real-backend integration & pilot E2E (`npm run test:e2e`) |
-| Simulator | Node + dedicated PostgreSQL (legacy follow-up harness, reference only — see `docs/`) |
-
-## Environment
-
-| Variable | Default | Purpose |
-|---|---|---|
-| `NEXT_PUBLIC_BACKEND_URL` | `http://127.0.0.1:8010` | Base URL of the real FastAPI backend |
-| `NEXT_PUBLIC_USE_MOCKS` | `true` | `true` → typed mocks from `src/mockData.ts`; `false` → real HTTP calls |
-
-See `.env.example`.
-
-## Quick start
+Requiere Node.js 24 (versión indicada en `.nvmrc`).
 
 ```bash
-nvm use                      # Node 24 (see .nvmrc)
-npm install
-npm run dev                  # Next.js app at http://127.0.0.1:5173 (mock mode by default)
-
-# Regenerate TS contracts after the backend OpenAPI changes
-npm run openapi:generate
-
-# Verify everything (unit + types + build)
-npm run typecheck
-npm test
-npm run build
+npm ci
+npm run dev
 ```
 
-> Full environment reference (Node pin, vars, dependency approach): [`ENVIRONMENT.md`](../../ENVIRONMENT.md).
+Abre [http://127.0.0.1:5173/agenda](http://127.0.0.1:5173/agenda). Por defecto se usan datos de demostración; no hace falta levantar el backend para revisar el diseño. Las variables disponibles están explicadas en [`.env.example`](.env.example).
 
-### Real mode + E2E (requires the backend)
+Para conectar el backend, crea `.env.local` con `NEXT_PUBLIC_USE_MOCKS=false` y `NEXT_PUBLIC_BACKEND_URL=http://127.0.0.1:8010`, e inicia FastAPI y PostgreSQL según el README del repositorio `odontoflow-backend`. Chat y Agente IA aún no tienen contrato operativo en ese backend.
 
-1. Start PostgreSQL on :5434 and migrate the backend to HEAD 0008.
-2. Run FastAPI on :8010 against a database with fixtures (see the backend README).
-3. Run the no-mock proof — one deterministic journey (Patient → Appointment → Visit → Execution →
-   Consumption → Charge → Payment → Cash/Inventory state → Transfer):
+## Estado de los módulos
+
+| Ruta | Estado actual |
+| --- | --- |
+| `/agenda` | Citas y disponibilidad conectadas al backend en modo real. El calendario y los filtros son de la interfaz. Editar/eliminar una cita y agregar un usuario a la lista son interacciones de demostración; el backend ofrece reprogramar y cancelar, no borrar. |
+| `/pacientes` | Lectura y registro conectados a `/patients` en modo real. |
+| `/caja` | Cargos y pagos conectados a `/charges` y `/charges/{id}/payments` en modo real. |
+| `/inventario` | Productos, saldos por sede, movimientos, entradas, ajustes y transferencias conectados en modo real. |
+| `/chat` | Prototipo para explorar conversaciones, filtros y transferencia. Las asignaciones de secretarias son temporales en modo demo; no hay persistencia de chats en el backend actual. |
+| `/agente` | Prototipo visual; sus métricas y actividad no provienen del backend operativo. |
+| `/configuracion` | Mapa de secciones previsto para el administrador; aún no edita usuarios, roles ni ajustes. |
+| `/asistente` | Asistente de voz opcional. Oculto por defecto; `NEXT_PUBLIC_ENABLE_VOICE=true` muestra la pantalla. En modo demo no envía peticiones al servicio de voz. |
+
+El nombre de administrador mostrado en modo demo es una muestra visual, no una sesión autenticada. El panel de notificaciones también es una vista previa sin servicio conectado.
+
+## Comandos
 
 ```bash
-  NEXT_PUBLIC_USE_MOCKS=false NEXT_PUBLIC_BACKEND_URL=http://127.0.0.1:8010 \
-  npx vitest run --config vitest.e2e.config.ts test/pilot-e2e.test.ts
-
-# reproducible from zero: resets odontoflow_e2e, migrates, boots the backend, runs the pilot
-./scripts/pilot-e2e.sh
+npm run typecheck    # TypeScript de la interfaz y del simulador histórico
+npm test             # pruebas unitarias y de adaptadores (94 actualmente)
+npm run build        # compilación Next.js y TypeScript del simulador
+npm run test:visual  # compila, abre las rutas actuales y genera capturas locales
 ```
 
-## Repository layout
+`test:visual` requiere Chromium, Chrome o Edge. Puedes indicar el ejecutable con `VISUAL_BROWSER_PATH`. Escribe las capturas en `screenshots/`, una carpeta ignorada por Git; también admite `VISUAL_SCREENSHOT_DIR` y, para comprobar un servidor ya iniciado, `VISUAL_BASE_URL`.
 
+Las pruebas de integración (`npm run test:e2e`) y el piloto (`npm run test:e2e:pilot`) necesitan el backend real y PostgreSQL. No forman parte de `npm test`. Para regenerar los tipos de la API tras un cambio de contrato, coloca el backend como repositorio hermano y ejecuta `npm run openapi:generate`; [`src/contracts/api.ts`](src/contracts/api.ts) es generado y no debe editarse a mano.
+
+**Nota sobre `npm start`:** ese comando inicia el simulador histórico desde `dist/src/server.js`, no la interfaz Next.js. Para servir una compilación de Next.js usa `npx next start -p 5173 -H 127.0.0.1` después de `npm run build`.
+
+## Estructura
+
+```text
+app/                    Rutas y layouts de Next.js
+src/views/              Pantallas de la interfaz
+src/components/         Componentes compartidos
+src/api.ts              Adaptación entre contratos, vistas y datos demo
+src/contracts/          Tipos OpenAPI generados y cliente HTTP
+src/mockData.ts         Datos para diseño y pruebas en modo demo
+test/                   Pruebas unitarias, de transporte e integración
+scripts/visual-check.mjs  Verificación visual actual
 ```
-src/
-  app/                  # Next.js App Router layouts and route segments
-  api.ts               # the adapter seam: toUi* view models + real/mock dispatch
-  contracts/
-    api.ts             # GENERATED from backend OpenAPI (openapi-typescript)
-    client.ts          # typed HTTP client + ApiError envelope (never hand-typed endpoints)
-  types.ts             # UI view models (typed over the generated contract)
-  mockData.ts          # design-time mocks — never consumed in real mode
-  views/                # AgendaPage, PatientsPage, CashPage, InventoryPage, ChatPage, AgentPage
-  components/          # AppShell, Badge, Button, DataTable, KpiCard, Modal, Header, Navbar
-  domain/  simulation/ # legacy simulator (reference only)
-  server.ts            # legacy simulation harness (reference only)
-test/                  # unit/adapter tests + integration + pilot-e2e (see docs/frontend-architecture.md)
-scripts/pilot-e2e.sh   # deterministic E2E harness (reset → migrate → boot → run)
-docs/                  # architecture & run guides
-```
 
-## Rules for contributors
+`src/domain/`, `src/simulation/`, `src/server.ts`, `db/`, `docker-compose.yml` y [`docs/run-demo.md`](docs/run-demo.md) pertenecen al simulador anterior. Siguen disponibles como referencia y para sus pruebas, pero no forman parte de la interfaz Next.js. Los informes y capturas de `.audit/` son evidencia histórica; pueden mostrar diseños de versiones anteriores.
 
-1. **Contracts are generated, never written.** After the backend OpenAPI changes: regenerate
-   `src/contracts/api.ts` and add typed client functions in `src/contracts/client.ts` matching the
-   existing style. Verify the regenerated diff before writing adapters.
-2. **The backend is authority.** Never send fields the contract does not define (`extra=forbid`), never
-   call paths that don't exist, never invent domain values in the UI.
-3. **One envelope.** All errors map through `toApiError` → `ApiError {code, message, httpStatus}` and are
-   rendered from `message`.
-4. **Mock mode mirrors the real rules** (reject overpayment, insufficient stock, zero adjustments…) so
-   design work behaves like production — but real mode is what ships.
-5. **Keep regressions green:** `npm run typecheck`, `npm test`, `npm run build`, and after backend
-   changes the real-backend integration suite.
-
-Full detail: [`docs/frontend-architecture.md`](docs/frontend-architecture.md) and [`AGENTS.md`](AGENTS.md).
+Lee [AGENTS.md](AGENTS.md) antes de cambiar código y [docs/frontend-architecture.md](docs/frontend-architecture.md) para entender la separación entre contratos, adaptadores y vistas.
