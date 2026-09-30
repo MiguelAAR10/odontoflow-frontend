@@ -13,7 +13,7 @@
     "test": "vitest run",
     "test:visual": "node scripts/visual-check.mjs",
     "start": "node dist/src/server.js",
-    "openapi:generate": "openapi-typescript ../odontoflow-backend/docs/api/openapi.yaml -o src/contracts/api.ts",
+    "openapi:generate": "openapi-typescript ${OPENAPI_SPEC:-../odontoflow-backend/docs/api/openapi.yaml} -o src/contracts/api.ts",
     "test:e2e": "vitest run --config vitest.e2e.config.ts",
     "test:e2e:pilot": "bash scripts/pilot-e2e.sh"
   },

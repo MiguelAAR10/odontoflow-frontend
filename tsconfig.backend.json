@@ -33,6 +33,12 @@
     "test/inventory-adapter.test.ts",
     "test/pilot-e2e.test.ts",
     "test/service-to-cash-integration.test.ts",
-    "test/voice-adapter.test.ts"
+    "test/voice-adapter.test.ts",
+    "test/home-registry.test.ts",
+    "test/home-adapter.test.ts",
+    "test/home-schedule.test.ts",
+    "test/bff-proxy.test.ts",
+    "test/bff-secret-guard.test.ts",
+    "test/setup-e2e-auth.ts"
   ]
 }

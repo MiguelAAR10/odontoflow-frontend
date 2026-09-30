@@ -45,7 +45,11 @@ let followUpId: number;
 async function fetchJson(path: string, init?: RequestInit): Promise<unknown> {
   const response = await fetch(`${BACKEND_URL}${path}`, {
     ...init,
-    headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
+    headers: {
+      "Content-Type": "application/json",
+      ...(process.env.BACKEND_DEMO_TOKEN ? { Authorization: `Bearer ${process.env.BACKEND_DEMO_TOKEN}` } : {}),
+      ...(init?.headers ?? {}),
+    },
   });
   const body = await response.json().catch(() => null);
   if (!response.ok) {

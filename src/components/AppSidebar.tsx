@@ -1,6 +1,6 @@
 "use client";
 
-import { Bot, Boxes, CalendarDays, ChevronRight, MessageCircleMore, Mic, Settings, Users, WalletCards } from "lucide-react";
+import { Bot, Boxes, CalendarDays, ChevronRight, House, MessageCircleMore, Mic, Settings, Users, WalletCards } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -10,7 +10,7 @@ import { BrandLogo } from "./BrandLogo";
 
 type SidebarEntry = { to: string; label: string; icon: typeof CalendarDays };
 const groups: Array<{ label: string; items: SidebarEntry[] }> = [
-  { label: "OPERACIÓN", items: [{ to: "/agenda", label: "Agenda", icon: CalendarDays }, { to: "/pacientes", label: "Pacientes", icon: Users }] },
+  { label: "OPERACIÓN", items: [{ to: "/home", label: "Inicio", icon: House }, { to: "/agenda", label: "Agenda", icon: CalendarDays }, { to: "/pacientes", label: "Pacientes", icon: Users }] },
   { label: "GESTIÓN", items: [{ to: "/caja", label: "Caja", icon: WalletCards }, { to: "/inventario", label: "Inventario", icon: Boxes }] },
   { label: "IA & CANALES", items: [{ to: "/agente", label: "Agente IA", icon: Bot }, { to: "/chat", label: "Chat", icon: MessageCircleMore }, ...(voiceEnabled ? [{ to: "/asistente", label: "Asistente", icon: Mic }] : [])] },
 ];

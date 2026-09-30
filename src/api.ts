@@ -1,5 +1,4 @@
-import axios from "axios";
-import { BACKEND_URL, USE_MOCKS } from "./env";
+import { USE_MOCKS } from "./env";
 import {
   agentActivity,
   appointments,
@@ -30,6 +29,7 @@ import {
   getAppointment as getAppointmentReal,
   getBalance as getBalanceReal,
   getVisit as getVisitReal,
+  http,
   listAppointments as listAppointmentsReal,
   listCharges as listChargesReal,
   listEligiblePractitioners as listEligiblePractitionersReal,
@@ -98,11 +98,11 @@ import type {
   Visit,
 } from "./types";
 import type { ChargeFollowUp, PatientVisitHistory, UnchargedExecution } from "./types";
+import type { HomePatient } from "./home/types";
 import { DIGITAL_METHODS, PAYMENT_METHOD_LABEL, isDigitalPaymentMethod } from "./ui";
 
-export const api = axios.create({
-  baseURL: BACKEND_URL,
-});
+/** Same instance as the typed client's transport: one base URL, one place to configure. */
+export const api = http;
 
 const useMocks = USE_MOCKS;
 export { useMocks, ApiError, toApiError, newIdempotencyKey };
@@ -227,6 +227,32 @@ export async function loadPatients(search?: string): Promise<Patient[]> {
   }
   const rows = await listPatientsReal(search);
   return rows.map(toUiPatient);
+}
+
+/**
+ * Home patient search keeps the canonical identity projection narrow. It
+ * reuses the same mock seam as the rest of the app, while real mode calls the
+ * typed /patients adapter with the entered search string.
+ */
+export function toUiPatientSearch(row: Pick<PatientRead, "id" | "full_name" | "dni" | "phone">): HomePatient {
+  return { id: String(row.id), name: row.full_name, dni: row.dni, phone: row.phone };
+}
+
+function toMockPatientSearch(patient: Patient): HomePatient {
+  return { id: patient.id, name: patient.name, dni: patient.dni || null, phone: patient.phone || null };
+}
+
+export async function searchPatients(search?: string): Promise<HomePatient[]> {
+  const query = search?.trim() ?? "";
+  if (useMocks) {
+    const normalized = query.toLowerCase();
+    const rows = await getPatients();
+    return rows
+      .filter((patient) => !normalized || [patient.name, patient.dni, patient.phone].some((value) => value.toLowerCase().includes(normalized)))
+      .map(toMockPatientSearch);
+  }
+  const rows = await listPatientsReal(query || undefined);
+  return rows.map(toUiPatientSearch);
 }
 
 /** Canonical patient create used by attendance qualification. */

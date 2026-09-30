@@ -39,6 +39,25 @@ npm run typecheck
 npm run test:e2e:pilot    # requiere backend + PostgreSQL reales
 ```
 
+## BFF — el navegador solo habla con su propio origen
+
+En modo real el navegador llama a `/api/backend/*` (base por defecto en
+`src/env.ts`). El Route Handler `app/api/backend/[...path]/route.ts` delega en
+`src/bff/proxy.ts`, que reenvía método, ruta, query y body al backend e inyecta
+`Authorization: Bearer $BACKEND_DEMO_TOKEN` en el servidor.
+
+- Variables solo de servidor: `BACKEND_URL` (default `http://127.0.0.1:8010`) y
+  `BACKEND_DEMO_TOKEN` (opcional). Nunca con prefijo `NEXT_PUBLIC_`; nada bajo
+  `src/` las lee (lo vigila `test/bff-secret-guard.test.ts`).
+- Solo pasan `content-type`, `accept`, `idempotency-key`, `x-request-id`; se
+  descartan `authorization`/`cookie` del navegador. El envelope de error del
+  backend pasa intacto (`toApiError` sigue igual).
+- Rechazos propios: `..`/segmentos vacíos → 400 `BFF_BAD_PATH`; `/internal/*` →
+  403 `BFF_FORBIDDEN_PATH`; backend caído → 502 `BACKEND_UNREACHABLE`.
+- `NEXT_PUBLIC_BACKEND_URL` solo sirve para la suite de integración en Node
+  (conexión directa); `test/setup-e2e-auth.ts` agrega el bearer si el proceso
+  de test tiene `BACKEND_DEMO_TOKEN`.
+
 ## El patrón para integrar una contribución externa — ya probado una vez
 
 Cuando se portó la vista de voz de Alejandro (PR externo, rama

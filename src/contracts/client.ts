@@ -37,7 +37,8 @@ export type TransferCreate = components["schemas"]["TransferCreate"];
 
 type AppointmentsPath = paths["/appointments"];
 
-const http = axios.create({
+/** Single transport shared with `src/api.ts` (re-exported there as `api`). */
+export const http = axios.create({
   baseURL: BACKEND_URL,
 });
 
