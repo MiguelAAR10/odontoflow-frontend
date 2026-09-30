@@ -14,6 +14,7 @@ import type {
   ServiceOption,
   Visit,
 } from "./types";
+import type { ChargeFollowUp } from "./types";
 
 export const patients: Patient[] = [
   { id: "ana", initials: "AT", name: "Ana Torres", dni: "74859632", phone: "+51 987 654 321", branch: "Lince", nextAppointment: "15 ago · 10:30 a. m.", treatment: "Limpieza dental", status: "Activo", tone: "cyan", origin: "Instagram", interest: "Alto" },
@@ -108,6 +109,53 @@ export const conversations: Conversation[] = [
   { id: "conv-lucia", patientId: "lucia", name: "Lucía Pérez", initials: "LP", preview: "Gracias por el recordatorio", time: "09:55", unread: 0, tag: "Paciente", tone: "purple", messages: [{ id: "m5", from: "agent", text: "Te recordamos tu control de ortodoncia de mañana.", time: "09:52" }, { id: "m6", from: "patient", text: "Gracias por el recordatorio", time: "09:55" }] },
   { id: "conv-diego", patientId: "diego", name: "Diego Salazar", initials: "DS", preview: "Quisiera una evaluación", time: "Ayer", unread: 0, tag: "Lead", tone: "green", messages: [{ id: "m7", from: "patient", text: "Quisiera una evaluación dental, por favor.", time: "Ayer" }] },
   { id: "conv-maria", patientId: "maria", name: "María Flores", initials: "MF", preview: "Necesito reprogramar", time: "Ayer", unread: 0, tag: "Paciente", tone: "pink", messages: [{ id: "m8", from: "patient", text: "Necesito reprogramar mi cita de endodoncia.", time: "Ayer" }] },
+];
+
+export const mockFollowUps: ChargeFollowUp[] = [
+  {
+    id: "2",
+    chargeId: 2,
+    nextFollowUpOn: "2026-09-08",
+    note: "Paciente indicó que completa el saldo el martes.",
+    state: "open",
+    openedAt: "2026-09-06T14:00:00Z",
+    closedAt: null,
+    closeReason: null,
+    chargeAmount: 500,
+    chargePaid: 200,
+    chargeOutstanding: 300,
+    isActiveCase: true,
+    patientId: 2,
+    patientName: "Carlos Rojas",
+    serviceId: 2,
+    serviceName: "Evaluación dental",
+    locationId: 2,
+    locationName: "Jesús María",
+    practitionerId: 2,
+    practitionerName: "Dr. Mateo León",
+  },
+  {
+    id: "1",
+    chargeId: 1,
+    nextFollowUpOn: "2026-08-20",
+    note: "Pago completo recibido.",
+    state: "closed",
+    openedAt: "2026-08-14T14:20:00Z",
+    closedAt: "2026-08-14T15:00:00Z",
+    closeReason: "settled",
+    chargeAmount: 180,
+    chargePaid: 180,
+    chargeOutstanding: 0,
+    isActiveCase: false,
+    patientId: 1,
+    patientName: "Ana Torres",
+    serviceId: 1,
+    serviceName: "Limpieza dental",
+    locationId: 1,
+    locationName: "Lince",
+    practitionerId: 1,
+    practitionerName: "Dra. Valeria Ruiz",
+  },
 ];
 
 // --- inventory mock store (real OpenAPI shapes only) ------------------------

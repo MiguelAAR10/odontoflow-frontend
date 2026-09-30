@@ -1,6 +1,6 @@
 @import "./tokens.css";
 @import url("https://api.fontshare.com/v2/css?f[]=clash-display@200,300,400,500,600,700&display=swap");
-@import url("https://api.fontshare.com/v2/css?f[]=satoshi@300,400,500,700,900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -725,4 +725,123 @@ h1, h2, h3 { text-wrap: balance; }
 
 @media (prefers-reduced-motion: reduce) {
   .skeleton, .drawer, .appointment-card, .slot-option { animation: none; transition: none; }
+}
+
+/* FE3A service-to-cash: clay actions, flat data, restrained glass overlays. */
+.cash-page { min-width: 0; }
+.cash-authority-note { display: inline-flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: 13px; }
+.cash-page > .tabs { margin: 4px 0 16px; }
+.cash-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 0; }
+.cash-toolbar { align-items: center; gap: var(--space-3); }
+.cash-toolbar .search-control { flex: 1 1 280px; max-width: 540px; }
+.toolbar-leading { display: inline-flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: 13px; }
+.toolbar-total { color: var(--text-muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+.table-context { display: grid; gap: 3px; min-width: 130px; }
+.table-context small, .person-cell small { color: var(--text-muted); font-size: 12px; }
+.numeric-emphasis { font-variant-numeric: tabular-nums; color: var(--text); }
+.badge-stack, .row-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; }
+.row-actions { min-width: max-content; }
+.success-banner { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; padding: 12px 14px; border: 1px solid var(--status-ok-line); border-radius: var(--radius-md); color: var(--status-ok); background: var(--status-ok-surface); }
+.payment-list { display: grid; gap: 8px; margin: 0 0 20px; padding: 0; list-style: none; }
+.payment-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(130px, max-content); align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface-muted); }
+.payment-list li > span { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; min-width: 0; }
+.payment-list li small { color: var(--text-muted); font-size: 12px; }
+.payment-list li > strong { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.payment-list__status { justify-self: end; }
+.cash-modal { display: grid; gap: 4px; }
+.charge-context { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 12px; }
+.charge-context > div { display: grid; gap: 3px; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface-muted); }
+.charge-context span, .charge-context small { color: var(--text-muted); font-size: 12px; }
+.charge-context strong { color: var(--text); }
+.charge-context--compact { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.payments-title { margin: 16px 0 8px; color: var(--text); font-family: var(--font-display); font-size: 18px; }
+.choice-field { min-width: 0; margin: 6px 0 0; padding: 0; border: 0; }
+.choice-field legend { margin-bottom: 8px; color: var(--text-muted); font-size: 12px; font-weight: 700; }
+.choice-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.choice-card { display: flex; align-items: flex-start; gap: 9px; min-height: 72px; padding: 11px; border: 1px solid var(--line-strong); border-radius: var(--radius-md); background: var(--surface); cursor: pointer; box-shadow: var(--shadow-clay); transition: border-color var(--duration-fast) var(--ease-standard), background var(--duration-fast) var(--ease-standard), transform var(--duration-fast) var(--ease-standard); }
+.choice-card:hover { border-color: var(--accent); background: var(--surface-soft); transform: translateY(-1px); }
+.choice-card--active { border-color: var(--accent); background: var(--accent-soft); }
+.choice-card input { margin-top: 3px; accent-color: var(--accent-hover); }
+.choice-card span { display: grid; gap: 4px; }
+.choice-card small { color: var(--text-muted); font-size: 12px; }
+.digital-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 13px; border: 1px solid var(--status-info-line); border-radius: var(--radius-md); background: var(--status-info-surface); }
+.digital-fields .field-note { grid-column: 1 / -1; }
+.field-note { display: flex; align-items: flex-start; gap: 7px; margin: 0; color: var(--text-muted); font-size: 12px; line-height: 1.45; }
+.field-note em { color: var(--status-danger); font-style: normal; }
+.pay-later-note, .settled-callout { display: flex; align-items: flex-start; gap: 9px; padding: 13px; border: 1px solid var(--status-warning-line); border-radius: var(--radius-md); color: var(--status-warning); background: var(--status-warning-surface); }
+.settled-callout { border-color: var(--status-ok-line); color: var(--status-ok); background: var(--status-ok-surface); }
+.payment-form textarea, .form-grid textarea { width: 100%; resize: vertical; border: 1px solid var(--line-strong); border-radius: var(--radius-md); color: var(--text); background: var(--surface); }
+.payment-form textarea:focus, .form-grid textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--focus-ring); outline: 0; }
+
+/* Attendance drawer */
+.attendance-panel { display: grid; gap: 20px; }
+.attendance-intro { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding-bottom: 4px; border-bottom: 1px solid var(--line); }
+.attendance-intro h3 { margin: 4px 0; color: var(--text); font-family: var(--font-display); font-size: 24px; }
+.attendance-intro p { margin: 0; color: var(--text-muted); font-size: 13px; }
+.eyebrow { color: var(--accent-ink); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.attendance-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0; padding: 0; list-style: none; }
+.attendance-steps li { display: flex; align-items: center; gap: 7px; color: var(--text-muted); font-size: 12px; font-weight: 700; }
+.attendance-steps li span { display: grid; place-items: center; width: 25px; height: 25px; border: 1px solid var(--line-strong); border-radius: 50%; background: var(--surface-muted); }
+.attendance-steps .attendance-step--active { color: var(--accent-ink); }
+.attendance-steps .attendance-step--active span { color: white; border-color: var(--accent); background: var(--accent); }
+.attendance-steps .attendance-step--done span { color: var(--status-ok); border-color: var(--status-ok-line); background: var(--status-ok-surface); }
+.attendance-step-panel { display: grid; gap: 16px; padding: 16px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-clay); }
+.section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.section-heading h4 { margin: 3px 0 4px; color: var(--text); font-family: var(--font-display); font-size: 19px; }
+.section-heading p { margin: 0; color: var(--text-muted); font-size: 12px; line-height: 1.45; }
+.section-heading > svg { color: var(--accent-ink); }
+.canonical-patient { display: flex; align-items: center; gap: 12px; padding: 13px; border: 1px solid var(--status-ok-line); border-radius: var(--radius-md); background: var(--status-ok-surface); }
+.canonical-patient > div { display: grid; flex: 1; gap: 3px; min-width: 0; }
+.canonical-patient strong { color: var(--text); }
+.canonical-patient small, .canonical-patient p { color: var(--text-muted); font-size: 12px; }
+.canonical-patient p { margin: 2px 0 0; }
+.canonical-patient--compact { padding: 10px 12px; }
+.patient-search-block { display: grid; gap: 12px; }
+.search-control--full { width: 100%; }
+.search-control--full .button { margin-left: auto; }
+.patient-search-results { display: grid; gap: 5px; max-height: 220px; overflow: auto; padding: 4px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface-muted); }
+.patient-search-results button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px; border: 0; border-bottom: 1px solid var(--line); color: var(--text); text-align: left; background: var(--surface); }
+.patient-search-results button:last-child { border-bottom: 0; }
+.patient-search-results button:hover { background: var(--surface-soft); }
+.patient-search-results button > span:last-child { display: grid; gap: 3px; }
+.patient-search-results small { color: var(--text-muted); font-size: 12px; }
+.attendance-new-patient { padding: 12px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface-muted); }
+.attendance-actions { justify-content: flex-end; padding-top: 4px; }
+.execution-list, .charge-issue-list { display: grid; gap: 7px; }
+.execution-row, .charge-issue-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface-muted); }
+.execution-row > span:first-child, .charge-issue-row > div:first-child { display: grid; gap: 3px; min-width: 0; }
+.execution-row small, .charge-issue-row span { color: var(--text-muted); font-size: 12px; }
+.charge-issue-row > div:first-child { flex: 1; }
+.charge-issue-row > div:first-child span { display: block; margin-top: 3px; }
+
+/* Patient detail */
+.patient-visits { display: grid; gap: 10px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+.patient-visits .section-heading { margin-bottom: 2px; }
+.patient-visit { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface-muted); }
+.patient-visit header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.patient-visit header > div { display: grid; gap: 3px; }
+.patient-visit header small, .patient-visit time { color: var(--text-muted); font-size: 12px; }
+.patient-visit__executions { display: grid; gap: 6px; }
+.patient-execution { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 8px; border-top: 1px solid var(--line); }
+.patient-execution > span:first-child { display: grid; gap: 3px; }
+.patient-execution small { color: var(--text-muted); font-size: 12px; }
+
+@media (max-width: 850px) {
+  .cash-authority-note { display: none; }
+  .cash-kpis { grid-template-columns: 1fr; }
+  .cash-page > .tabs { overflow-x: auto; }
+  .cash-toolbar { align-items: stretch; flex-wrap: wrap; }
+  .cash-toolbar .search-control { flex-basis: 100%; max-width: none; }
+  .cash-toolbar .result-count { margin-left: auto; }
+  .charge-context, .choice-grid, .digital-fields { grid-template-columns: 1fr; }
+  .payment-list li { grid-template-columns: 1fr auto; }
+  .payment-list__status { grid-column: 1 / -1; justify-self: start; }
+  .attendance-step-panel { padding: 13px; }
+  .attendance-intro { display: grid; }
+  .attendance-steps li { align-items: flex-start; flex-direction: column; }
+  .patient-execution { align-items: flex-start; flex-direction: column; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .choice-card { transition: none; }
 }

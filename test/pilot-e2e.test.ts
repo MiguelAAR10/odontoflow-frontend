@@ -12,9 +12,9 @@
  * pages bind to — so a passing run proves the pages reflect real server state
  * with zero mock business data (by construction of the module under test).
  *
- * Backend-only orchestration steps (visit/execution/consumption/charge-create)
- * are called via fetch because the current UI has no screens for them yet;
- * everything the UI actually renders goes through src/api + src/contracts/client.
+ * Inventory consumption remains backend-only orchestration for this pilot;
+ * service-to-cash mutations use the same typed client/adapter surface bound by
+ * the Agenda attendance panel and Caja.
  */
 import { beforeAll, describe, expect, it } from "vitest";
 import type { MovementRead } from "../src/contracts/client";
@@ -38,6 +38,7 @@ let appointmentId: number;
 let visitId: number;
 let executionId: number;
 let chargeId: number;
+let followUpId: number;
 
 // --- helpers -----------------------------------------------------------------
 
@@ -70,6 +71,12 @@ function nextDay(): { y: number; m: number; d: number } {
   const now = new Date();
   const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
   return { y: next.getFullYear(), m: next.getMonth() + 1, d: next.getDate() };
+}
+
+function calendarDayOffset(offset: number): string {
+  const now = new Date();
+  const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
 beforeAll(async () => {
@@ -147,21 +154,15 @@ describe("Pilot E2E — Patient → Appointment → Visit → Execution → Cons
   });
 
   it("3. creates a Visit from the confirmed appointment (location derived from the appointment)", async () => {
-    const visit = (await postJson("/visits", {
-      patient_id: patientId,
-      appointment_id: appointmentId,
-    })) as { id: number; location_id: number; location_name: string };
-    expect(visit.location_id).toBe(locationLince.id);
-    visitId = visit.id;
+    const visit = await api.createVisitRecord({ patient_id: patientId, appointment_id: appointmentId }, client.newIdempotencyKey());
+    expect(visit.locationId).toBe(locationLince.id);
+    visitId = Number(visit.id);
   });
 
   it("4. records the ServiceExecution", async () => {
-    const execution = (await postJson(`/visits/${visitId}/executions`, {
-      service_id: service.id,
-      executed_price: 150,
-    })) as { id: number; service_name: string };
-    expect(execution.service_name).toBe("Limpieza dental E2E");
-    executionId = execution.id;
+    const execution = await api.createServiceExecutionRecord(visitId, { service_id: service.id, executed_price: 150 }, client.newIdempotencyKey());
+    expect(execution.serviceName).toBe("Limpieza dental E2E");
+    executionId = Number(execution.id);
   });
 
   it("5+6. consumes stock at the Visit Location and emits a SALIDA there", async () => {
@@ -191,16 +192,21 @@ describe("Pilot E2E — Patient → Appointment → Visit → Execution → Cons
   });
 
   it("9. creates the Charge for the executed service", async () => {
-    const charge = (await postJson(`/executions/${executionId}/charges`, { amount: 150 })) as { id: number; amount: string; paid: string; outstanding: string };
-    expect(Number(charge.amount)).toBe(150);
-    expect(Number(charge.paid)).toBe(0);
-    expect(Number(charge.outstanding)).toBe(150);
-    chargeId = charge.id;
+    const charge = await api.createChargeRecord(executionId, { amount: 150 }, client.newIdempotencyKey());
+    expect(charge.amount).toBe(150);
+    expect(charge.paid).toBe(0);
+    expect(charge.outstanding).toBe(150);
+    chargeId = Number(charge.id);
   });
 
-  it("10a. registers a PARTIAL payment (50) — paid/outstanding update, overpayment still rejected", async () => {
-    const partial = await api.registerPayment(String(chargeId), { amount: 50, method: "Yape" }, client.newIdempotencyKey());
+  it("10a. opens a promised-date follow-up, then registers a PARTIAL digital payment", async () => {
+    const followUp = await client.openFollowUp(chargeId, { next_follow_up_on: calendarDayOffset(1), note: "Pilot payment commitment" }, client.newIdempotencyKey());
+    followUpId = followUp.id;
+    expect(followUp.state).toBe("open");
+    const partial = await api.registerPayment(String(chargeId), { amount: 50, method: "yape", reference: `PILOT-YAPE-${chargeId}` }, client.newIdempotencyKey());
     expect(partial.amount).toBe(50);
+    const verified = await client.verifyPayment(Number(partial.id), { reconciliation_note: "Pilot reference checked" }, client.newIdempotencyKey());
+    expect(verified.verification_status).toBe("verified");
 
     const charge = await client.getCharge(chargeId);
     expect(Number(charge.paid)).toBe(50);
@@ -209,7 +215,7 @@ describe("Pilot E2E — Patient → Appointment → Visit → Execution → Cons
     // The backend's real envelope, surfaced the same way the Cash page does
     // (toApiError): overpayment is INVALID_INPUT with the stable message.
     const rejection = await api
-      .registerPayment(String(chargeId), { amount: 500, method: "Yape" }, client.newIdempotencyKey())
+      .registerPayment(String(chargeId), { amount: 500, method: "yape", reference: `PILOT-YAPE-OVER-${chargeId}` }, client.newIdempotencyKey())
       .catch((error) => error);
     const envelope = api.toApiError(rejection);
     expect(envelope.httpStatus).toBe(422);
@@ -217,11 +223,17 @@ describe("Pilot E2E — Patient → Appointment → Visit → Execution → Cons
     expect(envelope.message).toContain("exceeds");
   });
 
-  it("10b. registers the FULL payment (100) — outstanding reaches zero", async () => {
-    await api.registerPayment(String(chargeId), { amount: 100, method: "Tarjeta" }, client.newIdempotencyKey());
+  it("10b. reschedules the follow-up, then registers the FULL payment — outstanding reaches zero", async () => {
+    const rescheduled = await client.rescheduleFollowUp(followUpId, { next_follow_up_on: calendarDayOffset(2), note: "Pilot rescheduled commitment" }, client.newIdempotencyKey());
+    expect(rescheduled.next_follow_up_on).toBe(calendarDayOffset(2));
+    await api.registerPayment(String(chargeId), { amount: 100, method: "tarjeta" }, client.newIdempotencyKey());
     const charge = await client.getCharge(chargeId);
     expect(Number(charge.paid)).toBe(150);
     expect(Number(charge.outstanding)).toBe(0);
+    const history = await client.listChargeFollowUps(chargeId);
+    expect(history.find((row) => row.id === followUpId)).toMatchObject({ state: "closed", close_reason: "settled", is_active_case: false });
+    const active = await client.listFollowUps({ active: true });
+    expect(active.some((row) => row.charge_id === chargeId)).toBe(false);
   });
 
   it("11. CashPage reflects the real paid/outstanding state (loadCharges — the exact page adapter)", async () => {

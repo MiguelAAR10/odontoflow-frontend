@@ -221,6 +221,44 @@ export interface Conversation {
   messages: ChatMessage[];
 }
 
+/** Collection follow-up projection. `isActiveCase` is a backend-derived rule. */
+export interface ChargeFollowUp {
+  id: string;
+  chargeId: number;
+  nextFollowUpOn: string;
+  note: string | null;
+  state: "open" | "closed";
+  openedAt: string;
+  closedAt: string | null;
+  closeReason: "settled" | "closed_by_operator" | null;
+  chargeAmount: number;
+  chargePaid: number;
+  chargeOutstanding: number;
+  isActiveCase: boolean;
+  patientId: number;
+  patientName: string;
+  serviceId: number;
+  serviceName: string;
+  locationId: number;
+  locationName: string;
+  /** Derived from ChargeRead context for the collections operational view. */
+  practitionerId?: number;
+  practitionerName?: string;
+}
+
+/** A service execution with its optional charge, used by Por facturar. */
+export interface UnchargedExecution extends ServiceExecution {
+  chargeId: number | null;
+}
+
+export interface PatientVisitHistory {
+  visit: Visit;
+  executions: Array<ServiceExecution & {
+    charge: Charge | null;
+    followUp: ChargeFollowUp | null;
+  }>;
+}
+
 
 /* ---------------------------------------------------------------------------
  * Voice assistant wire types.

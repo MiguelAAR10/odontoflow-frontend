@@ -23,6 +23,10 @@ export type VisitDetailRead = components["schemas"]["VisitDetailRead"];
 export type ServiceExecutionRead = components["schemas"]["ServiceExecutionRead"];
 export type ChargeRead = components["schemas"]["ChargeRead"];
 export type PaymentRead = components["schemas"]["PaymentRead"];
+export type PaymentCreate = components["schemas"]["PaymentCreate"];
+export type PaymentMethod = PaymentCreate["method"];
+export type PaymentVerificationStatus = PaymentRead["verification_status"];
+export type ChargeFollowUpRead = components["schemas"]["ChargeFollowUpRead"];
 export type ProductRead = components["schemas"]["ProductRead"];
 export type BalanceRead = components["schemas"]["BalanceRead"];
 export type MovementRead = components["schemas"]["MovementRead"];
@@ -264,12 +268,108 @@ export async function listPayments(chargeId: number): Promise<PaymentRead[]> {
 /** Record a payment against a charge; idempotency is per payment intent. */
 export async function createPayment(
   chargeId: number,
-  input: { amount: number; method: string },
+  input: {
+    amount: number;
+    method: PaymentMethod;
+    reference?: string;
+    receiver?: string;
+    reconciliation_note?: string;
+  },
   idempotencyKey: string,
 ): Promise<PaymentRead> {
-  const response = await http.post<PaymentRead>(`/charges/${chargeId}/payments`, input, {
+  const payload: PaymentCreate = { amount: input.amount, method: input.method };
+  if (input.reference !== undefined) payload.reference = input.reference;
+  if (input.receiver !== undefined) payload.receiver = input.receiver;
+  if (input.reconciliation_note !== undefined) payload.reconciliation_note = input.reconciliation_note;
+  const response = await http.post<PaymentRead>(`/charges/${chargeId}/payments`, payload, {
     headers: { "Idempotency-Key": idempotencyKey },
   });
+  return response.data;
+}
+
+export async function listAllPayments(params?: {
+  charge_id?: number;
+  method?: PaymentMethod;
+  verification_status?: PaymentVerificationStatus;
+  paid_from?: string;
+  paid_to?: string;
+}): Promise<PaymentRead[]> {
+  const response = await http.get<PaymentRead[]>("/payments", { params });
+  return response.data;
+}
+
+export async function verifyPayment(
+  paymentId: number,
+  input: { reconciliation_note?: string },
+  idempotencyKey: string,
+): Promise<PaymentRead> {
+  const payload: components["schemas"]["PaymentVerify"] = {};
+  if (input.reconciliation_note !== undefined) payload.reconciliation_note = input.reconciliation_note;
+  const response = await http.post<PaymentRead>(`/payments/${paymentId}/verify`, payload, {
+    headers: { "Idempotency-Key": idempotencyKey },
+  });
+  return response.data;
+}
+
+// --- collection follow-ups --------------------------------------------------
+
+export async function listFollowUps(params?: {
+  state?: "open" | "closed";
+  active?: boolean;
+  due_on_or_before?: string;
+  patient_id?: number;
+  location_id?: number;
+}): Promise<ChargeFollowUpRead[]> {
+  const response = await http.get<ChargeFollowUpRead[]>("/follow-ups", { params });
+  return response.data;
+}
+
+export async function listChargeFollowUps(chargeId: number): Promise<ChargeFollowUpRead[]> {
+  const response = await http.get<ChargeFollowUpRead[]>(`/charges/${chargeId}/follow-ups`);
+  return response.data;
+}
+
+export async function openFollowUp(
+  chargeId: number,
+  input: { next_follow_up_on: string; note?: string },
+  idempotencyKey: string,
+): Promise<ChargeFollowUpRead> {
+  const response = await http.post<ChargeFollowUpRead>(`/charges/${chargeId}/follow-ups`, input, {
+    headers: { "Idempotency-Key": idempotencyKey },
+  });
+  return response.data;
+}
+
+export async function rescheduleFollowUp(
+  followUpId: number,
+  input: { next_follow_up_on: string; note?: string },
+  idempotencyKey: string,
+): Promise<ChargeFollowUpRead> {
+  const response = await http.post<ChargeFollowUpRead>(`/follow-ups/${followUpId}/reschedule`, input, {
+    headers: { "Idempotency-Key": idempotencyKey },
+  });
+  return response.data;
+}
+
+export async function closeFollowUp(
+  followUpId: number,
+  input: { note?: string },
+  idempotencyKey: string,
+): Promise<ChargeFollowUpRead> {
+  const response = await http.post<ChargeFollowUpRead>(`/follow-ups/${followUpId}/close`, input, {
+    headers: { "Idempotency-Key": idempotencyKey },
+  });
+  return response.data;
+}
+
+export async function listExecutions(params?: {
+  visit_id?: number;
+  patient_id?: number;
+  charged?: boolean;
+  executed_from?: string;
+  executed_to?: string;
+}): Promise<ServiceExecutionRead[]> {
+  const response = await http.get<ServiceExecutionRead[]>("/executions", { params });
   return response.data;
 }
 

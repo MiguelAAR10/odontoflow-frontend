@@ -102,14 +102,15 @@ authority for this repository. FE1A requires no additional asset copy.
 
 ## Typography
 
-The source-approved Fontshare delivery mechanism is used in
-`src/index.css`; no font binaries are checked in.
+Clash Display remains loaded from Fontshare and Montserrat from Google Fonts in
+`src/index.css`; no font binaries are checked in. This FE3A decision removes
+Satoshi from the visible operational application default.
 
 - `Clash Display`: major page headings, section identity, and rare key metric
   moments. Keep it out of long operational copy.
-- `Satoshi`: navigation, search, filters, forms, tables, buttons, badges,
+- `Montserrat`: navigation, search, filters, forms, tables, buttons, badges,
   statuses, and all normal body copy.
-- Inter is not the visible application default and Google Fonts is not used.
+- Inter and Satoshi are not visible application defaults.
 
 The operational type scale is intentionally compact: page titles are roughly
 26–34px, section titles 18–20px, body copy 13–16px, labels 10–12px, and data
@@ -184,6 +185,12 @@ short and functional: 120ms for hover/focus feedback, 180ms for drawer and
 state transitions. Keep content changes stable; do not animate table rows or
 use decorative loops. `prefers-reduced-motion: reduce` disables nonessential
 transitions and animation.
+
+FE3A owner decisions: the attendance drawer and cash payment/follow-up
+modals use tactile, bounded hover/press/state feedback; dense cash, patient,
+and calendar data stays flat with no decorative row motion. Success and error
+states use semantic status treatments separate from cyan/magenta identity
+accents, and every FE3A transition honors `prefers-reduced-motion`.
 
 ## Responsive rules
 

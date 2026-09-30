@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "next dev -p 5173 -H 127.0.0.1",
-    "build": "next build && tsc -p tsconfig.backend.json",
+    "build": "next build --webpack && tsc -p tsconfig.backend.json",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.backend.json --noEmit",
     "test": "vitest run",
     "test:visual": "node scripts/visual-check.mjs",

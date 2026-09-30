@@ -1,3 +1,23 @@
+import type { components } from "./contracts/api.js";
+
+type PaymentMethod = components["schemas"]["PaymentCreate"]["method"];
+
+/** Display labels are presentation-only; the API always receives the code. */
+export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
+  efectivo: "Efectivo",
+  tarjeta: "Tarjeta",
+  yape: "Yape",
+  plin: "Plin",
+  transferencia: "Transferencia",
+  link_pago: "Link de pago",
+};
+
+export const DIGITAL_METHODS = ["yape", "plin", "transferencia"] as const;
+
+export function isDigitalPaymentMethod(method: PaymentMethod): method is (typeof DIGITAL_METHODS)[number] {
+  return (DIGITAL_METHODS as readonly string[]).includes(method);
+}
+
 export const inboxHtml = `<!doctype html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
 <title>Odonto Smart - Simulacion end-to-end</title>

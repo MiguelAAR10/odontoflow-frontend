@@ -16,6 +16,7 @@ import {
   mockVisits,
   patients,
 } from "./mockData";
+import { mockFollowUps } from "./mockData";
 import {
   ApiError,
   bookAppointment as bookAppointmentReal,
@@ -68,6 +69,17 @@ import {
   type SlotResult,
   type TransferRead,
 } from "./contracts/client";
+import {
+  closeFollowUp as closeFollowUpReal,
+  listAllPayments as listAllPaymentsReal,
+  listChargeFollowUps as listChargeFollowUpsReal,
+  listExecutions as listExecutionsReal,
+  listFollowUps as listFollowUpsReal,
+  openFollowUp as openFollowUpReal,
+  rescheduleFollowUp as rescheduleFollowUpReal,
+  verifyPayment as verifyPaymentReal,
+  type ChargeFollowUpRead,
+} from "./contracts/client";
 import type {
   Appointment,
   Charge,
@@ -85,6 +97,8 @@ import type {
   ServiceOption,
   Visit,
 } from "./types";
+import type { ChargeFollowUp, PatientVisitHistory, UnchargedExecution } from "./types";
+import { DIGITAL_METHODS, PAYMENT_METHOD_LABEL, isDigitalPaymentMethod } from "./ui";
 
 export const api = axios.create({
   baseURL: BACKEND_URL,
@@ -403,10 +417,27 @@ export async function getAgentDashboard() {
 // --- FE3A service-to-cash view models and adapters --------------------------
 
 const round2 = (value: number): number => Math.round(value * 100) / 100;
+const PAYMENT_METHODS: readonly PaymentMethod[] = ["efectivo", "tarjeta", "yape", "plin", "transferencia", "link_pago"];
+const PAYMENT_VERIFICATION_STATUSES: readonly PaymentVerificationStatus[] = ["unverified", "verified"];
 
 /** Parse the backend decimal string into a 2-decimal number. */
 export function toMoneyNumber(value: string | number): number {
   return round2(Number(value));
+}
+
+/** Format the backend's location-owned calendar date without a UTC shift. */
+export function clinicToday(timeZone = "America/Lima", now = new Date()): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(now);
+  return ["year", "month", "day"].map((type) => parts.find((part) => part.type === type)?.value ?? "00").join("-");
+}
+
+export function isActiveFollowUp(followUp: ChargeFollowUp): boolean {
+  return followUp.state === "open" && followUp.chargeOutstanding > 0;
 }
 
 /** Map the backend PaymentRead into the UI payment view model. */
@@ -682,42 +713,312 @@ export async function loadChargePayments(chargeId: string): Promise<Payment[]> {
   return (await listPaymentsReal(Number(chargeId))).map(toUiPayment);
 }
 
-/** Register a payment against a charge. Idempotency-Key is per payment intent;
- * the backend rejects overpayments and the envelope is surfaced as-is. */
+export async function loadExecutions(params?: {
+  visit_id?: number;
+  patient_id?: number;
+  charged?: boolean;
+  executed_from?: string;
+  executed_to?: string;
+}): Promise<UnchargedExecution[]> {
+  if (useMocks) {
+    const rows = mockExecutions.filter((execution) => {
+      const charge = mockCharges.find((item) => item.serviceExecutionId === Number(execution.id));
+      const charged = charge != null || execution.chargeId != null;
+      return (params?.visit_id == null || String(execution.visitId) === String(params.visit_id)) &&
+        (params?.patient_id == null || String(execution.patientId) === String(params.patient_id)) &&
+        (params?.charged == null || charged === params.charged) &&
+        (params?.executed_from == null || execution.executedAt >= params.executed_from) &&
+        (params?.executed_to == null || execution.executedAt < params.executed_to);
+    });
+    return copy(rows as UnchargedExecution[]);
+  }
+  const [rows, locations] = await Promise.all([listExecutionsReal(params), listLocationsReal()]);
+  const locationNameById = new Map(locations.map((location) => [location.id, location.name]));
+  return rows.map((row) => toUiExecution(row, locationNameById.get(row.location_id)) as UnchargedExecution);
+}
+
+export async function loadUnchargedExecutions(): Promise<UnchargedExecution[]> {
+  return loadExecutions({ charged: false });
+}
+
+export async function loadCanonicalLocations(): Promise<LocationRead[]> {
+  if (useMocks) return copy(mockLocations.map((location) => ({ id: Number(location.id), name: location.name, timezone: location.timezone, is_active: location.isActive })));
+  return listLocationsReal();
+}
+
+/** Register a payment against a charge; backend remains the financial authority. */
 export async function registerPayment(
   chargeId: string,
-  input: { amount: number; method: PaymentMethod },
+  input: {
+    amount: number;
+    method: PaymentMethod;
+    reference?: string;
+    receiver?: string;
+    reconciliation_note?: string;
+  },
   idempotencyKey: string,
 ): Promise<Payment> {
   if (!useMocks) {
     const created = await createPaymentReal(Number(chargeId), input, idempotencyKey);
     return toUiPayment(created);
   }
-  // Mock mode simulates the backend's money-correctness rules (reject
-  // overpayment / invalid amount) so the UI flow is identical in both modes.
+  const replay = readMockReceipt<Payment>(idempotencyKey, `payment:${chargeId}:${JSON.stringify(input)}`);
+  if (replay) return replay;
   if (!Number.isFinite(input.amount) || input.amount <= 0) {
-    throw new ApiError(422, "INVALID_INPUT", "El monto debe ser un número mayor a cero.");
+    throw new ApiError(422, "INVALID_INPUT", "The payment amount must be greater than zero.");
+  }
+  if (!PAYMENT_METHODS.includes(input.method)) {
+    throw new ApiError(422, "INVALID_INPUT", "The payment method is not supported.");
   }
   const charge = mockCharges.find((item) => item.id === chargeId);
-  if (!charge) throw new ApiError(404, "CHARGE_NOT_FOUND", "El cargo no existe.");
+  if (!charge) throw new ApiError(404, "NOT_FOUND", "Charge not found.");
   if (input.amount > charge.outstanding + 0.004) {
-    throw new ApiError(
-      422,
-      "INVALID_INPUT",
-      `El pago (S/ ${round2(input.amount).toFixed(2)}) supera el saldo pendiente del cargo (S/ ${charge.outstanding.toFixed(2)}).`,
-    );
+    throw new ApiError(422, "INVALID_INPUT", "The payment exceeds the outstanding amount of the charge.");
+  }
+  const reference = input.reference?.trim();
+  if (isDigitalPaymentMethod(input.method) && !reference) {
+    throw new ApiError(422, "INVALID_INPUT", "reference is required for yape, plin and transferencia.");
+  }
+  if (reference && mockCharges.some((item) => item.payments.some((payment) => payment.reference === reference && payment.method === input.method))) {
+    throw new ApiError(422, "INVALID_INPUT", "A payment with that operation code already exists.");
   }
   const payment: Payment = {
-    id: `payment-${Date.now()}`,
+    id: `payment-${++mockPaymentSequence}`,
+    chargeId: Number(charge.id),
     amount: round2(input.amount),
     method: input.method,
     paidAt: new Date().toISOString(),
+    reference: reference ?? null,
+    receiver: input.receiver ?? null,
+    reconciliationNote: input.reconciliation_note ?? null,
+    verificationStatus: "unverified",
+    verifiedAt: null,
   };
   charge.payments.push(payment);
   charge.paid = round2(charge.paid + payment.amount);
   charge.outstanding = round2(Math.max(0, charge.amount - charge.paid));
-  charge.status = charge.outstanding <= 0.004 ? "Pagado" : "Parcial";
+  charge.status = charge.outstanding <= 0.004 ? "Pagado" : charge.paid <= 0.004 ? "Pendiente" : "Parcial";
+  if (charge.outstanding <= 0.004) settleMockFollowUp(charge.id);
+  saveMockReceipt(idempotencyKey, `payment:${chargeId}:${JSON.stringify(input)}`, payment);
   return copy(payment);
+}
+
+export async function loadAllPayments(params?: {
+  charge_id?: number;
+  method?: PaymentMethod;
+  verification_status?: PaymentVerificationStatus;
+  paid_from?: string;
+  paid_to?: string;
+}): Promise<Payment[]> {
+  if (useMocks) {
+    return copy(mockCharges.flatMap((charge) => charge.payments).filter((payment) =>
+      (params?.charge_id == null || payment.chargeId === params.charge_id) &&
+      (params?.method == null || payment.method === params.method) &&
+      (params?.verification_status == null || payment.verificationStatus === params.verification_status) &&
+      (params?.paid_from == null || payment.paidAt >= params.paid_from) &&
+      (params?.paid_to == null || payment.paidAt < params.paid_to),
+    ));
+  }
+  return (await listAllPaymentsReal(params)).map(toUiPayment);
+}
+
+export async function loadReconciliationPayments(): Promise<Payment[]> {
+  const payments = await loadAllPayments({ verification_status: "unverified" });
+  return payments.filter((payment) => isDigitalPaymentMethod(payment.method));
+}
+
+export async function verifyPaymentRecord(
+  paymentId: string | number,
+  input: { reconciliation_note?: string },
+  idempotencyKey: string,
+): Promise<Payment> {
+  if (!useMocks) return toUiPayment(await verifyPaymentReal(Number(paymentId), input, idempotencyKey));
+  const replay = readMockReceipt<Payment>(idempotencyKey, `verify:${paymentId}:${JSON.stringify(input)}`);
+  if (replay) return replay;
+  const located = findMockPayment(String(paymentId));
+  if (!located) throw new ApiError(404, "NOT_FOUND", "Payment not found.");
+  if (located.payment.verificationStatus === "verified") {
+    throw new ApiError(422, "INVALID_INPUT", "The payment is already verified.");
+  }
+  located.payment.verificationStatus = "verified";
+  located.payment.verifiedAt = new Date().toISOString();
+  if (input.reconciliation_note !== undefined) located.payment.reconciliationNote = input.reconciliation_note;
+  saveMockReceipt(idempotencyKey, `verify:${paymentId}:${JSON.stringify(input)}`, located.payment);
+  return copy(located.payment);
+}
+
+export async function loadFollowUps(params?: {
+  state?: "open" | "closed";
+  active?: boolean;
+  due_on_or_before?: string;
+  patient_id?: number;
+  location_id?: number;
+}): Promise<ChargeFollowUp[]> {
+  if (useMocks) {
+    const rows = mockFollowUps.map((followUp) => refreshMockFollowUpDerived(followUp)).filter((followUp) =>
+      (params?.state == null || followUp.state === params.state) &&
+      (params?.active == null || isActiveFollowUp(followUp) === params.active) &&
+      (params?.due_on_or_before == null || followUp.nextFollowUpOn <= params.due_on_or_before) &&
+      (params?.patient_id == null || followUp.patientId === params.patient_id) &&
+      (params?.location_id == null || followUp.locationId === params.location_id),
+    );
+    rows.sort((left, right) => left.nextFollowUpOn.localeCompare(right.nextFollowUpOn) || Number(left.id) - Number(right.id));
+    return copy(rows);
+  }
+  return (await listFollowUpsReal(params)).map(toUiFollowUp);
+}
+
+export async function loadChargeFollowUps(chargeId: string | number): Promise<ChargeFollowUp[]> {
+  if (useMocks) return copy(mockFollowUps.filter((followUp) => followUp.chargeId === Number(chargeId)).sort((a, b) => b.openedAt.localeCompare(a.openedAt)));
+  return (await listChargeFollowUpsReal(Number(chargeId))).map(toUiFollowUp);
+}
+
+export async function openFollowUpRecord(
+  chargeId: string | number,
+  input: { next_follow_up_on: string; note?: string },
+  idempotencyKey: string,
+): Promise<ChargeFollowUp> {
+  if (!useMocks) return toUiFollowUp(await openFollowUpReal(Number(chargeId), input, idempotencyKey));
+  const replay = readMockReceipt<ChargeFollowUp>(idempotencyKey, `follow-up:open:${chargeId}:${JSON.stringify(input)}`);
+  if (replay) return replay;
+  const charge = mockCharges.find((item) => item.id === String(chargeId));
+  if (!charge) throw new ApiError(404, "NOT_FOUND", "Charge not found.");
+  if (charge.outstanding <= 0) throw new ApiError(422, "INVALID_INPUT", "The charge is already fully paid.");
+  if (mockFollowUps.some((followUp) => followUp.chargeId === Number(chargeId) && followUp.state === "open")) {
+    throw new ApiError(422, "INVALID_INPUT", "The charge already has an open follow-up.");
+  }
+  if (input.next_follow_up_on < clinicToday()) throw new ApiError(422, "INVALID_INPUT", "next_follow_up_on cannot be in the past.");
+  const followUp: ChargeFollowUp = {
+    id: String(++mockFollowUpSequence),
+    chargeId: Number(chargeId),
+    nextFollowUpOn: input.next_follow_up_on,
+    note: input.note ?? null,
+    state: "open",
+    openedAt: new Date().toISOString(),
+    closedAt: null,
+    closeReason: null,
+    chargeAmount: charge.amount,
+    chargePaid: charge.paid,
+    chargeOutstanding: charge.outstanding,
+    isActiveCase: true,
+    patientId: charge.patientId,
+    patientName: charge.patientName,
+    serviceId: charge.serviceId,
+    serviceName: charge.serviceName,
+    locationId: charge.locationId,
+    locationName: charge.locationName,
+    practitionerId: charge.practitionerId,
+    practitionerName: charge.practitionerName,
+  };
+  mockFollowUps.push(followUp);
+  saveMockReceipt(idempotencyKey, `follow-up:open:${chargeId}:${JSON.stringify(input)}`, followUp);
+  return copy(followUp);
+}
+
+export async function rescheduleFollowUpRecord(
+  followUpId: string | number,
+  input: { next_follow_up_on: string; note?: string },
+  idempotencyKey: string,
+): Promise<ChargeFollowUp> {
+  if (!useMocks) return toUiFollowUp(await rescheduleFollowUpReal(Number(followUpId), input, idempotencyKey));
+  const replay = readMockReceipt<ChargeFollowUp>(idempotencyKey, `follow-up:reschedule:${followUpId}:${JSON.stringify(input)}`);
+  if (replay) return replay;
+  const followUp = mockFollowUps.find((item) => item.id === String(followUpId));
+  if (!followUp) throw new ApiError(404, "NOT_FOUND", "Follow-up not found.");
+  if (followUp.state !== "open") throw new ApiError(409, "ENTITY_INACTIVE", "The follow-up is closed.");
+  if (input.next_follow_up_on < clinicToday()) throw new ApiError(422, "INVALID_INPUT", "next_follow_up_on cannot be in the past.");
+  followUp.nextFollowUpOn = input.next_follow_up_on;
+  followUp.note = input.note ?? null;
+  saveMockReceipt(idempotencyKey, `follow-up:reschedule:${followUpId}:${JSON.stringify(input)}`, followUp);
+  return copy(followUp);
+}
+
+export async function closeFollowUpRecord(
+  followUpId: string | number,
+  input: { note?: string },
+  idempotencyKey: string,
+): Promise<ChargeFollowUp> {
+  if (!useMocks) return toUiFollowUp(await closeFollowUpReal(Number(followUpId), input, idempotencyKey));
+  const replay = readMockReceipt<ChargeFollowUp>(idempotencyKey, `follow-up:close:${followUpId}:${JSON.stringify(input)}`);
+  if (replay) return replay;
+  const followUp = mockFollowUps.find((item) => item.id === String(followUpId));
+  if (!followUp) throw new ApiError(404, "NOT_FOUND", "Follow-up not found.");
+  if (followUp.state !== "open") throw new ApiError(409, "ENTITY_INACTIVE", "The follow-up is closed.");
+  followUp.state = "closed";
+  followUp.closedAt = new Date().toISOString();
+  followUp.closeReason = "closed_by_operator";
+  if (input.note) followUp.note = followUp.note ? `${followUp.note}\n${input.note}` : input.note;
+  followUp.isActiveCase = false;
+  saveMockReceipt(idempotencyKey, `follow-up:close:${followUpId}:${JSON.stringify(input)}`, followUp);
+  return copy(followUp);
+}
+
+export async function loadPatientHistory(patientId: string): Promise<PatientVisitHistory[]> {
+  const visits = await loadVisits(useMocks ? undefined : { patient_id: Number(patientId) });
+  const matching = useMocks ? visits.filter((visit) => String(visit.patientId) === patientId) : visits;
+  return Promise.all(matching.map(async (visit) => {
+    const detailed = visit.executions.length ? visit : await loadVisit(visit.id);
+    const executions = await Promise.all(detailed.executions.map(async (execution) => {
+      const charges = await loadCharges({ execution_id: Number(execution.id) });
+      const charge = charges[0] ?? null;
+      const followUps = charge ? await loadChargeFollowUps(charge.id) : [];
+      return { ...execution, charge, followUp: followUps.find((followUp) => followUp.state === "open") ?? followUps[0] ?? null };
+    }));
+    return { visit: detailed, executions };
+  }));
+}
+
+export function toUiFollowUp(row: ChargeFollowUpRead): ChargeFollowUp {
+  return {
+    id: String(row.id),
+    chargeId: row.charge_id,
+    nextFollowUpOn: row.next_follow_up_on,
+    note: row.note,
+    state: row.state,
+    openedAt: row.opened_at,
+    closedAt: row.closed_at,
+    closeReason: row.close_reason,
+    chargeAmount: toMoneyNumber(row.charge_amount),
+    chargePaid: toMoneyNumber(row.charge_paid),
+    chargeOutstanding: toMoneyNumber(row.charge_outstanding),
+    isActiveCase: row.is_active_case,
+    patientId: row.patient_id,
+    patientName: row.patient_name,
+    serviceId: row.service_id,
+    serviceName: row.service_name,
+    locationId: row.location_id,
+    locationName: row.location_name,
+  };
+}
+
+let mockPaymentSequence = 10;
+let mockFollowUpSequence = 20;
+
+function findMockPayment(paymentId: string): { charge: Charge; payment: Payment } | null {
+  for (const charge of mockCharges) {
+    const payment = charge.payments.find((item) => item.id === paymentId);
+    if (payment) return { charge, payment };
+  }
+  return null;
+}
+
+function refreshMockFollowUpDerived(followUp: ChargeFollowUp): ChargeFollowUp {
+  const charge = mockCharges.find((item) => item.id === String(followUp.chargeId));
+  if (!charge) return followUp;
+  followUp.chargeAmount = charge.amount;
+  followUp.chargePaid = charge.paid;
+  followUp.chargeOutstanding = charge.outstanding;
+  followUp.isActiveCase = isActiveFollowUp(followUp);
+  return followUp;
+}
+
+function settleMockFollowUp(chargeId: string): void {
+  const followUp = mockFollowUps.find((item) => item.chargeId === Number(chargeId) && item.state === "open");
+  if (!followUp) return;
+  followUp.state = "closed";
+  followUp.closedAt = new Date().toISOString();
+  followUp.closeReason = "settled";
+  followUp.isActiveCase = false;
 }
 
 // --- real inventory view model (M4.3: Product × Location stock) -------------

@@ -3,13 +3,15 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { ChevronDown, Eye, Plus, Search, UserRoundPlus, Users } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { createPatient, getPatients, loadPatients, newIdempotencyKey, toApiError, useMocks } from "../api";
+import { createPatient, getPatients, loadPatientHistory, loadPatients, newIdempotencyKey, toApiError, useMocks } from "../api";
 import { Badge, statusTone } from "../components/Badge";
 import { Button } from "../components/Button";
 import { type Column, DataTable } from "../components/DataTable";
 import { KpiCard } from "../components/KpiCard";
 import { Modal } from "../components/Modal";
-import type { Patient } from "../types";
+import type { Patient, PatientVisitHistory } from "../types";
+
+const money = (value: number) => `S/ ${value.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export function PatientsPage() {
   const searchParams = useSearchParams();
@@ -22,6 +24,9 @@ export function PatientsPage() {
   const [newOpen, setNewOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [history, setHistory] = useState<PatientVisitHistory[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState("");
 
   useEffect(() => {
     setLoading(true);
@@ -31,6 +36,20 @@ export function PatientsPage() {
       if (patientQuery) setSelected(data.find((item) => item.id === patientQuery) ?? null);
     }).catch((caught) => setError(toApiError(caught).message)).finally(() => setLoading(false));
   }, [patientQuery]);
+
+  useEffect(() => {
+    if (!selected) {
+      setHistory([]);
+      setHistoryError("");
+      return;
+    }
+    setHistoryLoading(true);
+    setHistoryError("");
+    void loadPatientHistory(selected.id)
+      .then(setHistory)
+      .catch((caught) => setHistoryError(toApiError(caught).message))
+      .finally(() => setHistoryLoading(false));
+  }, [selected]);
 
   const visible = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -93,6 +112,7 @@ export function PatientsPage() {
         {selected && <div className="patient-profile">
           <div className="patient-profile__hero"><span className={`avatar avatar--${selected.tone}`}>{selected.initials}</span><div><h3>{selected.name}</h3><Badge tone={statusTone(selected.status)}>{selected.status}</Badge></div></div>
           <div className="detail-list"><div><span>DNI</span><strong>{selected.dni}</strong></div><div><span>Teléfono</span><strong>{selected.phone}</strong></div><div><span>Sede</span><strong>{selected.branch}</strong></div><div><span>Origen</span><strong>{selected.origin}</strong></div><div><span>Próxima cita</span><strong>{selected.nextAppointment}</strong></div><div><span>Tratamiento</span><strong>{selected.treatment}</strong></div></div>
+          <section className="patient-visits" aria-labelledby="patient-visits-title"><div className="section-heading"><div><span className="eyebrow">Historia canónica</span><h4 id="patient-visits-title">Visitas y cargos</h4></div></div>{historyError && <div className="form-error" role="alert">{historyError}</div>}{historyLoading && <div className="detail-loading" role="status">Cargando visitas…</div>}{!historyLoading && !history.length && <p className="empty-state">Sin visitas registradas.</p>}{history.map(({ visit, executions }) => <article className="patient-visit" key={visit.id}><header><div><strong>Visita #{visit.id}</strong><small>{visit.locationName} · {visit.practitionerName}</small></div><time dateTime={visit.startedAt}>{new Date(visit.startedAt).toLocaleDateString("es-PE", { day: "numeric", month: "short", year: "numeric" })}</time></header>{executions.length ? <div className="patient-visit__executions">{executions.map(({ charge, followUp, ...execution }) => <div className="patient-execution" key={execution.id}><span><strong>{execution.serviceName}</strong><small>{money(execution.executedPrice)} · {new Date(execution.executedAt).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}</small></span><span className="badge-stack">{charge ? <Badge tone={statusTone(charge.status)}>{charge.status}{charge.outstanding > 0 ? ` · saldo ${money(charge.outstanding)}` : ""}</Badge> : <Badge tone="amber">Sin cargo</Badge>}{followUp && <Badge tone="purple">Seguimiento · {followUp.nextFollowUpOn}</Badge>}</span></div>)}</div> : <p className="empty-state">Sin servicios ejecutados.</p>}</article>)}</section>
           <div className="form-actions"><Button onClick={() => setSelected(null)}>Cerrar</Button><Button variant="primary">Editar ficha</Button></div>
         </div>}
       </Modal>

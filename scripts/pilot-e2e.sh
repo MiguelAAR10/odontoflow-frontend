@@ -40,4 +40,4 @@ curl -sf --max-time 2 "http://127.0.0.1:$PORT/health" >/dev/null \
 
 echo "== running pilot E2E (NEXT_PUBLIC_USE_MOCKS=false) =="
 (cd "$FRONTEND_DIR" && NEXT_PUBLIC_USE_MOCKS=false NEXT_PUBLIC_BACKEND_URL="http://127.0.0.1:$PORT" \
-  npx vitest run --config vitest.e2e.config.ts test/pilot-e2e.test.ts)
+  npx vitest run --config vitest.e2e.config.ts test/pilot-e2e.test.ts test/service-to-cash-integration.test.ts)
