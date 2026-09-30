@@ -54,7 +54,7 @@ Operating contract for every agent (human or AI) working in this repository. Rea
 
 ```bash
 npm run typecheck                          # both tsconfigs
-npm test                                   # unit + adapter suites (91 tests)
+npm test                                   # unit + adapter suites
 npm run build                              # Next.js build + tsc backend
 ./scripts/pilot-e2e.sh                     # deterministic real-backend E2E (needs :5434 + backend venv)
 # or manually:

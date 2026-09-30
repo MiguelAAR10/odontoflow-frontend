@@ -7,9 +7,10 @@ originalmente por **Leonardo Panduro** (commit `8769f12`, "Implement ODONTO
 SMART frontend") — todo lo que hay encima, incluido este archivo, se apoya en
 ese trabajo.
 
-**Estado verificado (2026-09-03):** typecheck limpio, 91 tests unitarios PASS,
-Pilot E2E 12/12 contra el backend real. Detalle sin filtrar en
+**Verificación histórica (2026-09-03):** typecheck limpio, 91 tests unitarios PASS,
+Pilot E2E 12/12 contra el backend real en esa fecha. Detalle sin filtrar en
 `odontoflow-planning/docs/handoffs/discovery/ODONTOFLOW_CTO_DISCOVERY_VERIFICATION.md`.
+Para el estado y los comandos actuales, consulta [`README.md`](README.md).
 
 ## Función de desarrollo — la regla que organiza todo el repo
 
@@ -19,8 +20,9 @@ Cada página se gatea con `useMocks` (de `src/api.ts`, controlado por
 | Página | Estado |
 |---|---|
 | Agenda, Pacientes, Caja, Inventario | **REAL** — llaman al backend de verdad cuando `NEXT_PUBLIC_USE_MOCKS=false` |
-| Chat, Agente IA | **PROTOTIPO** — datos mock siempre, incluso el llamado "modo real" apunta a endpoints (`/conversations`, `/agent/dashboard`) que **no existen en el backend todavía** |
+| Chat, Agente IA | **PROTOTIPO** — las pantallas de diseño usan mocks. Sus endpoints (`/conversations`, `/agent/dashboard`) todavía no forman parte del contrato del backend operativo. |
 | Asistente de voz | **PARCIAL** — detrás de `NEXT_PUBLIC_ENABLE_VOICE` (apagado por defecto), nunca hace HTTP en modo mock, produce solo borradores |
+| Configuración | **VISTA PREVIA** — muestra áreas de administración, sin guardar cambios ni gestionar roles reales |
 
 Desarrollar acá significa: si tu feature toca datos de negocio reales, síguele
 el patrón `useMocks` a una página que ya lo hace bien (`CashPage.tsx` o
@@ -32,7 +34,7 @@ nuevo.
 ```bash
 npm install
 npm run dev              # modo mock por defecto
-npm test                 # 91 tests
+npm test                 # suite unitaria y de adaptadores
 npm run typecheck
 npm run test:e2e:pilot    # requiere backend + PostgreSQL reales
 ```
