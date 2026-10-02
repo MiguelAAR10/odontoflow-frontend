@@ -102,6 +102,7 @@ export const MODULE_PERMISSIONS: Readonly<Record<string, readonly string[]>> = {
   "/pacientes": ["patients.read"],
   "/aprobaciones": ["proposals.read"],
   "/agente": ["proposals.read"],
+  "/chat": ["conversations.read"],
   "/productividad": ["audit.read"],
   "/caja": ["charges.read"],
   "/inventario": ["products.read"],
@@ -110,6 +111,12 @@ export const MODULE_PERMISSIONS: Readonly<Record<string, readonly string[]>> = {
 export function canOpen(identity: StaffIdentity | null, path: string): boolean {
   const required = MODULE_PERMISSIONS[path];
   return !required || hasPermissions(identity, required);
+}
+
+/** "Tomar" a handoff: the claim needs `conversations.resume`, and the backend
+ * also requires `conversations.read` right after it. People only. */
+export function canClaimHandoffs(identity: StaffIdentity | null): boolean {
+  return identity?.principalType === "human" && hasPermissions(identity, ["conversations.resume", "conversations.read"]);
 }
 
 /** The backend's run gates (`app/agents_runtime/service.py`,

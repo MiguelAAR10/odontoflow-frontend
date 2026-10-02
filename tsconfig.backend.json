@@ -44,6 +44,8 @@
     "test/approvals-mock.test.ts",
     "test/bff-persona.test.ts",
     "test/activity-adapter.test.ts",
-    "test/activity-mock.test.ts"
+    "test/activity-mock.test.ts",
+    "test/chat-adapter.test.ts",
+    "test/chat-mock.test.ts"
   ]
 }

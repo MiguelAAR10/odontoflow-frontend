@@ -1,7 +1,6 @@
 import type {
   Appointment,
   Charge,
-  Conversation,
   InventoryBalance,
   InventoryLocation,
   InventoryMovement,
@@ -12,7 +11,7 @@ import type {
   Visit,
 } from "./types";
 import type { ChargeFollowUp } from "./types";
-import type { ActivityItem, AgentRunOut, InboxItem, MeRead } from "./contracts/client";
+import type { ActivityItem, AgentRunOut, ConversationSummary, HandoffRead, InboxItem, MeRead, StaffMessageRead } from "./contracts/client";
 
 export const patients: Patient[] = [
   { id: "ana", initials: "AT", name: "Ana Torres", dni: "74859632", phone: "+51 987 654 321", branch: "Lince", nextAppointment: "15 ago · 10:30 a. m.", treatment: "Limpieza dental", status: "Activo", tone: "cyan", origin: "Instagram", interest: "Alto" },
@@ -75,18 +74,6 @@ export const mockVisits: Visit[] = [
 ];
 
 export const mockExecutions: ServiceExecution[] = mockVisits.flatMap((visit) => visit.executions);
-
-export const conversations: Conversation[] = [
-  { id: "conv-ana", patientId: "ana", name: "Ana Torres", initials: "AT", preview: "Sí, deseo confirmar mi cita", time: "10:42", unread: 2, tag: "Paciente", tone: "cyan", messages: [
-    { id: "m1", from: "patient", text: "Hola, quisiera confirmar mi cita de mañana.", time: "10:38" },
-    { id: "m2", from: "agent", text: "¡Hola, Ana! Tu cita está programada para mañana a las 10:30 a. m. en la sede Lince. ¿Confirmamos tu asistencia?", time: "10:39" },
-    { id: "m3", from: "patient", text: "Sí, deseo confirmar mi cita.", time: "10:42" },
-  ] },
-  { id: "conv-carlos", patientId: "carlos", name: "Carlos Rojas", initials: "CR", preview: "¿Tienen horario en Lince?", time: "10:30", unread: 0, tag: "Lead", tone: "blue", messages: [{ id: "m4", from: "patient", text: "Hola, ¿tienen horario disponible en Lince esta semana?", time: "10:30" }] },
-  { id: "conv-lucia", patientId: "lucia", name: "Lucía Pérez", initials: "LP", preview: "Gracias por el recordatorio", time: "09:55", unread: 0, tag: "Paciente", tone: "purple", messages: [{ id: "m5", from: "agent", text: "Te recordamos tu control de ortodoncia de mañana.", time: "09:52" }, { id: "m6", from: "patient", text: "Gracias por el recordatorio", time: "09:55" }] },
-  { id: "conv-diego", patientId: "diego", name: "Diego Salazar", initials: "DS", preview: "Quisiera una evaluación", time: "Ayer", unread: 0, tag: "Lead", tone: "green", messages: [{ id: "m7", from: "patient", text: "Quisiera una evaluación dental, por favor.", time: "Ayer" }] },
-  { id: "conv-maria", patientId: "maria", name: "María Flores", initials: "MF", preview: "Necesito reprogramar", time: "Ayer", unread: 0, tag: "Paciente", tone: "pink", messages: [{ id: "m8", from: "patient", text: "Necesito reprogramar mi cita de endodoncia.", time: "Ayer" }] },
-];
 
 export const mockFollowUps: ChargeFollowUp[] = [
   {
@@ -498,3 +485,110 @@ export const mockProductivityFacts = {
     { chargeId: 32, amount: "50.00", daysAgo: 0, reversed: true },
   ],
 };
+
+// --- Chat and handoff queue (design-time only) --------------------------------------
+// Exact `ConversationSummary` / `StaffMessageRead` / `HandoffRead` contract rows,
+// consistent with the Bandeja and Actividad rows above (Ana's approved reminder
+// is outbound message 1199; Lucía took handoff 6 on conversation 17). Real
+// mode consumes ZERO of these rows.
+
+const inbound = (id: number, minutes: number, text: string | null, extra: Partial<StaffMessageRead> = {}): StaffMessageRead =>
+  ({ id, direction: "inbound", message_type: "text", text, has_media: false, content_state: "available", delivery_status: "received", occurred_at: minutesAgo(minutes), ...extra });
+const outbound = (id: number, minutes: number, text: string, extra: Partial<StaffMessageRead> = {}): StaffMessageRead =>
+  ({ id, direction: "outbound", message_type: "text", text, has_media: false, content_state: "available", delivery_status: "read", occurred_at: minutesAgo(minutes), ...extra });
+
+/** Thread per conversation, oldest first (the backend's order). */
+export const mockConversationMessages: Record<number, StaffMessageRead[]> = {
+  12: [
+    inbound(1301, 11, "Hola, me llegó un recordatorio de pago pero yo ya pagué la semana pasada en la sede."),
+    outbound(1302, 10.5, "Hola, Rosa. Gracias por avisarnos. Reviso tu caso con una persona del equipo para que te responda hoy mismo."),
+    inbound(1303, 8, "Ok, espero. Tengo la foto del voucher."),
+  ],
+  41: [
+    inbound(1401, 30, "Buenos días, quisiera una evaluación dental mañana temprano si se puede."),
+    outbound(1402, 29.5, "¡Hola, Elena! Mañana tengo libre a las 9:30 con la Dra. Valeria Ruiz en Lince. ¿Te la reservo?"),
+    inbound(1403, 13, "Sí, por favor, a las 9:30 está perfecto."),
+    outbound(1404, 12.5, "Listo. La recepción confirma tu cita en unos minutos y te escribimos por aquí."),
+  ],
+  13: [
+    outbound(1501, 52, "Hola, se liberó un cupo de Control dental el jueves a las 16:00 en Lince. Si lo quiere, responda este mensaje y se lo reservamos.", { message_type: "template" }),
+    inbound(1502, 35, "¡Sí, lo quiero! Gracias por avisarme."),
+    outbound(1503, 34.5, "Perfecto, Jorge. Te reservo el cupo y te confirmo en un momento."),
+  ],
+  17: [
+    inbound(1601, 41 * 24 * 60, null, { content_state: "expired" }),
+    inbound(1602, 315, "Tengo mucho dolor en una muela y la cara hinchada desde anoche."),
+    outbound(1603, 314.5, "Lo siento mucho. Por lo que describes, te comunico ahora mismo con una persona del equipo para atenderte cuanto antes."),
+    inbound(1604, 313, null, { content_state: "redacted" }),
+    inbound(1605, 312, null, { message_type: "audio", has_media: true }),
+    outbound(1606, 290, "Hola, soy Lucía de la clínica. Te podemos atender hoy a las 12:00 en Lince como urgencia. ¿Puedes venir?"),
+    inbound(1607, 280, "Sí, voy para allá. Gracias."),
+  ],
+  9: [
+    inbound(1101, 3 * 24 * 60, "Hola, ¿me pueden enviar el detalle de mi última atención?"),
+    outbound(1102, 3 * 24 * 60 - 1, "¡Hola, Ana! Claro, en la sede te entregan el detalle impreso cuando lo necesites."),
+    outbound(1199, 24 * 60 - 60.2, "Hola Ana, le escribimos de Magdalena. Tiene un saldo pendiente de S/ 60.00.", { message_type: "template" }),
+    inbound(1200, 24 * 60 - 90, "Gracias por el aviso, paso a pagar el sábado."),
+  ],
+  22: [
+    inbound(1701, 130, "¿Hacen descuento si pago todo el tratamiento de ortodoncia por adelantado?"),
+    outbound(1702, 129.5, "Gracias por tu interés, María. Los descuentos los define el equipo; te comunico con una persona para revisarlo contigo."),
+  ],
+  20: [
+    inbound(1801, 2 * 24 * 60 + 30, "Hola, ¿tienen horario disponible en Lince esta semana?"),
+    outbound(1802, 2 * 24 * 60 + 29, "¡Hola, Carlos! Tenemos el miércoles a las 10:00 o el viernes a las 17:00. ¿Cuál prefieres?"),
+    inbound(1803, 2 * 24 * 60 + 10, "Mejor lo veo la próxima semana, gracias."),
+    outbound(1804, 2 * 24 * 60, "Cuando quieras, nos escribes por aquí. ¡Saludos!", { delivery_status: "failed" }),
+  ],
+  30: [
+    inbound(1901, 3 * 24 * 60 + 200, "Quisiera una evaluación dental, por favor."),
+  ],
+};
+
+const lastOf = (id: number) => mockConversationMessages[id]!.at(-1)!;
+const summary = (id: number, status: ConversationSummary["status"], contactId: number, name: string, extra: Partial<ConversationSummary> = {}): ConversationSummary => {
+  const last = lastOf(id);
+  return {
+    id,
+    status,
+    contact_identity_id: contactId,
+    contact_display_name: name,
+    assigned_principal_id: null,
+    assigned_display_name: null,
+    last_message_at: last.occurred_at,
+    last_message_preview: { direction: last.direction, text: last.text === null ? null : last.text.slice(0, 80), occurred_at: last.occurred_at },
+    pending_handoff_id: null,
+    ...extra,
+  };
+};
+
+export const mockConversations: ConversationSummary[] = [
+  summary(12, "human_handoff", 112, "Rosa Quispe", { pending_handoff_id: 7 }),
+  summary(41, "awaiting_confirmation", 141, "Elena Vargas"),
+  summary(22, "human_handoff", 122, "María Flores", { pending_handoff_id: 8 }),
+  summary(13, "open", 113, "Jorge Huamán"),
+  summary(17, "human_handoff", 117, "+•••••••••123", { assigned_principal_id: 2, assigned_display_name: "Lucía Ramos" }),
+  summary(9, "open", 109, "Ana Torres"),
+  summary(20, "closed", 120, "Carlos Rojas"),
+  summary(30, "open", 130, "Diego Salazar"),
+];
+
+const handoff = (id: number, conversationId: number, name: string, reasonCode: string, reasonSummary: string, status: string, minutes: number, claimedBy: { id: number; name: string } | null = null, updatedMinutes = minutes): HandoffRead => ({
+  id,
+  conversation_id: conversationId,
+  contact_display_name: name,
+  reason_code: reasonCode,
+  reason_summary: reasonSummary,
+  status,
+  claimed_by_principal_id: claimedBy?.id ?? null,
+  claimed_by_display_name: claimedBy?.name ?? null,
+  created_at: minutesAgo(minutes),
+  updated_at: minutesAgo(updatedMinutes),
+});
+
+export const mockHandoffs: HandoffRead[] = [
+  handoff(3, 20, "Carlos Rojas", "low_confidence", "El contacto pregunta por horarios fuera de los disponibles y el agente no pudo cerrar la reserva.", "resolved", 2 * 24 * 60 + 25, null, 2 * 24 * 60),
+  handoff(6, 17, "+•••••••••123", "urgent_symptoms", "Dolor intenso e hinchazón facial desde anoche: requiere evaluación de urgencia.", "claimed", 310, { id: 2, name: "Lucía Ramos" }, 300),
+  handoff(8, 22, "María Flores", "pricing_exception", "Pide descuento por pagar por adelantado el tratamiento completo de ortodoncia.", "pending", 129),
+  handoff(7, 12, "Rosa Quispe", "complaint", "Dice que ya pagó el saldo que se le recordó y tiene el comprobante.", "pending", 10.4),
+];

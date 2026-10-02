@@ -181,24 +181,79 @@ export interface InventoryTransfer {
   inMovementId: number;
 }
 
-export interface ChatMessage {
-  id: string;
-  from: "patient" | "agent" | "staff";
-  text: string;
-  time: string;
-}
-
-export interface Conversation {
-  id: string;
-  patientId: string;
+/** Chat (`GET /conversations`): one row of the clinic's inbox, by recency. */
+export interface ChatConversation {
+  id: number;
+  status: string;
+  statusLabel: string;
+  statusTone: Tone;
+  /** Patient → lead → masked phone (`+•••…123`), as the backend resolves it. */
   name: string;
   initials: string;
-  preview: string;
-  time: string;
-  unread: number;
-  tag: "Paciente" | "Lead";
   tone: Tone;
-  messages: ChatMessage[];
+  /** The contact has no patient or lead name: `name` is a masked phone. */
+  maskedPhone: boolean;
+  preview: string;
+  /** The preview text was redacted or expired. */
+  previewUnavailable: boolean;
+  previewFrom: "patient" | "clinic" | null;
+  lastMessageAt: string;
+  timeLabel: string;
+  assignedTo: string | null;
+  pendingHandoffId: number | null;
+}
+
+export interface ChatConversationPage {
+  items: ChatConversation[];
+  nextCursor: string | null;
+}
+
+export type ChatUnavailableReason = "redacted" | "expired" | "media" | "empty";
+
+/** One message of a thread (`GET /conversations/{id}/messages`). */
+export interface ChatThreadMessage {
+  id: number;
+  from: "patient" | "clinic";
+  /** Null when there is nothing to show; then `unavailable` says why. */
+  text: string | null;
+  unavailable: ChatUnavailableReason | null;
+  unavailableLabel: string | null;
+  occurredAt: string;
+  timeLabel: string;
+  dayLabel: string;
+  /** Outbound only: where the delivery stands. */
+  deliveryLabel: string | null;
+  deliveryFailed: boolean;
+}
+
+export interface ChatThreadPage {
+  messages: ChatThreadMessage[];
+  nextCursor: string | null;
+}
+
+export type HandoffStatus = "pending" | "claimed" | "resolved";
+
+/** A conversation the agent handed to a person (`GET /handoffs`). */
+export interface HandoffEntry {
+  id: number;
+  conversationId: number;
+  name: string;
+  reasonCode: string;
+  reasonLabel: string;
+  reasonSummary: string;
+  status: string;
+  statusLabel: string;
+  statusTone: Tone;
+  /** Only while `claimed`. */
+  claimedBy: string | null;
+  claimedById: number | null;
+  createdAt: string;
+  waitingLabel: string;
+}
+
+export interface HandoffQueuePage {
+  items: HandoffEntry[];
+  nextCursor: string | null;
 }
 
 /** Collection follow-up projection. `isActiveCase` is a backend-derived rule. */

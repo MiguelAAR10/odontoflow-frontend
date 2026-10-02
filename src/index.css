@@ -1651,3 +1651,52 @@ h1, h2, h3 { text-wrap: balance; }
 @media (prefers-reduced-motion: reduce) {
   .productivity-report { transition: none; }
 }
+
+/* --- Chat (FE3): real conversations, read-only thread, handoff queue ------------ */
+.chat-page__notice { margin: 0 0 var(--space-3); }
+.chat-panel-tabs { padding: 0 15px; border-bottom: 1px solid var(--line); }
+.chat-panel-tabs .tabs { margin-left: 0; gap: var(--space-2); }
+.chat-panel-tabs .tabs button { min-height: 40px; font-size: 13px; }
+.conversation-panel > .chat-patient-search { margin-top: 14px; }
+.conversation-item { min-height: 84px; }
+.conversation-item__copy small.conversation-item__preview--unavailable { color: var(--text-faint); font-style: italic; }
+.conversation-item__meta b { width: 22px; height: 22px; background: var(--status-warning); }
+.chat-load-more { width: calc(100% - 30px); min-height: 40px; margin: 12px 15px; border: 1px dashed var(--line-strong); border-radius: var(--radius-md); color: var(--accent-ink); background: var(--surface); font-size: 13px; font-weight: 600; }
+.chat-load-more:hover { background: var(--accent-soft); }
+.message-history .chat-load-more { width: auto; align-self: center; margin: 4px 0 0; padding: 0 16px; }
+.chat-list-error { display: grid; justify-items: start; gap: 8px; margin: 12px 15px; padding: 10px 12px; border: 1px solid var(--status-danger-line); border-radius: var(--radius-md); color: var(--status-danger); background: var(--status-danger-surface); font-size: 13px; }
+.chat-list-error p { margin: 0; line-height: 1.45; }
+.message-history .chat-list-error { margin: 0; }
+.message-day { display: flex; justify-content: center; margin: 4px 0 -2px; }
+.message-day span { padding: 3px 10px; border-radius: var(--radius-pill); color: var(--text-muted); background: var(--surface); border: 1px solid var(--line); font-size: 11px; font-weight: 600; }
+.message-bubble--unavailable { border-style: dashed; background: var(--surface-soft); }
+.message-bubble--unavailable p { display: flex; align-items: center; gap: 6px; color: var(--text-muted); font-style: italic; }
+.message-bubble--unavailable p svg { flex-shrink: 0; }
+.message-bubble small.message-bubble__delivery--failed { color: var(--status-danger); font-weight: 600; }
+.message-panel > .chat-readonly-note { display: flex; align-items: center; gap: 8px; margin: 9px 14px; padding: 0 14px; border: 1px solid var(--line); border-radius: var(--radius-md); color: var(--text-muted); background: var(--surface); font-size: 12.5px; line-height: 1.35; }
+.message-panel > .chat-readonly-note svg { flex-shrink: 0; color: var(--accent-ink); }
+.chat-facts { margin-top: 4px; }
+.chat-facts > div { gap: 14px; }
+.chat-facts dt { color: var(--text-muted); white-space: nowrap; }
+.chat-facts dd { margin: 0; color: var(--text); font-weight: 600; text-align: right; }
+.chat-scope { margin: 20px 23px 0; padding: 14px 16px; border: 1px solid var(--status-info-line); border-radius: var(--radius-md); color: var(--status-info); background: var(--status-info-surface); font-size: 13px; line-height: 1.5; }
+.chat-scope h3 { margin: 0 0 6px; color: inherit; font-size: 13px; }
+.chat-scope p { margin: 0; }
+.chat-scope p + p { margin-top: 6px; }
+.handoff-queue__hint { margin: 12px 15px 4px; color: var(--text-muted); font-size: 12px; line-height: 1.45; }
+.handoff-queue { margin: 0; padding: 0; list-style: none; }
+.handoff-item { display: grid; gap: 6px; padding: 14px 15px; border-bottom: 1px solid var(--line); background: var(--surface); }
+.handoff-item__head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.handoff-item__head strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); font-size: 14px; }
+.handoff-item__reason { margin: 0; color: var(--text); font-size: 13px; font-weight: 600; }
+.handoff-item__summary { margin: 0; color: var(--text-muted); font-size: 12.5px; line-height: 1.45; overflow-wrap: anywhere; }
+.handoff-item__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin: 0; color: var(--text-muted); font-size: 11.5px; }
+.handoff-item__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.handoff-item__actions .button { min-height: 36px; }
+.handoff-item__error { display: grid; justify-items: start; gap: 6px; padding: 8px 10px; border-radius: var(--radius-sm); color: var(--status-danger); background: var(--status-danger-surface); font-size: 12.5px; }
+.handoff-item__error p { margin: 0; line-height: 1.45; }
+@media (max-width: 767px) {
+  .conversation-panel { height: auto; max-height: 520px; }
+  .message-panel > .chat-readonly-note { margin-inline: 8px; padding-inline: 10px; font-size: 11.5px; }
+  .chat-scope { margin-inline: 16px; }
+}

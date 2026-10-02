@@ -1,7 +1,6 @@
 import { USE_MOCKS } from "./env";
 import {
   appointments,
-  conversations,
   mockBalances,
   mockCharges,
   mockExecutions,
@@ -80,8 +79,6 @@ import {
 import type {
   Appointment,
   Charge,
-  ChatMessage,
-  Conversation,
   InventoryBalance,
   InventoryLocation,
   InventoryMovement,
@@ -1322,27 +1319,6 @@ export async function registerTransfer(
   return toUiTransfer(await registerTransferReal(Number(productId), input, idempotencyKey));
 }
 
-export const getConversations = () => getOrMock<Conversation[]>("/conversations", conversations);
-
-export async function sendMessage(conversationId: string, text: string): Promise<ChatMessage> {
-  if (!useMocks) {
-    const response = await api.post<ChatMessage>(`/conversations/${conversationId}/messages`, { text });
-    return response.data;
-  }
-  const conversation = conversations.find((item) => item.id === conversationId);
-  if (!conversation) throw new Error("Conversación no encontrada");
-  const message: ChatMessage = {
-    id: `message-${Date.now()}`,
-    from: "staff",
-    text,
-    time: new Date().toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit", hour12: false }),
-  };
-  conversation.messages.push(message);
-  conversation.preview = text;
-  conversation.time = message.time;
-  return copy(message);
-}
-
 /* ---------------------------------------------------------------------------
  * Voice assistant — re-exported so pages keep importing from `../api`, the
  * single façade convention every other page follows. The implementation and
@@ -1404,6 +1380,28 @@ export {
   type ProductivityPreset,
 } from "./activity";
 export {
+  beginClaim,
+  claimHandoff,
+  CONVERSATION_FILTERS,
+  CONVERSATION_PAGE_SIZE,
+  CONVERSATION_STATUS,
+  describeChatError,
+  HANDOFF_FILTERS,
+  HANDOFF_REASON_LABEL,
+  loadConversations,
+  loadHandoffs,
+  loadThread,
+  toUiConversation,
+  toUiHandoff,
+  toUiMessage,
+  type ChatError,
+  type ChatSurface,
+  type ClaimIntent,
+  type ClaimResult,
+  type ConversationFilters,
+} from "./chat";
+export {
+  canClaimHandoffs,
   canOpen,
   canRunAgent,
   choosePersona,

@@ -55,6 +55,15 @@ export type ActivityItem = components["schemas"]["ActivityItem"];
 export type ActivityPage = components["schemas"]["ActivityPage"];
 export type ProductivityReport = components["schemas"]["ProductivityReport"];
 export type AgentProposalCounts = components["schemas"]["AgentProposalCounts"];
+export type ConversationSummary = components["schemas"]["ConversationSummary"];
+export type ConversationPage = components["schemas"]["ConversationPage"];
+export type ConversationStatus = NonNullable<ConversationQuery["status"]>;
+export type MessagePreview = components["schemas"]["MessagePreview"];
+export type StaffMessageRead = components["schemas"]["StaffMessageRead"];
+export type MessagePage = components["schemas"]["MessagePage"];
+export type HandoffRead = components["schemas"]["HandoffRead"];
+export type HandoffPage = components["schemas"]["HandoffPage"];
+export type HandoffStatus = NonNullable<HandoffQuery["status"]>;
 
 type AppointmentsPath = paths["/appointments"];
 
@@ -606,4 +615,47 @@ export async function getProductivity(query: ProductivityQuery): Promise<Product
   if (query.location_id != null) params.location_id = query.location_id;
   const response = await http.get<ProductivityReport>("/metrics/productivity", { params });
   return response.data;
+}
+
+// --- staff chat and handoff queue (human-only) ----------------------------------
+
+type ConversationQuery = NonNullable<paths["/conversations"]["get"]["parameters"]["query"]>;
+type MessageQuery = NonNullable<paths["/conversations/{conversation_id}/messages"]["get"]["parameters"]["query"]>;
+type HandoffQuery = NonNullable<paths["/handoffs"]["get"]["parameters"]["query"]>;
+
+/** Inbox by recency (`conversations.read`), keyset-paged by `cursor`. */
+export async function listStaffConversations(query: ConversationQuery = {}): Promise<ConversationPage> {
+  const params: ConversationQuery = {};
+  if (query.status) params.status = query.status;
+  if (query.location_id != null) params.location_id = query.location_id;
+  if (query.limit != null) params.limit = query.limit;
+  if (query.cursor) params.cursor = query.cursor;
+  const response = await http.get<ConversationPage>("/conversations", { params });
+  return response.data;
+}
+
+/** One thread, oldest to newest; `text` is null when redacted or expired. */
+export async function listConversationMessages(conversationId: number, query: MessageQuery = {}): Promise<MessagePage> {
+  const params: MessageQuery = {};
+  if (query.limit != null) params.limit = query.limit;
+  if (query.cursor) params.cursor = query.cursor;
+  const response = await http.get<MessagePage>(`/conversations/${conversationId}/messages`, { params });
+  return response.data;
+}
+
+/** Handoff queue, oldest first; the backend defaults `status` to `pending`. */
+export async function listHandoffs(query: HandoffQuery = {}): Promise<HandoffPage> {
+  const params: HandoffQuery = {};
+  if (query.status) params.status = query.status;
+  if (query.limit != null) params.limit = query.limit;
+  if (query.cursor) params.cursor = query.cursor;
+  const response = await http.get<HandoffPage>("/handoffs", { params });
+  return response.data;
+}
+
+/** A person takes a pending handoff (`conversations.resume`). A replay returns
+ * the live state, which may have moved on (e.g. `resolved`). */
+export async function claimHandoff(handoffId: number, idempotencyKey: string): Promise<Replayable<HandoffRead>> {
+  const response = await http.post<HandoffRead>(`/handoffs/${handoffId}/claim`, null, { headers: { "Idempotency-Key": idempotencyKey } });
+  return { data: response.data, replayed: isReplay(response.headers) };
 }
