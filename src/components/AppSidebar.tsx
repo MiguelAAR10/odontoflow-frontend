@@ -1,13 +1,13 @@
 "use client";
 
-import { Activity, Boxes, CalendarDays, ChartColumn, Check, ChevronsUpDown, ClipboardCheck, House, MessageCircleMore, Mic, Settings, Users, WalletCards } from "lucide-react";
+import { Activity, Boxes, CalendarDays, ChartColumn, ChevronsUpDown, ClipboardCheck, House, MessageCircleMore, Mic, Settings, Users, WalletCards } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { voiceEnabled } from "../voice";
 import { canOpen, useMocks } from "../api";
 import { BrandLogo } from "./BrandLogo";
-import { usePersona } from "./PersonaContext";
+import { PersonaPicker, usePersona } from "./PersonaContext";
 
 type SidebarEntry = { to: string; label: string; icon: typeof CalendarDays };
 const groups: Array<{ label: string; items: SidebarEntry[] }> = [
@@ -30,12 +30,11 @@ export function SidebarItem({ item, onNavigate }: { item: SidebarEntry; onNaviga
 }
 
 const initials = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]!.toUpperCase()).join("") || "?";
-const ROLE_LABEL: Record<string, string> = { secretaria: "Secretaria", administrador: "Administrador" };
 
 /** Who is acting, from `GET /me`; the menu switches between the demo staff
- * personas the server has credentials for. */
+ * personas the server has credentials for (asking the access code once). */
 function PersonaSwitcher() {
-  const { identity, personas, current, loading, switching, error, switchTo } = usePersona();
+  const { identity, loading, switching, error } = usePersona();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -57,29 +56,19 @@ function PersonaSwitcher() {
 
   const human = identity?.principalType === "human";
   const name = loading ? "Cargando…" : human ? identity.displayName : "Elegir persona";
-  const role = loading ? "" : human ? `${identity.roles.join(" · ") || "Sin rol"}${useMocks ? " · Demo" : ""}` : identity ? "Sin persona: acceso de integración" : "Sin sesión";
+  const role = loading ? "" : human ? `${identity.roles.join(" · ") || "Sin rol"}${useMocks ? " · Demo" : ""}` : "Sin sesión";
 
   // The trigger stays enabled (and focused) while switching: disabling it
   // would drop keyboard focus to <body>.
-  const choose = async (key: string) => {
+  const chosen = () => {
     setOpen(false);
     triggerRef.current?.focus();
-    if (key !== current) await switchTo(key);
   };
 
   return <div className="persona-switcher" ref={rootRef}>
     {open && <div className="persona-menu" id={menuId} role="group" aria-label="Cambiar de persona">
       <p className="persona-menu__label">Actuar como</p>
-      {personas.length === 0
-        ? <p className="persona-menu__empty">No hay personas configuradas en el servidor.</p>
-        : personas.map((persona) => {
-          const selected = persona.key === current;
-          return <button key={persona.key} type="button" className="persona-menu__option" aria-pressed={selected} onClick={() => void choose(persona.key)}>
-            <span className="sidebar-profile__avatar" aria-hidden="true">{initials(persona.displayName)}</span>
-            <span><strong>{persona.displayName}</strong><small>{ROLE_LABEL[persona.role] ?? persona.role}</small></span>
-            {selected && <Check size={16} aria-hidden="true" />}
-          </button>;
-        })}
+      <PersonaPicker onChoose={chosen} />
     </div>}
     <button ref={triggerRef} type="button" className="sidebar-profile persona-switcher__trigger" aria-expanded={open} aria-controls={open ? menuId : undefined} aria-busy={loading || switching} onClick={() => { if (!loading && !switching) setOpen((value) => !value); }}>
       <span className="sidebar-profile__avatar" aria-hidden="true">{human ? initials(identity.displayName) : "?"}</span>

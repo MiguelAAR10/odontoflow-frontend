@@ -43,6 +43,8 @@
     "test/approvals-adapter.test.ts",
     "test/approvals-mock.test.ts",
     "test/bff-persona.test.ts",
+    "test/bff-session.test.ts",
+    "test/bff-guard.test.ts",
     "test/activity-adapter.test.ts",
     "test/activity-mock.test.ts",
     "test/chat-adapter.test.ts",

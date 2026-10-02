@@ -12,7 +12,7 @@ function sourceFiles(dir: string): string[] {
 }
 
 describe("BFF secret guard", () => {
-  it.each(["BACKEND_DEMO_TOKEN", "BACKEND_DEMO_HUMANS"])("no file under src/ references %s", (name) => {
+  it.each(["BACKEND_DEMO_TOKEN", "BACKEND_DEMO_HUMANS", "BFF_ACCESS_CODE", "BFF_SESSION_SECRET"])("no file under src/ references %s", (name) => {
     const offenders = sourceFiles(join(process.cwd(), "src")).filter((file) => readFileSync(file, "utf8").includes(name));
     expect(offenders).toEqual([]);
   });
@@ -21,5 +21,20 @@ describe("BFF secret guard", () => {
     const env = readFileSync(join(process.cwd(), "src", "env.ts"), "utf8");
     expect(env).not.toMatch(/process\.env\.BACKEND_URL\b/);
     expect(env).not.toMatch(/process\.env\.(?!NEXT_PUBLIC_)\w+/);
+  });
+});
+
+describe("BFF secret guard · session variables", () => {
+  const roots = ["src", "app"].map((dir) => join(process.cwd(), dir));
+
+  it.each(["BFF_ACCESS_CODE", "BFF_SESSION_SECRET"])("%s is never exposed under a NEXT_PUBLIC_ name", (name) => {
+    const offenders = roots.flatMap(sourceFiles).filter((file) => readFileSync(file, "utf8").includes(`NEXT_PUBLIC_${name}`));
+    expect(offenders).toEqual([]);
+  });
+
+  it.each(["BFF_ACCESS_CODE", "BFF_SESSION_SECRET"])("%s is read only by the server Route Handlers", (name) => {
+    const readers = roots.flatMap(sourceFiles).filter((file) => readFileSync(file, "utf8").includes(`process.env.${name}`));
+    expect(readers.length).toBeGreaterThan(0);
+    expect(readers.every((file) => /[\\/]app[\\/]api[\\/].*route\.ts$/.test(file))).toBe(true);
   });
 });

@@ -40,11 +40,14 @@ export async function loadIdentity(): Promise<StaffIdentity> {
 export interface PersonaSession {
   personas: PersonaOption[];
   current: string | null;
+  /** The server wants its access code before switching persona. */
+  requiresCode?: boolean | undefined;
 }
 
 interface SessionBody {
   personas: Array<{ key: string; display_name: string; role: string }>;
   current: string | null;
+  requires_code?: boolean;
 }
 
 async function sessionRequest(init?: RequestInit): Promise<PersonaSession> {
@@ -62,6 +65,7 @@ async function sessionRequest(init?: RequestInit): Promise<PersonaSession> {
   return {
     personas: body.personas.map((persona) => ({ key: persona.key, displayName: persona.display_name, role: persona.role })),
     current: body.current,
+    requiresCode: body.requires_code,
   };
 }
 
@@ -76,8 +80,9 @@ export async function loadPersonas(): Promise<PersonaSession> {
   return USE_MOCKS ? mockSession() : sessionRequest();
 }
 
-/** `null` returns to the pre-persona integration credential. */
-export async function choosePersona(key: string | null): Promise<PersonaSession> {
+/** `null` clears the persona. `code` is the server's access code (real mode;
+ * a wrong one is 401 `ACCESS_CODE_INVALID`). */
+export async function choosePersona(key: string | null, code?: string): Promise<PersonaSession> {
   if (USE_MOCKS) {
     if (key !== null && !mockStaff.some((staff) => staff.key === key)) {
       throw new ApiError(400, "PERSONA_UNKNOWN", "Esa persona no está configurada en este servidor.");
@@ -85,7 +90,7 @@ export async function choosePersona(key: string | null): Promise<PersonaSession>
     mockPersona = key;
     return mockSession();
   }
-  return sessionRequest({ method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ persona: key }) });
+  return sessionRequest({ method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ persona: key, ...(code ? { code } : {}) }) });
 }
 
 // --- permission-driven UI -----------------------------------------------------

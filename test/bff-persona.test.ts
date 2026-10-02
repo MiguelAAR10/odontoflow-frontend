@@ -6,6 +6,7 @@ import {
   personaCookie,
   readPersonaKey,
   selectBackendToken,
+  signPersona,
 } from "../src/bff/personas";
 import { handlePersonaSession } from "../src/bff/session";
 
@@ -15,6 +16,9 @@ const HUMANS_RAW = JSON.stringify([
 ]);
 const humans = parseDemoHumans(HUMANS_RAW);
 const config = { humans, integrationToken: "ofk_integration" };
+const SECRET = "test-session-secret-0123456789abcdef";
+const NOW = Date.UTC(2026, 9, 2, 12, 0, 0);
+const signed = (key: string) => signPersona(key, SECRET, Math.floor(NOW / 1000) + 3600);
 
 const withCookie = (cookie?: string, init: RequestInit = {}) =>
   new Request("http://app.test/api/session", { ...init, headers: { ...(cookie ? { cookie } : {}), ...(init.headers as Record<string, string> | undefined) } });
@@ -45,9 +49,11 @@ describe("parseDemoHumans", () => {
 
 describe("readPersonaKey", () => {
   it("reads only the persona cookie", () => {
-    expect(readPersonaKey(withCookie(`theme=dark; ${PERSONA_COOKIE}=administrador; x=1`))).toBe("administrador");
-    expect(readPersonaKey(withCookie("theme=dark"))).toBeNull();
-    expect(readPersonaKey(withCookie())).toBeNull();
+    expect(readPersonaKey(withCookie(`theme=dark; ${PERSONA_COOKIE}=${signed("administrador")}; x=1`), SECRET, NOW)).toBe("administrador");
+    expect(readPersonaKey(withCookie("theme=dark"), SECRET, NOW)).toBeNull();
+    expect(readPersonaKey(withCookie(), SECRET, NOW)).toBeNull();
+    // An unsigned persona name is not a session.
+    expect(readPersonaKey(withCookie(`${PERSONA_COOKIE}=administrador`), SECRET, NOW)).toBeNull();
   });
 });
 
@@ -62,8 +68,8 @@ describe("selectBackendToken", () => {
     expect(selectBackendToken(["patients"], "", config)).toBeUndefined();
   });
 
-  it("without a persona cookie keeps the integration credential (pre-persona behaviour)", () => {
-    expect(selectBackendToken(["patients"], null, config)).toBe("ofk_integration");
+  it("without a persona gets no credential: the anonymous integration fallback is gone", () => {
+    expect(selectBackendToken(["patients"], null, config)).toBeUndefined();
     expect(selectBackendToken(["patients"], null, { humans, integrationToken: undefined })).toBeUndefined();
   });
 
@@ -74,28 +80,30 @@ describe("selectBackendToken", () => {
 });
 
 describe("personaCookie", () => {
-  it("is httpOnly, SameSite=Lax and path-wide; Secure only when asked", () => {
-    const cookie = personaCookie("secretaria", { secure: false });
-    expect(cookie).toMatch(new RegExp(`^${PERSONA_COOKIE}=secretaria;`));
+  it("is httpOnly, SameSite=Strict and path-wide; Secure only when asked", () => {
+    const cookie = personaCookie("secretaria", { secure: false, secret: SECRET, now: NOW });
+    expect(cookie).toMatch(new RegExp(`^${PERSONA_COOKIE}=secretaria\\.\\d+\\.[A-Za-z0-9_-]+;`));
     expect(cookie).toContain("HttpOnly");
-    expect(cookie).toContain("SameSite=Lax");
+    expect(cookie).toContain("SameSite=Strict");
+    expect(cookie).not.toContain("SameSite=Lax");
     expect(cookie).toContain("Path=/");
     expect(cookie).not.toContain("Secure");
-    expect(personaCookie("secretaria", { secure: true })).toContain("Secure");
+    expect(personaCookie("secretaria", { secure: true, secret: SECRET, now: NOW })).toContain("Secure");
   });
 
   it("clears with Max-Age=0", () => {
-    expect(personaCookie(null, { secure: false })).toMatch(new RegExp(`^${PERSONA_COOKIE}=; .*Max-Age=0`));
+    expect(personaCookie(null, { secure: false, secret: SECRET, now: NOW })).toMatch(new RegExp(`^${PERSONA_COOKIE}=; .*Max-Age=0`));
   });
 });
 
 describe("handlePersonaSession", () => {
-  const options = { humans, secure: false };
+  const CODE = "codigo-de-acceso-demo";
+  const options = { humans, secret: SECRET, accessCode: CODE, accessCodeVariable: "BFF_ACCESS_CODE", now: () => NOW };
   const json = (body: unknown, cookie?: string, headers: Record<string, string> = {}) =>
-    withCookie(cookie, { method: "POST", body: JSON.stringify(body), headers: { "content-type": "application/json", ...headers } });
+    withCookie(cookie, { method: "POST", body: JSON.stringify(body), headers: { "content-type": "application/json", origin: "http://app.test", ...headers } });
 
   it("GET lists personas without tokens and reports the current one", async () => {
-    const response = await handlePersonaSession(withCookie(`${PERSONA_COOKIE}=administrador`), options);
+    const response = await handlePersonaSession(withCookie(`${PERSONA_COOKIE}=${signed("administrador")}`), options);
     expect(response.status).toBe(200);
     const body = await response.json();
     expect(body).toEqual({
@@ -104,45 +112,49 @@ describe("handlePersonaSession", () => {
         { key: "administrador", display_name: "Carlos Vega", role: "administrador" },
       ],
       current: "administrador",
+      requires_code: true,
     });
     expect(JSON.stringify(body)).not.toContain("ofk_");
+    expect(JSON.stringify(body)).not.toContain(CODE);
     expect(response.headers.get("cache-control")).toBe("no-store");
   });
 
   it("GET with an unknown cookie reports no current persona", async () => {
     const body = await (await handlePersonaSession(withCookie(`${PERSONA_COOKIE}=gerente`), options)).json();
     expect(body.current).toBeNull();
+    const signedUnknown = await (await handlePersonaSession(withCookie(`${PERSONA_COOKIE}=${signed("gerente")}`), options)).json();
+    expect(signedUnknown.current).toBeNull();
   });
 
   it("POST a known persona sets the httpOnly cookie", async () => {
-    const response = await handlePersonaSession(json({ persona: "secretaria" }), options);
+    const response = await handlePersonaSession(json({ persona: "secretaria", code: CODE }), options);
     expect(response.status).toBe(200);
-    expect(response.headers.get("set-cookie")).toMatch(new RegExp(`^${PERSONA_COOKIE}=secretaria;.*HttpOnly`));
+    expect(response.headers.get("set-cookie")).toMatch(new RegExp(`^${PERSONA_COOKIE}=secretaria\\.\\d+\\.[A-Za-z0-9_-]+;.*HttpOnly`));
     expect((await response.json()).current).toBe("secretaria");
   });
 
   it("POST null clears the persona", async () => {
-    const response = await handlePersonaSession(json({ persona: null }, `${PERSONA_COOKIE}=secretaria`), options);
+    const response = await handlePersonaSession(json({ persona: null, code: CODE }, `${PERSONA_COOKIE}=${signed("secretaria")}`), options);
     expect(response.headers.get("set-cookie")).toContain("Max-Age=0");
     expect((await response.json()).current).toBeNull();
   });
 
   it("POST an unknown persona is refused and sets no cookie", async () => {
-    const response = await handlePersonaSession(json({ persona: "gerente" }), options);
+    const response = await handlePersonaSession(json({ persona: "gerente", code: CODE }), options);
     expect(response.status).toBe(400);
     expect((await response.json()).error.code).toBe("PERSONA_UNKNOWN");
     expect(response.headers.get("set-cookie")).toBeNull();
   });
 
   it("POST requires a JSON body (a plain cross-site form cannot switch persona)", async () => {
-    const form = withCookie(undefined, { method: "POST", body: "persona=secretaria", headers: { "content-type": "application/x-www-form-urlencoded" } });
+    const form = withCookie(undefined, { method: "POST", body: "persona=secretaria", headers: { "content-type": "application/x-www-form-urlencoded", origin: "http://app.test" } });
     const response = await handlePersonaSession(form, options);
     expect(response.status).toBe(415);
     expect(response.headers.get("set-cookie")).toBeNull();
   });
 
   it("POST from another origin is refused", async () => {
-    const response = await handlePersonaSession(json({ persona: "secretaria" }, undefined, { origin: "http://evil.test" }), options);
+    const response = await handlePersonaSession(json({ persona: "secretaria", code: CODE }, undefined, { origin: "http://evil.test" }), options);
     expect(response.status).toBe(403);
     expect(response.headers.get("set-cookie")).toBeNull();
   });
