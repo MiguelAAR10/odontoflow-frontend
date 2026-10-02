@@ -49,6 +49,12 @@ export type AgentRunOut = components["schemas"]["AgentRunOut"];
 export type AgentRunCounts = components["schemas"]["AgentRunCounts"];
 export type JobsRunDue = components["schemas"]["JobsRunDue"];
 export type JobsRunOut = components["schemas"]["JobsRunOut"];
+export type AgentRunPage = components["schemas"]["AgentRunPage"];
+export type AgentRunKey = AgentRunOut["agent_key"];
+export type ActivityItem = components["schemas"]["ActivityItem"];
+export type ActivityPage = components["schemas"]["ActivityPage"];
+export type ProductivityReport = components["schemas"]["ProductivityReport"];
+export type AgentProposalCounts = components["schemas"]["AgentProposalCounts"];
 
 type AppointmentsPath = paths["/appointments"];
 
@@ -564,5 +570,40 @@ export async function createAgentRun(agentKey: AgentRunCreate["agent_key"], idem
 export async function runDueAgentJobs(idempotencyKey: string, limit?: number): Promise<JobsRunOut> {
   const payload: Partial<JobsRunDue> = limit == null ? {} : { limit };
   const response = await http.post<JobsRunOut>("/agent-runs/jobs/run-due", payload, { headers: { "Idempotency-Key": idempotencyKey } });
+  return response.data;
+}
+
+/** Run history, newest first. The contract pages by `limit` only (1–100, no cursor). */
+export async function listAgentRuns(query: { agent_key?: AgentRunKey; limit?: number } = {}): Promise<AgentRunPage> {
+  const params: NonNullable<paths["/agent-runs"]["get"]["parameters"]["query"]> = {};
+  if (query.agent_key) params.agent_key = query.agent_key;
+  if (query.limit != null) params.limit = query.limit;
+  const response = await http.get<AgentRunPage>("/agent-runs", { params });
+  return response.data;
+}
+
+// --- staff observability (human-only reads) ------------------------------------
+
+type ActivityQuery = NonNullable<paths["/activity"]["get"]["parameters"]["query"]>;
+
+/** One feed of who did what (`proposals.read`), keyset-paged by `cursor`. */
+export async function listActivity(query: ActivityQuery = {}): Promise<ActivityPage> {
+  const params: ActivityQuery = {};
+  if (query.location_id != null) params.location_id = query.location_id;
+  if (query.agent_key) params.agent_key = query.agent_key;
+  if (query.since) params.since = query.since;
+  if (query.limit != null) params.limit = query.limit;
+  if (query.cursor) params.cursor = query.cursor;
+  const response = await http.get<ActivityPage>("/activity", { params });
+  return response.data;
+}
+
+type ProductivityQuery = paths["/metrics/productivity"]["get"]["parameters"]["query"];
+
+/** Administrator report (`audit.read`): inclusive local dates, at most 92 days apart. */
+export async function getProductivity(query: ProductivityQuery): Promise<ProductivityReport> {
+  const params: ProductivityQuery = { from: query.from, to: query.to };
+  if (query.location_id != null) params.location_id = query.location_id;
+  const response = await http.get<ProductivityReport>("/metrics/productivity", { params });
   return response.data;
 }

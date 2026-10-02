@@ -13,7 +13,7 @@ npm run dev
 
 Abre [http://127.0.0.1:5173/agenda](http://127.0.0.1:5173/agenda). Por defecto se usan datos de demostración; no hace falta levantar el backend para revisar el diseño. Las variables disponibles están explicadas en [`.env.example`](.env.example).
 
-Para conectar el backend, crea `.env.local` con `NEXT_PUBLIC_USE_MOCKS=false`, `BACKEND_URL=http://127.0.0.1:8010` y (si el backend lo exige) `BACKEND_DEMO_TOKEN=<credencial>` — ambas solo de servidor: el navegador habla con `/api/backend/*` y Next reenvía al backend (ver "BFF" en `DEVELOPMENT.md`) —, e inicia FastAPI y PostgreSQL según el README del repositorio `odontoflow-backend`. Chat y Agente IA aún no tienen contrato operativo en ese backend.
+Para conectar el backend, crea `.env.local` con `NEXT_PUBLIC_USE_MOCKS=false`, `BACKEND_URL=http://127.0.0.1:8010` y (si el backend lo exige) `BACKEND_DEMO_TOKEN=<credencial>` — ambas solo de servidor: el navegador habla con `/api/backend/*` y Next reenvía al backend (ver "BFF" en `DEVELOPMENT.md`) —, e inicia FastAPI y PostgreSQL según el README del repositorio `odontoflow-backend`. Chat aún no consume el contrato de conversaciones de ese backend.
 
 ## Estado de los módulos
 

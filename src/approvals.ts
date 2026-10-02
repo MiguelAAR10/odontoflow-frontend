@@ -35,6 +35,7 @@ import {
 } from "./contracts/client";
 import { mockInboxItems, mockLocations, mockPractitionerNames, mockServices } from "./mockData";
 import { canRunAgent, mockCurrentMe, toStaffIdentity } from "./session";
+import { AGENT_LABEL, nextMockRunId, recordMockActivity, recordMockProposalCreated, recordMockRun } from "./activity";
 import type { AgentRunResult, ApprovalCategory, ApprovalFact, ApprovalItem, ProposalDecision, RunnableAgent } from "./types";
 
 const INBOX_PAGE_SIZE = 50;
@@ -111,14 +112,6 @@ export const CATEGORY_LABEL: Record<ApprovalCategory, string> = {
   inventario: "Inventario",
   lista_espera: "Lista de espera",
   cita: "Cita",
-};
-
-const AGENT_LABEL: Record<string, string> = {
-  cobranza: "Cobranza",
-  inventario: "Inventario",
-  confirmaciones: "Confirmaciones",
-  backfill: "Cupos liberados",
-  reception: "Recepción",
 };
 
 function outcomeFor(item: InboxItem): string | null {
@@ -531,6 +524,7 @@ function mockDecide(item: ApprovalItem, intent: DecisionIntent): DecisionResult 
       if (row.status === "executed") throw new ApiError(422, "INVALID_INPUT", "A confirmed appointment proposal cannot be declined.");
       row.status = "expired"; // the backend stores a declined appointment proposal as expired
     }
+    recordMockActivity({ source: "proposal", action: intent.decision === "approve" ? "appointment_proposal.confirmed" : "appointment_proposal.declined", entity: ["appointment_proposal", String(row.id)], me, agentKey: "reception", locationId: row.location_id });
     const settled = settledAppointment(item, intent.decision, row.status === "executed" ? "confirmed" : "expired");
     mockReceipts.set(receiptKey, { fingerprint: item.key, value: copy(settled) });
     return { item: settled, replayed: false };
@@ -544,10 +538,14 @@ function mockDecide(item: ApprovalItem, intent: DecisionIntent): DecisionResult 
     if (item.payloadHash !== row.payload_hash) throw new ApiError(409, "PROPOSAL_HASH_MISMATCH", "The approved payload does not match the proposal.");
     row.status = "executed";
     row.result_ref = mockResultRef(row);
+    const trace = { source: "proposal", entity: ["agent_proposal", String(row.id)], me, agentKey: row.agent_key, locationId: row.location_id } as const;
+    recordMockActivity({ ...trace, action: "agent_proposal.approved" });
+    recordMockActivity({ ...trace, action: "agent_proposal.executed" });
   } else if (row.status !== "declined") {
     if (row.status !== "pending") throw mockStatusError(row.status);
     if (expired) { row.status = "expired"; throw mockStatusError("expired"); }
     row.status = "declined";
+    recordMockActivity({ source: "proposal", action: "agent_proposal.declined", entity: ["agent_proposal", String(row.id)], me, agentKey: row.agent_key, locationId: row.location_id });
   }
   row.decided_by = { id: me.principal.id, display_name: me.principal.display_name };
   const settled = mockView(row, me);
@@ -576,7 +574,6 @@ const MOCK_OVERDUE = [
   { chargeId: 32 },
   { chargeId: 33, patient: "Luis Mendoza", amount: "140.00", days: 8, conversationId: 14, locationId: 3, location: "Magdalena" },
 ] as const;
-let mockRunSequence = 10;
 let mockConfirmacionesQueued = false;
 
 function mockRun(agent: RunnableAgent, key: string): AgentRunResult {
@@ -588,6 +585,8 @@ function mockRun(agent: RunnableAgent, key: string): AgentRunResult {
   const me = requireMockMe();
   if (!canRunAgent(toStaffIdentity(me), agent)) throw PERMISSION_DENIED();
   const counts: AgentRunCounts = { candidates: 0, proposed: 0, deduped: 0, skipped: 0 };
+  const runId = nextMockRunId();
+  const startedAt = new Date().toISOString();
   let result: AgentRunResult;
   if (agent === "backfill") {
     result = toTickResult({ enqueued: 0, claimed: 0, done: 0, failed: 0, dead: 0, lost: 0, disabled_agents: [], jobs: [] });
@@ -598,7 +597,9 @@ function mockRun(agent: RunnableAgent, key: string): AgentRunResult {
         const exists = mockInboxItems.some((row) => row.kind === "collection_reminder" && asRecord(row.subject)?.id === String(candidate.chargeId));
         if (exists || !("patient" in candidate)) { counts.deduped += 1; continue; }
         counts.proposed += 1;
-        mockInboxItems.push(mockReminder(candidate));
+        const reminder = mockReminder(candidate, runId);
+        mockInboxItems.push(reminder);
+        recordMockProposalCreated({ id: reminder.id, agentKey: "cobranza", locationId: reminder.location_id, createdAt: reminder.created_at });
       }
     } else if (agent === "inventario") {
       counts.candidates = 1;
@@ -608,13 +609,15 @@ function mockRun(agent: RunnableAgent, key: string): AgentRunResult {
       if (mockConfirmacionesQueued) counts.deduped = 2; else counts.proposed = 2;
       mockConfirmacionesQueued = true;
     }
-    result = toRunResult({ id: mockRunSequence++, agent_key: agent, trigger: "manual", status: "completed", triggered_by_principal_id: me.principal.id, counts, error_category: null, started_at: new Date().toISOString(), finished_at: new Date().toISOString() }, false);
+    const run: AgentRunOut = { id: runId, agent_key: agent, trigger: "manual", status: "completed", triggered_by_principal_id: me.principal.id, counts, error_category: null, started_at: startedAt, finished_at: new Date().toISOString() };
+    recordMockRun(run, me);
+    result = toRunResult(run, false);
   }
   mockReceipts.set(`run:${key}`, { fingerprint: agent, value: copy(result) });
   return result;
 }
 
-function mockReminder(candidate: Extract<(typeof MOCK_OVERDUE)[number], { patient: string }>): InboxItem {
+function mockReminder(candidate: Extract<(typeof MOCK_OVERDUE)[number], { patient: string }>, runId: number): InboxItem {
   const firstName = candidate.patient.split(" ")[0];
   const now = Date.now();
   return {
@@ -627,7 +630,7 @@ function mockReminder(candidate: Extract<(typeof MOCK_OVERDUE)[number], { patien
     summary: `Recordatorio de pago a ${candidate.patient} — saldo S/ ${candidate.amount}`,
     reason: `Saldo vencido de S/ ${candidate.amount} hace ${candidate.days} días`,
     facts: { charge_id: candidate.chargeId, patient_id: 9, patient_name: candidate.patient, amount: candidate.amount, paid: "0.00", balance: candidate.amount },
-    evidence: { run_id: mockRunSequence, amount: candidate.amount, balance: candidate.amount, days_since_issued: candidate.days, issued_on: new Date(now - candidate.days * 86_400_000).toISOString().slice(0, 10), last_payment_at: null, last_payment_amount: null },
+    evidence: { run_id: runId, amount: candidate.amount, balance: candidate.amount, days_since_issued: candidate.days, issued_on: new Date(now - candidate.days * 86_400_000).toISOString().slice(0, 10), last_payment_at: null, last_payment_amount: null },
     payload: { charge_id: candidate.chargeId, message_text: `Hola ${firstName}, le escribimos de ${candidate.location}. Tiene un saldo pendiente de S/ ${candidate.amount} por su atención reciente. Puede pagarlo en la sede o responder este mensaje para coordinar. ¡Gracias!` },
     payload_hash: "f".repeat(64),
     subject: { type: "charge", id: String(candidate.chargeId) },

@@ -20,7 +20,8 @@ Cada página se gatea con `useMocks` (de `src/api.ts`, controlado por
 | Página | Estado |
 |---|---|
 | Agenda, Pacientes, Caja, Inventario | **REAL** — llaman al backend de verdad cuando `NEXT_PUBLIC_USE_MOCKS=false` |
-| Chat, Agente IA | **PROTOTIPO** — las pantallas de diseño usan mocks. Sus endpoints (`/conversations`, `/agent/dashboard`) todavía no forman parte del contrato del backend operativo. |
+| Bandeja, Actividad (feed + Corridas), Productividad | **REAL** — `/agent/inbox`, `/activity`, `/agent-runs` y `/metrics/productivity` (solo personas; Productividad exige `audit.read`). El menú las muestra según los `permissions` de `/me`. |
+| Chat | **PROTOTIPO** — la pantalla de diseño usa mocks; todavía no consume `/conversations`. |
 | Asistente de voz | **PARCIAL** — detrás de `NEXT_PUBLIC_ENABLE_VOICE` (apagado por defecto), nunca hace HTTP en modo mock, produce solo borradores |
 | Configuración | **VISTA PREVIA** — muestra áreas de administración, sin guardar cambios ni gestionar roles reales |
 

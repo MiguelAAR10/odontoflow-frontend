@@ -1,10 +1,7 @@
 import type {
-  AgentActivity,
   Appointment,
-  Automation,
   Charge,
   Conversation,
-  HumanQueueItem,
   InventoryBalance,
   InventoryLocation,
   InventoryMovement,
@@ -15,7 +12,7 @@ import type {
   Visit,
 } from "./types";
 import type { ChargeFollowUp } from "./types";
-import type { InboxItem, MeRead } from "./contracts/client";
+import type { ActivityItem, AgentRunOut, InboxItem, MeRead } from "./contracts/client";
 
 export const patients: Patient[] = [
   { id: "ana", initials: "AT", name: "Ana Torres", dni: "74859632", phone: "+51 987 654 321", branch: "Lince", nextAppointment: "15 ago · 10:30 a. m.", treatment: "Limpieza dental", status: "Activo", tone: "cyan", origin: "Instagram", interest: "Alto" },
@@ -32,27 +29,6 @@ export const appointments: Appointment[] = [
   { id: "apt-3", day: 2, time: "11:00", patient: "Lucía Pérez", treatment: "Ortodoncia", doctor: "Dra. Valeria Ruiz", branch: "Magdalena", status: "Confirmada", serviceId: 3, locationId: 3, practitionerId: 1, startUtc: "2026-09-09T16:00:00Z", endUtc: "2026-09-09T17:00:00Z", timeZone: "America/Lima" },
   { id: "apt-4", day: 3, time: "12:00", patient: "Diego Salazar", treatment: "Control", doctor: "Dra. Valeria Ruiz", branch: "Lince", status: "Confirmada", serviceId: 4, locationId: 1, practitionerId: 1, startUtc: "2026-09-10T17:00:00Z", endUtc: "2026-09-10T17:30:00Z", timeZone: "America/Lima" },
   { id: "apt-5", day: 4, time: "13:00", patient: "María Flores", treatment: "Endodoncia", doctor: "Dr. Mateo León", branch: "Jesús María", status: "No respondió", serviceId: 5, locationId: 2, practitionerId: 2, startUtc: "2026-09-11T18:00:00Z", endUtc: "2026-09-11T19:00:00Z", timeZone: "America/Lima" },
-];
-
-export const agentActivity: AgentActivity[] = [
-  { time: "09:00", kind: "Citas", icon: "clock", tone: "amber", action: "Confirmación enviada", patient: "Carlos Rojas", initials: "CR", channel: "WhatsApp", status: "Esperando" },
-  { time: "09:12", kind: "Citas", icon: "check", tone: "green", action: "Cita confirmada", patient: "Ana Torres", initials: "AT", channel: "WhatsApp", status: "Completado" },
-  { time: "09:24", kind: "Leads", icon: "message", tone: "cyan", action: "Consulta respondida: Implantes", patient: "José Ramírez", initials: "JR", channel: "WhatsApp", status: "Respondido" },
-  { time: "09:31", kind: "Leads", icon: "users", tone: "purple", action: "Derivado a Miguel", patient: "Lucía Gómez", initials: "LG", channel: "WhatsApp", status: "Requiere atención" },
-];
-
-export const humanQueue: HumanQueueItem[] = [
-  { id: "human-1", name: "Lucía Gómez", initials: "LG", reason: "Solicita descuento", waiting: "12 min esperando", tone: "pink" },
-  { id: "human-2", name: "Pedro Salazar", initials: "PS", reason: "Caso de paciente referido", waiting: "18 min esperando", tone: "blue" },
-  { id: "human-3", name: "María Flores", initials: "MF", reason: "Duda clínica", waiting: "25 min esperando", tone: "cyan" },
-];
-
-export const automations: Automation[] = [
-  { time: "09:00", title: "Confirmación día anterior", note: "18 de 20 enviadas", state: "done" },
-  { time: "12:00", title: "Llamar a no respondidos", note: "2 pendientes", state: "pending" },
-  { time: "16:00", title: "Segundo intento", note: "Programado", state: "scheduled" },
-  { time: "09:00", title: "Recordatorio del día", note: "8 enviados", state: "done" },
-  { time: "1 h antes", title: "Reconfirmación final", note: "Automático", state: "automatic" },
 ];
 
 export const mockCharges: Charge[] = [
@@ -373,3 +349,152 @@ export const mockStaff: Array<{ key: string; role: string; me: MeRead }> = [
     me: { principal: { id: 3, type: "human", display_name: "Carlos Vega" }, organization: { id: 1, name: "ODONTO SMART" }, roles: [{ code: "staff-administrador", name: "Administrador" }], permissions: ADMINISTRADOR_PERMISSIONS },
   },
 ];
+
+// --- Actividad, Corridas y Productividad (design-time only) -----------------------
+// Exact `ActivityItem` / `AgentRunOut` contract rows, consistent with the
+// Bandeja rows above (same proposals, people and sedes) and relative to module
+// load. The mock rules in src/activity.ts mirror the backend; real mode
+// consumes ZERO of these rows.
+
+const minutesAgo = (minutes: number): string => minutesFromNow(-minutes);
+
+/** The org's agent principals (the backend names them `airy-<agent>`). */
+export const mockAgentPrincipals = {
+  cobranza: { id: 11, kind: "agent", name: "airy-cobranza" },
+  inventario: { id: 12, kind: "agent", name: "airy-inventario" },
+  backfill: { id: 13, kind: "agent", name: "airy-backfill" },
+  reception: { id: 14, kind: "agent", name: "airy-reception" },
+  n8n: { id: 20, kind: "integration", name: "n8n WhatsApp" },
+} as const;
+
+const LUCIA = { id: 2, kind: "human", name: "Lucía Ramos" } as const;
+const CARLOS = { id: 3, kind: "human", name: "Carlos Vega" } as const;
+const SYSTEM = { id: null, kind: "system", name: "Sistema" } as const;
+type MockActor = { id: number | null; kind: string; name: string };
+
+export const mockAgentRuns: AgentRunOut[] = [
+  { id: 1, agent_key: "cobranza", trigger: "manual", status: "completed", triggered_by_principal_id: LUCIA.id, counts: { candidates: 4, proposed: 1, deduped: 2, skipped: 1 }, error_category: null, started_at: minutesAgo(24 * 60 + 5), finished_at: minutesAgo(24 * 60 + 5 - 0.05) },
+  { id: 2, agent_key: "confirmaciones", trigger: "schedule", status: "completed", triggered_by_principal_id: mockAgentPrincipals.n8n.id, counts: { candidates: 4, proposed: 4, deduped: 0, skipped: 0 }, error_category: null, started_at: minutesAgo(180), finished_at: minutesAgo(179.9) },
+  { id: 3, agent_key: "reception", trigger: "event", status: "completed", triggered_by_principal_id: mockAgentPrincipals.reception.id, counts: { candidates: 0, proposed: 0, deduped: 0, skipped: 0 }, error_category: null, started_at: minutesAgo(90), finished_at: minutesAgo(89.8) },
+  { id: 4, agent_key: "reception", trigger: "event", status: "failed", triggered_by_principal_id: mockAgentPrincipals.reception.id, counts: { candidates: 0, proposed: 0, deduped: 0, skipped: 0 }, error_category: "model_timeout", started_at: minutesAgo(50), finished_at: minutesAgo(49.5) },
+  { id: 5, agent_key: "inventario", trigger: "manual", status: "completed", triggered_by_principal_id: CARLOS.id, counts: { candidates: 1, proposed: 1, deduped: 0, skipped: 0 }, error_category: null, started_at: minutesAgo(41), finished_at: minutesAgo(40.9) },
+  { id: 6, agent_key: "cobranza", trigger: "manual", status: "completed", triggered_by_principal_id: LUCIA.id, counts: { candidates: 3, proposed: 2, deduped: 1, skipped: 0 }, error_category: null, started_at: minutesAgo(27), finished_at: minutesAgo(26.9) },
+  { id: 7, agent_key: "reception", trigger: "event", status: "completed", triggered_by_principal_id: mockAgentPrincipals.reception.id, counts: { candidates: 0, proposed: 0, deduped: 0, skipped: 0 }, error_category: null, started_at: minutesAgo(13), finished_at: minutesAgo(12.9) },
+  { id: 8, agent_key: "backfill", trigger: "event", status: "completed", triggered_by_principal_id: mockAgentPrincipals.backfill.id, counts: { candidates: 1, proposed: 1, deduped: 0, skipped: 0 }, error_category: null, started_at: minutesAgo(7), finished_at: minutesAgo(6.9) },
+];
+
+const RUN_ACTORS: Record<number, MockActor> = { [LUCIA.id]: LUCIA, [CARLOS.id]: CARLOS, ...Object.fromEntries(Object.values(mockAgentPrincipals).map((actor) => [actor.id, actor])) };
+
+/** Spanish templates the mock shares with the backend's `LABELS` (subset). */
+export const MOCK_ACTIVITY_LABELS: Record<string, string> = {
+  "agent_proposal.created": "propuso una acción para aprobar",
+  "agent_proposal.approved": "aprobó una propuesta",
+  "agent_proposal.declined": "rechazó una propuesta",
+  "agent_proposal.executed": "ejecutó una propuesta aprobada",
+  "agent_run.running": "inició una corrida",
+  "agent_run.completed": "completó una corrida",
+  "agent_run.failed": "registró una corrida fallida",
+  "appointment.created": "agendó una cita",
+  "appointment.cancelled": "canceló una cita",
+  "appointment.completed": "marcó una cita como atendida",
+  "appointment.no_show": "marcó una inasistencia",
+  "appointment_proposal.created": "propuso una cita",
+  "appointment_proposal.confirmed": "confirmó una cita propuesta",
+  "appointment_proposal.declined": "rechazó una cita propuesta",
+  "charge.created": "registró un cobro",
+  "conversation.human_handoff_requested": "derivó una conversación a una persona",
+  "message.received": "recibió un mensaje",
+  "outbound.queued": "encoló un mensaje",
+  "outbound.settled": "registró la entrega de un mensaje",
+  "patient.created": "registró un paciente",
+  "payment.created": "registró un pago",
+  "payment.verified": "verificó un pago",
+  "payment.reversed": "anuló un pago",
+  "reception_handoff.claimed": "tomó una derivación",
+  "waitlist_entry.created": "agregó a la lista de espera",
+};
+
+export function mockActivityRow(input: {
+  source: ActivityItem["source"];
+  id: number;
+  occurredAt: string;
+  action: string;
+  entity: readonly [string, string];
+  actor: MockActor;
+  agentKey?: string | null;
+  locationId?: number | null;
+}): ActivityItem {
+  const label = MOCK_ACTIVITY_LABELS[input.action];
+  return {
+    source: input.source,
+    id: input.id,
+    occurred_at: input.occurredAt,
+    action: input.action,
+    entity_type: input.entity[0],
+    entity_id: input.entity[1],
+    actor_kind: input.actor.kind,
+    actor_principal_id: input.actor.id,
+    actor_display_name: input.actor.name,
+    agent_key: input.agentKey ?? null,
+    location_id: input.locationId ?? null,
+    summary: label ? `${input.actor.name} ${label}` : `${input.actor.name}: ${input.action}`,
+  };
+}
+
+let auditId = 500;
+const audit = (minutes: number, action: string, entity: [string, string], actor: MockActor, locationId: number | null = null) =>
+  mockActivityRow({ source: "audit", id: auditId++, occurredAt: minutesAgo(minutes), action, entity, actor, locationId });
+let proposalAuditId = 800;
+const proposalRow = (minutes: number | string, action: string, entity: [string, string], actor: MockActor, agentKey: string, locationId: number) =>
+  mockActivityRow({ source: "proposal", id: proposalAuditId++, occurredAt: typeof minutes === "string" ? minutes : minutesAgo(minutes), action, entity, actor, agentKey, locationId });
+
+export const mockActivityItems: ActivityItem[] = [
+  ...mockAgentRuns.map((run) => mockActivityRow({ source: "agent_run", id: run.id, occurredAt: run.started_at, action: `agent_run.${run.status}`, entity: ["agent_run", String(run.id)], actor: RUN_ACTORS[run.triggered_by_principal_id] ?? SYSTEM, agentKey: run.agent_key })),
+  ...mockInboxItems.map((item) => item.source === "agent_proposal"
+    ? proposalRow(item.created_at, "agent_proposal.created", ["agent_proposal", String(item.id)], mockAgentPrincipals[item.agent_key as "cobranza" | "inventario" | "backfill"] ?? SYSTEM, item.agent_key ?? "", item.location_id ?? 0)
+    : proposalRow(item.created_at, "appointment_proposal.created", ["appointment_proposal", String(item.id)], mockAgentPrincipals.reception, "reception", item.location_id ?? 0)),
+  proposalRow(24 * 60 - 60, "agent_proposal.approved", ["agent_proposal", "299"], CARLOS, "cobranza", 3),
+  proposalRow(24 * 60 - 60.1, "agent_proposal.executed", ["agent_proposal", "299"], CARLOS, "cobranza", 3),
+  audit(24 * 60 - 60.2, "outbound.queued", ["outbound_message", "1199"], CARLOS),
+  audit(24 * 60 - 30, "payment.verified", ["payment", "41"], CARLOS),
+  audit(360, "payment.reversed", ["payment", "44"], CARLOS),
+  audit(310, "conversation.human_handoff_requested", ["conversation", "17"], mockAgentPrincipals.reception),
+  audit(300, "reception_handoff.claimed", ["reception_handoff", "6"], LUCIA),
+  audit(240, "waitlist_entry.created", ["waitlist_entry", "23"], LUCIA),
+  audit(210, "appointment.cancelled", ["appointment", "55"], LUCIA, 1),
+  audit(185, "appointment.no_show", ["appointment", "52"], LUCIA, 3),
+  audit(150, "charge.created", ["charge", "34"], LUCIA),
+  audit(120, "appointment.completed", ["appointment", "53"], LUCIA, 1),
+  audit(70, "patient.created", ["patient", "12"], LUCIA),
+  audit(55, "payment.created", ["payment", "47"], LUCIA),
+  audit(20, "outbound.settled", ["outbound_message", "1199"], SYSTEM),
+  audit(15, "appointment.created", ["appointment", "61"], LUCIA, 2),
+  audit(14, "message.received", ["message", "880"], mockAgentPrincipals.n8n),
+];
+
+/** What the productivity oracle reads in mock mode, in local days before today
+ * (0 = today). Proposals come from `mockInboxItems` so Bandeja decisions count. */
+export const mockProductivityFacts = {
+  appointments: [
+    { state: "completed", locationId: 1, daysAgo: 0 }, { state: "completed", locationId: 1, daysAgo: 1 },
+    { state: "completed", locationId: 2, daysAgo: 2 }, { state: "completed", locationId: 3, daysAgo: 3 },
+    { state: "completed", locationId: 1, daysAgo: 6 }, { state: "completed", locationId: 2, daysAgo: 9 },
+    { state: "completed", locationId: 3, daysAgo: 15 }, { state: "completed", locationId: 1, daysAgo: 40 },
+    { state: "no_show", locationId: 3, daysAgo: 0 }, { state: "no_show", locationId: 2, daysAgo: 12 },
+    { state: "cancelled", locationId: 1, daysAgo: 0 }, { state: "cancelled", locationId: 2, daysAgo: 5 },
+  ],
+  charges: [
+    { id: 34, locationId: 1, amount: "180.00", daysAgo: 0 },
+    { id: 32, locationId: 2, amount: "95.50", daysAgo: 9 },
+    { id: 31, locationId: 1, amount: "250.00", daysAgo: 12 },
+    { id: 29, locationId: 3, amount: "120.00", daysAgo: 15 },
+    { id: 20, locationId: 2, amount: "500.00", daysAgo: 45 },
+  ],
+  payments: [
+    { chargeId: 34, amount: "180.00", daysAgo: 0, reversed: false },
+    { chargeId: 31, amount: "70.00", daysAgo: 11, reversed: false },
+    { chargeId: 29, amount: "60.00", daysAgo: 14, reversed: false },
+    { chargeId: 20, amount: "200.00", daysAgo: 3, reversed: false },
+    { chargeId: 32, amount: "50.00", daysAgo: 0, reversed: true },
+  ],
+};

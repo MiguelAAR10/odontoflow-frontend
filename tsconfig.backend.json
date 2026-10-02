@@ -42,6 +42,8 @@
     "test/setup-e2e-auth.ts",
     "test/approvals-adapter.test.ts",
     "test/approvals-mock.test.ts",
-    "test/bff-persona.test.ts"
+    "test/bff-persona.test.ts",
+    "test/activity-adapter.test.ts",
+    "test/activity-mock.test.ts"
   ]
 }

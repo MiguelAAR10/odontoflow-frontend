@@ -1,10 +1,7 @@
 import { USE_MOCKS } from "./env";
 import {
-  agentActivity,
   appointments,
-  automations,
   conversations,
-  humanQueue,
   mockBalances,
   mockCharges,
   mockExecutions,
@@ -461,14 +458,6 @@ export function rescheduleReal(appointmentId: number, newStart: string, idempote
 
 export function cancelReal(appointmentId: number, idempotencyKey: string): Promise<AppointmentRead> {
   return cancelAppointmentReal(appointmentId, idempotencyKey);
-}
-
-export async function getAgentDashboard() {
-  if (!useMocks) {
-    const response = await api.get("/agent/dashboard");
-    return response.data as { activity: typeof agentActivity; queue: typeof humanQueue; automations: typeof automations };
-  }
-  return copy({ activity: agentActivity, queue: humanQueue, automations });
 }
 
 // --- FE3A service-to-cash view models and adapters --------------------------
@@ -1390,6 +1379,30 @@ export {
   type InboxCatalogNames,
   type InboxPageView,
 } from "./approvals";
+export {
+  ACTIVITY_AGENTS,
+  activitySentence,
+  AGENT_LABEL,
+  CLINIC_TIME_ZONE,
+  describeObservabilityError,
+  formatSoles,
+  loadActivity,
+  loadAgentRuns,
+  loadClinicLocations,
+  loadProductivity,
+  PRODUCTIVITY_MAX_SPAN_DAYS,
+  PRODUCTIVITY_PRESETS,
+  productivityPreset,
+  productivityRangeError,
+  RUNS_PAGE_SIZE,
+  toUiActivityItem,
+  toUiAgentRun,
+  toUiProductivity,
+  type ActivityFilters,
+  type ObservabilityError,
+  type ObservabilitySurface,
+  type ProductivityPreset,
+} from "./activity";
 export {
   canOpen,
   canRunAgent,

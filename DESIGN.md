@@ -212,8 +212,8 @@ The operational shell is sidebar + topbar + workspace. Navigation groups are
 fixed to the current product surface:
 
 - `OPERACIÓN`: Agenda, Pacientes
-- `GESTIÓN`: Caja, Inventario
-- `IA & CANALES`: Agente IA, Chat, and Asistente only when the existing voice
+- `GESTIÓN`: Caja, Inventario, and Productividad for people with `audit.read`
+- `IA & CANALES`: Actividad (feed + agent runs; replaced the Agente IA mock), Chat, and Asistente only when the existing voice
   flag is enabled
 - administrator footer: Configuración and the demo user/role label
 

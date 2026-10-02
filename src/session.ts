@@ -101,6 +101,8 @@ export const MODULE_PERMISSIONS: Readonly<Record<string, readonly string[]>> = {
   "/agenda": ["appointments.read"],
   "/pacientes": ["patients.read"],
   "/aprobaciones": ["proposals.read"],
+  "/agente": ["proposals.read"],
+  "/productividad": ["audit.read"],
   "/caja": ["charges.read"],
   "/inventario": ["products.read"],
 };

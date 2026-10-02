@@ -1,6 +1,6 @@
 "use client";
 
-import { Bot, Boxes, CalendarDays, Check, ChevronsUpDown, ClipboardCheck, House, MessageCircleMore, Mic, Settings, Users, WalletCards } from "lucide-react";
+import { Activity, Boxes, CalendarDays, ChartColumn, Check, ChevronsUpDown, ClipboardCheck, House, MessageCircleMore, Mic, Settings, Users, WalletCards } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
@@ -12,8 +12,8 @@ import { usePersona } from "./PersonaContext";
 type SidebarEntry = { to: string; label: string; icon: typeof CalendarDays };
 const groups: Array<{ label: string; items: SidebarEntry[] }> = [
   { label: "OPERACIÓN", items: [{ to: "/home", label: "Inicio", icon: House }, { to: "/agenda", label: "Agenda", icon: CalendarDays }, { to: "/pacientes", label: "Pacientes", icon: Users }, { to: "/aprobaciones", label: "Bandeja", icon: ClipboardCheck }] },
-  { label: "GESTIÓN", items: [{ to: "/caja", label: "Caja", icon: WalletCards }, { to: "/inventario", label: "Inventario", icon: Boxes }] },
-  { label: "IA & CANALES", items: [{ to: "/agente", label: "Agente IA", icon: Bot }, { to: "/chat", label: "Chat", icon: MessageCircleMore }, ...(voiceEnabled ? [{ to: "/asistente", label: "Asistente", icon: Mic }] : [])] },
+  { label: "GESTIÓN", items: [{ to: "/caja", label: "Caja", icon: WalletCards }, { to: "/inventario", label: "Inventario", icon: Boxes }, { to: "/productividad", label: "Productividad", icon: ChartColumn }] },
+  { label: "IA & CANALES", items: [{ to: "/agente", label: "Actividad", icon: Activity }, { to: "/chat", label: "Chat", icon: MessageCircleMore }, ...(voiceEnabled ? [{ to: "/asistente", label: "Asistente", icon: Mic }] : [])] },
 ];
 
 export function SidebarSection({ label, children }: { label: string; children: ReactNode }) {

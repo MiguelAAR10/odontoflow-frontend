@@ -56,6 +56,8 @@
     "test/approvals-adapter.test.ts",
     "test/approvals-mock.test.ts",
     "test/bff-persona.test.ts",
+    "test/activity-adapter.test.ts",
+    "test/activity-mock.test.ts",
     "vitest.config.ts",
     "next.config.ts",
     ".next/dev/types/**/*.ts"

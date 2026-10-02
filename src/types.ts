@@ -1,4 +1,8 @@
 import type {
+  ActivityItem,
+  AgentRunCounts,
+  AgentRunKey,
+  AgentRunOut,
   InboxAction,
   InboxItem,
   InboxKind,
@@ -45,34 +49,6 @@ export interface Appointment {
   startUtc?: string;
   endUtc?: string;
   timeZone?: string;
-}
-
-export interface AgentActivity {
-  time: string;
-  kind: "Citas" | "Leads";
-  icon: "clock" | "check" | "message" | "users";
-  tone: Tone;
-  action: string;
-  patient: string;
-  initials: string;
-  channel: string;
-  status: string;
-}
-
-export interface HumanQueueItem {
-  id: string;
-  name: string;
-  initials: string;
-  reason: string;
-  waiting: string;
-  tone: Tone;
-}
-
-export interface Automation {
-  time: string;
-  title: string;
-  note: string;
-  state: "done" | "pending" | "scheduled" | "automatic";
 }
 
 /** A recorded payment against a charge (PaymentRead mapped). */
@@ -418,4 +394,92 @@ export interface AgentRunResult {
   lines: string[];
   replayed: boolean;
   disabled: boolean;
+}
+
+// --- FE2: activity feed, agent run history, productivity ------------------------
+
+export type ActorKind = "human" | "agent" | "integration" | "system";
+
+/**
+ * One row of `GET /activity`. The sentence is the backend's closed Spanish
+ * template (`summary` = "<actor> <verb>"): the UI only swaps the technical
+ * agent principal name for "El agente de Cobranza" and adds which agent a
+ * person's action concerned. An action without a template keeps its code.
+ */
+export interface ActivityEntry {
+  key: string;
+  source: ActivityItem["source"];
+  occurredAt: string;
+  timeZone: string;
+  action: string;
+  actorKind: ActorKind;
+  actorLabel: string;
+  /** "aprobó una propuesta"; null when the backend has no template for the action. */
+  verb: string | null;
+  /** "del agente de Cobranza" when a person/system acted on an agent's work. */
+  context: string | null;
+  agentKey: string | null;
+  agentLabel: string | null;
+  locationName: string | null;
+}
+
+export interface ActivityFeedPage {
+  entries: ActivityEntry[];
+  nextCursor: string | null;
+}
+
+export interface AgentRunCount {
+  label: string;
+  value: number;
+}
+
+/** One row of `GET /agent-runs`. Reception runs are conversation turns and carry no counts. */
+export interface AgentRunEntry {
+  key: string;
+  id: number;
+  agent: AgentRunKey;
+  agentLabel: string;
+  trigger: AgentRunOut["trigger"];
+  triggerLabel: string;
+  status: AgentRunOut["status"];
+  startedAt: string;
+  finishedAt: string | null;
+  durationLabel: string | null;
+  counts: AgentRunCount[];
+  rawCounts: AgentRunCounts;
+  conversationTurn: boolean;
+  errorCategory: string | null;
+}
+
+export interface AgentRunHistory {
+  entries: AgentRunEntry[];
+  /** True when the backend may hold older runs than the requested limit. */
+  hasMore: boolean;
+  limit: number;
+}
+
+export interface ProductivityAgentRow {
+  agent: string;
+  agentLabel: string;
+  created: number;
+  approved: number;
+  declined: number;
+  expired: number;
+}
+
+/** `GET /metrics/productivity`, amounts formatted as soles from the backend's decimals. */
+export interface ProductivityView {
+  from: string;
+  to: string;
+  locationId: number | null;
+  appointments: { completed: number; noShow: number; cancelled: number };
+  money: { charged: string; collected: string; outstanding: string };
+  proposals: ProductivityAgentRow[];
+  remindersApproved: number;
+}
+
+export interface ClinicLocation {
+  id: number;
+  name: string;
+  timeZone: string;
 }

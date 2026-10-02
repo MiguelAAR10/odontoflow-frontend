@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { Boxes, CalendarCheck2, Check, ClipboardCheck, Hourglass, Play, RotateCcw, ShieldCheck, WalletCards, type LucideIcon } from "lucide-react";
 import {
   beginDecision,
@@ -104,6 +105,7 @@ function RunSummary({ result }: { result: AgentRunResult }) {
       {result.replayed && " Esta corrida ya se había hecho; se muestra el mismo resultado."}
     </p>
     <ul className="agent-run__counts">{result.lines.map((line) => <li key={line}>{line}</li>)}</ul>
+    <Link className="agent-run__trace" href="/agente#corridas">Ver en Corridas</Link>
   </>;
 }
 
