@@ -10,6 +10,7 @@ import { handleBackendRequest } from "../../../../src/bff/proxy";
  *   BACKEND_DEMO_HUMANS  — seed JSON `[{role, display_name, token}]`; the
  *                          signed persona cookie picks one of these tokens
  *   BFF_SESSION_SECRET   — HMAC secret the persona cookie is verified with
+ *                          (shorter than 32 characters → ignored, random per process)
  */
 type Context = { params: Promise<{ path: string[] }> };
 
@@ -20,7 +21,7 @@ async function handle(request: Request, { params }: Context): Promise<Response> 
     fetch,
     humans: parseDemoHumans(process.env.BACKEND_DEMO_HUMANS),
     integrationToken: process.env.BACKEND_DEMO_TOKEN,
-    secret: sessionSecret(process.env.BFF_SESSION_SECRET),
+    secret: sessionSecret(process.env.BFF_SESSION_SECRET, "BFF_SESSION_SECRET"),
   });
 }
 

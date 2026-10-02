@@ -95,13 +95,30 @@ export function readPersonaKey(request: Request, secret: string, nowMs: number =
 }
 
 const PROCESS_SECRET = Symbol.for("odontoflow.bff.sessionSecret");
+const REPORTED_WEAK_SECRETS = Symbol.for("odontoflow.bff.reportedWeakSecrets");
+/** A configured session secret shorter than this is rejected (treated as unset). */
+export const MIN_SESSION_SECRET_LENGTH = 32;
+
+/** True when a secret is configured but too short to sign cookies with. */
+export function isWeakSessionSecret(configured: string | undefined): boolean {
+  return !!configured && configured.length < MIN_SESSION_SECRET_LENGTH;
+}
 
 /** The configured session secret, else one random secret per server process
  *  (kept on `globalThis` so every Route Handler bundle shares it); cookies
- *  signed with it die when the process restarts. */
-export function sessionSecret(configured: string | undefined): string {
-  if (configured) return configured;
-  const store = globalThis as typeof globalThis & { [PROCESS_SECRET]?: string };
+ *  signed with it die when the process restarts. A secret shorter than
+ *  `MIN_SESSION_SECRET_LENGTH` counts as unset and is reported once per
+ *  variable, by name only — never its value. */
+export function sessionSecret(configured: string | undefined, variable = "the session secret"): string {
+  if (configured && !isWeakSessionSecret(configured)) return configured;
+  const store = globalThis as typeof globalThis & { [PROCESS_SECRET]?: string; [REPORTED_WEAK_SECRETS]?: Set<string> };
+  if (isWeakSessionSecret(configured)) {
+    const reported = (store[REPORTED_WEAK_SECRETS] ??= new Set());
+    if (!reported.has(variable)) {
+      reported.add(variable);
+      console.warn(`[bff] ${variable} is shorter than ${MIN_SESSION_SECRET_LENGTH} characters; ignoring it and using a random per-process secret.`);
+    }
+  }
   store[PROCESS_SECRET] ??= randomBytes(32).toString("base64url");
   return store[PROCESS_SECRET];
 }

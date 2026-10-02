@@ -1,7 +1,10 @@
-/** BFF session hardening: access code (A), signed cookie (B), same-origin (E), cookie flags (F). */
-import { describe, expect, it } from "vitest";
-import { PERSONA_COOKIE, parseDemoHumans, readPersonaKey, sessionSecret, signPersona } from "../src/bff/personas";
-import { handlePersonaSession, type SessionOptions } from "../src/bff/session";
+/** BFF session hardening: access code (A), signed cookie (B), same-origin (E), cookie flags (F),
+ *  and the FE-SEC2 follow-up: fail closed in production (G), attempt limit (H), secret length (I),
+ *  logout without code (J). */
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { POST as sessionRoute } from "../app/api/session/route";
+import { MIN_SESSION_SECRET_LENGTH, PERSONA_COOKIE, isWeakSessionSecret, parseDemoHumans, readPersonaKey, sessionSecret, signPersona } from "../src/bff/personas";
+import { createAttemptLimiter, handlePersonaSession, type SessionOptions } from "../src/bff/session";
 
 const humans = parseDemoHumans(JSON.stringify([
   { role: "secretaria", display_name: "Lucía Ramos", token: "ofk_lucia" },
@@ -43,11 +46,6 @@ describe("A · access code", () => {
     },
   );
 
-  it("clearing the persona also needs the code", async () => {
-    const response = await handlePersonaSession(post("http://app.test/api/session", { persona: null }), withCode);
-    expect(response.status).toBe(401);
-    expect(response.headers.get("set-cookie")).toBeNull();
-  });
 
   it.each(["http://localhost:5173", "http://127.0.0.1:5173", "http://[::1]:5173"])("without a configured code, %s may switch without one", async (origin) => {
     const response = await handlePersonaSession(post(`${origin}/api/session`, { persona: "secretaria" }), withoutCode);
@@ -128,7 +126,7 @@ describe("B · signed persona cookie", () => {
   });
 
   it("sessionSecret uses the configured secret, else one random secret per process", () => {
-    expect(sessionSecret("configured-secret-value")).toBe("configured-secret-value");
+    expect(sessionSecret("configured-secret-value-0123456789")).toBe("configured-secret-value-0123456789");
     const fallback = sessionSecret(undefined);
     expect(fallback.length).toBeGreaterThanOrEqual(32);
     expect(sessionSecret("")).toBe(fallback);
@@ -187,5 +185,218 @@ describe("F · cookie flags", () => {
     expect(cookie).toContain("Max-Age=0");
     expect(cookie).toContain("SameSite=Strict");
     expect(cookie).toContain("Secure");
+  });
+});
+
+describe("G · fail closed in production without an access code", () => {
+  const production: SessionOptions = { ...withoutCode, production: true };
+
+  it.each(["http://localhost:5173", "http://127.0.0.1:5173", "http://[::1]:5173", "http://clinic.example"])("in production, %s without a code is 503 naming the variable", async (origin) => {
+    const response = await handlePersonaSession(post(`${origin}/api/session`, { persona: "secretaria" }), production);
+    expect(response.status).toBe(503);
+    const body = await response.json();
+    expect(body.error.code).toBe("ACCESS_CODE_NOT_CONFIGURED");
+    expect(body.error.message).toContain("BFF_ACCESS_CODE");
+    expect(response.headers.get("set-cookie")).toBeNull();
+  });
+
+  it("in production, GET on localhost reports requires_code", async () => {
+    expect((await (await handlePersonaSession(get("http://localhost:5173/api/session"), production)).json()).requires_code).toBe(true);
+  });
+
+  it("in production with a code, the code still works", async () => {
+    const response = await handlePersonaSession(post("http://localhost:5173/api/session", { persona: "secretaria", code: CODE }), { ...withCode, production: true });
+    expect(response.status).toBe(200);
+  });
+});
+
+describe("H · access-code attempt limit", () => {
+  const clock = { now: NOW };
+  const limited = (attempts = createAttemptLimiter()): SessionOptions => ({ ...withCode, now: () => clock.now, attempts });
+  const from = (client: string | undefined, body: unknown) =>
+    post("http://app.test/api/session", body, client === undefined ? {} : { "x-forwarded-for": client });
+  const fail = async (options: SessionOptions, client: string | undefined, times: number) => {
+    for (let i = 0; i < times; i += 1) expect((await handlePersonaSession(from(client, { persona: "secretaria", code: "adivinanza" }), options)).status).toBe(401);
+  };
+
+  afterEach(() => {
+    clock.now = NOW;
+  });
+
+  it("after 5 wrong codes the client gets 429 with Retry-After, even with the right code, and no cookie", async () => {
+    const options = limited();
+    await fail(options, "203.0.113.7", 5);
+    const response = await handlePersonaSession(from("203.0.113.7", { persona: "secretaria", code: CODE }), options);
+    expect(response.status).toBe(429);
+    expect((await response.json()).error.code).toBe("ACCESS_CODE_RATE_LIMITED");
+    expect(response.headers.get("retry-after")).toBe("600");
+    expect(response.headers.get("set-cookie")).toBeNull();
+  });
+
+  it("4 wrong codes still let the right one through", async () => {
+    const options = limited();
+    await fail(options, "203.0.113.7", 4);
+    expect((await handlePersonaSession(from("203.0.113.7", { persona: "secretaria", code: CODE }), options)).status).toBe(200);
+  });
+
+  it("the lock lifts when the 10-minute window passes; Retry-After counts down", async () => {
+    const options = limited();
+    await fail(options, "203.0.113.7", 5);
+    clock.now = NOW + 9 * 60 * 1000;
+    const locked = await handlePersonaSession(from("203.0.113.7", { persona: "secretaria", code: CODE }), options);
+    expect(locked.status).toBe(429);
+    expect(locked.headers.get("retry-after")).toBe("60");
+    clock.now = NOW + 10 * 60 * 1000;
+    expect((await handlePersonaSession(from("203.0.113.7", { persona: "secretaria", code: CODE }), options)).status).toBe(200);
+  });
+
+  it("failures spread wider than the window never lock", async () => {
+    const options = limited();
+    for (let i = 0; i < 8; i += 1) {
+      clock.now = NOW + i * 3 * 60 * 1000;
+      await fail(options, "203.0.113.7", 1);
+    }
+    expect((await handlePersonaSession(from("203.0.113.7", { persona: "secretaria", code: CODE }), options)).status).toBe(200);
+  });
+
+  it("the counter is per client (first x-forwarded-for hop); a correct code does not reset other clients", async () => {
+    const options = limited();
+    await fail(options, "203.0.113.7, 10.0.0.1", 5);
+    expect((await handlePersonaSession(from("198.51.100.9, 10.0.0.1", { persona: "secretaria", code: CODE }), options)).status).toBe(200);
+    expect((await handlePersonaSession(from("203.0.113.7", { persona: "secretaria", code: CODE }), options)).status).toBe(429);
+  });
+
+  it("requests without x-forwarded-for share one bucket", async () => {
+    const options = limited();
+    await fail(options, undefined, 5);
+    expect((await handlePersonaSession(from(undefined, { persona: "secretaria", code: CODE }), options)).status).toBe(429);
+  });
+
+  it("the client table is bounded", async () => {
+    const attempts = createAttemptLimiter({ maxClients: 3 });
+    const options = limited(attempts);
+    for (let i = 0; i < 10; i += 1) await fail(options, `192.0.2.${i}`, 1);
+    expect(attempts.size()).toBeLessThanOrEqual(3);
+  });
+
+  it("the route handler enforces the limit per process", async () => {
+    vi.stubEnv("BFF_ACCESS_CODE", CODE);
+    vi.stubEnv("BFF_SESSION_SECRET", SECRET);
+    try {
+      const client = { "x-forwarded-for": "192.0.2.250" };
+      for (let i = 0; i < 5; i += 1) expect((await sessionRoute(post("http://app.test/api/session", { persona: "secretaria", code: "adivinanza" }, client))).status).toBe(401);
+      const response = await sessionRoute(post("http://app.test/api/session", { persona: "secretaria", code: CODE }, client));
+      expect(response.status).toBe(429);
+      expect(Number(response.headers.get("retry-after"))).toBeGreaterThan(0);
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+});
+
+describe("I · session secret length", () => {
+  const short = "x".repeat(MIN_SESSION_SECRET_LENGTH - 1);
+
+  it("a secret shorter than 32 characters is treated as unset", () => {
+    expect(MIN_SESSION_SECRET_LENGTH).toBe(32);
+    const fallback = sessionSecret(undefined);
+    expect(isWeakSessionSecret(short)).toBe(true);
+    expect(isWeakSessionSecret("x".repeat(32))).toBe(false);
+    expect(isWeakSessionSecret(undefined)).toBe(false);
+    expect(isWeakSessionSecret("")).toBe(false);
+    expect(sessionSecret(short)).toBe(fallback);
+    expect(sessionSecret("x".repeat(32))).toBe("x".repeat(32));
+  });
+
+  it("a short secret is reported once per variable, by name and never by value", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      sessionSecret("weak-secret-value", "TEST_WEAK_SECRET_VARIABLE");
+      sessionSecret("weak-secret-value", "TEST_WEAK_SECRET_VARIABLE");
+      expect(warn).toHaveBeenCalledTimes(1);
+      const message = warn.mock.calls.flat().join(" ");
+      expect(message).toContain("TEST_WEAK_SECRET_VARIABLE");
+      expect(message).not.toContain("weak-secret-value");
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it("choosing a persona with a rejected secret is 503 naming the variable, never the value", async () => {
+    const response = await handlePersonaSession(post("http://app.test/api/session", { persona: "secretaria", code: CODE }), { ...withCode, rejectedSecretVariable: "BFF_SESSION_SECRET" });
+    expect(response.status).toBe(503);
+    const body = await response.json();
+    expect(body.error.code).toBe("SESSION_SECRET_TOO_SHORT");
+    expect(body.error.message).toContain("BFF_SESSION_SECRET");
+    expect(response.headers.get("set-cookie")).toBeNull();
+  });
+
+  it("the route handler rejects a short BFF_SESSION_SECRET without echoing it", async () => {
+    vi.stubEnv("BFF_ACCESS_CODE", CODE);
+    vi.stubEnv("BFF_SESSION_SECRET", "short-route-secret");
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const response = await sessionRoute(post("http://app.test/api/session", { persona: "secretaria", code: CODE }));
+      expect(response.status).toBe(503);
+      const text = await response.text();
+      expect(text).toContain("BFF_SESSION_SECRET");
+      expect(text).not.toContain("short-route-secret");
+      expect(warn.mock.calls.flat().join(" ")).not.toContain("short-route-secret");
+    } finally {
+      warn.mockRestore();
+      vi.unstubAllEnvs();
+    }
+  });
+});
+
+describe("J · logout without the access code", () => {
+  const logout = (url = "http://app.test/api/session", headers: Record<string, string> = {}) => post(url, { persona: null }, headers);
+  const expectCleared = async (response: Response) => {
+    expect(response.status).toBe(200);
+    expect(response.headers.get("set-cookie")).toMatch(new RegExp(`^${PERSONA_COOKIE}=; .*Max-Age=0`));
+    expect((await response.json()).current).toBeNull();
+  };
+
+  it("clearing the persona needs no code", async () => {
+    await expectCleared(await handlePersonaSession(logout(), withCode));
+  });
+
+  it("clearing ignores a wrong code and does not count it as a failed attempt", async () => {
+    const attempts = createAttemptLimiter();
+    const options = { ...withCode, attempts };
+    for (let i = 0; i < 6; i += 1) await expectCleared(await handlePersonaSession(post("http://app.test/api/session", { persona: null, code: "adivinanza" }), options));
+    expect((await handlePersonaSession(post("http://app.test/api/session", { persona: "secretaria", code: CODE }), options)).status).toBe(200);
+  });
+
+  it("clearing works while the client is locked out, in production without a code, and with a rejected secret", async () => {
+    const attempts = createAttemptLimiter();
+    const options = { ...withCode, attempts };
+    for (let i = 0; i < 5; i += 1) await handlePersonaSession(post("http://app.test/api/session", { persona: "secretaria", code: "adivinanza" }), options);
+    await expectCleared(await handlePersonaSession(logout(), options));
+    await expectCleared(await handlePersonaSession(logout("http://clinic.example/api/session"), { ...withoutCode, production: true }));
+    await expectCleared(await handlePersonaSession(logout(), { ...withCode, rejectedSecretVariable: "BFF_SESSION_SECRET" }));
+  });
+
+  it("clearing still needs same-origin", async () => {
+    const response = await handlePersonaSession(logout("http://app.test/api/session", { origin: "http://evil.test", "sec-fetch-site": "cross-site" }), withCode);
+    expect(response.status).toBe(403);
+    expect(response.headers.get("set-cookie")).toBeNull();
+    const noOrigin = new Request("http://app.test/api/session", { method: "POST", body: JSON.stringify({ persona: null }), headers: { "content-type": "application/json" } });
+    expect((await handlePersonaSession(noOrigin, withCode)).status).toBe(403);
+  });
+});
+
+describe("G · route handler fails closed under NODE_ENV=production", () => {
+  it("POST on localhost without BFF_ACCESS_CODE is 503", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("BFF_ACCESS_CODE", "");
+    vi.stubEnv("BFF_SESSION_SECRET", SECRET);
+    try {
+      const response = await sessionRoute(post("http://localhost:5173/api/session", { persona: "secretaria" }));
+      expect(response.status).toBe(503);
+      expect((await response.json()).error.message).toContain("BFF_ACCESS_CODE");
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 });

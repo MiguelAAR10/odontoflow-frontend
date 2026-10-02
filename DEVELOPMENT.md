@@ -69,8 +69,14 @@ servidor:
 `app/api/session/route.ts` lista las personas (sin tokens) y
 `requires_code`, y fija o borra la cookie: `POST {persona, code}` solo JSON y
 del mismo origen, con el código de `BFF_ACCESS_CODE` comparado en tiempo
-constante (incorrecto → 401, sin cookie). Sin `BFF_ACCESS_CODE` solo se puede
-elegir persona en `localhost`/`127.0.0.1`/`[::1]`; en otro host → 503. La cookie
+constante (incorrecto → 401, sin cookie). Cinco códigos incorrectos del mismo
+cliente (primer salto de `x-forwarded-for`; sin él, un único cubo compartido) en
+10 minutos → 429 con `Retry-After` hasta que pase la ventana, sin comparar el
+código; el contador vive en memoria del proceso y está acotado. Sin
+`BFF_ACCESS_CODE` solo se puede elegir persona en
+`localhost`/`127.0.0.1`/`[::1]` fuera de producción; en otro host, o en
+cualquier host con `NODE_ENV=production`, → 503. Salir (`{persona: null}`) solo
+exige mismo origen, nunca el código. La cookie
 es `HttpOnly; SameSite=Strict; Path=/`, dura 12 h y lleva `Secure` si la
 petición es https o trae `x-forwarded-proto: https`. El selector pide el código
 una vez y lo guarda solo en memoria. Quién está dentro, con sus roles y
@@ -80,7 +86,9 @@ gobiernan solo con esos `permissions`.
 - Variables solo de servidor: `BACKEND_URL` (default `http://127.0.0.1:8010`),
   `BACKEND_DEMO_TOKEN`, `BACKEND_DEMO_HUMANS`, `BFF_ACCESS_CODE` y
   `BFF_SESSION_SECRET` (sin secreto, uno aleatorio por proceso: las cookies
-  mueren al reiniciar). Nunca con prefijo `NEXT_PUBLIC_`; nada bajo `src/` las
+  mueren al reiniciar; con menos de 32 caracteres se ignora igual, se avisa una
+  vez en el log por su nombre —nunca su valor— y elegir persona → 503
+  `SESSION_SECRET_TOO_SHORT`). Nunca con prefijo `NEXT_PUBLIC_`; nada bajo `src/` las
   lee (lo vigila `test/bff-secret-guard.test.ts`).
 - Solo pasan `content-type`, `accept`, `idempotency-key`, `x-request-id`; se
   descartan `authorization`/`cookie` del navegador. De vuelta pasa
