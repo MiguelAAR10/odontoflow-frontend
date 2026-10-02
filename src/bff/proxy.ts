@@ -3,8 +3,9 @@
  *
  * Pure and framework-free so it can be tested with a mocked `fetch`. The
  * Route Handler (`app/api/backend/[...path]/route.ts`) reads the server-only
- * configuration and delegates here. The demo credential is injected on the
- * server; it never reaches the browser bundle.
+ * configuration, picks the credential (`src/bff/personas.ts`) and delegates
+ * here. The credential is injected on the server; it never reaches the
+ * browser bundle.
  *
  * The backend's error envelope passes through untouched so `toApiError`
  * keeps working. Only proxy-level failures use the proxy's own envelope.
@@ -20,8 +21,9 @@ export interface ProxyOptions {
  *  `authorization` and `cookie` — is dropped. */
 const FORWARDED_REQUEST_HEADERS = ["content-type", "accept", "idempotency-key", "x-request-id"] as const;
 
-/** Backend response headers returned to the browser as-is. */
-const FORWARDED_RESPONSE_HEADERS = ["content-type", "retry-after", "x-request-id"] as const;
+/** Backend response headers returned to the browser as-is. `idempotent-replay`
+ *  tells the UI a retried intent was replayed, not executed twice. */
+const FORWARDED_RESPONSE_HEADERS = ["content-type", "retry-after", "x-request-id", "idempotent-replay"] as const;
 
 /** `/internal/*` is server-to-server only; later phases may add an explicit allowlist. */
 const FORBIDDEN_PREFIXES = new Set(["internal"]);

@@ -39,6 +39,9 @@
     "test/home-schedule.test.ts",
     "test/bff-proxy.test.ts",
     "test/bff-secret-guard.test.ts",
-    "test/setup-e2e-auth.ts"
+    "test/setup-e2e-auth.ts",
+    "test/approvals-adapter.test.ts",
+    "test/approvals-mock.test.ts",
+    "test/bff-persona.test.ts"
   ]
 }

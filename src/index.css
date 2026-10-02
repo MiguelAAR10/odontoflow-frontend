@@ -1485,3 +1485,84 @@ h1, h2, h3 { text-wrap: balance; }
 @media (prefers-reduced-motion: reduce) {
   .home-page *, .home-page *::before, .home-page *::after { animation: none !important; transition: none !important; }
 }
+
+/* ===========================================================================
+   FE1 Bandeja — approvals inbox, "Ejecutar ahora" and the staff persona.
+   Cards are flat-data surfaces; only the action buttons carry clay depth.
+   Status meaning comes from Badge semantic tones, never brand accents.
+   =========================================================================== */
+.approvals-live:empty { display: none; }
+.approvals-error { margin: 0 0 14px; }
+.approvals-notice { margin: 0 0 var(--space-4); padding: 12px 14px; border: 1px solid var(--status-info-line); border-radius: var(--radius-md); color: var(--status-info); background: var(--status-info-surface); font-size: 13.5px; }
+.approvals-section { margin-top: var(--space-6); }
+.approvals-section__header { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); margin-bottom: var(--space-3); }
+.approvals-section__header h2 { display: inline-flex; align-items: center; gap: var(--space-2); margin: 0; color: var(--text); font-size: 18px; line-height: 1.3; }
+.approvals-section__header h2 svg { color: var(--accent-ink); }
+.approvals-section__hint { flex-basis: 100%; margin: 0; color: var(--text-muted); font-size: 13px; }
+.approvals-section__header--inbox .tabs { align-self: center; margin-left: auto; flex-wrap: wrap; }
+.approvals-count { min-width: 28px; padding: 2px 9px; border: 1px solid var(--line); border-radius: var(--radius-pill); color: var(--text-muted); background: var(--surface-muted); font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; text-align: center; }
+.approvals-empty { min-height: 96px; padding: var(--space-4); border: 1px dashed var(--line); border-radius: var(--radius-md); background: var(--surface); }
+.approvals-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: var(--space-4); margin: 0; padding: 0; list-style: none; }
+.approvals-grid > li { display: flex; }
+.approvals-more { display: flex; justify-content: center; margin-top: var(--space-4); }
+
+.agent-runs__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: var(--space-3); margin: 0; padding: 0; list-style: none; }
+.agent-run { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); }
+.agent-run__text h3 { margin: 0 0 2px; color: var(--text); font-size: 15px; }
+.agent-run__text p { margin: 0; color: var(--text-muted); font-size: 12.5px; line-height: 1.45; }
+.agent-run .button { align-self: flex-start; min-height: 44px; }
+.agent-run__result:empty { display: none; }
+.agent-run__status { margin: 0 0 4px; color: var(--status-ok); font-size: 13px; font-weight: 600; }
+.agent-run__counts { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; color: var(--text); font-size: 13px; font-variant-numeric: tabular-nums; }
+.agent-run__error, .approval-card__error { flex-basis: 100%; flex-wrap: wrap; margin: 0; }
+
+.approval-card { display: flex; flex: 1; flex-direction: column; gap: var(--space-3); min-width: 0; padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); box-shadow: var(--shadow-sm); }
+.approval-card--lapsed, .approval-card--expired, .approval-card--declined, .approval-card--superseded { background: var(--surface-muted); }
+.approval-card__header { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.approval-card__category { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.approval-card__category svg { color: var(--accent-ink); }
+.approval-card__lead h3 { margin: 0; color: var(--text); font-size: 16px; line-height: 1.35; overflow-wrap: anywhere; }
+.approval-card__detail { margin: 4px 0 0; color: var(--text); font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.approval-card__facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2) var(--space-4); margin: 0; }
+.approval-card__facts > div { display: grid; align-content: start; gap: 2px; min-width: 0; }
+.approval-card__facts dt { color: var(--text-muted); font-size: 11px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; }
+.approval-card__facts dd { margin: 0; color: var(--text); font-size: 13.5px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.approval-card__message { margin: 0; padding: 10px 12px; border-left: 3px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface-sunken); }
+.approval-card__message figcaption { margin-bottom: 4px; color: var(--text-muted); font-size: 11px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; }
+.approval-card__message blockquote { margin: 0; color: var(--text); font-size: 13px; line-height: 1.5; }
+.approval-card__meta, .approval-card__outcome { margin: 0; color: var(--text-muted); font-size: 12.5px; }
+.approval-card__outcome { color: var(--text); font-weight: 600; }
+.approval-card__actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-2); margin-top: auto; padding-top: var(--space-3); border-top: 1px solid var(--line); }
+.approval-card__actions .field-note { flex-basis: 100%; }
+.approval-card__actions .button { min-height: 44px; }
+
+.persona-switcher { position: relative; }
+.persona-switcher__trigger { width: 100%; border: 0; border-top: 1px solid rgba(255,255,255,.1); background: transparent; font: inherit; text-align: left; cursor: pointer; border-radius: 0; }
+.persona-switcher__trigger:hover:not(:disabled) { background: rgba(255, 255, 255, .06); }
+.persona-switcher__trigger:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; border-radius: var(--radius-sm); }
+.persona-switcher__trigger[aria-busy="true"] { cursor: progress; opacity: .8; }
+.persona-switcher__text { flex: 1; min-width: 0; }
+.persona-switcher__text strong, .persona-switcher__text small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.persona-switcher__error { margin: 6px 10px 0; color: #ffb4c0; font-size: 11.5px; }
+.persona-menu { position: absolute; right: 0; bottom: calc(100% + 6px); left: 0; z-index: 30; display: grid; gap: 2px; padding: 8px; border: 1px solid var(--shell-line); border-radius: var(--radius-md); background: var(--shell-raised); box-shadow: var(--shadow-md); }
+.persona-menu__label { margin: 2px 6px 6px; color: #9ab4c9; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.persona-menu__empty { margin: 4px 6px; color: #c9d8e4; font-size: 12px; }
+.persona-menu__option { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 6px 8px; border: 1px solid transparent; border-radius: var(--radius-sm); color: #e8f2fa; background: transparent; font: inherit; text-align: left; cursor: pointer; }
+.persona-menu__option:hover { background: rgba(255, 255, 255, .08); }
+.persona-menu__option:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 1px; }
+.persona-menu__option[aria-pressed="true"] { border-color: rgba(65, 212, 203, .3); }
+.persona-menu__option > span:nth-child(2) { flex: 1; min-width: 0; }
+.persona-menu__option strong { display: block; font-size: 12.5px; font-weight: 600; }
+.persona-menu__option small { display: block; color: #9ab4c9; font-size: 11px; }
+.persona-menu__option svg { color: var(--brand-cyan); }
+
+@media (max-width: 850px) {
+  .approvals-grid { grid-template-columns: 1fr; }
+  .approvals-section__header--inbox .tabs { margin-left: 0; }
+}
+@media (max-width: 420px) {
+  .approval-card__facts { grid-template-columns: 1fr; }
+  .approval-card__actions .button { flex: 1; }
+}
+.modal:focus, .approvals-section__header h2:focus { outline: 0; }
+.approvals-section__header h2:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 3px; border-radius: var(--radius-sm); }

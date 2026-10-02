@@ -44,13 +44,27 @@ npm run test:e2e:pilot    # requiere backend + PostgreSQL reales
 En modo real el navegador llama a `/api/backend/*` (base por defecto en
 `src/env.ts`). El Route Handler `app/api/backend/[...path]/route.ts` delega en
 `src/bff/proxy.ts`, que reenvía método, ruta, query y body al backend e inyecta
-`Authorization: Bearer $BACKEND_DEMO_TOKEN` en el servidor.
+el bearer en el servidor. Qué bearer lo decide `src/bff/personas.ts`:
 
-- Variables solo de servidor: `BACKEND_URL` (default `http://127.0.0.1:8010`) y
-  `BACKEND_DEMO_TOKEN` (opcional). Nunca con prefijo `NEXT_PUBLIC_`; nada bajo
-  `src/` las lee (lo vigila `test/bff-secret-guard.test.ts`).
+- cookie httpOnly `of_persona` con una persona conocida (`secretaria`,
+  `administrador`) → el token humano de esa persona, tomado de
+  `BACKEND_DEMO_HUMANS` (JSON del seed `[{role, display_name, token}]`);
+- cookie con una persona desconocida → sin bearer (el backend responde 401),
+  nunca el de otra persona;
+- sin cookie, o rutas solo-integración (`/public/*`) → `BACKEND_DEMO_TOKEN`.
+
+`app/api/session/route.ts` lista las personas (sin tokens) y fija o borra la
+cookie (`POST {persona}` solo JSON y del mismo origen). Quién está dentro, con
+sus roles y permisos, lo dice el backend en `GET /me`; el menú lateral y la
+Bandeja se gobiernan solo con esos `permissions`.
+
+- Variables solo de servidor: `BACKEND_URL` (default `http://127.0.0.1:8010`),
+  `BACKEND_DEMO_TOKEN` y `BACKEND_DEMO_HUMANS` (opcionales). Nunca con prefijo
+  `NEXT_PUBLIC_`; nada bajo `src/` las lee (lo vigila
+  `test/bff-secret-guard.test.ts`).
 - Solo pasan `content-type`, `accept`, `idempotency-key`, `x-request-id`; se
-  descartan `authorization`/`cookie` del navegador. El envelope de error del
+  descartan `authorization`/`cookie` del navegador. De vuelta pasa
+  `Idempotent-Replay` para que la UI distinga un replay de una ejecución nueva. El envelope de error del
   backend pasa intacto (`toApiError` sigue igual).
 - Rechazos propios: `..`/segmentos vacíos → 400 `BFF_BAD_PATH`; `/internal/*` →
   403 `BFF_FORBIDDEN_PATH`; backend caído → 502 `BACKEND_UNREACHABLE`.

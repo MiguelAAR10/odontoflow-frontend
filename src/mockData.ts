@@ -15,6 +15,7 @@ import type {
   Visit,
 } from "./types";
 import type { ChargeFollowUp } from "./types";
+import type { InboxItem, MeRead } from "./contracts/client";
 
 export const patients: Patient[] = [
   { id: "ana", initials: "AT", name: "Ana Torres", dni: "74859632", phone: "+51 987 654 321", branch: "Lince", nextAppointment: "15 ago · 10:30 a. m.", treatment: "Limpieza dental", status: "Activo", tone: "cyan", origin: "Instagram", interest: "Alto" },
@@ -199,4 +200,176 @@ export const mockMovements: InventoryMovement[] = [
   { id: "7", productId: "4", locationId: "3", type: "ENTRADA", quantity: 45, unitPrice: 10, reason: null, transferId: null, movedAt: "2026-08-12T16:00:00Z" },
   { id: "8", productId: "5", locationId: "1", type: "ENTRADA", quantity: 30, unitPrice: 6, reason: null, transferId: null, movedAt: "2026-08-12T10:00:00Z" },
   { id: "9", productId: "5", locationId: "2", type: "ENTRADA", quantity: 10, unitPrice: 6, reason: null, transferId: null, movedAt: "2026-08-11T12:00:00Z" },
+];
+
+// --- Bandeja (design-time only) --------------------------------------------
+// Rows use the exact `InboxItem` / `MeRead` contract shapes. Times are relative
+// to module load so the demo always shows live and near-expiry items. The mock
+// rules in src/approvals.ts mirror the backend (actions per permission, hash
+// check, expiry, replay); real mode consumes ZERO of these rows.
+
+const minutesFromNow = (minutes: number): string => new Date(Date.now() + minutes * 60_000).toISOString();
+const daysAgo = (days: number): string => new Date(Date.now() - days * 86_400_000).toISOString();
+/** Next day at a Lima wall-clock hour (UTC-5, no DST), as a UTC instant. */
+const tomorrowLima = (hour: number, minute = 0): string => {
+  const now = new Date(Date.now() - 5 * 3_600_000);
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, hour + 5, minute)).toISOString();
+};
+const addMinutes = (iso: string, minutes: number): string => new Date(new Date(iso).getTime() + minutes * 60_000).toISOString();
+const mockHash = (seed: string): string => seed.repeat(64).slice(0, 64);
+
+const pendingAgentRow = (): Pick<InboxItem, "source" | "status" | "confirmation_token" | "decided_by" | "result_ref" | "error_code" | "actions"> => ({
+  source: "agent_proposal",
+  status: "pending",
+  confirmation_token: null,
+  decided_by: null,
+  result_ref: null,
+  error_code: null,
+  actions: [],
+});
+
+export const mockInboxItems: InboxItem[] = [
+  {
+    ...pendingAgentRow(),
+    id: 301,
+    kind: "collection_reminder",
+    agent_key: "cobranza",
+    location_id: 1,
+    summary: "Recordatorio de pago a Rosa Quispe — saldo S/ 180.00",
+    reason: "Saldo vencido de S/ 180.00 hace 12 días",
+    facts: { charge_id: 31, patient_id: 4, patient_name: "Rosa Quispe", amount: "250.00", paid: "70.00", balance: "180.00" },
+    evidence: { run_id: 1, amount: "250.00", balance: "180.00", days_since_issued: 12, issued_on: daysAgo(12).slice(0, 10), last_payment_at: daysAgo(11), last_payment_amount: "70.00" },
+    payload: { charge_id: 31, message_text: "Hola Rosa, le escribimos de Lince. Tiene un saldo pendiente de S/ 180.00 por su atención reciente. Puede pagarlo en la sede o responder este mensaje para coordinar. ¡Gracias!" },
+    payload_hash: mockHash("a1"),
+    subject: { type: "charge", id: "31" },
+    conversation_id: 12,
+    expires_at: minutesFromNow(70 * 60),
+    created_at: minutesFromNow(-25),
+  },
+  {
+    ...pendingAgentRow(),
+    id: 302,
+    kind: "collection_reminder",
+    agent_key: "cobranza",
+    location_id: 2,
+    summary: "Recordatorio de pago a Jorge Huamán — saldo S/ 95.50",
+    reason: "Saldo vencido de S/ 95.50 hace 9 días",
+    facts: { charge_id: 32, patient_id: 5, patient_name: "Jorge Huamán", amount: "95.50", paid: "0.00", balance: "95.50" },
+    evidence: { run_id: 1, amount: "95.50", balance: "95.50", days_since_issued: 9, issued_on: daysAgo(9).slice(0, 10), last_payment_at: null, last_payment_amount: null },
+    payload: { charge_id: 32, message_text: "Hola Jorge, le escribimos de Jesús María. Tiene un saldo pendiente de S/ 95.50 por su atención reciente. Puede pagarlo en la sede o responder este mensaje para coordinar. ¡Gracias!" },
+    payload_hash: mockHash("b2"),
+    subject: { type: "charge", id: "32" },
+    conversation_id: 13,
+    expires_at: minutesFromNow(70 * 60),
+    created_at: minutesFromNow(-26),
+  },
+  {
+    ...pendingAgentRow(),
+    id: 303,
+    kind: "inventory_transfer",
+    agent_key: "inventario",
+    location_id: 1,
+    summary: "Traspaso de 16.00 uds. (producto #3) sede #2 → #1",
+    reason: "Anestesia lidocaína 2%: Lince 4.00 < mín. 10.00; traspasar 16.00 desde Jesús María (120.00, mín. 10.00)",
+    facts: null,
+    evidence: {
+      run_id: 2, product_id: 3, product_name: "Anestesia lidocaína 2%", unit: "cartuchos",
+      target: { location_id: 1, name: "Lince", balance: "4.00", min_quantity: "10.00", consumption_7d: "9.00" },
+      donor: { location_id: 2, name: "Jesús María", balance: "120.00", min_quantity: "10.00", consumption_7d: "3.00", surplus: "110.00" },
+      target_fill: "16.00", quantity: "16.00", subject_version: "mock-v1",
+    },
+    payload: { product_id: 3, origin_location_id: 2, destination_location_id: 1, quantity: "16.00" },
+    payload_hash: mockHash("c3"),
+    subject: { type: "product_location", id: "3:1" },
+    conversation_id: null,
+    expires_at: minutesFromNow(71 * 60),
+    created_at: minutesFromNow(-40),
+  },
+  {
+    ...pendingAgentRow(),
+    id: 304,
+    kind: "waitlist_offer",
+    agent_key: "backfill",
+    location_id: 1,
+    summary: "Cupo libre — ofrecer a 3 pacientes en lista de espera (cita #55)",
+    reason: "Cancelación: Limpieza dental mañana 10:00 en Lince; 4 pacientes en lista de espera, se ofrece a 3",
+    facts: null,
+    evidence: { run_id: 3, job_key: "appointment.cancelled:55", appointment_id: 55, start_utc: tomorrowLima(10), service: "Limpieza dental", location: "Lince", matched: 4, offered_to: [21, 22, 23] },
+    payload: { appointment_id: 55, entry_ids: [21, 22, 23], message_text: "Hola, se liberó un cupo de Limpieza dental mañana a las 10:00 en Lince. Si lo quiere, responda este mensaje y se lo reservamos." },
+    payload_hash: mockHash("d4"),
+    subject: { type: "appointment", id: "55" },
+    conversation_id: null,
+    expires_at: minutesFromNow(24),
+    created_at: minutesFromNow(-6),
+  },
+  {
+    source: "appointment_proposal",
+    id: 101,
+    kind: "appointment_booking",
+    agent_key: null,
+    status: "pending",
+    location_id: 1,
+    summary: "Cita para Elena Vargas",
+    reason: null,
+    facts: null,
+    evidence: null,
+    payload: { lead_id: 8, patient_id: null, full_name: "Elena Vargas", service_id: 2, practitioner_id: 1, start_utc: tomorrowLima(9, 30), end_utc: addMinutes(tomorrowLima(9, 30), 30) },
+    payload_hash: null,
+    subject: null,
+    conversation_id: 41,
+    confirmation_token: "7d4f6a1e-2c3b-4f5a-9b6c-1d2e3f4a5b61",
+    expires_at: minutesFromNow(18),
+    created_at: minutesFromNow(-12),
+    decided_by: null,
+    result_ref: null,
+    error_code: null,
+    actions: [],
+  },
+  {
+    ...pendingAgentRow(),
+    id: 299,
+    kind: "collection_reminder",
+    agent_key: "cobranza",
+    status: "executed",
+    location_id: 3,
+    summary: "Recordatorio de pago a Ana Torres — saldo S/ 60.00",
+    reason: "Saldo vencido de S/ 60.00 hace 15 días",
+    facts: { charge_id: 29, patient_id: 1, patient_name: "Ana Torres", amount: "120.00", paid: "60.00", balance: "60.00" },
+    evidence: { run_id: 1, amount: "120.00", balance: "60.00", days_since_issued: 15, issued_on: daysAgo(15).slice(0, 10), last_payment_at: daysAgo(14), last_payment_amount: "60.00" },
+    payload: { charge_id: 29, message_text: "Hola Ana, le escribimos de Magdalena. Tiene un saldo pendiente de S/ 60.00." },
+    payload_hash: mockHash("e5"),
+    subject: { type: "charge", id: "29" },
+    conversation_id: 9,
+    expires_at: minutesFromNow(48 * 60),
+    created_at: daysAgo(1),
+    decided_by: { id: 2, display_name: "Lucía Ramos" },
+    result_ref: { type: "outbound_message", id: 77 },
+  },
+];
+
+/** Names an appointment proposal needs, as the real catalog reads would return. */
+export const mockPractitionerNames = new Map<number, string>([[1, "Dra. Valeria Ruiz"], [2, "Dr. Mateo León"]]);
+
+/** Mirrors the backend's human profiles (`scripts/issue_credential.py`). */
+const SECRETARIA_PERMISSIONS = [
+  "appointments.cancel", "appointments.create", "appointments.read", "appointments.record_outcome", "appointments.reschedule",
+  "availability.read", "charges.create", "charges.read", "contact_appointments.book", "conversations.read", "conversations.resume",
+  "deliveries.create", "executions.create", "executions.read", "follow_ups.create", "follow_ups.manage", "follow_ups.read",
+  "leads.create", "leads.read", "locations.read", "patients.create", "patients.read", "payments.create", "payments.manage",
+  "payments.read", "practitioners.read", "proposals.decide", "proposals.read", "services.read", "visits.create", "visits.read",
+  "waitlist.manage", "waitlist.read",
+];
+const ADMINISTRADOR_PERMISSIONS = [...SECRETARIA_PERMISSIONS, "audit.read", "movements.create", "movements.read", "payments.reverse", "products.create", "products.read", "reorder_points.manage"].sort();
+
+export const mockStaff: Array<{ key: string; role: string; me: MeRead }> = [
+  {
+    key: "secretaria",
+    role: "secretaria",
+    me: { principal: { id: 2, type: "human", display_name: "Lucía Ramos" }, organization: { id: 1, name: "ODONTO SMART" }, roles: [{ code: "staff-secretaria", name: "Secretaria" }], permissions: SECRETARIA_PERMISSIONS },
+  },
+  {
+    key: "administrador",
+    role: "administrador",
+    me: { principal: { id: 3, type: "human", display_name: "Carlos Vega" }, organization: { id: 1, name: "ODONTO SMART" }, roles: [{ code: "staff-administrador", name: "Administrador" }], permissions: ADMINISTRADOR_PERMISSIONS },
+  },
 ];

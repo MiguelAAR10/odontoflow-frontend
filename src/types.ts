@@ -1,4 +1,8 @@
 import type {
+  InboxAction,
+  InboxItem,
+  InboxKind,
+  InboxStatus,
   PaymentMethod as ApiPaymentMethod,
   PaymentVerificationStatus,
 } from "./contracts/client";
@@ -343,4 +347,75 @@ export interface NewAppointmentInput {
   branch: string;
   date: string;
   time: string;
+}
+
+/**
+ * One item of the approvals inbox (`GET /agent/inbox` → `InboxItem`), shaped
+ * for a person who cares about money and time. Headline and evidence are
+ * plain Spanish built only from backend values (charge facts, the agent's
+ * evidence, payload, catalog names); when a value is missing the backend's own
+ * `summary`/`reason` is shown instead — never an invented figure.
+ */
+export type ApprovalSource = InboxItem["source"];
+export type ApprovalStatus = InboxStatus;
+export type ApprovalCategory = "cobranza" | "inventario" | "lista_espera" | "cita";
+
+export interface ApprovalFact {
+  label: string;
+  value: string;
+}
+
+export interface ApprovalItem {
+  /** `${source}:${id}` — ids are only unique per source. */
+  key: string;
+  source: ApprovalSource;
+  id: number;
+  kind: InboxKind;
+  category: ApprovalCategory;
+  categoryLabel: string;
+  agentLabel: string | null;
+  status: ApprovalStatus;
+  headline: string;
+  detail: string | null;
+  facts: ApprovalFact[];
+  /** The exact text the patient(s) will receive, when the action sends one. */
+  message: string | null;
+  locationName: string | null;
+  expiresAt: string;
+  createdAt: string;
+  actions: InboxAction[];
+  payloadHash: string | null;
+  conversationId: number | null;
+  confirmationToken: string | null;
+  decidedBy: string | null;
+  outcome: string | null;
+  errorCode: string | null;
+}
+
+export type ProposalDecision = "approve" | "decline";
+
+/** Which person is acting, from `GET /me` (permissions drive the UI). */
+export interface StaffIdentity {
+  principalType: string;
+  displayName: string;
+  organizationName: string;
+  roles: string[];
+  permissions: string[];
+}
+
+export interface PersonaOption {
+  key: string;
+  displayName: string;
+  role: string;
+}
+
+export type RunnableAgent = "cobranza" | "inventario" | "confirmaciones" | "backfill";
+
+export interface AgentRunResult {
+  agent: RunnableAgent;
+  status: "completed" | "running" | "failed";
+  /** Plain-Spanish count lines, e.g. "3 propuestas nuevas". */
+  lines: string[];
+  replayed: boolean;
+  disabled: boolean;
 }

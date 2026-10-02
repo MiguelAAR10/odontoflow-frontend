@@ -16,6 +16,7 @@ import type { LeadRead, LocationRead, PractitionerRead, ServiceRead, SlotResult 
 import { AppSidebar } from "./AppSidebar";
 import { Button } from "./Button";
 import { Modal } from "./Modal";
+import { usePersona } from "./PersonaContext";
 import { Surface } from "./Surface";
 import { Topbar } from "./Topbar";
 
@@ -59,6 +60,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [error, setError] = useState("");
   const [key, setKey] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // A persona switch remounts the page so it refetches with the new credential.
+  const { version: personaVersion } = usePersona();
 
   useEffect(() => {
     const openFromChat = (event: Event) => {
@@ -212,7 +215,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <AppSidebar mobileOpen={sidebarOpen} onNavigate={() => setSidebarOpen(false)} />
       <div className="app-workspace">
         <Topbar onNewAppointment={() => { setAppointmentPatient(""); setAppointmentOpen(true); }} mobileOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen((value) => !value)} />
-        <Surface as="main" id="main-content" className="app-main">{children}</Surface>
+        <Surface key={personaVersion} as="main" id="main-content" className="app-main">{children}</Surface>
       </div>
       {sidebarOpen && <button className="sidebar-backdrop" type="button" aria-label="Cerrar navegación" onClick={() => setSidebarOpen(false)} />}
       <Modal title="Nueva cita" open={appointmentOpen} onClose={() => setAppointmentOpen(false)}>

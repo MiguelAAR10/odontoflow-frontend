@@ -99,6 +99,12 @@ describe("proxyToBackend", () => {
     expect(sentHeaders(fetchMock).get("authorization")).toBeNull();
   });
 
+  it("forwards Idempotent-Replay so the UI can tell a replay from a new execution", async () => {
+    const fetchMock = upstream(200, { id: 3 }, { "idempotent-replay": "true" });
+    const response = await proxyToBackend(new Request("http://app.test/api/backend/agent/proposals/3/approve", { method: "POST", body: "{}" }), ["agent", "proposals", "3", "approve"], { backendUrl: BACKEND, token: TOKEN, fetch: fetchMock });
+    expect(response.headers.get("idempotent-replay")).toBe("true");
+  });
+
   it("returns an empty body for 204 responses", async () => {
     const fetchMock = vi.fn(async () => new Response(null, { status: 204 }));
     const response = await proxyToBackend(new Request("http://app.test/api/backend/x/1", { method: "DELETE" }), ["x", "1"], { backendUrl: BACKEND, token: TOKEN, fetch: fetchMock });

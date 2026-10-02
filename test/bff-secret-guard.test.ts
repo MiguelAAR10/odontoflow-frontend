@@ -1,4 +1,4 @@
-/** Guard: the server-only demo credential is read by the Route Handler only, never under src/. */
+/** Guard: the server-only demo credentials are read by the Route Handlers only, never under src/. */
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -12,8 +12,8 @@ function sourceFiles(dir: string): string[] {
 }
 
 describe("BFF secret guard", () => {
-  it("no file under src/ references BACKEND_DEMO_TOKEN", () => {
-    const offenders = sourceFiles(join(process.cwd(), "src")).filter((file) => readFileSync(file, "utf8").includes("BACKEND_DEMO_TOKEN"));
+  it.each(["BACKEND_DEMO_TOKEN", "BACKEND_DEMO_HUMANS"])("no file under src/ references %s", (name) => {
+    const offenders = sourceFiles(join(process.cwd(), "src")).filter((file) => readFileSync(file, "utf8").includes(name));
     expect(offenders).toEqual([]);
   });
 

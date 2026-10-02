@@ -34,6 +34,21 @@ export type TransferRead = components["schemas"]["TransferRead"];
 export type EntryCreate = components["schemas"]["EntryCreate"];
 export type AdjustmentCreate = components["schemas"]["AdjustmentCreate"];
 export type TransferCreate = components["schemas"]["TransferCreate"];
+export type AppointmentProposalRead = components["schemas"]["AppointmentProposalRead"];
+export type AppointmentProposalConfirm = components["schemas"]["AppointmentProposalConfirm"];
+export type AppointmentProposalDecline = components["schemas"]["AppointmentProposalDecline"];
+export type MeRead = components["schemas"]["MeRead"];
+export type InboxPage = components["schemas"]["InboxPage"];
+export type InboxItem = components["schemas"]["InboxItem"];
+export type InboxStatus = InboxItem["status"];
+export type InboxKind = InboxItem["kind"];
+export type InboxAction = InboxItem["actions"][number];
+export type ProposalApprove = components["schemas"]["ProposalApprove"];
+export type AgentRunCreate = components["schemas"]["AgentRunCreate"];
+export type AgentRunOut = components["schemas"]["AgentRunOut"];
+export type AgentRunCounts = components["schemas"]["AgentRunCounts"];
+export type JobsRunDue = components["schemas"]["JobsRunDue"];
+export type JobsRunOut = components["schemas"]["JobsRunOut"];
 
 type AppointmentsPath = paths["/appointments"];
 
@@ -447,3 +462,107 @@ export async function registerTransfer(
 }
 
 export type { paths };
+
+// --- appointment proposals: confirm/decline (inbox source "appointment_proposal") ---
+
+export async function confirmAppointmentProposal(
+  body: AppointmentProposalConfirm,
+  idempotencyKey: string,
+): Promise<AppointmentProposalRead> {
+  const payload: AppointmentProposalConfirm = { conversation_id: body.conversation_id, confirmation_token: body.confirmation_token };
+  const response = await http.post<AppointmentProposalRead>(
+    "/scheduling/appointment-proposals/confirm",
+    payload,
+    { headers: { "Idempotency-Key": idempotencyKey } },
+  );
+  return response.data;
+}
+
+export async function declineAppointmentProposal(
+  body: AppointmentProposalDecline,
+  idempotencyKey: string,
+): Promise<AppointmentProposalRead> {
+  const payload: AppointmentProposalDecline = { conversation_id: body.conversation_id, confirmation_token: body.confirmation_token };
+  const response = await http.post<AppointmentProposalRead>(
+    "/scheduling/appointment-proposals/decline",
+    payload,
+    { headers: { "Idempotency-Key": idempotencyKey } },
+  );
+  return response.data;
+}
+
+// --- who is signed in ---------------------------------------------------------
+
+export async function getMe(): Promise<MeRead> {
+  const response = await http.get<MeRead>("/me");
+  return response.data;
+}
+
+// --- agent proposals inbox ----------------------------------------------------
+
+type InboxQuery = NonNullable<paths["/agent/inbox"]["get"]["parameters"]["query"]>;
+
+export async function listInbox(query: Pick<InboxQuery, "status" | "source" | "kind" | "location_id" | "limit" | "cursor"> = {}): Promise<InboxPage> {
+  const params: InboxQuery = {};
+  if (query.status) params.status = query.status;
+  if (query.source) params.source = query.source;
+  if (query.kind) params.kind = query.kind;
+  if (query.location_id != null) params.location_id = query.location_id;
+  if (query.limit != null) params.limit = query.limit;
+  if (query.cursor) params.cursor = query.cursor;
+  const response = await http.get<InboxPage>("/agent/inbox", { params });
+  return response.data;
+}
+
+/** A mutation result plus whether the backend replayed a prior intent
+ * (`Idempotent-Replay: true`) instead of executing it again. */
+export interface Replayable<T> {
+  data: T;
+  replayed: boolean;
+}
+
+function isReplay(headers: unknown): boolean {
+  const value = (headers as Record<string, unknown> | undefined)?.["idempotent-replay"];
+  return String(value ?? "").toLowerCase() === "true";
+}
+
+export async function approveProposal(
+  proposalId: number,
+  payloadHash: string,
+  idempotencyKey: string,
+): Promise<Replayable<InboxItem>> {
+  const payload: ProposalApprove = { payload_hash: payloadHash };
+  const response = await http.post<InboxItem>(
+    `/agent/proposals/${proposalId}/approve`,
+    payload,
+    { headers: { "Idempotency-Key": idempotencyKey } },
+  );
+  return { data: response.data, replayed: isReplay(response.headers) };
+}
+
+/** Decline is idempotent on the backend (a declined row stays declined); the
+ * intent key is still sent so every mutation carries one. */
+export async function declineProposal(proposalId: number, idempotencyKey: string): Promise<InboxItem> {
+  const response = await http.post<InboxItem>(
+    `/agent/proposals/${proposalId}/decline`,
+    null,
+    { headers: { "Idempotency-Key": idempotencyKey } },
+  );
+  return response.data;
+}
+
+// --- agent runs ("Ejecutar ahora") --------------------------------------------
+
+export async function createAgentRun(agentKey: AgentRunCreate["agent_key"], idempotencyKey: string): Promise<Replayable<AgentRunOut>> {
+  const payload: AgentRunCreate = { agent_key: agentKey };
+  const response = await http.post<AgentRunOut>("/agent-runs", payload, { headers: { "Idempotency-Key": idempotencyKey } });
+  return { data: response.data, replayed: isReplay(response.headers) };
+}
+
+/** Backfill tick. Safe to repeat (unique job keys + leases); the key is sent
+ * for consistency with every other mutation. */
+export async function runDueAgentJobs(idempotencyKey: string, limit?: number): Promise<JobsRunOut> {
+  const payload: Partial<JobsRunDue> = limit == null ? {} : { limit };
+  const response = await http.post<JobsRunOut>("/agent-runs/jobs/run-due", payload, { headers: { "Idempotency-Key": idempotencyKey } });
+  return response.data;
+}

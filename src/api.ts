@@ -754,7 +754,7 @@ let mockChargeSequence = 20;
 function readMockReceipt<T>(key: string, fingerprint: string): T | null {
   const receipt = mockReceipts.get(key);
   if (!receipt) return null;
-  if (receipt.fingerprint !== fingerprint) throw new ApiError(409, "IDEMPOTENCY_KEY_REUSED", "The idempotency key was already used for a different request.");
+  if (receipt.fingerprint !== fingerprint) throw new ApiError(409, "IDEMPOTENCY_KEY_REUSED", "The idempotency key was already used by a different request.");
   return copy(receipt.value as T);
 }
 
@@ -1373,3 +1373,31 @@ export {
   voiceEnabled,
   voiceLive,
 } from "./voice";
+
+// --- Bandeja (approvals inbox, agent runs) and the signed-in staff persona ---
+export {
+  beginDecision,
+  CATEGORY_LABEL,
+  decideInboxItem,
+  describeApprovalError,
+  loadInbox,
+  RUNNABLE_AGENTS,
+  runAgentNow,
+  toUiInboxItem,
+  type ActionableError,
+  type DecisionIntent,
+  type DecisionResult,
+  type InboxCatalogNames,
+  type InboxPageView,
+} from "./approvals";
+export {
+  canOpen,
+  canRunAgent,
+  choosePersona,
+  hasPermissions,
+  loadIdentity,
+  loadPersonas,
+  MODULE_PERMISSIONS,
+  toStaffIdentity,
+  type PersonaSession,
+} from "./session";
