@@ -19,8 +19,9 @@ describe("toUiPatient", () => {
     expect(view.initials).toBe("AT");
     expect(view.dni).toBe("12345678");
     expect(view.phone).toBe("+51999000099");
-    expect(view.status).toBe("Activo");
-    expect(view.branch).toBe("");
+    expect(view.status).toBe("No disponible");
+    expect(view.branch).toBe("No disponible");
+    expect(view.nextAppointment).toBe("No disponible");
   });
 
   it("tolerates missing optional fields", () => {

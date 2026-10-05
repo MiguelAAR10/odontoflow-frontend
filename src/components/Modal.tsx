@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
 interface ModalProps {
@@ -8,9 +9,10 @@ interface ModalProps {
   children: ReactNode;
   footer?: ReactNode;
   size?: "small" | "medium" | "large";
+  portal?: boolean;
 }
 
-export function Modal({ title, open, onClose, children, footer, size = "medium" }: ModalProps) {
+export function Modal({ title, open, onClose, children, footer, size = "medium", portal = false }: ModalProps) {
   useEffect(() => {
     if (!open) return;
     const close = (event: KeyboardEvent) => event.key === "Escape" && onClose();
@@ -19,7 +21,7 @@ export function Modal({ title, open, onClose, children, footer, size = "medium" 
   }, [open, onClose]);
 
   if (!open) return null;
-  return (
+  const content = (
     <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
       <section className={`modal modal--${size}`} role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <header className="modal__header">
@@ -31,4 +33,5 @@ export function Modal({ title, open, onClose, children, footer, size = "medium" 
       </section>
     </div>
   );
+  return portal && typeof document !== "undefined" ? createPortal(content, document.body) : content;
 }

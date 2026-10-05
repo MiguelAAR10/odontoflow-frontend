@@ -20,6 +20,8 @@
     "test/**/*.ts"
   ],
   "exclude": [
+    "src/domain/odontoRepository.ts",
+    "test/odonto-repository.test.ts",
     "test/agenda-adapter.test.ts",
     "test/agenda-integration.test.ts",
     "test/patients-adapter.test.ts",
@@ -27,6 +29,7 @@
     "test/cash-adapter.test.ts",
     "test/cash-transport.test.ts",
     "test/inventory-adapter.test.ts",
+    "test/voice-draft.test.ts",
     "test/pilot-e2e.test.ts",
     "test/voice-adapter.test.ts"
   ]

@@ -1,0 +1,1217 @@
+{
+  "baseUrl": "Isolated production build",
+  "screenshots": "docs/qa/auditoria-2026-09-30/view-matrix-final",
+  "routes": [
+    {
+      "role": "owner",
+      "route": "/",
+      "heading": "Inicio",
+      "desktop": "docs/qa/auditoria-2026-09-30/view-matrix-final/owner-_-1440.png",
+      "mobile": [
+        {
+          "width": 1280,
+          "overflow": false,
+          "viewport": 1280,
+          "document": 1280,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/owner-_-1280.png"
+        },
+        {
+          "width": 390,
+          "overflow": false,
+          "viewport": 390,
+          "document": 390,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/owner-_-390.png"
+        },
+        {
+          "width": 375,
+          "overflow": false,
+          "viewport": 375,
+          "document": 375,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/owner-_-375.png"
+        }
+      ],
+      "sidebar": {
+        "logo": {
+          "x": 14,
+          "y": 24,
+          "width": 220,
+          "height": 146
+        },
+        "footer": {
+          "x": 12,
+          "y": 851.5,
+          "width": 224,
+          "height": 32.5
+        },
+        "footerDot": {
+          "x": 68,
+          "y": 872.25,
+          "width": 7,
+          "height": 7
+        }
+      },
+      "finalUrl": "/",
+      "desktopDimensions": {
+        "viewport": 1440,
+        "document": 1440
+      },
+      "overflows": [],
+      "visualDefects": [],
+      "status": "captured"
+    },
+    {
+      "role": "owner",
+      "route": "/sedes",
+      "heading": "Sedes",
+      "desktop": "docs/qa/auditoria-2026-09-30/view-matrix-final/owner-_sedes-1440.png",
+      "mobile": [
+        {
+          "width": 1280,
+          "overflow": false,
+          "viewport": 1280,
+          "document": 1280,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/owner-_sedes-1280.png"
+        },
+        {
+          "width": 390,
+          "overflow": false,
+          "viewport": 390,
+          "document": 390,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/owner-_sedes-390.png"
+        },
+        {
+          "width": 375,
+          "overflow": false,
+          "viewport": 375,
+          "document": 375,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/owner-_sedes-375.png"
+        }
+      ],
+      "finalUrl": "/sedes",
+      "desktopDimensions": {
+        "viewport": 1440,
+        "document": 1440
+      },
+      "overflows": [],
+      "visualDefects": [],
+      "status": "captured"
+    },
+    {
+      "role": "owner",
+      "route": "/finanzas",
+      "heading": "Finanzas",
+      "desktop": "docs/qa/auditoria-2026-09-30/view-matrix-final/owner-_finanzas-1440.png",
+      "mobile": [
+        {
+          "width": 1280,
+          "overflow": false,
+          "viewport": 1280,
+          "document": 1280,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/owner-_finanzas-1280.png"
+        },
+        {
+          "width": 390,
+          "overflow": false,
+          "viewport": 390,
+          "document": 390,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/owner-_finanzas-390.png"
+        },
+        {
+          "width": 375,
+          "overflow": false,
+          "viewport": 375,
+          "document": 375,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/owner-_finanzas-375.png"
+        }
+      ],
+      "finalUrl": "/finanzas",
+      "desktopDimensions": {
+        "viewport": 1440,
+        "document": 1440
+      },
+      "overflows": [],
+      "visualDefects": [],
+      "status": "captured"
+    },
+    {
+      "role": "owner",
+      "route": "/pacientes",
+      "heading": "Pacientes",
+      "desktop": "docs/qa/auditoria-2026-09-30/view-matrix-final/owner-_pacientes-1440.png",
+      "mobile": [
+        {
+          "width": 1280,
+          "overflow": false,
+          "viewport": 1280,
+          "document": 1280,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/owner-_pacientes-1280.png"
+        },
+        {
+          "width": 390,
+          "overflow": false,
+          "viewport": 390,
+          "document": 390,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/owner-_pacientes-390.png"
+        },
+        {
+          "width": 375,
+          "overflow": false,
+          "viewport": 375,
+          "document": 375,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/owner-_pacientes-375.png"
+        }
+      ],
+      "finalUrl": "/pacientes",
+      "desktopDimensions": {
+        "viewport": 1440,
+        "document": 1440
+      },
+      "overflows": [],
+      "visualDefects": [],
+      "status": "captured"
+    },
+    {
+      "role": "owner",
+      "route": "/comercial",
+      "heading": "Comercial",
+      "desktop": "docs/qa/auditoria-2026-09-30/view-matrix-final/owner-_comercial-1440.png",
+      "mobile": [
+        {
+          "width": 1280,
+          "overflow": false,
+          "viewport": 1280,
+          "document": 1280,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/owner-_comercial-1280.png"
+        },
+        {
+          "width": 390,
+          "overflow": false,
+          "viewport": 390,
+          "document": 390,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/owner-_comercial-390.png"
+        },
+        {
+          "width": 375,
+          "overflow": false,
+          "viewport": 375,
+          "document": 375,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/owner-_comercial-375.png"
+        }
+      ],
+      "finalUrl": "/comercial",
+      "desktopDimensions": {
+        "viewport": 1440,
+        "document": 1440
+      },
+      "overflows": [],
+      "visualDefects": [],
+      "status": "captured"
+    },
+    {
+      "role": "owner",
+      "route": "/produccion",
+      "heading": "Producción",
+      "desktop": "docs/qa/auditoria-2026-09-30/view-matrix-final/owner-_produccion-1440.png",
+      "mobile": [
+        {
+          "width": 1280,
+          "overflow": false,
+          "viewport": 1280,
+          "document": 1280,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/owner-_produccion-1280.png"
+        },
+        {
+          "width": 390,
+          "overflow": false,
+          "viewport": 390,
+          "document": 390,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/owner-_produccion-390.png"
+        },
+        {
+          "width": 375,
+          "overflow": false,
+          "viewport": 375,
+          "document": 375,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/owner-_produccion-375.png"
+        }
+      ],
+      "finalUrl": "/produccion",
+      "desktopDimensions": {
+        "viewport": 1440,
+        "document": 1440
+      },
+      "overflows": [],
+      "visualDefects": [],
+      "status": "captured"
+    },
+    {
+      "role": "owner",
+      "route": "/inventario",
+      "heading": "Inventario",
+      "desktop": "docs/qa/auditoria-2026-09-30/view-matrix-final/owner-_inventario-1440.png",
+      "mobile": [
+        {
+          "width": 1280,
+          "overflow": false,
+          "viewport": 1280,
+          "document": 1280,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/owner-_inventario-1280.png"
+        },
+        {
+          "width": 390,
+          "overflow": false,
+          "viewport": 390,
+          "document": 390,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/owner-_inventario-390.png"
+        },
+        {
+          "width": 375,
+          "overflow": false,
+          "viewport": 375,
+          "document": 375,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/owner-_inventario-375.png"
+        }
+      ],
+      "finalUrl": "/inventario",
+      "desktopDimensions": {
+        "viewport": 1440,
+        "document": 1440
+      },
+      "overflows": [],
+      "visualDefects": [],
+      "status": "captured"
+    },
+    {
+      "role": "owner",
+      "route": "/caja",
+      "heading": "Cobros",
+      "desktop": "docs/qa/auditoria-2026-09-30/view-matrix-final/owner-_caja-1440.png",
+      "mobile": [
+        {
+          "width": 1280,
+          "overflow": false,
+          "viewport": 1280,
+          "document": 1280,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/owner-_caja-1280.png"
+        },
+        {
+          "width": 390,
+          "overflow": false,
+          "viewport": 390,
+          "document": 390,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/owner-_caja-390.png"
+        },
+        {
+          "width": 375,
+          "overflow": false,
+          "viewport": 375,
+          "document": 375,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/owner-_caja-375.png"
+        }
+      ],
+      "finalUrl": "/caja",
+      "desktopDimensions": {
+        "viewport": 1440,
+        "document": 1440
+      },
+      "overflows": [],
+      "visualDefects": [],
+      "status": "captured"
+    },
+    {
+      "role": "owner",
+      "route": "/agente",
+      "heading": "Guía de flujos",
+      "desktop": "docs/qa/auditoria-2026-09-30/view-matrix-final/owner-_agente-1440.png",
+      "mobile": [
+        {
+          "width": 1280,
+          "overflow": false,
+          "viewport": 1280,
+          "document": 1280,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/owner-_agente-1280.png"
+        },
+        {
+          "width": 390,
+          "overflow": false,
+          "viewport": 390,
+          "document": 390,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/owner-_agente-390.png"
+        },
+        {
+          "width": 375,
+          "overflow": false,
+          "viewport": 375,
+          "document": 375,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/owner-_agente-375.png"
+        }
+      ],
+      "finalUrl": "/agente",
+      "desktopDimensions": {
+        "viewport": 1440,
+        "document": 1440
+      },
+      "overflows": [],
+      "visualDefects": [],
+      "status": "captured"
+    },
+    {
+      "role": "admin",
+      "route": "/",
+      "heading": "Viernes, 14 de agosto",
+      "desktop": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_-1440.png",
+      "mobile": [
+        {
+          "width": 1280,
+          "overflow": false,
+          "viewport": 1280,
+          "document": 1280,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_-1280.png"
+        },
+        {
+          "width": 390,
+          "overflow": false,
+          "viewport": 390,
+          "document": 390,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_-390.png"
+        },
+        {
+          "width": 375,
+          "overflow": false,
+          "viewport": 375,
+          "document": 375,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_-375.png"
+        }
+      ],
+      "sidebar": {
+        "logo": {
+          "x": 14,
+          "y": 24,
+          "width": 220,
+          "height": 146
+        },
+        "footer": {
+          "x": 12,
+          "y": 851.5,
+          "width": 224,
+          "height": 32.5
+        },
+        "footerDot": {
+          "x": 68,
+          "y": 872.25,
+          "width": 7,
+          "height": 7
+        }
+      },
+      "finalUrl": "/",
+      "desktopDimensions": {
+        "viewport": 1440,
+        "document": 1440
+      },
+      "overflows": [],
+      "visualDefects": [],
+      "status": "captured"
+    },
+    {
+      "role": "admin",
+      "route": "/agenda",
+      "heading": "Agenda de citas",
+      "desktop": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_agenda-1440.png",
+      "mobile": [
+        {
+          "width": 1280,
+          "overflow": false,
+          "viewport": 1280,
+          "document": 1280,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_agenda-1280.png"
+        },
+        {
+          "width": 390,
+          "overflow": false,
+          "viewport": 390,
+          "document": 390,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_agenda-390.png"
+        },
+        {
+          "width": 375,
+          "overflow": false,
+          "viewport": 375,
+          "document": 375,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_agenda-375.png"
+        }
+      ],
+      "finalUrl": "/agenda",
+      "desktopDimensions": {
+        "viewport": 1440,
+        "document": 1440
+      },
+      "overflows": [],
+      "visualDefects": [],
+      "status": "captured"
+    },
+    {
+      "role": "admin",
+      "route": "/pacientes",
+      "heading": "Pacientes",
+      "desktop": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_pacientes-1440.png",
+      "mobile": [
+        {
+          "width": 1280,
+          "overflow": false,
+          "viewport": 1280,
+          "document": 1280,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_pacientes-1280.png"
+        },
+        {
+          "width": 390,
+          "overflow": false,
+          "viewport": 390,
+          "document": 390,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_pacientes-390.png"
+        },
+        {
+          "width": 375,
+          "overflow": false,
+          "viewport": 375,
+          "document": 375,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_pacientes-375.png"
+        }
+      ],
+      "finalUrl": "/pacientes",
+      "desktopDimensions": {
+        "viewport": 1440,
+        "document": 1440
+      },
+      "overflows": [],
+      "visualDefects": [],
+      "status": "captured"
+    },
+    {
+      "role": "admin",
+      "route": "/visitas/visit-ana",
+      "heading": "Registro clínico",
+      "desktop": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_visitas_visit-ana-1440.png",
+      "mobile": [
+        {
+          "width": 1280,
+          "overflow": false,
+          "viewport": 1280,
+          "document": 1280,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_visitas_visit-ana-1280.png"
+        },
+        {
+          "width": 390,
+          "overflow": false,
+          "viewport": 390,
+          "document": 390,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_visitas_visit-ana-390.png"
+        },
+        {
+          "width": 375,
+          "overflow": false,
+          "viewport": 375,
+          "document": 375,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_visitas_visit-ana-375.png"
+        }
+      ],
+      "finalUrl": "/visitas/visit-ana",
+      "desktopDimensions": {
+        "viewport": 1440,
+        "document": 1440
+      },
+      "overflows": [],
+      "visualDefects": [],
+      "status": "captured"
+    },
+    {
+      "role": "admin",
+      "route": "/caja",
+      "heading": "Cobros",
+      "desktop": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_caja-1440.png",
+      "mobile": [
+        {
+          "width": 1280,
+          "overflow": false,
+          "viewport": 1280,
+          "document": 1280,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_caja-1280.png"
+        },
+        {
+          "width": 390,
+          "overflow": false,
+          "viewport": 390,
+          "document": 390,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_caja-390.png"
+        },
+        {
+          "width": 375,
+          "overflow": false,
+          "viewport": 375,
+          "document": 375,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_caja-375.png"
+        }
+      ],
+      "finalUrl": "/caja",
+      "desktopDimensions": {
+        "viewport": 1440,
+        "document": 1440
+      },
+      "overflows": [],
+      "visualDefects": [],
+      "status": "captured"
+    },
+    {
+      "role": "admin",
+      "route": "/inventario",
+      "heading": "Inventario",
+      "desktop": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_inventario-1440.png",
+      "mobile": [
+        {
+          "width": 1280,
+          "overflow": false,
+          "viewport": 1280,
+          "document": 1280,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_inventario-1280.png"
+        },
+        {
+          "width": 390,
+          "overflow": false,
+          "viewport": 390,
+          "document": 390,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_inventario-390.png"
+        },
+        {
+          "width": 375,
+          "overflow": false,
+          "viewport": 375,
+          "document": 375,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_inventario-375.png"
+        }
+      ],
+      "finalUrl": "/inventario",
+      "desktopDimensions": {
+        "viewport": 1440,
+        "document": 1440
+      },
+      "overflows": [],
+      "visualDefects": [],
+      "status": "captured"
+    },
+    {
+      "role": "admin",
+      "route": "/solicitudes",
+      "heading": "Solicitudes",
+      "desktop": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_solicitudes-1440.png",
+      "mobile": [
+        {
+          "width": 1280,
+          "overflow": false,
+          "viewport": 1280,
+          "document": 1280,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [
+            {
+              "text": "Confirmar consentimiento",
+              "clipped": false
+            },
+            {
+              "text": "Completar indicaciones de evaluación",
+              "clipped": false
+            },
+            {
+              "text": "Solicitar modelo de estudio",
+              "clipped": false
+            },
+            {
+              "text": "Cerrar evolución de blanqueamiento",
+              "clipped": false
+            }
+          ],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_solicitudes-1280.png"
+        },
+        {
+          "width": 390,
+          "overflow": false,
+          "viewport": 390,
+          "document": 390,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [
+            {
+              "text": "Confirmar consentimiento",
+              "clipped": false
+            },
+            {
+              "text": "Completar indicaciones de evaluación",
+              "clipped": false
+            },
+            {
+              "text": "Solicitar modelo de estudio",
+              "clipped": false
+            },
+            {
+              "text": "Cerrar evolución de blanqueamiento",
+              "clipped": false
+            }
+          ],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_solicitudes-390.png"
+        },
+        {
+          "width": 375,
+          "overflow": false,
+          "viewport": 375,
+          "document": 375,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [
+            {
+              "text": "Confirmar consentimiento",
+              "clipped": false
+            },
+            {
+              "text": "Completar indicaciones de evaluación",
+              "clipped": false
+            },
+            {
+              "text": "Solicitar modelo de estudio",
+              "clipped": false
+            },
+            {
+              "text": "Cerrar evolución de blanqueamiento",
+              "clipped": false
+            }
+          ],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_solicitudes-375.png"
+        }
+      ],
+      "finalUrl": "/solicitudes",
+      "desktopDimensions": {
+        "viewport": 1440,
+        "document": 1440
+      },
+      "overflows": [],
+      "visualDefects": [],
+      "status": "captured"
+    },
+    {
+      "role": "admin",
+      "route": "/chat",
+      "heading": "Conversaciones",
+      "desktop": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_chat-1440.png",
+      "mobile": [
+        {
+          "width": 1280,
+          "overflow": false,
+          "viewport": 1280,
+          "document": 1280,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_chat-1280.png"
+        },
+        {
+          "width": 390,
+          "overflow": false,
+          "viewport": 390,
+          "document": 390,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_chat-390.png"
+        },
+        {
+          "width": 375,
+          "overflow": false,
+          "viewport": 375,
+          "document": 375,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_chat-375.png"
+        }
+      ],
+      "finalUrl": "/chat",
+      "desktopDimensions": {
+        "viewport": 1440,
+        "document": 1440
+      },
+      "overflows": [],
+      "visualDefects": [],
+      "status": "captured"
+    },
+    {
+      "role": "admin",
+      "route": "/atencion/visit-ana",
+      "heading": "Atención",
+      "desktop": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_atencion_visit-ana-1440.png",
+      "mobile": [
+        {
+          "width": 1280,
+          "overflow": false,
+          "viewport": 1280,
+          "document": 1280,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_atencion_visit-ana-1280.png"
+        },
+        {
+          "width": 390,
+          "overflow": false,
+          "viewport": 390,
+          "document": 390,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_atencion_visit-ana-390.png"
+        },
+        {
+          "width": 375,
+          "overflow": false,
+          "viewport": 375,
+          "document": 375,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_atencion_visit-ana-375.png"
+        }
+      ],
+      "finalUrl": "/atencion/visit-ana",
+      "desktopDimensions": {
+        "viewport": 1440,
+        "document": 1440
+      },
+      "overflows": [],
+      "visualDefects": [],
+      "status": "captured"
+    },
+    {
+      "role": "admin",
+      "route": "/agente",
+      "heading": "Guía de flujos",
+      "desktop": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_agente-1440.png",
+      "mobile": [
+        {
+          "width": 1280,
+          "overflow": false,
+          "viewport": 1280,
+          "document": 1280,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_agente-1280.png"
+        },
+        {
+          "width": 390,
+          "overflow": false,
+          "viewport": 390,
+          "document": 390,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_agente-390.png"
+        },
+        {
+          "width": 375,
+          "overflow": false,
+          "viewport": 375,
+          "document": 375,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/admin-_agente-375.png"
+        }
+      ],
+      "finalUrl": "/agente",
+      "desktopDimensions": {
+        "viewport": 1440,
+        "document": 1440
+      },
+      "overflows": [],
+      "visualDefects": [],
+      "status": "captured"
+    },
+    {
+      "role": "collaborator",
+      "route": "/mi-dia",
+      "heading": "Mi día",
+      "desktop": "docs/qa/auditoria-2026-09-30/view-matrix-final/collaborator-_mi-dia-1440.png",
+      "mobile": [
+        {
+          "width": 1280,
+          "overflow": false,
+          "viewport": 1280,
+          "document": 1280,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/collaborator-_mi-dia-1280.png"
+        },
+        {
+          "width": 390,
+          "overflow": false,
+          "viewport": 390,
+          "document": 390,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/collaborator-_mi-dia-390.png"
+        },
+        {
+          "width": 375,
+          "overflow": false,
+          "viewport": 375,
+          "document": 375,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/collaborator-_mi-dia-375.png"
+        }
+      ],
+      "finalUrl": "/mi-dia",
+      "desktopDimensions": {
+        "viewport": 1440,
+        "document": 1440
+      },
+      "overflows": [],
+      "visualDefects": [],
+      "status": "captured"
+    },
+    {
+      "role": "collaborator",
+      "route": "/mis-pacientes",
+      "heading": "Mis pacientes",
+      "desktop": "docs/qa/auditoria-2026-09-30/view-matrix-final/collaborator-_mis-pacientes-1440.png",
+      "mobile": [
+        {
+          "width": 1280,
+          "overflow": false,
+          "viewport": 1280,
+          "document": 1280,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/collaborator-_mis-pacientes-1280.png"
+        },
+        {
+          "width": 390,
+          "overflow": false,
+          "viewport": 390,
+          "document": 390,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/collaborator-_mis-pacientes-390.png"
+        },
+        {
+          "width": 375,
+          "overflow": false,
+          "viewport": 375,
+          "document": 375,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/collaborator-_mis-pacientes-375.png"
+        }
+      ],
+      "finalUrl": "/mis-pacientes",
+      "desktopDimensions": {
+        "viewport": 1440,
+        "document": 1440
+      },
+      "overflows": [],
+      "visualDefects": [],
+      "status": "captured"
+    },
+    {
+      "role": "collaborator",
+      "route": "/solicitudes",
+      "heading": "Solicitudes",
+      "desktop": "docs/qa/auditoria-2026-09-30/view-matrix-final/collaborator-_solicitudes-1440.png",
+      "mobile": [
+        {
+          "width": 1280,
+          "overflow": false,
+          "viewport": 1280,
+          "document": 1280,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [
+            {
+              "text": "Confirmar consentimiento",
+              "clipped": false
+            },
+            {
+              "text": "Completar indicaciones de evaluación",
+              "clipped": false
+            },
+            {
+              "text": "Enviar radiografía periapical",
+              "clipped": false
+            },
+            {
+              "text": "Cerrar evolución de blanqueamiento",
+              "clipped": false
+            },
+            {
+              "text": "Revisar evolución de limpieza",
+              "clipped": false
+            }
+          ],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/collaborator-_solicitudes-1280.png"
+        },
+        {
+          "width": 390,
+          "overflow": false,
+          "viewport": 390,
+          "document": 390,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [
+            {
+              "text": "Confirmar consentimiento",
+              "clipped": false
+            },
+            {
+              "text": "Completar indicaciones de evaluación",
+              "clipped": false
+            },
+            {
+              "text": "Enviar radiografía periapical",
+              "clipped": false
+            },
+            {
+              "text": "Cerrar evolución de blanqueamiento",
+              "clipped": false
+            },
+            {
+              "text": "Revisar evolución de limpieza",
+              "clipped": false
+            }
+          ],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/collaborator-_solicitudes-390.png"
+        },
+        {
+          "width": 375,
+          "overflow": false,
+          "viewport": 375,
+          "document": 375,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [
+            {
+              "text": "Confirmar consentimiento",
+              "clipped": false
+            },
+            {
+              "text": "Completar indicaciones de evaluación",
+              "clipped": false
+            },
+            {
+              "text": "Enviar radiografía periapical",
+              "clipped": false
+            },
+            {
+              "text": "Cerrar evolución de blanqueamiento",
+              "clipped": false
+            },
+            {
+              "text": "Revisar evolución de limpieza",
+              "clipped": false
+            }
+          ],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/collaborator-_solicitudes-375.png"
+        }
+      ],
+      "finalUrl": "/solicitudes",
+      "desktopDimensions": {
+        "viewport": 1440,
+        "document": 1440
+      },
+      "overflows": [],
+      "visualDefects": [],
+      "status": "captured"
+    },
+    {
+      "role": "collaborator",
+      "route": "/visitas/visit-ana",
+      "heading": "Ana Beltrán",
+      "desktop": "docs/qa/auditoria-2026-09-30/view-matrix-final/collaborator-_visitas_visit-ana-1440.png",
+      "mobile": [
+        {
+          "width": 1280,
+          "overflow": false,
+          "viewport": 1280,
+          "document": 1280,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/collaborator-_visitas_visit-ana-1280.png"
+        },
+        {
+          "width": 390,
+          "overflow": false,
+          "viewport": 390,
+          "document": 390,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/collaborator-_visitas_visit-ana-390.png"
+        },
+        {
+          "width": 375,
+          "overflow": false,
+          "viewport": 375,
+          "document": 375,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/collaborator-_visitas_visit-ana-375.png"
+        }
+      ],
+      "finalUrl": "/visitas/visit-ana",
+      "desktopDimensions": {
+        "viewport": 1440,
+        "document": 1440
+      },
+      "overflows": [],
+      "visualDefects": [],
+      "status": "captured"
+    },
+    {
+      "role": "collaborator",
+      "route": "/asistente",
+      "heading": "Dictado",
+      "desktop": "docs/qa/auditoria-2026-09-30/view-matrix-final/collaborator-_asistente-1440.png",
+      "mobile": [
+        {
+          "width": 1280,
+          "overflow": false,
+          "viewport": 1280,
+          "document": 1280,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/collaborator-_asistente-1280.png"
+        },
+        {
+          "width": 390,
+          "overflow": false,
+          "viewport": 390,
+          "document": 390,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/collaborator-_asistente-390.png"
+        },
+        {
+          "width": 375,
+          "overflow": false,
+          "viewport": 375,
+          "document": 375,
+          "helpOverlapsVisualization": false,
+          "requestTitles": [],
+          "image": "docs/qa/auditoria-2026-09-30/view-matrix-final/collaborator-_asistente-375.png"
+        }
+      ],
+      "finalUrl": "/asistente",
+      "desktopDimensions": {
+        "viewport": 1440,
+        "document": 1440
+      },
+      "overflows": [],
+      "visualDefects": [],
+      "status": "captured"
+    }
+  ],
+  "interactions": {
+    "reschedule": {
+      "passed": true,
+      "before": "sábado 15 ago · 09:00",
+      "after": "sábado 15 ago · 11:00"
+    },
+    "cancel": {
+      "passed": true,
+      "finalState": "Cancelada"
+    },
+    "chat": {
+      "passed": true,
+      "sentLocally": true,
+      "reset": true,
+      "originalMessageCount": 3
+    },
+    "writeRequests": [],
+    "pageErrors": [],
+    "blockedWriteRequests": []
+  },
+  "pageErrors": [],
+  "failures": 0,
+  "mobileOverflows": [],
+  "allOverflows": [],
+  "visualDefects": []
+}

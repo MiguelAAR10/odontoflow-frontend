@@ -1,0 +1,138 @@
+.dashboard {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(310px, 0.8fr);
+  align-items: start;
+  gap: 16px;
+}
+
+.analyticsGrid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 14px;
+}
+
+.analyticsGrid > section:nth-child(1) { grid-column: span 8; }
+.analyticsGrid > section:nth-child(2) { grid-column: span 4; }
+.analyticsGrid > section:nth-child(3) { grid-column: 1 / -1; }
+
+.agendaPanel,
+.metrics,
+.pendingPanel,
+.dayLink {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.agendaPanel { padding: 19px; }
+.panelHeader { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 15px; }
+.panelHeader h2,
+.pendingPanel h2 { margin: 0; color: var(--text); font-size: 17px; font-weight: 700; }
+.panelHeader p { margin: 4px 0 0; color: var(--text-muted); font-size: 11px; text-transform: capitalize; }
+.panelHeader > span { flex: 0 0 auto; padding: 5px 9px; border-radius: 999px; color: var(--accent-ink); background: var(--accent-soft); font-size: 11px; font-weight: 700; }
+
+.appointment {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) minmax(132px, auto);
+  align-items: center;
+  gap: 15px;
+  min-height: 82px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-bottom: 0;
+  background: var(--surface);
+}
+.appointment:first-of-type { border-radius: 8px 8px 0 0; }
+.appointment:last-child { border-bottom: 1px solid var(--line); border-radius: 0 0 8px 8px; }
+.appointmentFeatured { min-height: 112px; border: 1px solid #bad3ce; border-left: 3px solid var(--accent); border-radius: 8px !important; background: #f6faf9; }
+.appointmentTime time { display: block; color: var(--text); font-size: 20px; font-weight: 750; font-variant-numeric: tabular-nums; }
+.appointmentFeatured .appointmentTime time { color: var(--accent-ink); font-size: 26px; }
+.appointmentTime small { display: block; margin-top: 4px; color: var(--text-muted); font-size: 10px; text-transform: capitalize; }
+.appointmentPatient { min-width: 0; }
+.appointmentPatient strong,
+.appointmentPatient span,
+.appointmentPatient small { display: block; }
+.appointmentPatient strong { overflow: hidden; color: var(--text); font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
+.appointmentPatient span { margin-top: 3px; color: var(--text-muted); font-size: 12px; }
+.appointmentPatient small { display: flex; align-items: center; gap: 5px; margin-top: 7px; color: var(--text-muted); font-size: 11px; }
+.appointmentPatient small svg { color: var(--accent-ink); }
+.appointmentAction { display: grid; justify-items: end; gap: 6px; }
+.appointmentAction :global(.workspace-link) { gap: 3px; font-size: 11px; }
+.status { color: var(--text-muted); font-size: 10px; font-weight: 700; text-align: right; }
+.statusVisited { color: var(--accent-ink); }
+.statusMissed { color: #9b5b4d; }
+.listHeading { margin: 18px 0 7px; color: var(--text-muted); font-size: 10px; font-weight: 750; text-transform: uppercase; }
+.historyDetails { margin-top: 17px; border-top: 1px solid var(--line); }
+.historyDetails > summary { display: flex; align-items: center; justify-content: space-between; min-height: 42px; color: var(--text-muted); font-size: 11px; font-weight: 750; cursor: pointer; list-style: none; text-transform: uppercase; }
+.historyDetails > summary::-webkit-details-marker { display: none; }
+.historyDetails > summary::after { width: 7px; height: 7px; margin-left: 8px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; content: ""; transform: rotate(45deg) translateY(-2px); }
+.historyDetails[open] > summary::after { transform: rotate(225deg) translateY(-2px); }
+.historyDetails > summary span { margin-right: auto; }
+.historyDetails > summary strong { margin-right: 10px; font-variant-numeric: tabular-nums; }
+.appointmentList { overflow: hidden; border: 1px solid var(--line); border-radius: 8px; }
+.appointmentList .appointment { border: 0; border-bottom: 1px solid var(--line); }
+.appointmentList .appointment:last-child { border-bottom: 0; border-radius: 0; }
+.appointmentList .appointmentFeatured { border: 1px solid #bad3ce; border-left: 3px solid var(--accent); border-radius: 8px; }
+.emptyNext { display: grid; min-height: 100px; place-items: center; border: 1px dashed var(--line-strong); border-radius: 8px; color: var(--text-muted); font-size: 13px; }
+
+.insights { display: grid; align-content: start; gap: 12px; }
+.metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 13px 7px; }
+.metrics > div { display: grid; align-content: center; gap: 5px; min-width: 0; padding: 0 9px; border-right: 1px solid var(--line); }
+.metrics > div:last-child { border-right: 0; }
+.metrics strong { color: var(--text); font-size: 22px; line-height: 1; font-variant-numeric: tabular-nums; }
+.metrics span { color: var(--text-muted); font-size: 9px; line-height: 1.25; }
+
+.pendingPanel { padding: 15px; }
+.pendingPanel > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+.pendingPanel h2 { font-size: 14px; }
+.pendingPanel > header a { display: inline-flex; align-items: center; gap: 3px; color: var(--accent-ink); font-size: 11px; font-weight: 700; text-decoration: none; }
+.pendingList { display: grid; }
+.pendingRow { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: center; gap: 9px; min-height: 59px; border-bottom: 1px solid var(--line); color: inherit; text-decoration: none; }
+.pendingRow:last-child { border-bottom: 0; }
+.pendingIcon { display: grid; width: 30px; height: 30px; place-items: center; border-radius: 50%; color: var(--accent-ink); background: var(--accent-soft); }
+.pendingRow > span:nth-child(2) { min-width: 0; }
+.pendingRow strong,
+.pendingRow small { display: block; }
+.pendingRow strong { color: var(--text); font-size: 12px; }
+.pendingRow small { margin-top: 3px; color: var(--text-muted); font-size: 10px; }
+.pendingRow > svg { color: var(--text-muted); }
+.pendingEmpty { padding: 19px 0; color: var(--text-muted); font-size: 12px; text-align: center; }
+
+.dayLink { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 12px; color: inherit; text-decoration: none; }
+.dayIcon { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 50%; color: var(--accent-ink); background: var(--accent-soft); }
+.dayLink > span:nth-child(2) strong,
+.dayLink > span:nth-child(2) small { display: block; }
+.dayLink > span:nth-child(2) strong { color: var(--text); font-size: 11px; }
+.dayLink > span:nth-child(2) small { margin-top: 3px; color: var(--text-muted); font-size: 10px; text-transform: capitalize; }
+.dayLink > span:last-child { display: inline-flex; align-items: center; gap: 2px; color: var(--accent-ink); font-size: 10px; font-weight: 700; white-space: nowrap; }
+
+@media (max-width: 1000px) {
+  .dashboard { grid-template-columns: minmax(0, 1fr); }
+  .insights { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .insights > section:first-child,
+  .pendingPanel { grid-column: 1 / -1; }
+  .analyticsGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .analyticsGrid > section:nth-child(1) { grid-column: 1 / -1; }
+  .analyticsGrid > section:nth-child(2),
+  .analyticsGrid > section:nth-child(3) { grid-column: span 1; }
+}
+
+@media (max-width: 620px) {
+  .agendaPanel { padding: 13px; }
+  .insights { grid-template-columns: minmax(0, 1fr); }
+  .insights > section:first-child,
+  .pendingPanel { grid-column: auto; }
+  .analyticsGrid { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .analyticsGrid > section:nth-child(n) { grid-column: auto; }
+  .appointment { grid-template-columns: 66px minmax(0, 1fr); gap: 11px; padding: 11px 9px; }
+  .appointmentTime time { font-size: 17px; }
+  .appointmentFeatured .appointmentTime time { font-size: 20px; }
+  .appointmentAction { grid-column: 2; display: flex; align-items: center; justify-content: space-between; justify-items: initial; gap: 10px; }
+  .status { text-align: left; }
+  .metrics { padding-inline: 4px; }
+  .metrics > div { padding-inline: 6px; }
+  .metrics strong { font-size: 19px; }
+  .metrics span { font-size: 8px; }
+}

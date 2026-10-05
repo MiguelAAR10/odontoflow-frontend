@@ -47,6 +47,7 @@
     "test/cash-transport.test.ts",
     "test/inventory-adapter.test.ts",
     "test/voice-adapter.test.ts",
+    "test/voice-draft.test.ts",
     "vitest.config.ts",
     "next.config.ts",
     ".next/dev/types/**/*.ts"

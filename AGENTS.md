@@ -71,3 +71,41 @@ same way. A new integration spec must be registered in all three places.
 - Do not remove the generated-contract workflow to "simplify" — regeneration is the contract's source of
   truth.
 - Do not treat `mockData.ts` as authoritative for anything beyond design-time visuals.
+
+## 7. Design and agent workflow
+
+- Before changing a user-facing view, load the relevant local skills in `.agents/skills/odontoflow-engineering/`,
+  `odontoflow-visual-system/`, `clinical-workflow-ux/`, `clinical-data-storytelling/`, `clinical-motion/`,
+  and `ux-visual-qa/`. Before reporting completion, apply `verification-before-completion/`. Keep the existing
+  `frontend-design`, `web-design-guidelines`, `next-best-practices`, and React best-practice skills in force.
+- Use the platform-specific agent names in `docs/agent-workflow.md`; Claude/Cursor use kebab-case names
+  from `.claude/agents/`, while Codex uses snake_case names from `.codex/agents/`. Never pass a name from
+  one catalog to another tool.
+- Run read-only critiques in parallel if useful, then resolve one brief before implementation. Assign exactly
+  one implementation agent to a route/file set at a time; do not start another implementer until that agent
+  has handed off or stopped. The parent coordinates ownership and runs QA after implementation; the auditor
+  reviews evidence but does not edit. UX owns safe workflow, role boundaries, and comprehension; visual
+  design chooses expression within those constraints; the data analyst owns metric validity. Where they
+  disagree, backend truth and workflow safety win.
+- Product direction and screenshot scoring for A70/B30 are defined in `docs/odonto-visual-direction.md`; do
+  not reinterpret A/B from memory or equate “Apple-like” with a specific vendor UI.
+- Every chart or metric must identify its question, source, calculation, time window, and data status. Demo data
+  stays visibly demo; absent backend fields remain unavailable rather than being inferred or fabricated.
+- Before calling a view done, inspect its rendered desktop and mobile screenshots, exercise its primary flow in
+  an isolated browser context, check keyboard/reduced-motion behavior, and record any unverified states.
+- Precedence when guidance conflicts: generated backend contract and this `AGENTS.md` first; then these
+  repo-specific skills; then third-party design/testing skills. In particular, never follow generic placeholder
+  content advice if it would fabricate business facts, and use the repo's JS Playwright harness rather than
+  generic Python instructions. The upstream `frontend-design` and `webapp-testing` files remain unmodified and
+  hash-pinned; their generic placeholder and Python-harness advice is explicitly superseded for this repo by
+  the data-truth rules above and `.agents/skills/ux-visual-qa/SKILL.md`.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

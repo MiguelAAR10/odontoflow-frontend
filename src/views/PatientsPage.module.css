@@ -1,0 +1,30 @@
+.patientsPage { min-width: 0; }
+.patientProfile { min-width: 0; }
+.patientTable { min-width: 0; }
+.patientTable :global(.data-table) { min-width: 760px; }
+.patientFacts { padding: 4px 0; }
+.patientFacts > div { min-width: 0; align-items: flex-start; padding: 12px 0; }
+.patientFacts strong { max-width: 62%; overflow-wrap: anywhere; text-align: right; }
+.apiLimit, .demoNotice { margin: 14px 0 0; padding: 10px 12px; border-left: 2px solid var(--line-strong); color: var(--text-muted); background: var(--surface-muted); font-size: 12px; line-height: 1.5; }
+.patientHistory { display: grid; gap: 8px; margin-top: 20px; }
+.patientHistory h4 { margin: 0; color: var(--text); font-size: 13px; font-weight: 650; }
+.patientHistory ul { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.patientHistory li { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 10px 0; border-top: 1px solid var(--line); }
+.patientHistory li > span { display: grid; gap: 3px; min-width: 0; }
+.patientHistory li strong { color: var(--text); font-size: 12px; }
+.patientHistory li small, .patientHistory li time, .patientHistory p { color: var(--text-muted); font-size: 11px; }
+.patientHistory li small { overflow-wrap: anywhere; }
+.patientHistory li time { flex: 0 0 auto; }
+.patientHistory p { margin: 0; line-height: 1.5; }
+.demoNotice { grid-column: 1 / -1; margin: 0; }
+
+@media (max-width: 640px) {
+  .patientTable :global(.data-table) { min-width: 560px; }
+  .patientFacts > div { gap: 12px; }
+  .patientFacts strong { max-width: 58%; }
+  .patientHistory li { flex-direction: column; gap: 4px; }
+}
+
+@media (max-width: 560px) {
+  .patientTable :global(.data-table) { min-width: 0 !important; }
+}

@@ -1,0 +1,121 @@
+.page :global(.inventory-toolbar) {
+  flex-wrap: wrap;
+}
+
+.inventoryTable :global(.data-table td:nth-child(4)) {
+  font-variant-numeric: tabular-nums;
+}
+
+.inventoryTable :global(.row-actions .button) {
+  flex: 0 0 36px;
+}
+
+@media (max-width: 1120px) {
+  .inventoryTable {
+    overflow: visible;
+    border-top: 1px solid var(--line);
+  }
+
+  .inventoryTable :global(.data-table) {
+    min-width: 0;
+    display: block;
+  }
+
+  .inventoryTable :global(.data-table thead) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+
+  .inventoryTable :global(.data-table tbody) {
+    display: grid;
+  }
+
+  .inventoryTable :global(.data-table tbody tr) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 2px 12px;
+    padding: 12px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .inventoryTable :global(.data-table td) {
+    min-width: 0;
+    height: auto;
+    padding: 5px 0;
+    border: 0;
+    white-space: normal;
+  }
+
+  .inventoryTable :global(.data-table td:nth-child(1)) {
+    grid-column: 1 / -1;
+    padding-bottom: 8px;
+  }
+
+  .inventoryTable :global(.data-table td:nth-child(2)),
+  .inventoryTable :global(.data-table td:nth-child(3)),
+  .inventoryTable :global(.data-table td:nth-child(5)) {
+    display: none;
+  }
+
+  .inventoryTable :global(.data-table td:nth-child(4)) {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: baseline;
+    gap: 8px;
+    font-weight: 700;
+  }
+
+  .inventoryTable :global(.data-table td:nth-child(4)::before) {
+    color: var(--text-muted);
+    content: "Saldo";
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .inventoryTable :global(.data-table td:nth-child(6)) {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+    padding-top: 8px;
+    border-top: 1px solid var(--line);
+  }
+
+  .inventoryTable :global(.row-actions) {
+    display: flex;
+    justify-content: flex-end;
+    gap: 7px;
+  }
+
+  .inventoryTable :global(.row-actions .button) {
+    width: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    flex-basis: 40px;
+  }
+}
+
+@media (max-width: 640px) {
+  .page :global(.inventory-toolbar) {
+    align-items: stretch;
+    gap: 9px;
+  }
+
+  .page :global(.inventory-toolbar .select-control),
+  .page :global(.inventory-toolbar .search-control) {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .page :global(.inventory-toolbar > .button) {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .inventoryTable :global(.data-table tbody tr) {
+    padding: 11px 12px;
+  }
+}

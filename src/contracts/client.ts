@@ -13,6 +13,7 @@ import { BACKEND_URL } from "../env";
 export type AppointmentListItem = components["schemas"]["AppointmentListItem"];
 export type AppointmentRead = components["schemas"]["AppointmentRead"];
 export type LeadRead = components["schemas"]["LeadRead"];
+export type LeadCreate = components["schemas"]["LeadCreate"];
 export type LocationRead = components["schemas"]["LocationRead"];
 export type ServiceRead = components["schemas"]["ServiceRead"];
 export type PractitionerRead = components["schemas"]["PractitionerRead"];
@@ -20,6 +21,12 @@ export type SlotResult = components["schemas"]["SlotResult"];
 export type PatientRead = components["schemas"]["PatientRead"];
 export type ChargeRead = components["schemas"]["ChargeRead"];
 export type PaymentRead = components["schemas"]["PaymentRead"];
+export type VisitCreate = components["schemas"]["VisitCreate"];
+export type VisitRead = components["schemas"]["VisitRead"];
+export type VisitDetailRead = components["schemas"]["VisitDetailRead"];
+export type ServiceExecutionCreate = components["schemas"]["ServiceExecutionCreate"];
+export type ServiceExecutionRead = components["schemas"]["ServiceExecutionRead"];
+export type ChargeCreate = components["schemas"]["ChargeCreate"];
 export type ProductRead = components["schemas"]["ProductRead"];
 export type BalanceRead = components["schemas"]["BalanceRead"];
 export type MovementRead = components["schemas"]["MovementRead"];
@@ -103,6 +110,16 @@ export async function listLeads(search?: string): Promise<LeadRead[]> {
   return response.data;
 }
 
+export async function getLead(leadId: number): Promise<LeadRead> {
+  const response = await http.get<LeadRead>(`/leads/${leadId}`);
+  return response.data;
+}
+
+export async function createLead(input: LeadCreate): Promise<LeadRead> {
+  const response = await http.post<LeadRead>("/leads", input);
+  return response.data;
+}
+
 export async function listLocations(): Promise<LocationRead[]> {
   const response = await http.get<LocationRead[]>("/locations");
   return response.data;
@@ -176,6 +193,41 @@ export async function cancelAppointment(
 
 export function newIdempotencyKey(): string {
   return crypto.randomUUID();
+}
+
+// --- clinical flow ---------------------------------------------------------
+
+export async function listVisits(patientId?: number): Promise<VisitRead[]> {
+  const response = await http.get<VisitRead[]>("/visits", { params: patientId ? { patient_id: patientId } : undefined });
+  return response.data;
+}
+
+export async function getVisit(visitId: number): Promise<VisitDetailRead> {
+  const response = await http.get<VisitDetailRead>(`/visits/${visitId}`);
+  return response.data;
+}
+
+export async function createVisit(input: VisitCreate, idempotencyKey: string): Promise<VisitRead> {
+  const response = await http.post<VisitRead>("/visits", input, { headers: { "Idempotency-Key": idempotencyKey } });
+  return response.data;
+}
+
+export async function createServiceExecution(
+  visitId: number,
+  input: ServiceExecutionCreate,
+  idempotencyKey: string,
+): Promise<ServiceExecutionRead> {
+  const response = await http.post<ServiceExecutionRead>(`/visits/${visitId}/executions`, input, { headers: { "Idempotency-Key": idempotencyKey } });
+  return response.data;
+}
+
+export async function createCharge(
+  executionId: number,
+  input: ChargeCreate,
+  idempotencyKey: string,
+): Promise<ChargeRead> {
+  const response = await http.post<ChargeRead>(`/executions/${executionId}/charges`, input, { headers: { "Idempotency-Key": idempotencyKey } });
+  return response.data;
 }
 
 // --- cash vertical (real economic surface, M4 Phase 1) ----------------------

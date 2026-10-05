@@ -1,94 +1,142 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Bot, CalendarDays, CheckCircle2, Clock3, MessageCircleMore, Settings, Users } from "lucide-react";
-import { getAgentDashboard } from "../api";
-import { Badge, statusTone } from "../components/Badge";
+import { useState, type FormEvent } from "react";
+import { ArrowRight, CalendarDays, MessageCircle, RotateCcw, Send, Users } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Badge } from "../components/Badge";
 import { Button } from "../components/Button";
-import { KpiCard } from "../components/KpiCard";
-import { Modal } from "../components/Modal";
-import { PageHeader } from "../components/PageHeader";
-import { Tabs } from "../components/Tabs";
-import type { AgentActivity, Automation, HumanQueueItem } from "../types";
+import styles from "./AgentPage.module.css";
 
-const activityIcons = { clock: Clock3, check: CheckCircle2, message: MessageCircleMore, users: Users };
+type HelpAction = { label: string; href: string } | null;
+type HelpMessage = { id: number; question: string; answer: string; action: HelpAction };
+
+const prompts = [
+  "¿Cómo creo una cita?",
+  "¿Se envían mensajes por WhatsApp?",
+  "¿Dónde reviso los leads?",
+];
+
+function answerFor(question: string): { answer: string; action: HelpAction } {
+  const normalized = question.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("es");
+
+  if (/cita|agenda|reserv/.test(normalized)) {
+    return {
+      answer: "Abre Agenda para consultar las citas. En modo demo, puedes crear una desde Conversaciones al elegir un contacto. La ayuda no reserva ni modifica citas por su cuenta.",
+      action: { label: "Abrir Agenda", href: "/agenda" },
+    };
+  }
+  if (/whatsapp|telegram|mensaje|convers/.test(normalized)) {
+    return {
+      answer: "Conversaciones es una demostración local. Los mensajes que agregues allí no se transmiten por WhatsApp ni Telegram; en modo API la vista no carga mensajes ficticios.",
+      action: { label: "Abrir Conversaciones", href: "/chat" },
+    };
+  }
+  if (/lead|paciente|contact/.test(normalized)) {
+    return {
+      answer: "Los leads se consultan desde Pacientes, en la pestaña Leads. Desde allí puedes abrir su ficha y continuar el seguimiento disponible para tu perfil.",
+      action: { label: "Ver leads", href: "/pacientes?tab=leads" },
+    };
+  }
+  if (/ayuda|asistente|funcion|puedes|demo|ia|automatic/.test(normalized)) {
+    return {
+      answer: "Esta pantalla es una ayuda de demostración con respuestas predefinidas. No usa IA, no consulta APIs y no ejecuta acciones. Usa los accesos de la página para abrir Agenda, Leads o Conversaciones.",
+      action: null,
+    };
+  }
+  return {
+    answer: "Puedo orientar sobre citas, leads y Conversaciones. Estas respuestas son predefinidas y no realizan cambios; elige un acceso para continuar en la pantalla correspondiente.",
+    action: null,
+  };
+}
 
 export function AgentPage() {
-  const [activity, setActivity] = useState<AgentActivity[]>([]);
-  const [queue, setQueue] = useState<HumanQueueItem[]>([]);
-  const [automations, setAutomations] = useState<Automation[]>([]);
-  const [tab, setTab] = useState("Todas");
-  const [day, setDay] = useState("Hoy");
-  const [configOpen, setConfigOpen] = useState(false);
-  const [taken, setTaken] = useState<HumanQueueItem | null>(null);
+  const router = useRouter();
+  const [question, setQuestion] = useState("");
+  const [messages, setMessages] = useState<HelpMessage[]>([]);
+  const [sequence, setSequence] = useState(0);
 
-  useEffect(() => { void getAgentDashboard().then((data) => { setActivity(data.activity); setQueue(data.queue); setAutomations(data.automations); }); }, []);
-  const filtered = useMemo(() => tab === "Todas" ? activity : activity.filter((item) => item.kind === tab), [activity, tab]);
+  const ask = (value: string) => {
+    const cleanQuestion = value.trim();
+    if (!cleanQuestion) return;
+    const result = answerFor(cleanQuestion);
+    setMessages((current) => [...current, { id: sequence + 1, question: cleanQuestion, ...result }]);
+    setSequence((current) => current + 1);
+    setQuestion("");
+  };
 
-  const takeConversation = (item: HumanQueueItem) => {
-    setQueue((current) => current.filter((queued) => queued.id !== item.id));
-    setTaken(item);
+  const submitQuestion = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    ask(question);
   };
 
   return (
-    <section className="page">
-      <PageHeader title="Agente IA" description="Seguimiento automático de pacientes y citas" actions={<><span className="agent-active"><i />Activo</span><Button icon={Settings} onClick={() => setConfigOpen(true)}>Configurar agente</Button></>} />
-      <div className="kpi-grid">
-        <KpiCard icon={MessageCircleMore} value={24} label="Conversaciones hoy" tone="blue" />
-        <KpiCard icon={CalendarDays} value={8} label="Citas generadas" tone="cyan" />
-        <KpiCard icon={Clock3} value={5} label="Esperando respuesta" tone="amber" />
-        <KpiCard icon={Users} value={3} label="Derivados a una persona" tone="purple" />
-      </div>
-
-      <div className="agent-workspace">
-        <div className="agent-left">
-          <section className="panel agent-activity">
-            <div className="panel-header"><h2>Actividad del agente</h2><Tabs items={["Todas", "Citas", "Leads"].map((label) => ({ id: label, label }))} value={tab} onChange={setTab} ariaLabel="Filtrar actividad del agente" panelId="agent-activity-panel" /><select value={day} onChange={(event) => setDay(event.target.value)} aria-label="Filtrar por fecha"><option>Hoy</option><option>Ayer</option><option>Esta semana</option></select></div>
-            <div className="activity-list" id="agent-activity-panel" role="tabpanel">
-              {filtered.length ? filtered.map((item) => {
-                const Icon = activityIcons[item.icon];
-                return <div className="activity-row" key={`${item.time}-${item.patient}`}>
-                  <time>{item.time}</time><Icon className={`text-${item.tone}`} size={24} />
-                  <strong>{item.action}</strong><span className="person-inline"><span className={`avatar avatar--${item.tone}`}>{item.initials}</span>{item.patient}</span>
-                  <span className="whatsapp-inline"><MessageCircleMore size={18} />{item.channel}</span><Badge tone={statusTone(item.status)}>{item.status}</Badge>
-                </div>;
-              }) : <div className="empty-state">No hay actividad para este filtro.</div>}
-            </div>
-          </section>
-
-          <section className="panel automations-panel">
-            <h2>Automatizaciones de hoy</h2>
-            <div className="automation-flow">
-              {automations.map((item, index) => <article className={`automation-step automation-step--${item.state}`} key={`${item.time}-${item.title}`}>
-                <strong>{item.time}</strong><span>{item.title}</span><footer>{item.state === "done" ? <CheckCircle2 /> : <Clock3 />}{item.note}</footer>{index < automations.length - 1 && <i className="automation-link" />}
-              </article>)}
-            </div>
-          </section>
+    <section className={`page ${styles.page}`}>
+      <header className={styles.header}>
+        <div>
+          <p className={styles.eyebrow}>Centro de ayuda</p>
+          <h1>Guía de flujos</h1>
+          <p className={styles.subtitle}>Respuestas para los flujos de OdontoFlow.</p>
         </div>
+        <Badge tone="slate">Demo local</Badge>
+      </header>
 
-        <section className="panel human-panel">
-          <h2>Atención humana <span className="count-badge">{queue.length}</span></h2>
-          <div className="human-list">
-            {queue.length ? queue.map((item) => <article className="human-card" key={item.id}>
-              <span className={`avatar avatar--${item.tone}`}>{item.initials}</span>
-              <div><strong>{item.name}</strong><span>{item.reason}</span><small><Clock3 size={14} />{item.waiting}</small></div>
-              <Button compact onClick={() => takeConversation(item)}>Tomar conversación</Button>
-            </article>) : <div className="empty-state"><CheckCircle2 size={30} /><strong>Cola atendida</strong><span>No hay conversaciones pendientes.</span></div>}
+      <p className={styles.disclosure} role="note">
+        Asistente mock con respuestas predefinidas. No usa IA ni APIs y no ejecuta acciones.
+      </p>
+
+      <div className={styles.workspace}>
+        <nav className={styles.shortcuts} aria-label="Accesos de trabajo">
+          <h2>Ir a una sección</h2>
+          <button type="button" onClick={() => router.push("/agenda")}>
+            <span className={styles.shortcutIcon}><CalendarDays size={18} /></span>
+            <span><strong>Agenda</strong><small>Consultar y organizar citas</small></span>
+            <ArrowRight size={16} aria-hidden="true" />
+          </button>
+          <button type="button" onClick={() => router.push("/pacientes?tab=leads")}>
+            <span className={styles.shortcutIcon}><Users size={18} /></span>
+            <span><strong>Leads</strong><small>Revisar contactos interesados</small></span>
+            <ArrowRight size={16} aria-hidden="true" />
+          </button>
+          <button type="button" onClick={() => router.push("/chat")}>
+            <span className={styles.shortcutIcon}><MessageCircle size={18} /></span>
+            <span><strong>Conversaciones</strong><small>Mensajes locales de demo</small></span>
+            <ArrowRight size={16} aria-hidden="true" />
+          </button>
+        </nav>
+
+        <section className={styles.assistant} aria-labelledby="assistant-title">
+          <header className={styles.assistantHeader}>
+            <div><h2 id="assistant-title">Asistente de ayuda</h2><p>Consulta cómo continuar un flujo.</p></div>
+            {messages.length > 0 && <Button compact icon={RotateCcw} onClick={() => setMessages([])}>Borrar conversación</Button>}
+          </header>
+
+          <div className={styles.transcript} role="log" aria-live="polite" aria-label="Conversación con el asistente mock">
+            {messages.length === 0 ? (
+              <div className={styles.welcome}>
+                <span className={styles.welcomeIcon}><MessageCircle size={21} /></span>
+                <div><strong>¿Qué necesitas resolver?</strong><p>Prueba una consulta frecuente o escribe tu pregunta.</p></div>
+                <div className={styles.promptList}>
+                  {prompts.map((prompt) => <button type="button" key={prompt} onClick={() => ask(prompt)}>{prompt}<ArrowRight size={15} /></button>)}
+                </div>
+              </div>
+            ) : messages.map((message) => (
+              <article className={styles.exchange} key={message.id}>
+                <p className={styles.question}>{message.question}</p>
+                <div className={styles.answer}>
+                  <span className={styles.answerLabel}>Ayuda demo</span>
+                  <p>{message.answer}</p>
+                  {message.action && <Button compact onClick={() => router.push(message.action!.href)}>{message.action.label}<ArrowRight size={15} /></Button>}
+                </div>
+              </article>
+            ))}
           </div>
+
+          <form className={styles.composer} onSubmit={submitQuestion}>
+            <input value={question} onChange={(event) => setQuestion(event.target.value)} maxLength={240} aria-label="Pregunta para la ayuda demo" placeholder="Escribe una pregunta sobre citas, leads o mensajes" />
+            <Button type="submit" variant="primary" icon={Send} aria-label="Consultar ayuda demo" disabled={!question.trim()} />
+          </form>
         </section>
       </div>
-
-      <Modal title="Configurar agente" open={configOpen} onClose={() => setConfigOpen(false)}>
-        <div className="settings-list">
-          <label><span><strong>Confirmaciones automáticas</strong><small>Contactar un día antes de la cita</small></span><input type="checkbox" defaultChecked /></label>
-          <label><span><strong>Segundo intento</strong><small>Reintentar con pacientes sin respuesta</small></span><input type="checkbox" defaultChecked /></label>
-          <label><span><strong>Derivación humana</strong><small>Transferir casos sensibles al equipo</small></span><input type="checkbox" defaultChecked /></label>
-          <div className="form-actions"><Button onClick={() => setConfigOpen(false)}>Cancelar</Button><Button variant="primary" icon={Bot} onClick={() => setConfigOpen(false)}>Guardar configuración</Button></div>
-        </div>
-      </Modal>
-      <Modal title="Conversación asignada" open={Boolean(taken)} onClose={() => setTaken(null)} size="small">
-        {taken && <div className="confirmation-message"><CheckCircle2 /><p>Ahora estás atendiendo la conversación de <strong>{taken.name}</strong>.</p><Button variant="primary" onClick={() => setTaken(null)}>Entendido</Button></div>}
-      </Modal>
     </section>
   );
 }
