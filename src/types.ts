@@ -15,7 +15,7 @@ export interface Patient {
   branch: string;
   nextAppointment: string;
   treatment: string;
-  status: "Activo" | "Lead" | "Pendiente";
+  status: "Activo" | "Lead" | "Pendiente" | "No disponible";
   tone: Tone;
   origin: string;
   interest: string;
@@ -29,7 +29,7 @@ export interface Appointment {
   treatment: string;
   doctor: string;
   branch: string;
-  status: "Confirmada" | "Por confirmar" | "No respondió" | "Cancelada";
+  status: "Confirmada" | "Por confirmar" | "No respondió" | "Cancelada" | "Atendida" | "En atención" | "No-show";
   /** Real-mode scheduling identity used by filters and slot actions. */
   leadId?: number;
   serviceId?: number;

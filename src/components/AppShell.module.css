@@ -1,0 +1,30 @@
+.mobileAppointmentBar {
+  display: none;
+}
+
+@media (max-width: 850px) {
+  .mobileAppointmentBar {
+    min-height: 54px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 6px 16px;
+    background: var(--canvas);
+  }
+
+  .mobileAppointmentBar :global(.new-appointment-button) {
+    position: static !important;
+    inset: auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    padding: 0 13px !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+  }
+
+  .mobileAppointmentBar :global(.new-appointment-button span) {
+    display: inline !important;
+  }
+}

@@ -6,10 +6,10 @@ export function Badge({ tone = "slate", children }: { tone?: Tone; children: Rea
 }
 
 export function statusTone(status: string): Tone {
-  if (["Confirmada", "Completado", "Pagado", "Disponible", "Activo"].includes(status)) return "green";
+  if (["Confirmada", "Completado", "Pagado", "Disponible", "Activo", "Atendida"].includes(status)) return "green";
   if (["Por confirmar", "Esperando", "Pendiente", "Stock bajo"].includes(status)) return "amber";
-  if (["No respondió", "Crítico", "Egreso", "Cancelada"].includes(status)) return "red";
+  if (["No respondió", "Crítico", "Egreso", "Cancelada", "No-show"].includes(status)) return "red";
   if (["Requiere atención", "Plin", "Yape"].includes(status)) return "purple";
-  if (["Inactivo"].includes(status)) return "slate";
+  if (["Inactivo", "No disponible"].includes(status)) return "slate";
   return "cyan";
 }

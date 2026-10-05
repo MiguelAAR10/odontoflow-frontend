@@ -13,6 +13,8 @@ import { BACKEND_URL } from "../env";
 export type AppointmentListItem = components["schemas"]["AppointmentListItem"];
 export type AppointmentRead = components["schemas"]["AppointmentRead"];
 export type LeadRead = components["schemas"]["LeadRead"];
+export type LeadCreate = components["schemas"]["LeadCreate"];
+export type VisitCreate = components["schemas"]["VisitCreate"];
 export type LocationRead = components["schemas"]["LocationRead"];
 export type ServiceRead = components["schemas"]["ServiceRead"];
 export type PractitionerRead = components["schemas"]["PractitionerRead"];
@@ -20,7 +22,9 @@ export type SlotResult = components["schemas"]["SlotResult"];
 export type PatientRead = components["schemas"]["PatientRead"];
 export type VisitRead = components["schemas"]["VisitRead"];
 export type VisitDetailRead = components["schemas"]["VisitDetailRead"];
+export type ServiceExecutionCreate = components["schemas"]["ServiceExecutionCreate"];
 export type ServiceExecutionRead = components["schemas"]["ServiceExecutionRead"];
+export type ChargeCreate = components["schemas"]["ChargeCreate"];
 export type ChargeRead = components["schemas"]["ChargeRead"];
 export type PaymentRead = components["schemas"]["PaymentRead"];
 export type PaymentCreate = components["schemas"]["PaymentCreate"];
@@ -108,6 +112,16 @@ export async function getAppointment(appointmentId: number): Promise<Appointment
 
 export async function listLeads(search?: string): Promise<LeadRead[]> {
   const response = await http.get<LeadRead[]>("/leads", { params: search ? { search } : undefined });
+  return response.data;
+}
+
+export async function getLead(leadId: number): Promise<LeadRead> {
+  const response = await http.get<LeadRead>(`/leads/${leadId}`);
+  return response.data;
+}
+
+export async function createLead(input: LeadCreate): Promise<LeadRead> {
+  const response = await http.post<LeadRead>("/leads", input);
   return response.data;
 }
 

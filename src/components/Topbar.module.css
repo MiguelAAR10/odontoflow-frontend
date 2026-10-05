@@ -1,0 +1,43 @@
+@media (max-width: 850px) {
+  .desktopAction {
+    display: none !important;
+  }
+}
+
+.compactRole {
+  display: none;
+}
+
+@media (max-width: 1180px) {
+  .compactRole {
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 8px;
+  }
+
+  .compactRole svg {
+    flex: 0 0 auto;
+    color: var(--accent-ink);
+  }
+
+  .compactRole select {
+    min-width: 0;
+    max-width: 124px;
+    padding-right: 2px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 420px) {
+  .compactRole {
+    gap: 4px;
+    padding-inline: 6px;
+  }
+
+  .compactRole select {
+    max-width: 104px;
+    font-size: 11px;
+  }
+}

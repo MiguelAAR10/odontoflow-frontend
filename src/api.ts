@@ -208,10 +208,10 @@ export function toUiPatient(row: {
     name,
     dni: row.dni ?? "",
     phone: row.phone ?? "",
-    branch: "",
-    nextAppointment: "Sin cita",
-    treatment: "Por definir",
-    status: "Activo",
+    branch: "No disponible",
+    nextAppointment: "No disponible",
+    treatment: "No disponible",
+    status: "No disponible",
     tone: "cyan",
     origin: "Registro clínico",
     interest: "Por validar",
@@ -1373,3 +1373,49 @@ export {
   voiceEnabled,
   voiceLive,
 } from "./voice";
+
+// Role-based demo views use a separate snapshot for scenarios that the API
+// does not model yet. Keep the operational API above as the single real-data
+// facade; these exports expose only the demo repository surface.
+export {
+  RepositoryProvider,
+  useOdontoRepository,
+} from "./api/RepositoryContext";
+export {
+  ApiRepository,
+  MockDemoRepository,
+  RepositoryError,
+  createDemoSnapshot,
+  DEMO_FINANCIAL_PERIODS,
+  DEMO_NOW,
+  DEMO_TIME_ZONE,
+  chargeTotals,
+  confirmationQueue,
+  demoDateKey,
+  demoMomentLabel,
+  demoWeekWindow,
+  detailForVisit,
+  financialSummary,
+  noShows,
+  resetDemo,
+} from "./api/repository";
+export type {
+  CommandResult,
+  DemoActor,
+  DemoAppointment,
+  DemoFinancialPeriodKey,
+  DemoLead,
+  DemoPatient,
+  DemoRequest,
+  OdontoCommand,
+  OdontoSnapshot,
+} from "./api/repository";
+export { createLeadRecord, getLeadRecord, toMoneyCents } from "./api/transport";
+export type {
+  AppointmentListItem,
+  LeadRead,
+  LocationRead,
+  PractitionerRead,
+  ServiceRead,
+  SlotResult,
+} from "./contracts/client";

@@ -1,0 +1,30 @@
+{
+  "baseUrl": "Isolated production build",
+  "screenshots": "docs/qa/auditoria-2026-09-30/actions-final",
+  "routes": [],
+  "interactions": {
+    "reschedule": {
+      "passed": true,
+      "before": "sábado 15 ago · 09:00",
+      "after": "sábado 15 ago · 11:00"
+    },
+    "cancel": {
+      "passed": true,
+      "finalState": "Cancelada"
+    },
+    "chat": {
+      "passed": true,
+      "sentLocally": true,
+      "reset": true,
+      "originalMessageCount": 3
+    },
+    "writeRequests": [],
+    "pageErrors": [],
+    "blockedWriteRequests": []
+  },
+  "pageErrors": [],
+  "failures": 0,
+  "mobileOverflows": [],
+  "allOverflows": [],
+  "visualDefects": []
+}
