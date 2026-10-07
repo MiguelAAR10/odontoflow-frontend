@@ -5,6 +5,8 @@ import { Check } from "lucide-react";
 import { choosePersona, loadIdentity, loadPersonas, toApiError, useMocks } from "../api";
 import type { PersonaOption, StaffIdentity } from "../types";
 import { BrandLogo } from "./BrandLogo";
+import { createLatestRequest } from "../session";
+import { onSessionExpired } from "../contracts/client";
 
 /**
  * The signed-in staff person for the whole shell. `identity` is the backend's
@@ -45,48 +47,66 @@ export function PersonaProvider({ children }: { children: ReactNode }) {
   const [requiresCode, setRequiresCode] = useState(false);
   const [hasCode, setHasCode] = useState(false);
   const codeRef = useRef("");
-
-  const readIdentity = useCallback(async () => {
-    try {
-      setIdentity(await loadIdentity());
-      setError("");
-    } catch (caught) {
-      const apiError = toApiError(caught);
-      setIdentity(null);
-      // 401 = no usable persona yet: the picker asks for one, not an error.
-      setError(apiError.httpStatus === 401 ? "" : apiError.message);
-      if (apiError.code === "PERSONA_REQUIRED") setCurrent(null);
-    }
-  }, []);
+  const requests = useRef(createLatestRequest());
 
   useEffect(() => {
-    let active = true;
-    void (async () => {
-      const [session] = await Promise.allSettled([loadPersonas(), readIdentity()]);
-      if (!active) return;
-      if (session.status === "fulfilled") {
-        setPersonas(session.value.personas);
-        setCurrent(session.value.current);
-        setRequiresCode(session.value.requiresCode === true);
-      } else {
-        setError(toApiError(session.reason).message);
-      }
+    const unsubscribe = onSessionExpired((code) => {
+      requests.current.invalidate();
+      codeRef.current = "";
+      setHasCode(false);
+      setIdentity(null);
+      setCurrent(null);
       setLoading(false);
+      setSwitching(false);
+      setError(code === "ACCESS_CODE_INVALID" ? WRONG_CODE : "Tu sesión caducó. Elige quién eres de nuevo.");
+      setVersion((value) => value + 1);
+    });
+    const isCurrent = requests.current.begin();
+    void (async () => {
+      try {
+        // Read the selector before /me so its options survive a /me 401.
+        const session = await loadPersonas();
+        if (!isCurrent()) return;
+        setPersonas(session.personas);
+        setCurrent(session.current);
+        setRequiresCode(session.requiresCode === true);
+        if (session.current !== null) {
+          const nextIdentity = await loadIdentity();
+          if (isCurrent()) setIdentity(nextIdentity);
+        }
+      } catch (caught) {
+        if (isCurrent()) setError(toApiError(caught).message);
+      } finally {
+        if (isCurrent()) setLoading(false);
+      }
     })();
-    return () => { active = false; };
-  }, [readIdentity]);
+    return () => { unsubscribe(); requests.current.invalidate(); };
+  }, []);
 
   const switchTo = useCallback(async (key: string | null, code?: string) => {
     if (code !== undefined) codeRef.current = code;
+    const previousIdentity = identity;
+    requests.current.invalidate();
     setSwitching(true);
+    setIdentity(null);
+    setError("");
+    setVersion((value) => value + 1);
+    const pending = choosePersona(key, codeRef.current || undefined);
+    const isCurrent = requests.current.begin();
+    let sessionChosen = false;
     try {
-      const session = await choosePersona(key, codeRef.current || undefined);
+      const session = await pending;
+      if (!isCurrent()) return;
+      sessionChosen = true;
       setPersonas(session.personas);
       setCurrent(session.current);
       setHasCode(codeRef.current !== "");
-      await readIdentity();
-      setVersion((value) => value + 1);
+      if (session.current !== null) {
+        const nextIdentity = await loadIdentity();
+        if (isCurrent()) setIdentity(nextIdentity);
+      }
     } catch (caught) {
+      if (!isCurrent()) return;
       const apiError = toApiError(caught);
       if (apiError.code === "ACCESS_CODE_INVALID") {
         codeRef.current = "";
@@ -94,20 +114,21 @@ export function PersonaProvider({ children }: { children: ReactNode }) {
         setRequiresCode(true);
         setError(WRONG_CODE);
       } else {
+        if (!sessionChosen) setIdentity(previousIdentity);
         setError(apiError.message);
       }
     } finally {
-      setSwitching(false);
+      if (isCurrent()) setSwitching(false);
     }
-  }, [readIdentity]);
+  }, [identity]);
 
   const needsCode = requiresCode && !hasCode;
   const value = useMemo<PersonaState>(
     () => ({ identity, personas, current, loading, switching, error, version, needsCode, switchTo }),
     [identity, personas, current, loading, switching, error, version, needsCode, switchTo],
   );
-  const gated = !useMocks && (loading || current === null);
-  return <PersonaContext.Provider value={value}>{gated ? <PersonaGate /> : children}</PersonaContext.Provider>;
+  const gated = !useMocks && (loading || switching || current === null || identity === null);
+  return <PersonaContext.Provider value={value}>{gated ? <PersonaGate key={version} /> : children}</PersonaContext.Provider>;
 }
 
 export function usePersona(): PersonaState {

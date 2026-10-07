@@ -7,13 +7,27 @@
  * makes no HTTP call.
  */
 import { USE_MOCKS } from "./env";
-import { ApiError, getMe, type MeRead } from "./contracts/client";
+import { advanceSessionVersion, ApiError, getMe, getSessionVersion, invalidateSession, type MeRead } from "./contracts/client";
 import { mockStaff } from "./mockData";
 import type { PersonaOption, RunnableAgent, StaffIdentity } from "./types";
 
 const SESSION_URL = "/api/session";
 
 let mockPersona: string | null = mockStaff[0]?.key ?? null;
+
+/** A view owns only its latest request and the identity that started it.
+ * Call invalidate on filter changes and effect cleanup, including unmount. */
+export function createLatestRequest() {
+  let request = 0;
+  return {
+    begin(): () => boolean {
+      const ticket = ++request;
+      const identity = getSessionVersion();
+      return () => ticket === request && identity === getSessionVersion();
+    },
+    invalidate(): void { request += 1; },
+  };
+}
 
 /** The mock persona's `/me`, or null when none is chosen (backend 401). */
 export function mockCurrentMe(): MeRead | null {
@@ -51,6 +65,7 @@ interface SessionBody {
 }
 
 async function sessionRequest(init?: RequestInit): Promise<PersonaSession> {
+  const version = getSessionVersion();
   let response: Response;
   try {
     response = await fetch(SESSION_URL, { cache: "no-store", credentials: "same-origin", ...init });
@@ -59,6 +74,7 @@ async function sessionRequest(init?: RequestInit): Promise<PersonaSession> {
   }
   const body = (await response.json().catch(() => null)) as (SessionBody & { error?: { code: string; message: string; details?: Record<string, unknown> } }) | null;
   if (!response.ok || !body) {
+    if (response.status === 401) invalidateSession(version, body?.error?.code);
     const error = body?.error;
     throw new ApiError(response.status, error?.code ?? "UNKNOWN", error?.message ?? "No se pudo cambiar de persona.", error?.details ?? {});
   }
@@ -83,6 +99,7 @@ export async function loadPersonas(): Promise<PersonaSession> {
 /** `null` clears the persona. `code` is the server's access code (real mode;
  * a wrong one is 401 `ACCESS_CODE_INVALID`). */
 export async function choosePersona(key: string | null, code?: string): Promise<PersonaSession> {
+  advanceSessionVersion();
   if (USE_MOCKS) {
     if (key !== null && !mockStaff.some((staff) => staff.key === key)) {
       throw new ApiError(400, "PERSONA_UNKNOWN", "Esa persona no está configurada en este servidor.");

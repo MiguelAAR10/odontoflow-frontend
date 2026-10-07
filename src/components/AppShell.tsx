@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
   bookReal,
   createAppointment,
-  currentWeekWindow,
+  agendaDateKey,
+  agendaWeekReadWindow,
   getEligiblePractitioners,
   getLeads,
   getLocations,
@@ -19,6 +20,8 @@ import { Modal } from "./Modal";
 import { usePersona } from "./PersonaContext";
 import { Surface } from "./Surface";
 import { Topbar } from "./Topbar";
+import { createLatestRequest } from "../session";
+import type { ChatAppointmentContext } from "../types";
 
 function localDateKey(instant: string, timeZone: string): string {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -55,6 +58,8 @@ function formatSlotTime(instant: string, timeZone: string): string {
 export function AppShell({ children }: { children: ReactNode }) {
   const [appointmentOpen, setAppointmentOpen] = useState(false);
   const [appointmentPatient, setAppointmentPatient] = useState("");
+  const [appointmentContext, setAppointmentContext] = useState<ChatAppointmentContext | null>(null);
+  const [leadId, setLeadId] = useState("");
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState("");
   const [error, setError] = useState("");
@@ -62,10 +67,28 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   // A persona switch remounts the page so it refetches with the new credential.
   const { version: personaVersion } = usePersona();
+  const selectorRequests = useRef(createLatestRequest());
+  const practitionerRequests = useRef(createLatestRequest());
+  const slotRequests = useRef(createLatestRequest());
+  const mutationRequests = useRef(createLatestRequest());
+
+  const closeAppointment = useCallback(() => {
+    if (!saving) setAppointmentOpen(false);
+  }, [saving]);
+
+  useEffect(() => {
+    // Mock mode keeps the shell mounted; identity changes still discard its modal.
+    mutationRequests.current.invalidate();
+    setAppointmentOpen(false);
+    setSaving(false);
+  }, [personaVersion]);
 
   useEffect(() => {
     const openFromChat = (event: Event) => {
-      setAppointmentPatient((event as CustomEvent<{ patient: string }>).detail.patient);
+      const context = (event as CustomEvent<ChatAppointmentContext>).detail;
+      setAppointmentContext(context);
+      setAppointmentPatient(context.displayName);
+      setLeadId("");
       setAppointmentOpen(true);
     };
     window.addEventListener("open-new-appointment", openFromChat);
@@ -99,15 +122,25 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const loadSelectors = useCallback(() => {
     if (useMocks) return;
-    void getLeads().then(setLeads).catch((caught) => setError(toApiError(caught).message));
-    void getServices().then(setServices).catch((caught) => setError(toApiError(caught).message));
-    void getLocations().then(setLocations).catch((caught) => setError(toApiError(caught).message));
+    const isCurrent = selectorRequests.current.begin();
+    void Promise.allSettled([getLeads(), getServices(), getLocations()])
+      .then(([nextLeads, nextServices, nextLocations]) => {
+        if (!isCurrent()) return;
+        setLeads(nextLeads.status === "fulfilled" ? nextLeads.value : []);
+        setServices(nextServices.status === "fulfilled" ? nextServices.value : []);
+        setLocations(nextLocations.status === "fulfilled" ? nextLocations.value : []);
+        const errors = [nextLeads, nextServices, nextLocations].flatMap((result) =>
+          result.status === "rejected" ? [toApiError(result.reason).message] : []);
+        if (errors.length) setError(errors.join(" "));
+      })
+      .catch((caught) => { if (isCurrent()) setError(toApiError(caught).message); });
   }, []);
 
   useEffect(() => {
     if (!appointmentOpen) return;
     loadSelectors();
     setError("");
+    setSaving(false);
     setKey(newIdempotencyKey());
     setServiceId("");
     setLocationId("");
@@ -116,9 +149,11 @@ export function AppShell({ children }: { children: ReactNode }) {
     setSlots([]);
     setSelectedStart("");
     setSlotsError("");
+    return () => { selectorRequests.current.invalidate(); practitionerRequests.current.invalidate(); slotRequests.current.invalidate(); mutationRequests.current.invalidate(); };
   }, [appointmentOpen, loadSelectors]);
 
   useEffect(() => {
+    const isCurrent = practitionerRequests.current.begin();
     if (useMocks || !serviceId || !locationId) {
       setPractitioners([]);
       setPractitionerId("");
@@ -130,11 +165,13 @@ export function AppShell({ children }: { children: ReactNode }) {
     setSlots([]);
     setSelectedStart("");
     void getEligiblePractitioners(Number(serviceId), Number(locationId))
-      .then(setPractitioners)
-      .catch((caught) => setError(toApiError(caught).message));
+      .then((rows) => { if (isCurrent()) setPractitioners(rows); })
+      .catch((caught) => { if (isCurrent()) setError(toApiError(caught).message); });
+    return () => practitionerRequests.current.invalidate();
   }, [locationId, serviceId]);
 
   useEffect(() => {
+    const isCurrent = slotRequests.current.begin();
     if (useMocks || !appointmentOpen || !serviceId || !locationId || !practitionerId) {
       setSlotsLoading(false);
       return;
@@ -142,7 +179,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     setSlotsLoading(true);
     setSlotsError("");
     setSelectedStart("");
-    const window = currentWeekWindow(slotTimeZone);
+    const window = agendaWeekReadWindow(agendaDateKey(new Date().toISOString(), slotTimeZone), slotTimeZone);
     void getSlots({
       service_id: Number(serviceId),
       location_id: Number(locationId),
@@ -150,10 +187,11 @@ export function AppShell({ children }: { children: ReactNode }) {
       window_end: window.to,
     })
       .then((available) => {
-        setSlots(available.filter((slot) => slot.practitioner_id === Number(practitionerId)));
+        if (isCurrent()) setSlots(available.filter((slot) => slot.practitioner_id === Number(practitionerId)));
       })
-      .catch((caught) => setSlotsError(toApiError(caught).message))
-      .finally(() => setSlotsLoading(false));
+      .catch((caught) => { if (isCurrent()) setSlotsError(toApiError(caught).message); })
+      .finally(() => { if (isCurrent()) setSlotsLoading(false); });
+    return () => slotRequests.current.invalidate();
   }, [appointmentOpen, locationId, practitionerId, serviceId, slotTimeZone]);
 
   useEffect(() => {
@@ -173,6 +211,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   const submitAppointment = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (saving) return;
+    const isCurrent = mutationRequests.current.begin();
     const form = new FormData(event.currentTarget);
     setSaving(true);
     setError("");
@@ -191,21 +231,26 @@ export function AppShell({ children }: { children: ReactNode }) {
           setError("Selecciona un horario disponible.");
           return;
         }
+        if (!leads.some((lead) => lead.id === Number(leadId))) {
+          setError("Selecciona un lead real de la lista para crear la cita.");
+          return;
+        }
         await bookReal({
-          lead_id: Number(form.get("lead_id")),
+          lead_id: Number(leadId),
           service_id: Number(form.get("service_id")),
           location_id: Number(form.get("location_id")),
           practitioner_id: Number(form.get("practitioner_id")),
           start: selectedStart,
         }, key);
       }
+      if (!isCurrent()) return;
       setAppointmentOpen(false);
       setToast("Cita creada correctamente");
       window.dispatchEvent(new Event("appointment-created"));
     } catch (caught) {
-      setError(toApiError(caught).message);
+      if (isCurrent()) setError(toApiError(caught).message);
     } finally {
-      setSaving(false);
+      if (isCurrent()) setSaving(false);
     }
   };
 
@@ -214,11 +259,11 @@ export function AppShell({ children }: { children: ReactNode }) {
       <a className="skip-link" href="#main-content">Saltar al contenido</a>
       <AppSidebar mobileOpen={sidebarOpen} onNavigate={() => setSidebarOpen(false)} />
       <div className="app-workspace">
-        <Topbar onNewAppointment={() => { setAppointmentPatient(""); setAppointmentOpen(true); }} mobileOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen((value) => !value)} />
+        <Topbar onNewAppointment={() => { setAppointmentPatient(""); setAppointmentContext(null); setLeadId(""); setAppointmentOpen(true); }} mobileOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen((value) => !value)} />
         <Surface key={personaVersion} as="main" id="main-content" className="app-main">{children}</Surface>
       </div>
       {sidebarOpen && <button className="sidebar-backdrop" type="button" aria-label="Cerrar navegación" onClick={() => setSidebarOpen(false)} />}
-      <Modal title="Nueva cita" open={appointmentOpen} onClose={() => setAppointmentOpen(false)}>
+      <Modal title="Nueva cita" open={appointmentOpen} onClose={closeAppointment}>
         <form id="new-appointment-form" className="form-grid" onSubmit={submitAppointment}>
           {useMocks ? (
             <>
@@ -231,7 +276,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             </>
           ) : (
             <>
-              <label className="field field--wide"><span>Paciente / lead</span><select name="lead_id" required autoFocus><option value="">Selecciona un lead…</option>{leads.map((lead) => <option key={lead.id} value={lead.id}>{lead.full_name}</option>)}</select></label>
+              {appointmentContext && <p className="field-note field--wide" role="note">Desde la conversación con {appointmentContext.displayName}. El chat no incluye un vínculo patient/lead: selecciona el registro real al que corresponde esta cita. Si no existe un perfil, regístralo antes de continuar.</p>}
+              <label className="field field--wide"><span>Paciente / lead</span><select name="lead_id" required autoFocus value={leadId} onChange={(event) => setLeadId(event.target.value)}><option value="">Selecciona un lead real…</option>{leads.map((lead) => <option key={lead.id} value={lead.id}>{lead.full_name} · Lead #{lead.id}</option>)}</select></label>
               <label className="field"><span>Servicio</span><select name="service_id" required value={serviceId} onChange={(event) => setServiceId(event.target.value)}><option value="">Selecciona…</option>{services.map((service) => <option key={service.id} value={service.id}>{service.name}</option>)}</select></label>
               <label className="field"><span>Sede</span><select name="location_id" required value={locationId} onChange={(event) => setLocationId(event.target.value)}><option value="">Selecciona…</option>{locations.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}</select></label>
               <label className="field"><span>Odontólogo</span><select name="practitioner_id" required value={practitionerId} disabled={!serviceId || !locationId || practitioners.length === 0} onChange={(event) => setPractitionerId(event.target.value)}><option value="">{serviceId && locationId ? "Selecciona…" : "Elige servicio y sede"}</option>{practitioners.map((practitioner) => <option key={practitioner.id} value={practitioner.id}>{practitioner.display_name}</option>)}</select></label>
@@ -257,7 +303,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </>
           )}
           {error && <div className="form-error field--wide" role="alert">{error}</div>}
-          <div className="form-actions field--wide"><Button type="button" onClick={() => setAppointmentOpen(false)}>Cancelar</Button><Button type="submit" variant="primary" disabled={saving || (!useMocks && !selectedStart)}>{saving ? "Guardando…" : "Crear cita"}</Button></div>
+          <div className="form-actions field--wide"><Button type="button" onClick={closeAppointment} disabled={saving}>Cancelar</Button><Button type="submit" variant="primary" disabled={saving || (!useMocks && !selectedStart)}>{saving ? "Guardando…" : "Crear cita"}</Button></div>
         </form>
       </Modal>
       {toast && <div className="toast" role="status">{toast}</div>}

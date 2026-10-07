@@ -72,6 +72,37 @@ export const http = axios.create({
   baseURL: BACKEND_URL,
 });
 
+// Browser identity generations fence late responses from a previous persona.
+// No credential or backend domain state is stored here.
+let sessionVersion = 0;
+const sessionExpiredListeners = new Set<(code?: string) => void>();
+export const getSessionVersion = (): number => sessionVersion;
+export const advanceSessionVersion = (): number => ++sessionVersion;
+export function onSessionExpired(listener: (code?: string) => void): () => void {
+  sessionExpiredListeners.add(listener);
+  return () => { sessionExpiredListeners.delete(listener); };
+}
+export function invalidateSession(expectedVersion = sessionVersion, code?: string): void {
+  if (expectedVersion !== sessionVersion) return;
+  advanceSessionVersion();
+  for (const listener of sessionExpiredListeners) listener(code);
+}
+
+const requestVersions = new WeakMap<object, number>();
+// The optional access supports the existing transport-boundary test doubles;
+// real Axios instances always supply both interceptor managers.
+http.interceptors?.request.use((config) => {
+  requestVersions.set(config, getSessionVersion());
+  return config;
+});
+http.interceptors?.response.use((response) => response, (caught: unknown) => {
+  if (axios.isAxiosError(caught) && caught.response?.status === 401) {
+    const version = caught.config && requestVersions.get(caught.config);
+    if (version !== undefined) invalidateSession(version);
+  }
+  return Promise.reject(caught);
+});
+
 export interface ApiErrorShape {
   code: string;
   message: string;
