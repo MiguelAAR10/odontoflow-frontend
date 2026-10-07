@@ -1,0 +1,15 @@
+{
+  "command": [
+    "npm",
+    "run",
+    "build"
+  ],
+  "cwd": "/home/miguel/projects/portfolio/AI-EdgeRunners/odontoflow/.worktrees/frontend-erp",
+  "environment_overrides": {},
+  "started_at_utc": "2026-10-04T07:18:45.798650+00:00",
+  "finished_at_utc": "2026-10-04T07:19:47.050819+00:00",
+  "duration_seconds": 58.324,
+  "exit_code": 0,
+  "peak_child_rss_kib": 661816,
+  "log_bytes": 1101
+}

@@ -1,0 +1,11 @@
+{
+  "head_identical": true,
+  "branch_identical": true,
+  "commits_identical": true,
+  "inherited_diff_identical": true,
+  "tracked_diff_empty": true,
+  "staged_diff_empty": true,
+  "untracked_tools_identical": true,
+  "untracked_tool_files": 118,
+  "new_untracked_paths_outside_p0": []
+}

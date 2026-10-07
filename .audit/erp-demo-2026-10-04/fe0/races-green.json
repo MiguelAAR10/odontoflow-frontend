@@ -1,0 +1,19 @@
+{
+  "command": [
+    "npm",
+    "test",
+    "--",
+    "test/demo-view-races.test.ts",
+    "test/session-expiry.test.ts"
+  ],
+  "environment_overrides": {
+    "VITEST_MAX_THREADS": "1",
+    "VITEST_MIN_THREADS": "1",
+    "VITEST_MAX_FORKS": "1",
+    "VITEST_MIN_FORKS": "1"
+  },
+  "started_at_utc": "2026-10-04T07:32:58.841260+00:00",
+  "exit_code": 0,
+  "duration_seconds": 5.894,
+  "finished_at_utc": "2026-10-04T07:33:04.735621+00:00"
+}

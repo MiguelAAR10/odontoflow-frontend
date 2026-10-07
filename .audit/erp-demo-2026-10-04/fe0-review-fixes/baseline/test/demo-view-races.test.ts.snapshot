@@ -1,0 +1,46 @@
+import { describe, expect, it, vi } from "vitest";
+
+const sessionPath = "../src/session";
+const clientPath = "../src/contracts/client";
+
+describe("view request ownership", () => {
+  it("keeps the newer Agenda filter result when the older read finishes last", async () => {
+    const { createLatestRequest } = await import(sessionPath);
+    const requests = createLatestRequest();
+    let resolveOld!: (rows: string[]) => void;
+    const oldRows = new Promise<string[]>((resolve) => { resolveOld = resolve; });
+    const commit = vi.fn();
+    const oldCurrent = requests.begin();
+    const oldRead = oldRows.then((rows) => { if (oldCurrent()) commit(rows); });
+    const newCurrent = requests.begin();
+    if (newCurrent()) commit(["sede nueva"]);
+    resolveOld(["sede anterior"]);
+    await oldRead;
+    expect(commit.mock.calls).toEqual([[["sede nueva"]]]);
+  });
+
+  it("drops Chat page success, error and finally after a filter change", async () => {
+    const { createLatestRequest } = await import(sessionPath);
+    const requests = createLatestRequest();
+    const success = requests.begin();
+    requests.invalidate();
+    expect(success()).toBe(false);
+    const failedPage = requests.begin();
+    const renderError = vi.fn();
+    const finishLoading = vi.fn();
+    requests.invalidate();
+    await Promise.reject(new Error("old page")).catch((error) => { if (failedPage()) renderError(error); }).finally(() => { if (failedPage()) finishLoading(); });
+    expect(renderError).not.toHaveBeenCalled();
+    expect(finishLoading).not.toHaveBeenCalled();
+  });
+
+  it("cannot restore identity or a thread after expiry or persona change", async () => {
+    const { createLatestRequest } = await import(sessionPath);
+    const client = await import(clientPath);
+    const identity = createLatestRequest().begin();
+    const messages = createLatestRequest().begin();
+    client.advanceSessionVersion();
+    expect(identity()).toBe(false);
+    expect(messages()).toBe(false);
+  });
+});

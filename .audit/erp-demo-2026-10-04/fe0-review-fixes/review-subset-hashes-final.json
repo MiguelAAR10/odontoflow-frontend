@@ -1,0 +1,26 @@
+{
+  "src/components/AppShell.tsx": {
+    "sha256": "8c813ef34a3c7545227c7d0476229957f55727f5d53139e398832f878817ffeb",
+    "bytes": 15739
+  },
+  "src/components/PersonaContext.tsx": {
+    "sha256": "f9a513cac17a893302d2d85193fb4de46d68269fea4aebc546fa9e091a28a1c1",
+    "bytes": 8744
+  },
+  "src/views/AgendaPage.tsx": {
+    "sha256": "077191e36b1ed240b93bdb80c100e781200b8f2bc463dffb4e117ba1cb86737f",
+    "bytes": 35152
+  },
+  "src/views/ApprovalsPage.tsx": {
+    "sha256": "46389527ae7fc76a6344f8cf9a75ad6e5e512cb94b3e976b2e05557ef2ecedb4",
+    "bytes": 17420
+  },
+  "docs/run-demo.md": {
+    "sha256": "64b3e0ac8ea2c85e90790ddeebcde493579d01b51364739f1cb770d2e0f20d9c",
+    "bytes": 4803
+  },
+  "test/demo-view-races.test.ts": {
+    "sha256": "50bc535c26cf9dec77bd3a567926210f0295227358d2838391cb6def638f1b3a",
+    "bytes": 3054
+  }
+}

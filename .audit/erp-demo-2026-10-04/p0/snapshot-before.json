@@ -1,0 +1,11 @@
+{
+  "recorded_at_utc": "2026-10-04T07:13:19.264277+00:00",
+  "cwd": "/home/miguel/projects/portfolio/AI-EdgeRunners/odontoflow/.worktrees/frontend-erp",
+  "head": "842b8318ab7f810ad8b2397dc7fa72484a4f4f73",
+  "main": "e508b85e61131aa95ed14d783f1e569574b96979",
+  "origin_main": "e508b85e61131aa95ed14d783f1e569574b96979",
+  "branch": "erp/frontend",
+  "untracked_tool_files": 118,
+  "worktree_diff_bytes": 0,
+  "staged_diff_bytes": 0
+}

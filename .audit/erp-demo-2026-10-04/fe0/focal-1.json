@@ -1,0 +1,24 @@
+{
+  "command": [
+    "npm",
+    "test",
+    "--",
+    "test/approvals-adapter.test.ts",
+    "test/chat-adapter.test.ts",
+    "test/agenda-adapter.test.ts",
+    "test/bff-session.test.ts",
+    "test/bff-guard.test.ts",
+    "test/session-expiry.test.ts",
+    "test/demo-view-races.test.ts"
+  ],
+  "environment_overrides": {
+    "VITEST_MAX_THREADS": "1",
+    "VITEST_MIN_THREADS": "1",
+    "VITEST_MAX_FORKS": "1",
+    "VITEST_MIN_FORKS": "1"
+  },
+  "started_at_utc": "2026-10-04T07:37:43.825504+00:00",
+  "exit_code": 0,
+  "duration_seconds": 7.521,
+  "finished_at_utc": "2026-10-04T07:37:51.347116+00:00"
+}

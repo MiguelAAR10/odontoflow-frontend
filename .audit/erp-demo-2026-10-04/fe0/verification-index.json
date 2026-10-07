@@ -1,0 +1,335 @@
+{
+  "approvals-green": {
+    "command": [
+      "npm",
+      "test",
+      "--",
+      "test/approvals-adapter.test.ts"
+    ],
+    "environment_overrides": {
+      "VITEST_MAX_THREADS": "1",
+      "VITEST_MIN_THREADS": "1",
+      "VITEST_MAX_FORKS": "1",
+      "VITEST_MIN_FORKS": "1"
+    },
+    "started_at_utc": "2026-10-04T07:29:07.623281+00:00",
+    "exit_code": 0,
+    "duration_seconds": 3.577,
+    "finished_at_utc": "2026-10-04T07:29:11.201541+00:00",
+    "log": ".audit/erp-demo-2026-10-04/fe0/approvals-green.log",
+    "log_hash": {
+      "sha256": "1067f3debb84ff25110561ae9a9b27116cfef9b47b3d250540084d6ff13863f6",
+      "bytes": 415
+    },
+    "tests_summary": "36 passed (36)",
+    "files_summary": "1 passed (1)"
+  },
+  "approvals-red": {
+    "command": [
+      "npm",
+      "test",
+      "--",
+      "test/approvals-adapter.test.ts"
+    ],
+    "environment_overrides": {
+      "VITEST_MAX_THREADS": "1",
+      "VITEST_MIN_THREADS": "1",
+      "VITEST_MAX_FORKS": "1",
+      "VITEST_MIN_FORKS": "1"
+    },
+    "started_at_utc": "2026-10-04T07:28:35.318646+00:00",
+    "exit_code": 1,
+    "duration_seconds": 2.966,
+    "finished_at_utc": "2026-10-04T07:28:41.217032+00:00",
+    "log": ".audit/erp-demo-2026-10-04/fe0/approvals-red.log",
+    "log_hash": {
+      "sha256": "eb69e7e5cd0d1e6bfa01a841b7f6b24346f2b98008f52fc2cd5e3b1ffda534d9",
+      "bytes": 8408
+    },
+    "tests_summary": "4 failed | 32 passed (36)",
+    "files_summary": "1 failed (1)"
+  },
+  "build-escalated": {
+    "command": [
+      "npm",
+      "run",
+      "build"
+    ],
+    "environment_overrides": {},
+    "started_at_utc": "2026-10-04T08:10:09.352552+00:00",
+    "exit_code": 0,
+    "duration_seconds": 66.301,
+    "finished_at_utc": "2026-10-04T08:11:21.518274+00:00",
+    "log": ".audit/erp-demo-2026-10-04/fe0/build-escalated.log",
+    "log_hash": {
+      "sha256": "8e53b30bcb51617a2aede2d45df32303efe31adcd56fc834c83e0544371f6901",
+      "bytes": 1103
+    },
+    "tests_summary": null,
+    "files_summary": null
+  },
+  "build-sandbox": {
+    "command": [
+      "npm",
+      "run",
+      "build"
+    ],
+    "environment_overrides": {},
+    "started_at_utc": "2026-10-04T07:46:04.132683+00:00",
+    "exit_code": 1,
+    "duration_seconds": 4.979,
+    "finished_at_utc": "2026-10-04T07:46:09.111727+00:00",
+    "log": ".audit/erp-demo-2026-10-04/fe0/build-sandbox.log",
+    "log_hash": {
+      "sha256": "e33d6edcc82559c21b5cbdf22362139947bed3a4cf7b9140b6d705d20f23127e",
+      "bytes": 364
+    },
+    "tests_summary": null,
+    "files_summary": null
+  },
+  "chat-agenda-green": {
+    "command": [
+      "npm",
+      "test",
+      "--",
+      "test/chat-adapter.test.ts",
+      "test/agenda-adapter.test.ts"
+    ],
+    "environment_overrides": {
+      "VITEST_MAX_THREADS": "1",
+      "VITEST_MIN_THREADS": "1",
+      "VITEST_MAX_FORKS": "1",
+      "VITEST_MIN_FORKS": "1"
+    },
+    "started_at_utc": "2026-10-04T07:36:29.905010+00:00",
+    "exit_code": 1,
+    "duration_seconds": 4.877,
+    "finished_at_utc": "2026-10-04T07:36:34.782310+00:00",
+    "log": ".audit/erp-demo-2026-10-04/fe0/chat-agenda-green.log",
+    "log_hash": {
+      "sha256": "c209d53235b34d0aff9248df6623660b166c1166cb4a8ec9d1595648ec4375a2",
+      "bytes": 4136
+    },
+    "tests_summary": "1 failed | 31 passed (32)",
+    "files_summary": "1 failed | 1 passed (2)"
+  },
+  "chat-agenda-red": {
+    "command": [
+      "npm",
+      "test",
+      "--",
+      "test/chat-adapter.test.ts",
+      "test/agenda-adapter.test.ts"
+    ],
+    "environment_overrides": {
+      "VITEST_MAX_THREADS": "1",
+      "VITEST_MIN_THREADS": "1",
+      "VITEST_MAX_FORKS": "1",
+      "VITEST_MIN_FORKS": "1"
+    },
+    "started_at_utc": "2026-10-04T07:35:04.130218+00:00",
+    "exit_code": 1,
+    "duration_seconds": 7.655,
+    "finished_at_utc": "2026-10-04T07:35:14.716861+00:00",
+    "log": ".audit/erp-demo-2026-10-04/fe0/chat-agenda-red.log",
+    "log_hash": {
+      "sha256": "6bc66d3e826db972dafffd47cacfa85b4eb51731ffd64a8d58c39f98de645800",
+      "bytes": 8010
+    },
+    "tests_summary": "5 failed | 27 passed (32)",
+    "files_summary": "2 failed (2)"
+  },
+  "focal-1": {
+    "command": [
+      "npm",
+      "test",
+      "--",
+      "test/approvals-adapter.test.ts",
+      "test/chat-adapter.test.ts",
+      "test/agenda-adapter.test.ts",
+      "test/bff-session.test.ts",
+      "test/bff-guard.test.ts",
+      "test/session-expiry.test.ts",
+      "test/demo-view-races.test.ts"
+    ],
+    "environment_overrides": {
+      "VITEST_MAX_THREADS": "1",
+      "VITEST_MIN_THREADS": "1",
+      "VITEST_MAX_FORKS": "1",
+      "VITEST_MIN_FORKS": "1"
+    },
+    "started_at_utc": "2026-10-04T07:37:43.825504+00:00",
+    "exit_code": 0,
+    "duration_seconds": 7.521,
+    "finished_at_utc": "2026-10-04T07:37:51.347116+00:00",
+    "log": ".audit/erp-demo-2026-10-04/fe0/focal-1.log",
+    "log_hash": {
+      "sha256": "94fbd03dd1695acce7b2933f49b2268ce4809fbbeec4f6fbffc17ea98ebcbcdb",
+      "bytes": 1091
+    },
+    "tests_summary": "168 passed (168)",
+    "files_summary": "7 passed (7)"
+  },
+  "races-green": {
+    "command": [
+      "npm",
+      "test",
+      "--",
+      "test/demo-view-races.test.ts",
+      "test/session-expiry.test.ts"
+    ],
+    "environment_overrides": {
+      "VITEST_MAX_THREADS": "1",
+      "VITEST_MIN_THREADS": "1",
+      "VITEST_MAX_FORKS": "1",
+      "VITEST_MIN_FORKS": "1"
+    },
+    "started_at_utc": "2026-10-04T07:32:58.841260+00:00",
+    "exit_code": 0,
+    "duration_seconds": 5.894,
+    "finished_at_utc": "2026-10-04T07:33:04.735621+00:00",
+    "log": ".audit/erp-demo-2026-10-04/fe0/races-green.log",
+    "log_hash": {
+      "sha256": "6d57fe178267e5b3074107f25fac352a262a63b5162759401b57e16146ff408b",
+      "bytes": 595
+    },
+    "tests_summary": "8 passed (8)",
+    "files_summary": "2 passed (2)"
+  },
+  "races-red": {
+    "command": [
+      "npm",
+      "test",
+      "--",
+      "test/demo-view-races.test.ts"
+    ],
+    "environment_overrides": {
+      "VITEST_MAX_THREADS": "1",
+      "VITEST_MIN_THREADS": "1",
+      "VITEST_MAX_FORKS": "1",
+      "VITEST_MIN_FORKS": "1"
+    },
+    "started_at_utc": "2026-10-04T07:31:49.781428+00:00",
+    "exit_code": 1,
+    "duration_seconds": 4.814,
+    "finished_at_utc": "2026-10-04T07:31:54.595893+00:00",
+    "log": ".audit/erp-demo-2026-10-04/fe0/races-red.log",
+    "log_hash": {
+      "sha256": "f1d78a0061bdc0b0a00688bd967e7052b0c2e3b05c9efbf11e330c9b39382383",
+      "bytes": 2865
+    },
+    "tests_summary": "3 failed (3)",
+    "files_summary": "1 failed (1)"
+  },
+  "session-green": {
+    "command": [
+      "npm",
+      "test",
+      "--",
+      "test/session-expiry.test.ts"
+    ],
+    "environment_overrides": {
+      "VITEST_MAX_THREADS": "1",
+      "VITEST_MIN_THREADS": "1",
+      "VITEST_MAX_FORKS": "1",
+      "VITEST_MIN_FORKS": "1"
+    },
+    "started_at_utc": "2026-10-04T07:31:07.730405+00:00",
+    "exit_code": 0,
+    "duration_seconds": 3.871,
+    "finished_at_utc": "2026-10-04T07:31:11.602413+00:00",
+    "log": ".audit/erp-demo-2026-10-04/fe0/session-green.log",
+    "log_hash": {
+      "sha256": "e74c53eed97137402307db05abea52d8609a2161fc3775511ba0a10c1de5fcf0",
+      "bytes": 525
+    },
+    "tests_summary": "5 passed (5)",
+    "files_summary": "1 passed (1)"
+  },
+  "session-red": {
+    "command": [
+      "npm",
+      "test",
+      "--",
+      "test/session-expiry.test.ts"
+    ],
+    "environment_overrides": {
+      "VITEST_MAX_THREADS": "1",
+      "VITEST_MIN_THREADS": "1",
+      "VITEST_MAX_FORKS": "1",
+      "VITEST_MIN_FORKS": "1"
+    },
+    "started_at_utc": "2026-10-04T07:30:03.801859+00:00",
+    "exit_code": 1,
+    "duration_seconds": 3.022,
+    "finished_at_utc": "2026-10-04T07:30:06.824731+00:00",
+    "log": ".audit/erp-demo-2026-10-04/fe0/session-red.log",
+    "log_hash": {
+      "sha256": "7d3d6c819d2a03596c092b1671f4515d69cbd147e8b2852c1d4223eac8834078",
+      "bytes": 4597
+    },
+    "tests_summary": "5 failed (5)",
+    "files_summary": "1 failed (1)"
+  },
+  "typecheck-1": {
+    "command": [
+      "npm",
+      "run",
+      "typecheck"
+    ],
+    "environment_overrides": {},
+    "started_at_utc": "2026-10-04T07:39:08.274009+00:00",
+    "exit_code": 0,
+    "duration_seconds": 24.02,
+    "finished_at_utc": "2026-10-04T07:39:35.224851+00:00",
+    "log": ".audit/erp-demo-2026-10-04/fe0/typecheck-1.log",
+    "log_hash": {
+      "sha256": "20eb8ed09fb7261a9593a9a8eeea86b1a516304c6c1aee0b61c30702a93d4920",
+      "bytes": 113
+    },
+    "tests_summary": null,
+    "files_summary": null
+  },
+  "typecheck-final": {
+    "command": [
+      "npm",
+      "run",
+      "typecheck"
+    ],
+    "environment_overrides": {},
+    "started_at_utc": "2026-10-04T07:44:18.223735+00:00",
+    "exit_code": 0,
+    "duration_seconds": 20.691,
+    "finished_at_utc": "2026-10-04T07:44:41.843576+00:00",
+    "log": ".audit/erp-demo-2026-10-04/fe0/typecheck-final.log",
+    "log_hash": {
+      "sha256": "20eb8ed09fb7261a9593a9a8eeea86b1a516304c6c1aee0b61c30702a93d4920",
+      "bytes": 113
+    },
+    "tests_summary": null,
+    "files_summary": null
+  },
+  "unit-final": {
+    "command": [
+      "npm",
+      "test"
+    ],
+    "environment_overrides": {
+      "VITEST_MAX_THREADS": "1",
+      "VITEST_MIN_THREADS": "1",
+      "VITEST_MAX_FORKS": "1",
+      "VITEST_MIN_FORKS": "1"
+    },
+    "started_at_utc": "2026-10-04T07:44:47.941626+00:00",
+    "exit_code": 0,
+    "duration_seconds": 25.097,
+    "finished_at_utc": "2026-10-04T07:45:15.972296+00:00",
+    "log": ".audit/erp-demo-2026-10-04/fe0/unit-final.log",
+    "log_hash": {
+      "sha256": "cd03c876a8c6b02a4bdae6fdc8c6f7279b306e0b050569200148e6fc1a6298cd",
+      "bytes": 2103
+    },
+    "tests_summary": "370 passed (370)",
+    "files_summary": "30 passed (30)"
+  }
+}

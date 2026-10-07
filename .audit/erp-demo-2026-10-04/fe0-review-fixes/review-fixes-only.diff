@@ -1,0 +1,152 @@
+--- a/src/components/AppShell.tsx
++++ b/src/components/AppShell.tsx
+@@ -72,6 +72,17 @@
+   const slotRequests = useRef(createLatestRequest());
+   const mutationRequests = useRef(createLatestRequest());
+ 
++  const closeAppointment = useCallback(() => {
++    if (!saving) setAppointmentOpen(false);
++  }, [saving]);
++
++  useEffect(() => {
++    // Mock mode keeps the shell mounted; identity changes still discard its modal.
++    mutationRequests.current.invalidate();
++    setAppointmentOpen(false);
++    setSaving(false);
++  }, [personaVersion]);
++
+   useEffect(() => {
+     const openFromChat = (event: Event) => {
+       const context = (event as CustomEvent<ChatAppointmentContext>).detail;
+@@ -112,10 +123,15 @@
+   const loadSelectors = useCallback(() => {
+     if (useMocks) return;
+     const isCurrent = selectorRequests.current.begin();
+-    void Promise.all([getLeads(), getServices(), getLocations()])
++    void Promise.allSettled([getLeads(), getServices(), getLocations()])
+       .then(([nextLeads, nextServices, nextLocations]) => {
+         if (!isCurrent()) return;
+-        setLeads(nextLeads); setServices(nextServices); setLocations(nextLocations);
++        setLeads(nextLeads.status === "fulfilled" ? nextLeads.value : []);
++        setServices(nextServices.status === "fulfilled" ? nextServices.value : []);
++        setLocations(nextLocations.status === "fulfilled" ? nextLocations.value : []);
++        const errors = [nextLeads, nextServices, nextLocations].flatMap((result) =>
++          result.status === "rejected" ? [toApiError(result.reason).message] : []);
++        if (errors.length) setError(errors.join(" "));
+       })
+       .catch((caught) => { if (isCurrent()) setError(toApiError(caught).message); });
+   }, []);
+@@ -247,7 +263,7 @@
+         <Surface key={personaVersion} as="main" id="main-content" className="app-main">{children}</Surface>
+       </div>
+       {sidebarOpen && <button className="sidebar-backdrop" type="button" aria-label="Cerrar navegación" onClick={() => setSidebarOpen(false)} />}
+-      <Modal title="Nueva cita" open={appointmentOpen} onClose={() => setAppointmentOpen(false)}>
++      <Modal title="Nueva cita" open={appointmentOpen} onClose={closeAppointment}>
+         <form id="new-appointment-form" className="form-grid" onSubmit={submitAppointment}>
+           {useMocks ? (
+             <>
+@@ -287,7 +303,7 @@
+             </>
+           )}
+           {error && <div className="form-error field--wide" role="alert">{error}</div>}
+-          <div className="form-actions field--wide"><Button type="button" onClick={() => setAppointmentOpen(false)}>Cancelar</Button><Button type="submit" variant="primary" disabled={saving || (!useMocks && !selectedStart)}>{saving ? "Guardando…" : "Crear cita"}</Button></div>
++          <div className="form-actions field--wide"><Button type="button" onClick={closeAppointment} disabled={saving}>Cancelar</Button><Button type="submit" variant="primary" disabled={saving || (!useMocks && !selectedStart)}>{saving ? "Guardando…" : "Crear cita"}</Button></div>
+         </form>
+       </Modal>
+       {toast && <div className="toast" role="status">{toast}</div>}
+--- a/src/components/PersonaContext.tsx
++++ b/src/components/PersonaContext.tsx
+@@ -2,7 +2,7 @@
+ 
+ import { createContext, useCallback, useContext, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
+ import { Check } from "lucide-react";
+-import { choosePersona, loadIdentity, loadPersonas, toApiError } from "../api";
++import { choosePersona, loadIdentity, loadPersonas, toApiError, useMocks } from "../api";
+ import type { PersonaOption, StaffIdentity } from "../types";
+ import { BrandLogo } from "./BrandLogo";
+ import { createLatestRequest } from "../session";
+@@ -127,7 +127,7 @@
+     () => ({ identity, personas, current, loading, switching, error, version, needsCode, switchTo }),
+     [identity, personas, current, loading, switching, error, version, needsCode, switchTo],
+   );
+-  const gated = loading || switching || current === null || identity === null;
++  const gated = !useMocks && (loading || switching || current === null || identity === null);
+   return <PersonaContext.Provider value={value}>{gated ? <PersonaGate key={version} /> : children}</PersonaContext.Provider>;
+ }
+ 
+--- a/src/views/AgendaPage.tsx
++++ b/src/views/AgendaPage.tsx
+@@ -311,6 +311,8 @@
+     if (busy) return;
+     detailRequests.current.invalidate();
+     slotRequests.current.invalidate();
++    setDetailLoading(false);
++    setRescheduleLoading(false);
+     setSelected(null);
+     setDetail(null);
+     setRescheduleOpen(false);
+--- a/src/views/ApprovalsPage.tsx
++++ b/src/views/ApprovalsPage.tsx
+@@ -260,7 +260,6 @@
+       if (!isCurrent()) return;
+       const error = describeApprovalError(caught, item.source);
+       setDecisions((state) => ({ ...state, [item.key]: { intent, busy: false, error } }));
+-      if (item.source === "appointment_proposal" && error.reload) window.dispatchEvent(new Event("appointment-created"));
+     }
+   };
+ 
+--- a/docs/run-demo.md
++++ b/docs/run-demo.md
+@@ -34,11 +34,13 @@
+ 
+ ## Recorrido local y límites vigentes
+ 
+-1. Elige una persona autorizada mediante el selector. El código, si el servidor lo pide, se conserva sólo en memoria. Un 401 en cualquier lectura o mutación vuelve al selector y descarta identidad/código y respuestas pendientes; no se reproduce automáticamente una mutación. Un 403 informa la restricción de permisos y conserva la sesión.
++1. Elige una persona autorizada mediante el selector. El código, si el servidor lo pide, se conserva sólo en memoria. Un 401 en cualquier lectura o mutación vuelve al selector y descarta identidad/código y respuestas pendientes; esto incluye un código incorrecto al cambiar de persona. No se reproduce automáticamente una mutación. Un 403 informa la restricción de permisos y conserva la sesión.
+ 2. Consulta Agenda, Pacientes, Caja e Inventario según permisos backend. En Agenda, “Hoy” vuelve al día de la sede seleccionada; elegir una fecha conserva la vista día/semana. Horarios e IDs del catálogo provienen del backend.
+ 3. En Bandeja, revisa Pendientes y “Aprobadas/en proceso”. Una aprobación en proceso no significa ejecutada ni ofrece aprobar otra vez. Ante un conflicto de cita, vuelve a cargar la bandeja y consulta otro horario real en Agenda. Propuestas genéricas conservan códigos y mensajes backend.
+ 4. En Chat, lee conversaciones y toma derivaciones según permisos. “Crear cita” abre el formulario real: el contrato actual sólo proyecta `contact_identity_id`, por lo que debes seleccionar explícitamente un lead real por ID. El nombre no establece vínculo patient/lead. Si falta el perfil, regístralo antes de continuar; no se inventa uno.
+ 5. El historial Chat **mantiene el contrato ASC actual** y “Ver mensajes más recientes”. No ofrece “historia anterior” ni orden descendente hasta que BE0b entregue OpenAPI estable. SIM, WAITLIST y los recorridos completos siguen sujetos a sus gates.
++
++El backend ya limita el preview de Chat a 80 caracteres y no indica si lo truncó. Un preview recibido de exactamente 80 se muestra sin elipsis: con este contrato no se distingue de un mensaje más largo ya recortado. No se infiere truncamiento ni se amplía la API para resolver esa limitación.
+ 
+ La verificación browser/I0, cookie firmada, same-origin, permisos y ausencia de tokens en bundle se realiza en el ensayo poseído por el coordinador. No uses capturas mock ni esta verificación local como sustituto de Q2/Q8.
+ 
+--- a/test/demo-view-races.test.ts
++++ b/test/demo-view-races.test.ts
+@@ -1,4 +1,6 @@
+-import { describe, expect, it, vi } from "vitest";
++import { afterEach, describe, expect, it, vi } from "vitest";
++import { createElement } from "react";
++import { renderToStaticMarkup } from "react-dom/server";
+ 
+ const sessionPath = "../src/session";
+ const clientPath = "../src/contracts/client";
+@@ -44,3 +46,27 @@
+     expect(messages()).toBe(false);
+   });
+ });
++
++describe("PersonaProvider initial rendering", () => {
++  afterEach(() => { vi.unstubAllEnvs(); vi.resetModules(); });
++
++  const renderInitial = async (useMocks: boolean) => {
++    vi.resetModules();
++    vi.stubEnv("NEXT_PUBLIC_USE_MOCKS", String(useMocks));
++    const providerPath = "../src/components/PersonaContext";
++    const { PersonaProvider } = await import(providerPath);
++    return renderToStaticMarkup(createElement(PersonaProvider, null, createElement("p", null, "design child")));
++  };
++
++  it("keeps mock design children visible before identity effects run", async () => {
++    const html = await renderInitial(true);
++    expect(html).toContain("design child");
++    expect(html).not.toContain("Elige quién eres");
++  });
++
++  it("keeps real-mode children behind the identity gate initially", async () => {
++    const html = await renderInitial(false);
++    expect(html).not.toContain("design child");
++    expect(html).toContain("Elige quién eres");
++  });
++});

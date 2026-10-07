@@ -1,0 +1,12 @@
+{
+  "command": [
+    "npm",
+    "run",
+    "typecheck"
+  ],
+  "environment_overrides": {},
+  "started_at_utc": "2026-10-04T08:33:54.722161+00:00",
+  "exit_code": 0,
+  "duration_seconds": 9.681,
+  "finished_at_utc": "2026-10-04T08:34:04.403249+00:00"
+}

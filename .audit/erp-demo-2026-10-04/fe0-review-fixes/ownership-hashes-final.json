@@ -1,0 +1,94 @@
+{
+  "README.md": {
+    "sha256": "dec54b1d585d69409c6562bfb8f7dd5eae7acafe14b6e92746b4c22b91fc8055",
+    "bytes": 4832
+  },
+  "docs/run-demo.md": {
+    "sha256": "64b3e0ac8ea2c85e90790ddeebcde493579d01b51364739f1cb770d2e0f20d9c",
+    "bytes": 4803
+  },
+  "package.json": {
+    "sha256": "58f1a0ac142c43ec27280bbddcf7ead8c7017d7e5819b40528ffe22046a56984",
+    "bytes": 1314
+  },
+  "src/api.ts": {
+    "sha256": "2d9a1ef649bafc26351de83d33481d0e797eef103bc8c5f5ce79579d849f8659",
+    "bytes": 58792
+  },
+  "src/approvals.ts": {
+    "sha256": "9c09178d3e7246e1801a86b4df11a60ae54c274774803c3d33d38e5b5e0887f7",
+    "bytes": 33544
+  },
+  "src/bff/proxy.ts": {
+    "sha256": "1e6489460b271af973333064c303f0a92a64692f68de7d7c9954ce12af30394c",
+    "bytes": 10573
+  },
+  "src/chat.ts": {
+    "sha256": "da07e6310f47a4d9c1d8c103beae9da8fa8e36cd6d7c7e7d38abd432ab6f7d26",
+    "bytes": 19057
+  },
+  "src/components/AppShell.tsx": {
+    "sha256": "8c813ef34a3c7545227c7d0476229957f55727f5d53139e398832f878817ffeb",
+    "bytes": 15739
+  },
+  "src/components/PersonaContext.tsx": {
+    "sha256": "f9a513cac17a893302d2d85193fb4de46d68269fea4aebc546fa9e091a28a1c1",
+    "bytes": 8744
+  },
+  "src/contracts/api.ts": {
+    "sha256": "42d18ff42489d766141d2270c2ee29686cb041c595087feb65d0a9a70d92b86c",
+    "bytes": 484263
+  },
+  "src/contracts/client.ts": {
+    "sha256": "a24e3942486a55b9e2d0a922d9e14c4fff7c6df823fc0cf6445a583e7f621922",
+    "bytes": 27261
+  },
+  "src/session.ts": {
+    "sha256": "fca39a7fdda71e2fc310734a75a54558f71ccf0b2afa05925cf053f6159f55b8",
+    "bytes": 6668
+  },
+  "src/types.ts": {
+    "sha256": "b1ef92c21353a8a1bb2552d7e9e71aa10335b635cbdf41f523fdeccf9be863b6",
+    "bytes": 14951
+  },
+  "src/views/AgendaPage.tsx": {
+    "sha256": "077191e36b1ed240b93bdb80c100e781200b8f2bc463dffb4e117ba1cb86737f",
+    "bytes": 35152
+  },
+  "src/views/ApprovalsPage.tsx": {
+    "sha256": "46389527ae7fc76a6344f8cf9a75ad6e5e512cb94b3e976b2e05557ef2ecedb4",
+    "bytes": 17420
+  },
+  "src/views/ChatPage.tsx": {
+    "sha256": "9b6879a925176cb630b696cc5e49f62ef4dfeb1f696bdc48b90b1025061d90b5",
+    "bytes": 23075
+  },
+  "test/agenda-adapter.test.ts": {
+    "sha256": "50865f96dcc3d2924b03d45e335f546de6c44b3fd25e4c532492482b04ad7498",
+    "bytes": 2740
+  },
+  "test/approvals-adapter.test.ts": {
+    "sha256": "949a44825992de89ec5c015588e6e6cfeaa39191130408fed7eaf8178982cf67",
+    "bytes": 22074
+  },
+  "test/bff-guard.test.ts": {
+    "sha256": "d6fb6455b47835d1039040efe026ed9672a82c71283822298070d0bf720724bc",
+    "bytes": 10841
+  },
+  "test/bff-session.test.ts": {
+    "sha256": "6d4a501b545cac391dc1d651b03629b134a697d0fdff095c5e739ab7db2892de",
+    "bytes": 21510
+  },
+  "test/chat-adapter.test.ts": {
+    "sha256": "bb963229ab5d6e2451a0780d1b5129286a7ea9fb68e30649daf8f9a545f3eff0",
+    "bytes": 13253
+  },
+  "test/demo-view-races.test.ts": {
+    "sha256": "50bc535c26cf9dec77bd3a567926210f0295227358d2838391cb6def638f1b3a",
+    "bytes": 3054
+  },
+  "test/session-expiry.test.ts": {
+    "sha256": "c4dc77b523626be8285282ef021e9b64ee207ffbcbd882dba1d8afff4073d88b",
+    "bytes": 3473
+  }
+}

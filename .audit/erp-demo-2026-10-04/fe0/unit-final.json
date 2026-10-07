@@ -1,0 +1,16 @@
+{
+  "command": [
+    "npm",
+    "test"
+  ],
+  "environment_overrides": {
+    "VITEST_MAX_THREADS": "1",
+    "VITEST_MIN_THREADS": "1",
+    "VITEST_MAX_FORKS": "1",
+    "VITEST_MIN_FORKS": "1"
+  },
+  "started_at_utc": "2026-10-04T07:44:47.941626+00:00",
+  "exit_code": 0,
+  "duration_seconds": 25.097,
+  "finished_at_utc": "2026-10-04T07:45:15.972296+00:00"
+}

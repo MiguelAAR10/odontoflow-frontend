@@ -1,0 +1,19 @@
+{
+  "command": [
+    "npm",
+    "test",
+    "--",
+    "test/chat-adapter.test.ts",
+    "test/agenda-adapter.test.ts"
+  ],
+  "environment_overrides": {
+    "VITEST_MAX_THREADS": "1",
+    "VITEST_MIN_THREADS": "1",
+    "VITEST_MAX_FORKS": "1",
+    "VITEST_MIN_FORKS": "1"
+  },
+  "started_at_utc": "2026-10-04T07:36:29.905010+00:00",
+  "exit_code": 1,
+  "duration_seconds": 4.877,
+  "finished_at_utc": "2026-10-04T07:36:34.782310+00:00"
+}

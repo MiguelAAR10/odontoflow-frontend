@@ -1,0 +1,30 @@
+{
+  "nativeAttached": {
+    "exitCode": 0,
+    "signal": null,
+    "stdoutBytes": 0,
+    "stderrBytes": 0,
+    "validJson": false
+  },
+  "nativeDetached": {
+    "exitCode": 0,
+    "signal": null,
+    "stdoutBytes": 0,
+    "stderrBytes": 0,
+    "validJson": false
+  },
+  "crossSpawnAttached": {
+    "exitCode": 0,
+    "signal": null,
+    "stdoutBytes": 0,
+    "stderrBytes": 0,
+    "validJson": false
+  },
+  "crossSpawnDetached": {
+    "exitCode": 0,
+    "signal": null,
+    "stdoutBytes": 0,
+    "stderrBytes": 0,
+    "validJson": false
+  }
+}
