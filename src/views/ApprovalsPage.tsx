@@ -20,6 +20,8 @@ import { Button } from "../components/Button";
 import { usePersona } from "../components/PersonaContext";
 import { Tabs } from "../components/Tabs";
 import type { AgentRunResult, ApprovalCategory, ApprovalItem, ApprovalStatus, ProposalDecision, RunnableAgent, StaffIdentity, Tone } from "../types";
+import { createLatestRequest } from "../session";
+import { getSessionVersion } from "../contracts/client";
 
 /**
  * Bandeja: everything the agents propose, with its evidence, in one place.
@@ -113,6 +115,7 @@ function RunSummary({ result }: { result: AgentRunResult }) {
 
 const STATUS_TABS: Array<{ id: ApprovalStatus; label: string }> = [
   { id: "pending", label: "Pendientes" },
+  { id: "approved", label: "Aprobadas/en proceso" },
   { id: "executed", label: "Ejecutadas" },
   { id: "declined", label: "Declinadas" },
   { id: "expired", label: "Vencidas" },
@@ -183,44 +186,56 @@ function InboxSection({ reloadToken }: { reloadToken: number }) {
   // A decided card leaves the pending list, so focus lands on the stable
   // section heading instead of falling to <body>.
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const reads = useRef(createLatestRequest());
+  const currentStatus = useRef(status);
   const now = useNow();
 
   const refresh = useCallback(async () => {
+    const isCurrent = reads.current.begin();
     setLoading(true);
+    setLoadingMore(false);
+    setNextCursor(null);
     setError("");
     setDecisions({});
     try {
       const page = await loadInbox({ status });
+      if (!isCurrent()) return;
       setItems(page.items);
       setNextCursor(page.nextCursor);
     } catch (caught) {
+      if (!isCurrent()) return;
       setItems([]);
       setNextCursor(null);
       setError(describeApprovalError(caught).message);
     } finally {
-      setLoading(false);
+      if (isCurrent()) setLoading(false);
     }
   }, [status]);
 
   useEffect(() => {
     void refresh();
+    return () => reads.current.invalidate();
   }, [refresh, reloadToken]);
 
   const loadMore = async () => {
-    if (!nextCursor) return;
+    if (!nextCursor || loadingMore || loading) return;
+    const isCurrent = reads.current.begin();
     setLoadingMore(true);
     try {
       const page = await loadInbox({ status, cursor: nextCursor });
+      if (!isCurrent()) return;
       setItems((rows) => [...rows, ...page.items.filter((item) => !rows.some((row) => row.key === item.key))]);
       setNextCursor(page.nextCursor);
     } catch (caught) {
-      setError(describeApprovalError(caught).message);
+      if (isCurrent()) setError(describeApprovalError(caught).message);
     } finally {
-      setLoadingMore(false);
+      if (isCurrent()) setLoadingMore(false);
     }
   };
 
   const decide = async (item: ApprovalItem, decision: ProposalDecision) => {
+    const identityVersion = getSessionVersion();
+    const isCurrent = () => identityVersion === getSessionVersion() && currentStatus.current === status;
     // Repeating the same decision after a failure is a retry of the same
     // intent and reuses its Idempotency-Key; a different decision is new.
     const previous = decisions[item.key];
@@ -228,6 +243,7 @@ function InboxSection({ reloadToken }: { reloadToken: number }) {
     setDecisions((state) => ({ ...state, [item.key]: { intent, busy: true, error: null } }));
     try {
       const { item: settled, replayed } = await decideInboxItem(item, intent);
+      if (!isCurrent()) return;
       setDecisions((state) => {
         const next = { ...state };
         delete next[item.key];
@@ -241,7 +257,9 @@ function InboxSection({ reloadToken }: { reloadToken: number }) {
         setItems((rows) => rows.map((row) => (row.key === item.key ? settled : row)));
       }
     } catch (caught) {
-      setDecisions((state) => ({ ...state, [item.key]: { intent, busy: false, error: describeApprovalError(caught) } }));
+      if (!isCurrent()) return;
+      const error = describeApprovalError(caught, item.source);
+      setDecisions((state) => ({ ...state, [item.key]: { intent, busy: false, error } }));
     }
   };
 
@@ -256,7 +274,7 @@ function InboxSection({ reloadToken }: { reloadToken: number }) {
       <header className="approvals-section__header approvals-section__header--inbox">
         <h2 id="inbox-title" ref={headingRef} tabIndex={-1}><ClipboardCheck size={19} aria-hidden="true" /> Propuestas {tabLabel.toLowerCase()}</h2>
         {!loading && !error && <span className="approvals-count" aria-label={`${items.length}${nextCursor ? " o más" : ""} propuestas`}>{items.length}{nextCursor ? "+" : ""}</span>}
-        <Tabs ariaLabel="Filtrar por estado" panelId="inbox-list" value={status} onChange={(value) => { setAnnouncement(""); setStatus(value as ApprovalStatus); }} items={STATUS_TABS} />
+        <Tabs ariaLabel="Filtrar por estado" panelId="inbox-list" value={status} onChange={(value) => { reads.current.invalidate(); currentStatus.current = value as ApprovalStatus; setAnnouncement(""); setStatus(value as ApprovalStatus); }} items={STATUS_TABS} />
       </header>
       {error && <div className="form-error approvals-error" role="alert">{error}<Button compact icon={RotateCcw} onClick={() => void refresh()}>Reintentar</Button></div>}
       <div id="inbox-list">

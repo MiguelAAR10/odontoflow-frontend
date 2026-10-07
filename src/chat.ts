@@ -33,6 +33,7 @@ import { mockConversationMessages, mockConversations, mockHandoffs } from "./moc
 import { mockCurrentMe } from "./session";
 import type {
   ChatConversation,
+  ChatAppointmentContext,
   ChatConversationPage,
   ChatThreadMessage,
   ChatThreadPage,
@@ -165,11 +166,12 @@ export function toUiConversation(row: ConversationSummary, now: Date = new Date(
   let preview = "Sin mensajes todavía";
   if (last && text === null) preview = "Mensaje no disponible";
   if (text !== null) {
-    const body = text.length >= PREVIEW_CHARS ? `${text}…` : text;
+    const body = text.length > PREVIEW_CHARS ? `${text.slice(0, PREVIEW_CHARS)}…` : text;
     preview = previewFrom === "clinic" ? `Clínica: ${body}` : body;
   }
   return {
     id: row.id,
+    contactIdentityId: row.contact_identity_id,
     status: row.status,
     statusLabel: status.label,
     statusTone: status.tone,
@@ -185,6 +187,10 @@ export function toUiConversation(row: ConversationSummary, now: Date = new Date(
     assignedTo: row.assigned_display_name,
     pendingHandoffId: row.pending_handoff_id,
   };
+}
+
+export function appointmentContextForChat(conversation: ChatConversation): ChatAppointmentContext {
+  return { conversationId: conversation.id, contactIdentityId: conversation.contactIdentityId, displayName: conversation.name };
 }
 
 function unavailableOf(message: StaffMessageRead): { reason: ChatUnavailableReason; label: string } | null {

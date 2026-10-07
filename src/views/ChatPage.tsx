@@ -4,6 +4,7 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "rea
 import { Archive, Bot, Clock3, EyeOff, Hand, Lock, MessageCircle, RotateCcw, Search, UserRoundCheck } from "lucide-react";
 import {
   beginClaim,
+  appointmentContextForChat,
   canClaimHandoffs,
   claimHandoff,
   CLINIC_TIME_ZONE,
@@ -21,6 +22,7 @@ import { Button } from "../components/Button";
 import { usePersona } from "../components/PersonaContext";
 import { Tabs } from "../components/Tabs";
 import type { ChatConversation, ChatThreadMessage, HandoffEntry, HandoffStatus } from "../types";
+import { createLatestRequest } from "../session";
 
 type ConversationStatus = NonNullable<(typeof CONVERSATION_FILTERS)[number]["status"]>;
 type PanelView = "conversaciones" | "derivaciones";
@@ -74,20 +76,24 @@ export function ChatPage() {
   const [pendingCount, setPendingCount] = useState<{ count: number; more: boolean } | null>(null);
   const [claims, setClaims] = useState<Record<number, ClaimState>>({});
   const [notice, setNotice] = useState("");
+  const conversationPages = useRef(createLatestRequest());
+  const handoffPages = useRef(createLatestRequest());
 
   const reload = () => { setNotice(""); setReloadToken((value) => value + 1); };
 
   useEffect(() => {
     let active = true;
+    conversationPages.current.invalidate();
     setConversations(emptyList());
     loadConversations({ status })
       .then((page) => { if (active) setConversations({ items: page.items, nextCursor: page.nextCursor, loading: false, error: null }); })
       .catch((caught) => { if (active) setConversations({ items: [], nextCursor: null, loading: false, error: describeChatError(caught, "conversaciones") }); });
-    return () => { active = false; };
+    return () => { active = false; conversationPages.current.invalidate(); };
   }, [status, reloadToken]);
 
   useEffect(() => {
     let active = true;
+    handoffPages.current.invalidate();
     setQueue(emptyList());
     loadHandoffs({ status: queueStatus })
       .then((page) => {
@@ -96,31 +102,35 @@ export function ChatPage() {
         if (queueStatus === "pending") setPendingCount({ count: page.items.length, more: Boolean(page.nextCursor) });
       })
       .catch((caught) => { if (active) setQueue({ items: [], nextCursor: null, loading: false, error: describeChatError(caught, "derivaciones") }); });
-    return () => { active = false; };
+    return () => { active = false; handoffPages.current.invalidate(); };
   }, [queueStatus, reloadToken]);
 
   const loadMoreConversations = async () => {
-    if (!conversations.nextCursor) return;
+    if (!conversations.nextCursor || conversations.loading) return;
+    const isCurrent = conversationPages.current.begin();
     setConversations((state) => ({ ...state, loading: true }));
     try {
       const page = await loadConversations({ status, cursor: conversations.nextCursor });
+      if (!isCurrent()) return;
       setConversations((state) => {
         const seen = new Set(state.items.map((item) => item.id));
         return { items: [...state.items, ...page.items.filter((item) => !seen.has(item.id))], nextCursor: page.nextCursor, loading: false, error: null };
       });
     } catch (caught) {
-      setConversations((state) => ({ ...state, loading: false, error: describeChatError(caught, "conversaciones") }));
+      if (isCurrent()) setConversations((state) => ({ ...state, loading: false, error: describeChatError(caught, "conversaciones") }));
     }
   };
 
   const loadMoreHandoffs = async () => {
-    if (!queue.nextCursor) return;
+    if (!queue.nextCursor || queue.loading) return;
+    const isCurrent = handoffPages.current.begin();
     setQueue((state) => ({ ...state, loading: true }));
     try {
       const page = await loadHandoffs({ status: queueStatus, cursor: queue.nextCursor });
-      setQueue((state) => ({ items: [...state.items, ...page.items], nextCursor: page.nextCursor, loading: false, error: null }));
+      if (!isCurrent()) return;
+      setQueue((state) => ({ items: [...state.items, ...page.items.filter((item) => !state.items.some((row) => row.id === item.id))], nextCursor: page.nextCursor, loading: false, error: null }));
     } catch (caught) {
-      setQueue((state) => ({ ...state, loading: false, error: describeChatError(caught, "derivaciones") }));
+      if (isCurrent()) setQueue((state) => ({ ...state, loading: false, error: describeChatError(caught, "derivaciones") }));
     }
   };
 
@@ -218,7 +228,11 @@ export function ChatPage() {
 
         <aside className="patient-panel">
           <h2>Datos de la conversación</h2>
-          {selected && <ConversationFacts conversation={selected} />}
+          {selected && <>
+            <ConversationFacts conversation={selected} />
+            {identity?.permissions.includes("appointments.create") && <Button compact icon={MessageCircle} onClick={() => window.dispatchEvent(new CustomEvent("open-new-appointment", { detail: appointmentContextForChat(selected) }))}>Crear cita</Button>}
+            <p className="field-note">El chat no incluye el vínculo con un paciente o lead. Para crear una cita, selecciona un registro real en el formulario.</p>
+          </>}
           <div className="chat-scope">
             <h3>Qué puedes hacer aquí</h3>
             <p>Leer cada conversación completa y tomar las que el agente derivó a una persona.</p>
@@ -255,6 +269,7 @@ function ThreadPanel({ conversation, canClaim, claim, onClaim, onReload }: { con
   const [error, setError] = useState<ChatError | null>(null);
   const historyRef = useRef<HTMLDivElement>(null);
   const stickToEnd = useRef(true);
+  const messagePages = useRef(createLatestRequest());
 
   const fetchPages = useCallback(async (cursor: string | null, pages: number) => {
     const collected: ChatThreadMessage[] = [];
@@ -270,11 +285,12 @@ function ThreadPanel({ conversation, canClaim, claim, onClaim, onReload }: { con
 
   useEffect(() => {
     let active = true;
+    messagePages.current.invalidate();
     stickToEnd.current = true;
     fetchPages(null, THREAD_PAGES_ON_OPEN)
       .then(({ collected, next }) => { if (active) { setMessages(collected); setNextCursor(next); setLoading(false); } })
       .catch((caught) => { if (active) { setError(describeChatError(caught, "mensajes")); setLoading(false); } });
-    return () => { active = false; };
+    return () => { active = false; messagePages.current.invalidate(); };
   }, [fetchPages, conversation.lastMessageAt]);
 
   useEffect(() => {
@@ -283,17 +299,19 @@ function ThreadPanel({ conversation, canClaim, claim, onClaim, onReload }: { con
   }, [messages]);
 
   const loadNewer = async () => {
-    if (!nextCursor) return;
+    if (!nextCursor || loading) return;
+    const isCurrent = messagePages.current.begin();
     setLoading(true);
     stickToEnd.current = false;
     try {
       const { collected, next } = await fetchPages(nextCursor, 1);
-      setMessages((current) => [...current, ...collected]);
+      if (!isCurrent()) return;
+      setMessages((current) => [...current, ...collected.filter((item) => !current.some((row) => row.id === item.id))]);
       setNextCursor(next);
     } catch (caught) {
-      setError(describeChatError(caught, "mensajes"));
+      if (isCurrent()) setError(describeChatError(caught, "mensajes"));
     } finally {
-      setLoading(false);
+      if (isCurrent()) setLoading(false);
     }
   };
 

@@ -65,6 +65,16 @@ describe("Chat real-mode adapter (mocked axios)", () => {
   beforeEach(() => { mockGet.mockReset(); mockPost.mockReset(); });
 
   describe("the conversation list", () => {
+    it.each([79, 80, 81])("adds ellipsis only beyond 80 characters (%s)", (length) => {
+      const text = "x".repeat(length);
+      const row = api.toUiConversation({ ...conversation, last_message_preview: { direction: "inbound", text, occurred_at: conversation.last_message_at } }, NOW);
+      expect(row.preview).toBe(length > 80 ? "x".repeat(80) + "…" : text);
+    });
+
+    it("preserves the canonical contact id without inferring a lead from a name", () => {
+      expect(api.toUiConversation(conversation, NOW)).toMatchObject({ contactIdentityId: 109 });
+      expect(api.appointmentContextForChat(api.toUiConversation(conversation, NOW))).toEqual({ conversationId: 9, contactIdentityId: 109, displayName: "Ana Torres" });
+    });
     it("asks for one page by status and keeps the cursor", async () => {
       mockGet.mockResolvedValue({ data: { items: [conversation], next_cursor: "next" } });
       const page = await api.loadConversations({ status: "human_handoff", cursor: "prev" });
@@ -103,11 +113,11 @@ describe("Chat real-mode adapter (mocked axios)", () => {
       expect(api.toUiConversation({ ...conversation, last_message_preview: null }, NOW).preview).toBe("Sin mensajes todavía");
     });
 
-    it("marks the clinic's own last message and the 80-character cut", () => {
+    it("marks the clinic's own last message without guessing truncation at 80", () => {
       const long = "x".repeat(80);
       const row = api.toUiConversation({ ...conversation, last_message_preview: { direction: "outbound", text: long, occurred_at: conversation.last_message_at } }, NOW);
       expect(row.previewFrom).toBe("clinic");
-      expect(row.preview).toBe(`Clínica: ${long}…`);
+      expect(row.preview).toBe(`Clínica: ${long}`);
     });
 
     it("keeps a masked phone as the backend sends it", () => {

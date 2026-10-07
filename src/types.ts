@@ -184,6 +184,7 @@ export interface InventoryTransfer {
 /** Chat (`GET /conversations`): one row of the clinic's inbox, by recency. */
 export interface ChatConversation {
   id: number;
+  contactIdentityId: number;
   status: string;
   statusLabel: string;
   statusTone: Tone;
@@ -201,6 +202,13 @@ export interface ChatConversation {
   timeLabel: string;
   assignedTo: string | null;
   pendingHandoffId: number | null;
+}
+
+/** Context only: the current conversation contract supplies no lead/patient link. */
+export interface ChatAppointmentContext {
+  conversationId: number;
+  contactIdentityId: number;
+  displayName: string;
 }
 
 export interface ChatConversationPage {

@@ -293,11 +293,25 @@ describe("Bandeja real-mode adapter (mocked axios)", () => {
         .toBe("El agente de Cupos liberados no está habilitado en esta clínica.");
     });
 
-    it("keeps the backend message for anything else", () => {
+    it.each([
+      [422, "INVALID_INPUT", "La propuesta de cita ya no se puede confirmar. Vuelve a cargar la bandeja."],
+      [409, "SLOT_BLOCKED", "El horario de la cita ya no está disponible. Vuelve a cargar la bandeja y consulta otro horario en Agenda."],
+      [409, "APPOINTMENT_CONFLICT", "El horario de la cita ya fue ocupado. Vuelve a cargar la bandeja y consulta otro horario en Agenda."],
+    ])("explains appointment error %s/%s and requests fresh data", (status, code, message) => {
+      expect(api.describeApprovalError(envelopeError(status, code), "appointment_proposal")).toEqual({ message, reload: true });
+    });
+
+    it("keeps the backend message for generic INVALID_INPUT", () => {
       expect(api.describeApprovalError(envelopeError(422, "INVALID_INPUT", "The appointment proposal is no longer confirmable."))).toEqual({
         message: "The appointment proposal is no longer confirmable.",
         reload: false,
       });
+    });
+
+    it("does not submit another approval for an approved proposal", async () => {
+      const item = api.toUiInboxItem({ ...reminder, status: "approved" });
+      await expect(api.decideInboxItem(item, api.beginDecision(item, "approve"))).rejects.toMatchObject({ code: "PROPOSAL_NOT_PENDING" });
+      expect(mockPost).not.toHaveBeenCalled();
     });
   });
 

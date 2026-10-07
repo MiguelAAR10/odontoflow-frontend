@@ -182,6 +182,32 @@ export function currentWeekWindow(timeZone = "America/Lima"): { from: string; to
   return { from: monday.toISOString(), to: nextMonday.toISOString() };
 }
 
+/** Calendar date on a branch's wall clock, independent of the browser timezone. */
+export function agendaDateKey(instant: string, timeZone: string): string {
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date(instant));
+  return ["year", "month", "day"].map((type) => parts.find((part) => part.type === type)!.value).join("-");
+}
+
+/** Query bounds use each local midnight's actual offset, including DST changes. */
+export function agendaWeekReadWindow(dateKey: string, timeZone: string): { from: string; to: string } {
+  const date = new Date(`${dateKey}T00:00:00Z`);
+  const monday = date.getTime() - ((date.getUTCDay() + 6) % 7) * 86_400_000;
+  const midnight = (wallTime: number): string => {
+    let instant = wallTime;
+    const formatter = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" });
+    for (let index = 0; index < 4; index += 1) {
+      const parts = formatter.formatToParts(new Date(instant));
+      const part = (type: string) => Number(parts.find((item) => item.type === type)!.value);
+      const represented = Date.UTC(part("year"), part("month") - 1, part("day"), part("hour"), part("minute"), part("second"));
+      const difference = wallTime - represented;
+      instant += difference;
+      if (difference === 0) break;
+    }
+    return new Date(instant).toISOString();
+  };
+  return { from: midnight(monday), to: midnight(monday + 7 * 86_400_000) };
+}
+
 /** Patient search uses the typed contract in real mode so the topbar never
  * receives raw PatientRead rows as if they were the UI view model. */
 export const getPatients = (): Promise<Patient[]> => (useMocks ? Promise.resolve(copy(patients)) : loadPatients());
@@ -1380,6 +1406,7 @@ export {
   type ProductivityPreset,
 } from "./activity";
 export {
+  appointmentContextForChat,
   beginClaim,
   claimHandoff,
   CONVERSATION_FILTERS,

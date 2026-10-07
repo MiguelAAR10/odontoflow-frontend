@@ -331,6 +331,7 @@ export interface DecisionResult {
 
 export async function decideInboxItem(item: ApprovalItem, intent: DecisionIntent): Promise<DecisionResult> {
   if (intent.itemKey !== item.key) throw new Error("The decision intent belongs to another item.");
+  if (item.status !== "pending") throw new ApiError(409, "PROPOSAL_NOT_PENDING", "Esta propuesta ya fue revisada. Vuelve a cargar la bandeja.");
   if (USE_MOCKS) return mockDecide(item, intent);
   const keep = (next: ApprovalItem): ApprovalItem => ({ ...next, locationName: item.locationName ?? next.locationName, facts: next.facts.length ? next.facts : item.facts });
 
@@ -367,8 +368,13 @@ export interface ActionableError {
   reload: boolean;
 }
 
-export function describeApprovalError(caught: unknown): ActionableError {
+export function describeApprovalError(caught: unknown, source?: ApprovalItem["source"]): ActionableError {
   const error = toApiError(caught);
+  if (source === "appointment_proposal") {
+    if (error.code === "INVALID_INPUT") return { message: "La propuesta de cita ya no se puede confirmar. Vuelve a cargar la bandeja.", reload: true };
+    if (error.code === "SLOT_BLOCKED") return { message: "El horario de la cita ya no está disponible. Vuelve a cargar la bandeja y consulta otro horario en Agenda.", reload: true };
+    if (error.code === "APPOINTMENT_CONFLICT") return { message: "El horario de la cita ya fue ocupado. Vuelve a cargar la bandeja y consulta otro horario en Agenda.", reload: true };
+  }
   switch (error.code) {
     case "PROPOSAL_SUPERSEDED":
     case "PROPOSAL_HASH_MISMATCH":
