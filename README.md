@@ -43,7 +43,7 @@ npm run test:visual  # compila, abre las rutas actuales y genera capturas locale
 
 Las pruebas de integración (`npm run test:e2e`) y el piloto (`npm run test:e2e:pilot`) necesitan el backend real y PostgreSQL. No forman parte de `npm test`. Para regenerar los tipos de la API tras un cambio de contrato, coloca el backend como repositorio hermano y ejecuta `npm run openapi:generate`; [`src/contracts/api.ts`](src/contracts/api.ts) es generado y no debe editarse a mano.
 
-**Nota sobre `npm start`:** ese comando inicia el simulador histórico desde `dist/src/server.js`, no la interfaz Next.js. Para servir una compilación de Next.js usa `npx next start -p 5173 -H 127.0.0.1` después de `npm run build`.
+**Nota sobre `npm start`:** después de `npm run build`, sirve la interfaz Next.js en `http://127.0.0.1:5173` (loopback). El simulador histórico desde `dist/src/server.js` conserva el script explícito `npm run start:legacy`. Consulta el [runbook del demo](docs/run-demo.md) para configuración y límites del ensayo.
 
 ## Estructura
 
