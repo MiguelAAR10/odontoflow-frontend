@@ -1,0 +1,174 @@
+packet: project-publish-01-frontend
+generated_at: "2026-09-17T14:42:59-05:00"
+mode: read-only inspection (no product files, remotes, or databases modified)
+repository_path: /home/miguel/projects/portfolio/AI-EdgeRunners/odontoflow/odontoflow-frontend
+
+git:
+  branch: main
+  head: a788df56d2d7f0ea5359da3227bb86fb457ca214
+  head_subject: "feat(fe3a): salvage checkout through charge"
+  head_author: "Miguel <miguel.arias@neo.com.pe>"
+  head_date: "2026-09-06 20:27:02 -0500"
+  upstream_configured: leonardo/main
+  upstream_status: unusable (remote returns 404; local ref is stale)
+  ahead_behind_vs_upstream: { ahead: 16, behind: 0 }
+  head_on_any_remote_branch: false
+
+remotes:
+  - name: origin
+    url: git@github.com:MiguelAAR10/odontoflow-frontend.git
+    reachable: true
+    fetch_result: ok
+    heads:
+      main: 0dbfa9e6705efb5b1e6553e3841ca204533cdf97
+  - name: leonardo
+    url: https://github.com/leonardopanduro-rgb/ODONTO-SMART-FRONT.git
+    reachable: false
+    fetch_result: failed
+    failure_reason: >-
+      remote: Repository not found. fatal: repository
+      'https://github.com/leonardopanduro-rgb/ODONTO-SMART-FRONT.git/' not found
+      (GitHub HTTP 404; git fetch and git ls-remote exit 128)
+    local_stale_refs: [leonardo/main]
+  - name: alejandro
+    url: https://github.com/AlejandroMarceloCh/ODONTO-SMART-FRONT.git
+    reachable: true
+    fetch_result: ok
+    heads:
+      main: 8769f12f5e3144fe5c2032d0f8445861dc304c76
+      feat/asistente-voz: c0f418dc5b296715fa4b0a6cb8cbd0da9f7eba0f
+
+canonical:
+  github_repository: MiguelAAR10/odontoflow-frontend
+  remote_name: origin
+  evidence:
+    - origin is the only remote whose main carries the local lineage (origin/main 0dbfa9e is an ancestor of local main)
+    - README.md and DEVELOPMENT.md describe this checkout as the canonical app; DEVELOPMENT.md documents porting external work "al canónico"
+    - leonardo remote is gone (404) and alejandro/main is frozen at the original clone root 8769f12
+  origin_main_sha: 0dbfa9e6705efb5b1e6553e3841ca204533cdf97
+  local_vs_origin: { ahead: 1, behind: 0 }
+  origin_health: HEALTHY
+  origin_health_evidence:
+    - git fetch origin exits 0 after the coordinator's fresh fetch
+    - origin exposes exactly one head: main at 0dbfa9e
+    - origin/main is a strict ancestor of local main (no divergence, no force-push smell)
+
+local_only_commits:
+  count: 1
+  commits:
+    - sha: a788df56d2d7f0ea5359da3227bb86fb457ca214
+      parent: 0dbfa9e6705efb5b1e6553e3841ca204533cdf97
+      author: "Miguel <miguel.arias@neo.com.pe>"
+      date: "2026-09-06 20:27:02 -0500"
+      subject: "feat(fe3a): salvage checkout through charge"
+      body: ""   # no body, no git notes, no trailing documentation
+      files_changed: 8
+      files:
+        - src/api.ts
+        - src/components/AttendancePanel.tsx
+        - src/contracts/api.ts        # generated from backend OpenAPI
+        - src/contracts/client.ts
+        - src/mockData.ts
+        - src/types.ts
+        - src/views/AgendaPage.tsx
+        - test/service-to-cash-adapter.test.ts
+      on_remote: false
+      intent_documentation:
+        prior_evidence_in_repo:
+          - .audit/fe3a-checkpoint.md (2026-09-06 16:05) says: do not stage or commit any product file until the integration lead's gate
+          - .audit/fe3a-salvage.md (2026-09-06 18:58) recommends, on explicit continuation, partitioning the mixed worktree and committing "one bounded S1 slice" after fixing the S1 payload blocker
+        commit_matches_salvage_slice: true
+        s1_payload_blocker_fixed_in_commit: true
+        s1_payload_note: >-
+          Committed src/components/AttendancePanel.tsx ensureVisit sends only
+          { patient_id, appointment_id } (the backend XOR shape); the salvage
+          report's blocker #1 (sending practitioner_id + location_id together)
+          is not present in the committed version.
+        explicit_authorization_found_in_repo: false
+        decision: MUST_REMAIN_BLOCKED_FOR_PUBLICATION
+        decision_reasoning: >-
+          The commit content matches the salvage plan's recommended bounded S1
+          slice and fixes the named payload blocker, so it is plausibly the
+          owner's intended salvage commit. But no in-repo artifact authorizes or
+          records that commit, the checkpoint explicitly withheld commit
+          permission pending the integration-lead gate, and the commit has no
+          body/notes. Publishing it would push a partial FE3A slice while the
+          remaining mixed FE3A work (including surfaces the salvage report
+          marks INCOMPLETE) stays uncommitted. Do not rewrite or discard the
+          commit; require explicit coordinator/integration-lead confirmation
+          before any push.
+
+dirty_worktree:
+  dirty: true
+  tracked_modified: 19
+  untracked_paths: 12
+  tracked_diff_shortstat: "19 files changed, 1190 insertions(+), 369 deletions(-)"
+  staged_changes: none
+  tracked_modified_files:
+    - AGENTS.md
+    - DESIGN.md
+    - package.json
+    - scripts/pilot-e2e.sh
+    - src/api.ts
+    - src/contracts/client.ts
+    - src/index.css
+    - src/mockData.ts
+    - src/tokens.css
+    - src/types.ts
+    - src/ui.ts
+    - src/views/CashPage.tsx
+    - src/views/PatientsPage.tsx
+    - test/cash-adapter.test.ts
+    - test/cash-transport.test.ts
+    - test/pilot-e2e.test.ts
+    - tsconfig.backend.json
+    - vitest.config.ts
+    - vitest.e2e.config.ts
+  untracked_paths:
+    - .agents/skills/impeccable/
+    - .audit/fe3a-browser-mock/
+    - .audit/fe3a-checkpoint.md
+    - .audit/fe3a-salvage.md
+    - .claude/agents/
+    - .claude/skills/impeccable/
+    - .codex/
+    - .impeccable/
+    - src/assets/
+    - test/collections-adapter.test.ts
+    - test/reconciliation-adapter.test.ts
+    - test/service-to-cash-integration.test.ts
+  note: >-
+    The leftovers are the uncommitted remainder of the mixed FE3A work
+    described in .audit/fe3a-salvage.md (CashPage, PatientsPage, styles,
+    harness config, later adapter tests).
+
+documentation:
+  README.md: { exists: true, bytes: 6391, notes: "English overview, real-vs-prototype screen table, dual-mode adapter seam, quick start and E2E commands" }
+  DEVELOPMENT.md: { exists: true, bytes: 3242, notes: "Spanish dev contract; credits Leonardo Panduro (commit 8769f12), useMocks gate table, external-contribution porting pattern" }
+  DESIGN.md: { exists: true, bytes: 15920, notes: "canonical visual contract for the OdontoFlow operational UI (tokens are normative)" }
+  AGENTS.md: { exists: true, dirty: true }
+
+commands:
+  node: ".nvmrc = 24; engines: node >=20.9.0"
+  install: npm install
+  dev: "npm run dev  # next dev -p 5173 -H 127.0.0.1, mock mode by default"
+  build: "npm run build  # next build --webpack && tsc -p tsconfig.backend.json"
+  typecheck: npm run typecheck
+  test: npm test
+  test_e2e: npm run test:e2e
+  test_e2e_pilot: npm run test:e2e:pilot
+  openapi_generate: npm run openapi:generate
+  test_visual: npm run test:visual
+  start: "npm start  # legacy simulator: node dist/src/server.js"
+  external_harness: ./scripts/pilot-e2e.sh  # needs PostgreSQL :5434 + backend venv
+
+verdicts:
+  origin_healthy: true
+  canonical_github_repository: https://github.com/MiguelAAR10/odontoflow-frontend
+  local_only_commit_count: 1
+  local_only_commit_status: MUST_REMAIN_BLOCKED_FOR_PUBLICATION
+  ready_to_publish: false
+  blockers:
+    - "a788df5 lacks an in-repo authorization record; last written gate (checkpoint) said commit only after the integration lead's gate"
+    - "19 tracked files and 12 untracked paths of mixed FE3A work remain uncommitted in the worktree"
+  safe_actions_observed: none taken beyond git fetch --prune (refs only) and this packet
