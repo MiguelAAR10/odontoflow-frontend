@@ -2,10 +2,19 @@
  * Agenda adapter unit tests — pure view-model mapping (no network).
  */
 import { describe, expect, it } from "vitest";
-import { toApiError, toGridSlot, toUiStatus } from "../src/api";
+import { agendaDateKey, agendaWeekReadWindow, toApiError, toGridSlot, toUiStatus } from "../src/api";
 import { ApiError } from "../src/contracts/client";
 
 describe("toGridSlot", () => {
+  it("uses the selected clinic's day for Hoy across UTC midnight", () => {
+    expect(agendaDateKey("2026-10-05T00:30:00Z", "America/Lima")).toBe("2026-10-04");
+    expect(agendaDateKey("2026-10-05T00:30:00Z", "Asia/Tokyo")).toBe("2026-10-05");
+  });
+
+  it("queries a week bounded by local midnight instead of a fixed UTC offset", () => {
+    expect(agendaWeekReadWindow("2026-10-04", "America/Lima")).toEqual({ from: "2026-09-28T05:00:00.000Z", to: "2026-10-05T05:00:00.000Z" });
+    expect(agendaWeekReadWindow("2026-11-01", "America/New_York")).toEqual({ from: "2026-10-26T04:00:00.000Z", to: "2026-11-02T05:00:00.000Z" });
+  });
   it("maps a UTC instant to the Lima weekday slot (Mon=0)", () => {
     // 2026-08-10 14:00 UTC == Monday 09:00 Lima
     const slot = toGridSlot("2026-08-10T14:00:00Z", "America/Lima");

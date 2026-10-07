@@ -1,0 +1,15 @@
+{
+  "command": [
+    "node",
+    "/home/miguel/projects/portfolio/AI-EdgeRunners/odontoflow/.worktrees/frontend-erp/node_modules/typescript/bin/tsc",
+    "--showConfig",
+    "--project",
+    "/home/miguel/projects/portfolio/AI-EdgeRunners/odontoflow/.worktrees/frontend-erp/tsconfig.json",
+    "--pretty",
+    "false"
+  ],
+  "exit_code": 0,
+  "stdout_bytes": 5606,
+  "stderr_bytes": 0,
+  "valid_json": true
+}

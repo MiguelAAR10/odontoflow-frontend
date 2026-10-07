@@ -58,6 +58,8 @@ const paymentRead = {
   reconciliation_note: null,
   verification_status: "unverified" as const,
   verified_at: null,
+  reversed: false,
+  reversed_at: null,
 };
 
 beforeEach(() => {

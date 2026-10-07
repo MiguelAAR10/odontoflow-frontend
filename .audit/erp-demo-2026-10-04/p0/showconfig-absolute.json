@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/home/miguel/.nvm/versions/node/v24.12.0/bin/node",
+    "/home/miguel/projects/portfolio/AI-EdgeRunners/odontoflow/.worktrees/frontend-erp/node_modules/typescript/bin/tsc",
+    "--showConfig",
+    "--project",
+    "/home/miguel/projects/portfolio/AI-EdgeRunners/odontoflow/.worktrees/frontend-erp/tsconfig.json",
+    "--pretty",
+    "false"
+  ],
+  "path_node": "/home/miguel/.nvm/versions/node/v24.12.0/bin/node",
+  "path_node_resolved": "/home/miguel/.nvm/versions/node/v24.12.0/bin/node",
+  "exit_code": 0,
+  "stdout_bytes": 5606,
+  "stderr_bytes": 0,
+  "valid_json": true
+}

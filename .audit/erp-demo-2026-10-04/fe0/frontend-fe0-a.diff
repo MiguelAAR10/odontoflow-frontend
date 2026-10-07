@@ -1,0 +1,1327 @@
+diff --git a/README.md b/README.md
+index acd5e77..cb96c1b 100644
+--- a/README.md
++++ b/README.md
+@@ -43,7 +43,7 @@ npm run test:visual  # compila, abre las rutas actuales y genera capturas locale
+ 
+ Las pruebas de integración (`npm run test:e2e`) y el piloto (`npm run test:e2e:pilot`) necesitan el backend real y PostgreSQL. No forman parte de `npm test`. Para regenerar los tipos de la API tras un cambio de contrato, coloca el backend como repositorio hermano y ejecuta `npm run openapi:generate`; [`src/contracts/api.ts`](src/contracts/api.ts) es generado y no debe editarse a mano.
+ 
+-**Nota sobre `npm start`:** ese comando inicia el simulador histórico desde `dist/src/server.js`, no la interfaz Next.js. Para servir una compilación de Next.js usa `npx next start -p 5173 -H 127.0.0.1` después de `npm run build`.
++**Nota sobre `npm start`:** después de `npm run build`, sirve la interfaz Next.js en `http://127.0.0.1:5173` (loopback). El simulador histórico desde `dist/src/server.js` conserva el script explícito `npm run start:legacy`. Consulta el [runbook del demo](docs/run-demo.md) para configuración y límites del ensayo.
+ 
+ ## Estructura
+ 
+diff --git a/docs/run-demo.md b/docs/run-demo.md
+index 8e6efed..a931d9b 100644
+--- a/docs/run-demo.md
++++ b/docs/run-demo.md
+@@ -1,54 +1,47 @@
+-# Ejecutar el simulador histórico end-to-end desde cero
++# Ejecutar el demo operativo de OdontoFlow
+ 
+-Este procedimiento inicia `src/server.ts` y su interfaz de simulación. No inicia la aplicación Next.js actual. Para revisar el frontend operativo, usa las instrucciones de [README.md](../README.md).
++La aplicación actual es Next.js. `npm start` sirve su compilación en `http://127.0.0.1:5173`; `npm run dev` mantiene el desarrollo en esa dirección. Este runbook no crea ni resetea bases, emite credenciales ni inicia el backend.
+ 
+-## 1. Base aislada
++## Preparación
+ 
+-Levanta PostgreSQL local:
++Trabaja en el checkout frontend acordado con el coordinador. Usa las dependencias ya instaladas y un backend demo ficticio preparado por su propietario, con API, base y puertos explícitos del ensayo. No ejecutes `scripts/pilot-e2e.sh` ni los defaults históricos de PostgreSQL contra un cluster compartido.
+ 
+-```bash
+-docker compose up -d db
+-```
++Configura `NEXT_PUBLIC_USE_MOCKS=false` **antes de compilar** para consumir el backend canónico. Las variables `NEXT_PUBLIC_*` quedan incorporadas durante el build. Mantén `NEXT_PUBLIC_BACKEND_URL` sin override directo: el navegador debe usar el BFF same-origin `/api/backend`.
+ 
+-Aplica las migraciones y seeds en orden:
++El coordinador debe haber configurado en servidor `BACKEND_URL`, las personas `BACKEND_DEMO_HUMANS`, `BFF_SESSION_SECRET` y, cuando corresponda, `BFF_ACCESS_CODE`. Conserva los secretos existentes: no los imprimas, copies al navegador ni guardes en variables `NEXT_PUBLIC_*`. El acceso sin código en producción permanece cerrado por defecto y el secreto de sesión debe satisfacer la validación existente.
+ 
+-```bash
+-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/001_initial.sql
+-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/002_simulated_channels.sql
+-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/003_end_to_end_followup.sql
+-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/seeds/001_simulated.sql
+-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/seeds/002_end_to_end_demo.sql
+-```
++## Compilar y verificar
+ 
+-Todos los pacientes, teléfonos, sedes, doctores y citas son ficticios.
++Ejecuta estos comandos en serie; el coordinador reserva aparte la integración DB/E2E:
+ 
+-## 2. Compilar y verificar
+-
+-```bash
+-npm install
++~~~bash
+ npm run typecheck
+-npm test
+-npm run build
+-```
++VITEST_MAX_THREADS=1 VITEST_MIN_THREADS=1 VITEST_MAX_FORKS=1 VITEST_MIN_FORKS=1 npm test
++NEXT_PUBLIC_USE_MOCKS=false npm run build
++~~~
++
++El build comprende `next build --webpack` y la compilación del harness histórico. La suite unitaria excluye las cuatro integraciones registradas en `vitest.e2e.config.ts`. Si un comando falla, conserva su salida y exit; no desactives el typecheck ni cambies seguridad para ocultarlo. Pruebas unitarias y build no certifican la integración real del demo.
+ 
+-## 3. Iniciar
++## Servir la compilación
+ 
+-```bash
++Sólo después de que el coordinador libere el puerto de este ensayo:
++
++~~~bash
+ npm start
+-```
++~~~
++
++Ese script ejecuta `next start -p 5173 -H 127.0.0.1`. No inicia `dist/src/server.js`. Para otro puerto, acuerda uno propio y sirve la compilación con `npx next start -p <puerto-propio> -H 127.0.0.1`; no mates procesos ajenos. No ejecutes dev y start simultáneamente sobre el mismo puerto.
+ 
+-Abre `http://127.0.0.1:3000`.
++## Recorrido local y límites vigentes
+ 
+-## 4. Demo obligatoria
++1. Elige una persona autorizada mediante el selector. El código, si el servidor lo pide, se conserva sólo en memoria. Un 401 en cualquier lectura o mutación vuelve al selector y descarta identidad/código y respuestas pendientes; no se reproduce automáticamente una mutación. Un 403 informa la restricción de permisos y conserva la sesión.
++2. Consulta Agenda, Pacientes, Caja e Inventario según permisos backend. En Agenda, “Hoy” vuelve al día de la sede seleccionada; elegir una fecha conserva la vista día/semana. Horarios e IDs del catálogo provienen del backend.
++3. En Bandeja, revisa Pendientes y “Aprobadas/en proceso”. Una aprobación en proceso no significa ejecutada ni ofrece aprobar otra vez. Ante un conflicto de cita, vuelve a cargar la bandeja y consulta otro horario real en Agenda. Propuestas genéricas conservan códigos y mensajes backend.
++4. En Chat, lee conversaciones y toma derivaciones según permisos. “Crear cita” abre el formulario real: el contrato actual sólo proyecta `contact_identity_id`, por lo que debes seleccionar explícitamente un lead real por ID. El nombre no establece vínculo patient/lead. Si falta el perfil, regístralo antes de continuar; no se inventa uno.
++5. El historial Chat **mantiene el contrato ASC actual** y “Ver mensajes más recientes”. No ofrece “historia anterior” ni orden descendente hasta que BE0b entregue OpenAPI estable. SIM, WAITLIST y los recorridos completos siguen sujetos a sus gates.
+ 
+-Pulsa **Ejecutar demo Ana**. El sistema:
++La verificación browser/I0, cookie firmada, same-origin, permisos y ausencia de tokens en bundle se realiza en el ensayo poseído por el coordinador. No uses capturas mock ni esta verificación local como sustituto de Q2/Q8.
+ 
+-1. Restablece solo la sesión ficticia de Ana a lunes 08:55.
+-2. Genera WhatsApp a las 09:00.
+-3. Genera llamadas a las 12:00 y 16:00.
+-4. Marca la llamada de 16:00 como `ANSWERED_CONFIRMED`.
+-5. Conserva `appointment_status=CONFIRMED` y `followup_status=CONFIRMED`.
+-6. Genera `SAME_DAY_09AM` y `ONE_HOUR_BEFORE` el martes.
+-7. Muestra métricas, historial operativo, resumen, bandeja y cola sin duplicados.
++## Harness histórico
+ 
+-La demo no abre conexiones hacia Google, Meta, WhatsApp ni proveedores de llamadas.
++`src/server.ts`, `src/domain/` y `src/simulation/` siguen como referencia. Para un consumidor histórico cuyo entorno aislado ya esté preparado, el entrypoint queda disponible explícitamente como `npm run start:legacy` (`node dist/src/server.js`). No es el demo ERP actual; este procedimiento no configura su DB ni lo ejecuta.
+diff --git a/package.json b/package.json
+index f25478f..a1a0f13 100644
+--- a/package.json
++++ b/package.json
+@@ -12,7 +12,8 @@
+     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.backend.json --noEmit",
+     "test": "vitest run",
+     "test:visual": "node scripts/visual-check.mjs",
+-    "start": "node dist/src/server.js",
++    "start": "next start -p 5173 -H 127.0.0.1",
++    "start:legacy": "node dist/src/server.js",
+     "openapi:generate": "openapi-typescript ${OPENAPI_SPEC:-../odontoflow-backend/docs/api/openapi.yaml} -o src/contracts/api.ts",
+     "test:e2e": "vitest run --config vitest.e2e.config.ts",
+     "test:e2e:pilot": "bash scripts/pilot-e2e.sh"
+diff --git a/src/api.ts b/src/api.ts
+index 18e0079..7cd3f0e 100644
+--- a/src/api.ts
++++ b/src/api.ts
+@@ -182,6 +182,32 @@ export function currentWeekWindow(timeZone = "America/Lima"): { from: string; to
+   return { from: monday.toISOString(), to: nextMonday.toISOString() };
+ }
+ 
++/** Calendar date on a branch's wall clock, independent of the browser timezone. */
++export function agendaDateKey(instant: string, timeZone: string): string {
++  const parts = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date(instant));
++  return ["year", "month", "day"].map((type) => parts.find((part) => part.type === type)!.value).join("-");
++}
++
++/** Query bounds use each local midnight's actual offset, including DST changes. */
++export function agendaWeekReadWindow(dateKey: string, timeZone: string): { from: string; to: string } {
++  const date = new Date(`${dateKey}T00:00:00Z`);
++  const monday = date.getTime() - ((date.getUTCDay() + 6) % 7) * 86_400_000;
++  const midnight = (wallTime: number): string => {
++    let instant = wallTime;
++    const formatter = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" });
++    for (let index = 0; index < 4; index += 1) {
++      const parts = formatter.formatToParts(new Date(instant));
++      const part = (type: string) => Number(parts.find((item) => item.type === type)!.value);
++      const represented = Date.UTC(part("year"), part("month") - 1, part("day"), part("hour"), part("minute"), part("second"));
++      const difference = wallTime - represented;
++      instant += difference;
++      if (difference === 0) break;
++    }
++    return new Date(instant).toISOString();
++  };
++  return { from: midnight(monday), to: midnight(monday + 7 * 86_400_000) };
++}
++
+ /** Patient search uses the typed contract in real mode so the topbar never
+  * receives raw PatientRead rows as if they were the UI view model. */
+ export const getPatients = (): Promise<Patient[]> => (useMocks ? Promise.resolve(copy(patients)) : loadPatients());
+@@ -1380,6 +1406,7 @@ export {
+   type ProductivityPreset,
+ } from "./activity";
+ export {
++  appointmentContextForChat,
+   beginClaim,
+   claimHandoff,
+   CONVERSATION_FILTERS,
+diff --git a/src/approvals.ts b/src/approvals.ts
+index 0d69363..4dfae61 100644
+--- a/src/approvals.ts
++++ b/src/approvals.ts
+@@ -331,6 +331,7 @@ export interface DecisionResult {
+ 
+ export async function decideInboxItem(item: ApprovalItem, intent: DecisionIntent): Promise<DecisionResult> {
+   if (intent.itemKey !== item.key) throw new Error("The decision intent belongs to another item.");
++  if (item.status !== "pending") throw new ApiError(409, "PROPOSAL_NOT_PENDING", "Esta propuesta ya fue revisada. Vuelve a cargar la bandeja.");
+   if (USE_MOCKS) return mockDecide(item, intent);
+   const keep = (next: ApprovalItem): ApprovalItem => ({ ...next, locationName: item.locationName ?? next.locationName, facts: next.facts.length ? next.facts : item.facts });
+ 
+@@ -367,8 +368,13 @@ export interface ActionableError {
+   reload: boolean;
+ }
+ 
+-export function describeApprovalError(caught: unknown): ActionableError {
++export function describeApprovalError(caught: unknown, source?: ApprovalItem["source"]): ActionableError {
+   const error = toApiError(caught);
++  if (source === "appointment_proposal") {
++    if (error.code === "INVALID_INPUT") return { message: "La propuesta de cita ya no se puede confirmar. Vuelve a cargar la bandeja.", reload: true };
++    if (error.code === "SLOT_BLOCKED") return { message: "El horario de la cita ya no está disponible. Vuelve a cargar la bandeja y consulta otro horario en Agenda.", reload: true };
++    if (error.code === "APPOINTMENT_CONFLICT") return { message: "El horario de la cita ya fue ocupado. Vuelve a cargar la bandeja y consulta otro horario en Agenda.", reload: true };
++  }
+   switch (error.code) {
+     case "PROPOSAL_SUPERSEDED":
+     case "PROPOSAL_HASH_MISMATCH":
+diff --git a/src/chat.ts b/src/chat.ts
+index 574d67b..a1a6945 100644
+--- a/src/chat.ts
++++ b/src/chat.ts
+@@ -33,6 +33,7 @@ import { mockConversationMessages, mockConversations, mockHandoffs } from "./moc
+ import { mockCurrentMe } from "./session";
+ import type {
+   ChatConversation,
++  ChatAppointmentContext,
+   ChatConversationPage,
+   ChatThreadMessage,
+   ChatThreadPage,
+@@ -165,11 +166,12 @@ export function toUiConversation(row: ConversationSummary, now: Date = new Date(
+   let preview = "Sin mensajes todavía";
+   if (last && text === null) preview = "Mensaje no disponible";
+   if (text !== null) {
+-    const body = text.length >= PREVIEW_CHARS ? `${text}…` : text;
++    const body = text.length > PREVIEW_CHARS ? `${text.slice(0, PREVIEW_CHARS)}…` : text;
+     preview = previewFrom === "clinic" ? `Clínica: ${body}` : body;
+   }
+   return {
+     id: row.id,
++    contactIdentityId: row.contact_identity_id,
+     status: row.status,
+     statusLabel: status.label,
+     statusTone: status.tone,
+@@ -187,6 +189,10 @@ export function toUiConversation(row: ConversationSummary, now: Date = new Date(
+   };
+ }
+ 
++export function appointmentContextForChat(conversation: ChatConversation): ChatAppointmentContext {
++  return { conversationId: conversation.id, contactIdentityId: conversation.contactIdentityId, displayName: conversation.name };
++}
++
+ function unavailableOf(message: StaffMessageRead): { reason: ChatUnavailableReason; label: string } | null {
+   if (message.content_state === "redacted" || message.content_state === "expired") {
+     return { reason: message.content_state, label: UNAVAILABLE_LABEL[message.content_state] };
+diff --git a/src/components/AppShell.tsx b/src/components/AppShell.tsx
+index 7b4cda7..160fe6f 100644
+--- a/src/components/AppShell.tsx
++++ b/src/components/AppShell.tsx
+@@ -1,8 +1,9 @@
+-import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
++import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
+ import {
+   bookReal,
+   createAppointment,
+-  currentWeekWindow,
++  agendaDateKey,
++  agendaWeekReadWindow,
+   getEligiblePractitioners,
+   getLeads,
+   getLocations,
+@@ -19,6 +20,8 @@ import { Modal } from "./Modal";
+ import { usePersona } from "./PersonaContext";
+ import { Surface } from "./Surface";
+ import { Topbar } from "./Topbar";
++import { createLatestRequest } from "../session";
++import type { ChatAppointmentContext } from "../types";
+ 
+ function localDateKey(instant: string, timeZone: string): string {
+   const parts = new Intl.DateTimeFormat("en-CA", {
+@@ -55,6 +58,8 @@ function formatSlotTime(instant: string, timeZone: string): string {
+ export function AppShell({ children }: { children: ReactNode }) {
+   const [appointmentOpen, setAppointmentOpen] = useState(false);
+   const [appointmentPatient, setAppointmentPatient] = useState("");
++  const [appointmentContext, setAppointmentContext] = useState<ChatAppointmentContext | null>(null);
++  const [leadId, setLeadId] = useState("");
+   const [saving, setSaving] = useState(false);
+   const [toast, setToast] = useState("");
+   const [error, setError] = useState("");
+@@ -62,10 +67,17 @@ export function AppShell({ children }: { children: ReactNode }) {
+   const [sidebarOpen, setSidebarOpen] = useState(false);
+   // A persona switch remounts the page so it refetches with the new credential.
+   const { version: personaVersion } = usePersona();
++  const selectorRequests = useRef(createLatestRequest());
++  const practitionerRequests = useRef(createLatestRequest());
++  const slotRequests = useRef(createLatestRequest());
++  const mutationRequests = useRef(createLatestRequest());
+ 
+   useEffect(() => {
+     const openFromChat = (event: Event) => {
+-      setAppointmentPatient((event as CustomEvent<{ patient: string }>).detail.patient);
++      const context = (event as CustomEvent<ChatAppointmentContext>).detail;
++      setAppointmentContext(context);
++      setAppointmentPatient(context.displayName);
++      setLeadId("");
+       setAppointmentOpen(true);
+     };
+     window.addEventListener("open-new-appointment", openFromChat);
+@@ -99,15 +111,20 @@ export function AppShell({ children }: { children: ReactNode }) {
+ 
+   const loadSelectors = useCallback(() => {
+     if (useMocks) return;
+-    void getLeads().then(setLeads).catch((caught) => setError(toApiError(caught).message));
+-    void getServices().then(setServices).catch((caught) => setError(toApiError(caught).message));
+-    void getLocations().then(setLocations).catch((caught) => setError(toApiError(caught).message));
++    const isCurrent = selectorRequests.current.begin();
++    void Promise.all([getLeads(), getServices(), getLocations()])
++      .then(([nextLeads, nextServices, nextLocations]) => {
++        if (!isCurrent()) return;
++        setLeads(nextLeads); setServices(nextServices); setLocations(nextLocations);
++      })
++      .catch((caught) => { if (isCurrent()) setError(toApiError(caught).message); });
+   }, []);
+ 
+   useEffect(() => {
+     if (!appointmentOpen) return;
+     loadSelectors();
+     setError("");
++    setSaving(false);
+     setKey(newIdempotencyKey());
+     setServiceId("");
+     setLocationId("");
+@@ -116,9 +133,11 @@ export function AppShell({ children }: { children: ReactNode }) {
+     setSlots([]);
+     setSelectedStart("");
+     setSlotsError("");
++    return () => { selectorRequests.current.invalidate(); practitionerRequests.current.invalidate(); slotRequests.current.invalidate(); mutationRequests.current.invalidate(); };
+   }, [appointmentOpen, loadSelectors]);
+ 
+   useEffect(() => {
++    const isCurrent = practitionerRequests.current.begin();
+     if (useMocks || !serviceId || !locationId) {
+       setPractitioners([]);
+       setPractitionerId("");
+@@ -130,11 +149,13 @@ export function AppShell({ children }: { children: ReactNode }) {
+     setSlots([]);
+     setSelectedStart("");
+     void getEligiblePractitioners(Number(serviceId), Number(locationId))
+-      .then(setPractitioners)
+-      .catch((caught) => setError(toApiError(caught).message));
++      .then((rows) => { if (isCurrent()) setPractitioners(rows); })
++      .catch((caught) => { if (isCurrent()) setError(toApiError(caught).message); });
++    return () => practitionerRequests.current.invalidate();
+   }, [locationId, serviceId]);
+ 
+   useEffect(() => {
++    const isCurrent = slotRequests.current.begin();
+     if (useMocks || !appointmentOpen || !serviceId || !locationId || !practitionerId) {
+       setSlotsLoading(false);
+       return;
+@@ -142,7 +163,7 @@ export function AppShell({ children }: { children: ReactNode }) {
+     setSlotsLoading(true);
+     setSlotsError("");
+     setSelectedStart("");
+-    const window = currentWeekWindow(slotTimeZone);
++    const window = agendaWeekReadWindow(agendaDateKey(new Date().toISOString(), slotTimeZone), slotTimeZone);
+     void getSlots({
+       service_id: Number(serviceId),
+       location_id: Number(locationId),
+@@ -150,10 +171,11 @@ export function AppShell({ children }: { children: ReactNode }) {
+       window_end: window.to,
+     })
+       .then((available) => {
+-        setSlots(available.filter((slot) => slot.practitioner_id === Number(practitionerId)));
++        if (isCurrent()) setSlots(available.filter((slot) => slot.practitioner_id === Number(practitionerId)));
+       })
+-      .catch((caught) => setSlotsError(toApiError(caught).message))
+-      .finally(() => setSlotsLoading(false));
++      .catch((caught) => { if (isCurrent()) setSlotsError(toApiError(caught).message); })
++      .finally(() => { if (isCurrent()) setSlotsLoading(false); });
++    return () => slotRequests.current.invalidate();
+   }, [appointmentOpen, locationId, practitionerId, serviceId, slotTimeZone]);
+ 
+   useEffect(() => {
+@@ -173,6 +195,8 @@ export function AppShell({ children }: { children: ReactNode }) {
+ 
+   const submitAppointment = async (event: FormEvent<HTMLFormElement>) => {
+     event.preventDefault();
++    if (saving) return;
++    const isCurrent = mutationRequests.current.begin();
+     const form = new FormData(event.currentTarget);
+     setSaving(true);
+     setError("");
+@@ -191,21 +215,26 @@ export function AppShell({ children }: { children: ReactNode }) {
+           setError("Selecciona un horario disponible.");
+           return;
+         }
++        if (!leads.some((lead) => lead.id === Number(leadId))) {
++          setError("Selecciona un lead real de la lista para crear la cita.");
++          return;
++        }
+         await bookReal({
+-          lead_id: Number(form.get("lead_id")),
++          lead_id: Number(leadId),
+           service_id: Number(form.get("service_id")),
+           location_id: Number(form.get("location_id")),
+           practitioner_id: Number(form.get("practitioner_id")),
+           start: selectedStart,
+         }, key);
+       }
++      if (!isCurrent()) return;
+       setAppointmentOpen(false);
+       setToast("Cita creada correctamente");
+       window.dispatchEvent(new Event("appointment-created"));
+     } catch (caught) {
+-      setError(toApiError(caught).message);
++      if (isCurrent()) setError(toApiError(caught).message);
+     } finally {
+-      setSaving(false);
++      if (isCurrent()) setSaving(false);
+     }
+   };
+ 
+@@ -214,7 +243,7 @@ export function AppShell({ children }: { children: ReactNode }) {
+       <a className="skip-link" href="#main-content">Saltar al contenido</a>
+       <AppSidebar mobileOpen={sidebarOpen} onNavigate={() => setSidebarOpen(false)} />
+       <div className="app-workspace">
+-        <Topbar onNewAppointment={() => { setAppointmentPatient(""); setAppointmentOpen(true); }} mobileOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen((value) => !value)} />
++        <Topbar onNewAppointment={() => { setAppointmentPatient(""); setAppointmentContext(null); setLeadId(""); setAppointmentOpen(true); }} mobileOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen((value) => !value)} />
+         <Surface key={personaVersion} as="main" id="main-content" className="app-main">{children}</Surface>
+       </div>
+       {sidebarOpen && <button className="sidebar-backdrop" type="button" aria-label="Cerrar navegación" onClick={() => setSidebarOpen(false)} />}
+@@ -231,7 +260,8 @@ export function AppShell({ children }: { children: ReactNode }) {
+             </>
+           ) : (
+             <>
+-              <label className="field field--wide"><span>Paciente / lead</span><select name="lead_id" required autoFocus><option value="">Selecciona un lead…</option>{leads.map((lead) => <option key={lead.id} value={lead.id}>{lead.full_name}</option>)}</select></label>
++              {appointmentContext && <p className="field-note field--wide" role="note">Desde la conversación con {appointmentContext.displayName}. El chat no incluye un vínculo patient/lead: selecciona el registro real al que corresponde esta cita. Si no existe un perfil, regístralo antes de continuar.</p>}
++              <label className="field field--wide"><span>Paciente / lead</span><select name="lead_id" required autoFocus value={leadId} onChange={(event) => setLeadId(event.target.value)}><option value="">Selecciona un lead real…</option>{leads.map((lead) => <option key={lead.id} value={lead.id}>{lead.full_name} · Lead #{lead.id}</option>)}</select></label>
+               <label className="field"><span>Servicio</span><select name="service_id" required value={serviceId} onChange={(event) => setServiceId(event.target.value)}><option value="">Selecciona…</option>{services.map((service) => <option key={service.id} value={service.id}>{service.name}</option>)}</select></label>
+               <label className="field"><span>Sede</span><select name="location_id" required value={locationId} onChange={(event) => setLocationId(event.target.value)}><option value="">Selecciona…</option>{locations.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}</select></label>
+               <label className="field"><span>Odontólogo</span><select name="practitioner_id" required value={practitionerId} disabled={!serviceId || !locationId || practitioners.length === 0} onChange={(event) => setPractitionerId(event.target.value)}><option value="">{serviceId && locationId ? "Selecciona…" : "Elige servicio y sede"}</option>{practitioners.map((practitioner) => <option key={practitioner.id} value={practitioner.id}>{practitioner.display_name}</option>)}</select></label>
+diff --git a/src/components/PersonaContext.tsx b/src/components/PersonaContext.tsx
+index a92ef96..ad4f510 100644
+--- a/src/components/PersonaContext.tsx
++++ b/src/components/PersonaContext.tsx
+@@ -2,9 +2,11 @@
+ 
+ import { createContext, useCallback, useContext, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
+ import { Check } from "lucide-react";
+-import { choosePersona, loadIdentity, loadPersonas, toApiError, useMocks } from "../api";
++import { choosePersona, loadIdentity, loadPersonas, toApiError } from "../api";
+ import type { PersonaOption, StaffIdentity } from "../types";
+ import { BrandLogo } from "./BrandLogo";
++import { createLatestRequest } from "../session";
++import { onSessionExpired } from "../contracts/client";
+ 
+ /**
+  * The signed-in staff person for the whole shell. `identity` is the backend's
+@@ -45,48 +47,66 @@ export function PersonaProvider({ children }: { children: ReactNode }) {
+   const [requiresCode, setRequiresCode] = useState(false);
+   const [hasCode, setHasCode] = useState(false);
+   const codeRef = useRef("");
+-
+-  const readIdentity = useCallback(async () => {
+-    try {
+-      setIdentity(await loadIdentity());
+-      setError("");
+-    } catch (caught) {
+-      const apiError = toApiError(caught);
+-      setIdentity(null);
+-      // 401 = no usable persona yet: the picker asks for one, not an error.
+-      setError(apiError.httpStatus === 401 ? "" : apiError.message);
+-      if (apiError.code === "PERSONA_REQUIRED") setCurrent(null);
+-    }
+-  }, []);
++  const requests = useRef(createLatestRequest());
+ 
+   useEffect(() => {
+-    let active = true;
++    const unsubscribe = onSessionExpired((code) => {
++      requests.current.invalidate();
++      codeRef.current = "";
++      setHasCode(false);
++      setIdentity(null);
++      setCurrent(null);
++      setLoading(false);
++      setSwitching(false);
++      setError(code === "ACCESS_CODE_INVALID" ? WRONG_CODE : "Tu sesión caducó. Elige quién eres de nuevo.");
++      setVersion((value) => value + 1);
++    });
++    const isCurrent = requests.current.begin();
+     void (async () => {
+-      const [session] = await Promise.allSettled([loadPersonas(), readIdentity()]);
+-      if (!active) return;
+-      if (session.status === "fulfilled") {
+-        setPersonas(session.value.personas);
+-        setCurrent(session.value.current);
+-        setRequiresCode(session.value.requiresCode === true);
+-      } else {
+-        setError(toApiError(session.reason).message);
++      try {
++        // Read the selector before /me so its options survive a /me 401.
++        const session = await loadPersonas();
++        if (!isCurrent()) return;
++        setPersonas(session.personas);
++        setCurrent(session.current);
++        setRequiresCode(session.requiresCode === true);
++        if (session.current !== null) {
++          const nextIdentity = await loadIdentity();
++          if (isCurrent()) setIdentity(nextIdentity);
++        }
++      } catch (caught) {
++        if (isCurrent()) setError(toApiError(caught).message);
++      } finally {
++        if (isCurrent()) setLoading(false);
+       }
+-      setLoading(false);
+     })();
+-    return () => { active = false; };
+-  }, [readIdentity]);
++    return () => { unsubscribe(); requests.current.invalidate(); };
++  }, []);
+ 
+   const switchTo = useCallback(async (key: string | null, code?: string) => {
+     if (code !== undefined) codeRef.current = code;
++    const previousIdentity = identity;
++    requests.current.invalidate();
+     setSwitching(true);
++    setIdentity(null);
++    setError("");
++    setVersion((value) => value + 1);
++    const pending = choosePersona(key, codeRef.current || undefined);
++    const isCurrent = requests.current.begin();
++    let sessionChosen = false;
+     try {
+-      const session = await choosePersona(key, codeRef.current || undefined);
++      const session = await pending;
++      if (!isCurrent()) return;
++      sessionChosen = true;
+       setPersonas(session.personas);
+       setCurrent(session.current);
+       setHasCode(codeRef.current !== "");
+-      await readIdentity();
+-      setVersion((value) => value + 1);
++      if (session.current !== null) {
++        const nextIdentity = await loadIdentity();
++        if (isCurrent()) setIdentity(nextIdentity);
++      }
+     } catch (caught) {
++      if (!isCurrent()) return;
+       const apiError = toApiError(caught);
+       if (apiError.code === "ACCESS_CODE_INVALID") {
+         codeRef.current = "";
+@@ -94,20 +114,21 @@ export function PersonaProvider({ children }: { children: ReactNode }) {
+         setRequiresCode(true);
+         setError(WRONG_CODE);
+       } else {
++        if (!sessionChosen) setIdentity(previousIdentity);
+         setError(apiError.message);
+       }
+     } finally {
+-      setSwitching(false);
++      if (isCurrent()) setSwitching(false);
+     }
+-  }, [readIdentity]);
++  }, [identity]);
+ 
+   const needsCode = requiresCode && !hasCode;
+   const value = useMemo<PersonaState>(
+     () => ({ identity, personas, current, loading, switching, error, version, needsCode, switchTo }),
+     [identity, personas, current, loading, switching, error, version, needsCode, switchTo],
+   );
+-  const gated = !useMocks && (loading || current === null);
+-  return <PersonaContext.Provider value={value}>{gated ? <PersonaGate /> : children}</PersonaContext.Provider>;
++  const gated = loading || switching || current === null || identity === null;
++  return <PersonaContext.Provider value={value}>{gated ? <PersonaGate key={version} /> : children}</PersonaContext.Provider>;
+ }
+ 
+ export function usePersona(): PersonaState {
+diff --git a/src/contracts/client.ts b/src/contracts/client.ts
+index 7e0ed60..a7d52a7 100644
+--- a/src/contracts/client.ts
++++ b/src/contracts/client.ts
+@@ -72,6 +72,37 @@ export const http = axios.create({
+   baseURL: BACKEND_URL,
+ });
+ 
++// Browser identity generations fence late responses from a previous persona.
++// No credential or backend domain state is stored here.
++let sessionVersion = 0;
++const sessionExpiredListeners = new Set<(code?: string) => void>();
++export const getSessionVersion = (): number => sessionVersion;
++export const advanceSessionVersion = (): number => ++sessionVersion;
++export function onSessionExpired(listener: (code?: string) => void): () => void {
++  sessionExpiredListeners.add(listener);
++  return () => { sessionExpiredListeners.delete(listener); };
++}
++export function invalidateSession(expectedVersion = sessionVersion, code?: string): void {
++  if (expectedVersion !== sessionVersion) return;
++  advanceSessionVersion();
++  for (const listener of sessionExpiredListeners) listener(code);
++}
++
++const requestVersions = new WeakMap<object, number>();
++// The optional access supports the existing transport-boundary test doubles;
++// real Axios instances always supply both interceptor managers.
++http.interceptors?.request.use((config) => {
++  requestVersions.set(config, getSessionVersion());
++  return config;
++});
++http.interceptors?.response.use((response) => response, (caught: unknown) => {
++  if (axios.isAxiosError(caught) && caught.response?.status === 401) {
++    const version = caught.config && requestVersions.get(caught.config);
++    if (version !== undefined) invalidateSession(version);
++  }
++  return Promise.reject(caught);
++});
++
+ export interface ApiErrorShape {
+   code: string;
+   message: string;
+diff --git a/src/session.ts b/src/session.ts
+index b281702..aba8299 100644
+--- a/src/session.ts
++++ b/src/session.ts
+@@ -7,7 +7,7 @@
+  * makes no HTTP call.
+  */
+ import { USE_MOCKS } from "./env";
+-import { ApiError, getMe, type MeRead } from "./contracts/client";
++import { advanceSessionVersion, ApiError, getMe, getSessionVersion, invalidateSession, type MeRead } from "./contracts/client";
+ import { mockStaff } from "./mockData";
+ import type { PersonaOption, RunnableAgent, StaffIdentity } from "./types";
+ 
+@@ -15,6 +15,20 @@ const SESSION_URL = "/api/session";
+ 
+ let mockPersona: string | null = mockStaff[0]?.key ?? null;
+ 
++/** A view owns only its latest request and the identity that started it.
++ * Call invalidate on filter changes and effect cleanup, including unmount. */
++export function createLatestRequest() {
++  let request = 0;
++  return {
++    begin(): () => boolean {
++      const ticket = ++request;
++      const identity = getSessionVersion();
++      return () => ticket === request && identity === getSessionVersion();
++    },
++    invalidate(): void { request += 1; },
++  };
++}
++
+ /** The mock persona's `/me`, or null when none is chosen (backend 401). */
+ export function mockCurrentMe(): MeRead | null {
+   return mockStaff.find((staff) => staff.key === mockPersona)?.me ?? null;
+@@ -51,6 +65,7 @@ interface SessionBody {
+ }
+ 
+ async function sessionRequest(init?: RequestInit): Promise<PersonaSession> {
++  const version = getSessionVersion();
+   let response: Response;
+   try {
+     response = await fetch(SESSION_URL, { cache: "no-store", credentials: "same-origin", ...init });
+@@ -59,6 +74,7 @@ async function sessionRequest(init?: RequestInit): Promise<PersonaSession> {
+   }
+   const body = (await response.json().catch(() => null)) as (SessionBody & { error?: { code: string; message: string; details?: Record<string, unknown> } }) | null;
+   if (!response.ok || !body) {
++    if (response.status === 401) invalidateSession(version, body?.error?.code);
+     const error = body?.error;
+     throw new ApiError(response.status, error?.code ?? "UNKNOWN", error?.message ?? "No se pudo cambiar de persona.", error?.details ?? {});
+   }
+@@ -83,6 +99,7 @@ export async function loadPersonas(): Promise<PersonaSession> {
+ /** `null` clears the persona. `code` is the server's access code (real mode;
+  * a wrong one is 401 `ACCESS_CODE_INVALID`). */
+ export async function choosePersona(key: string | null, code?: string): Promise<PersonaSession> {
++  advanceSessionVersion();
+   if (USE_MOCKS) {
+     if (key !== null && !mockStaff.some((staff) => staff.key === key)) {
+       throw new ApiError(400, "PERSONA_UNKNOWN", "Esa persona no está configurada en este servidor.");
+diff --git a/src/types.ts b/src/types.ts
+index c34d23a..523ef45 100644
+--- a/src/types.ts
++++ b/src/types.ts
+@@ -184,6 +184,7 @@ export interface InventoryTransfer {
+ /** Chat (`GET /conversations`): one row of the clinic's inbox, by recency. */
+ export interface ChatConversation {
+   id: number;
++  contactIdentityId: number;
+   status: string;
+   statusLabel: string;
+   statusTone: Tone;
+@@ -203,6 +204,13 @@ export interface ChatConversation {
+   pendingHandoffId: number | null;
+ }
+ 
++/** Context only: the current conversation contract supplies no lead/patient link. */
++export interface ChatAppointmentContext {
++  conversationId: number;
++  contactIdentityId: number;
++  displayName: string;
++}
++
+ export interface ChatConversationPage {
+   items: ChatConversation[];
+   nextCursor: string | null;
+diff --git a/src/views/AgendaPage.tsx b/src/views/AgendaPage.tsx
+index fc77ba7..22f5988 100644
+--- a/src/views/AgendaPage.tsx
++++ b/src/views/AgendaPage.tsx
+@@ -19,6 +19,8 @@ import {
+   deleteDemoAppointment,
+   editDemoAppointment,
+   currentWeekWindow,
++  agendaDateKey,
++  agendaWeekReadWindow,
+   getAgendaDetail,
+   getAppointments,
+   getLocations,
+@@ -37,6 +39,7 @@ import { Button } from "../components/Button";
+ import { Drawer } from "../components/Drawer";
+ import { Modal } from "../components/Modal";
+ import type { Appointment } from "../types";
++import { createLatestRequest } from "../session";
+ 
+ const HOURS = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00"];
+ const WEEKDAY_LABELS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+@@ -186,6 +189,11 @@ export function AgendaPage() {
+   const [rescheduleLoading, setRescheduleLoading] = useState(false);
+   const [cancelOpen, setCancelOpen] = useState(false);
+   const [busy, setBusy] = useState(false);
++  const [locations, setLocations] = useState<LocationRead[]>([]);
++  const calendarTimeZone = locations.find((location) => String(location.id) === locationFilter)?.timezone ?? locations[0]?.timezone ?? "America/Lima";
++  const agendaRequests = useRef(createLatestRequest());
++  const detailRequests = useRef(createLatestRequest());
++  const slotRequests = useRef(createLatestRequest());
+ 
+   useEffect(() => {
+     if (!statusOpen) return;
+@@ -205,7 +213,6 @@ export function AgendaPage() {
+   const selectDate = (dateKey: string) => {
+     setSelectedDate(dateKey); setCalendarMonth(dateKey.slice(0, 7));
+     setActiveDay((new Date(`${dateKey}T00:00:00Z`).getUTCDay() + 6) % 7);
+-    setViewMode("day");
+   };
+   const moveMonth = (offset: number) => {
+     const next = new Date(Date.UTC(monthDate.getUTCFullYear(), monthDate.getUTCMonth() + offset, 1));
+@@ -213,35 +220,49 @@ export function AgendaPage() {
+   };
+ 
+   const refresh = useCallback(async (): Promise<Appointment[]> => {
++    const isCurrent = agendaRequests.current.begin();
+     setLoading(true);
+     setError("");
+     try {
+       const rows = useMocks
+         ? await getAppointments()
+-        : await loadAgenda({ locationId: locationFilter === "all" ? undefined : Number(locationFilter), from: new Date(new Date(weekWindow.from).getTime() + 5 * 3600000).toISOString(), to: new Date(new Date(weekWindow.to).getTime() + 5 * 3600000).toISOString() });
++        : await loadAgenda({ locationId: locationFilter === "all" ? undefined : Number(locationFilter), ...agendaWeekReadWindow(selectedDate, calendarTimeZone) });
++      if (!isCurrent()) return [];
+       setAppointments(rows);
+       return rows;
+     } catch (caught) {
+-      setError(toApiError(caught).message);
++      if (isCurrent()) setError(toApiError(caught).message);
+       return [];
+     } finally {
+-      setLoading(false);
++      if (isCurrent()) setLoading(false);
+     }
+-  }, [locationFilter, weekWindow.from, weekWindow.to]);
++  }, [locationFilter, selectedDate, calendarTimeZone]);
+ 
+   useEffect(() => {
++    setSelected(null);
++    setDetail(null);
++    setDetailLoading(false);
++    setRescheduleOpen(false);
++    setRescheduleLoading(false);
++    setCancelOpen(false);
+     void refresh();
+     const reload = () => void refresh();
+     window.addEventListener("appointment-created", reload);
+-    return () => window.removeEventListener("appointment-created", reload);
++    return () => {
++      agendaRequests.current.invalidate();
++      detailRequests.current.invalidate();
++      slotRequests.current.invalidate();
++      window.removeEventListener("appointment-created", reload);
++    };
+   }, [refresh]);
+ 
+-  const [locations, setLocations] = useState<LocationRead[]>([]);
+   useEffect(() => {
+     if (useMocks) return;
++    let active = true;
+     void getLocations()
+-      .then(setLocations)
+-      .catch((caught) => setError(toApiError(caught).message));
++      .then((rows) => { if (active) setLocations(rows); })
++      .catch((caught) => { if (active) setError(toApiError(caught).message); });
++    return () => { active = false; };
+   }, []);
+ 
+   const locationChoices = useMemo(() => {
+@@ -273,19 +294,23 @@ export function AgendaPage() {
+   const inCell = (day: number, hour: string) => visible.filter((appointment) => appointment.day === day && Number(appointment.time.slice(0, 2)) === Number(hour.slice(0, 2)));
+ 
+   const openDetail = (appointment: Appointment) => {
++    const isCurrent = detailRequests.current.begin();
++    slotRequests.current.invalidate();
+     setSelected(appointment);
+     setDetail(null);
+     setError("");
+     if (useMocks) return;
+     setDetailLoading(true);
+     void getAgendaDetail(Number(appointment.id))
+-      .then(setDetail)
+-      .catch((caught) => setError(toApiError(caught).message))
+-      .finally(() => setDetailLoading(false));
++      .then((row) => { if (isCurrent()) setDetail(row); })
++      .catch((caught) => { if (isCurrent()) setError(toApiError(caught).message); })
++      .finally(() => { if (isCurrent()) setDetailLoading(false); });
+   };
+ 
+   const closeDetail = () => {
+     if (busy) return;
++    detailRequests.current.invalidate();
++    slotRequests.current.invalidate();
+     setSelected(null);
+     setDetail(null);
+     setRescheduleOpen(false);
+@@ -335,13 +360,15 @@ export function AgendaPage() {
+ 
+   const startReschedule = async () => {
+     if (!selected?.serviceId || !selected.locationId || !selected.practitionerId) return;
++    const isCurrent = slotRequests.current.begin();
+     setRescheduleOpen(true);
+     setRescheduleLoading(true);
+     setRescheduleSlots([]);
+     setRescheduleSlot("");
+     setError("");
+     try {
+-      const window = currentWeekWindow(selected.timeZone ?? "America/Lima");
++      const timeZone = selected.timeZone ?? "America/Lima";
++      const window = agendaWeekReadWindow(agendaDateKey(new Date().toISOString(), timeZone), timeZone);
+       const slots = await getSlots({
+         service_id: selected.serviceId,
+         location_id: selected.locationId,
+@@ -351,11 +378,11 @@ export function AgendaPage() {
+       // The SlotQuery contract returns eligible practitioners. A reschedule
+       // keeps the appointment's practitioner because the mutation accepts only
+       // a new start, so only that practitioner's canonical slots are valid here.
+-      setRescheduleSlots(slots.filter((slot) => slot.practitioner_id === selected.practitionerId));
++      if (isCurrent()) setRescheduleSlots(slots.filter((slot) => slot.practitioner_id === selected.practitionerId));
+     } catch (caught) {
+-      setError(toApiError(caught).message);
++      if (isCurrent()) setError(toApiError(caught).message);
+     } finally {
+-      setRescheduleLoading(false);
++      if (isCurrent()) setRescheduleLoading(false);
+     }
+   };
+ 
+@@ -417,6 +444,7 @@ export function AgendaPage() {
+             <p>{formatWeekRange(weekWindow.from)}</p>
+           </div>
+           <div className="filter-row filter-row--heading">
++            <Button compact onClick={() => selectDate(agendaDateKey(new Date().toISOString(), calendarTimeZone))}>Hoy</Button>
+             <label className="select-control"><span className="sr-only">Periodo</span><select value={viewMode} onChange={(event) => setViewMode(event.target.value as ViewMode)}><option value="week">Semana</option><option value="day">Día</option></select><ChevronDown size={16} aria-hidden="true" /></label>
+             {viewMode === "day" && <label className="select-control"><span className="sr-only">Día de la semana</span><select value={String(activeDay)} onChange={(event) => selectDate(new Date(new Date(weekWindow.from).getTime() + Number(event.target.value) * 86400000).toISOString().slice(0, 10))}>{weekDays.map((day, index) => <option key={day} value={index}>{day}</option>)}</select><ChevronDown size={16} aria-hidden="true" /></label>}
+             <label className="select-control"><MapPin size={18} aria-hidden="true" /><span className="sr-only">Sede</span><select value={locationFilter} onChange={(event) => { setLocationFilter(event.target.value); setPractitionerFilter("all"); }}><option value="all">Todas las sedes</option>{locationChoices.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select><ChevronDown size={16} aria-hidden="true" /></label>
+diff --git a/src/views/ApprovalsPage.tsx b/src/views/ApprovalsPage.tsx
+index bf8d16b..2f0d1c9 100644
+--- a/src/views/ApprovalsPage.tsx
++++ b/src/views/ApprovalsPage.tsx
+@@ -20,6 +20,8 @@ import { Button } from "../components/Button";
+ import { usePersona } from "../components/PersonaContext";
+ import { Tabs } from "../components/Tabs";
+ import type { AgentRunResult, ApprovalCategory, ApprovalItem, ApprovalStatus, ProposalDecision, RunnableAgent, StaffIdentity, Tone } from "../types";
++import { createLatestRequest } from "../session";
++import { getSessionVersion } from "../contracts/client";
+ 
+ /**
+  * Bandeja: everything the agents propose, with its evidence, in one place.
+@@ -113,6 +115,7 @@ function RunSummary({ result }: { result: AgentRunResult }) {
+ 
+ const STATUS_TABS: Array<{ id: ApprovalStatus; label: string }> = [
+   { id: "pending", label: "Pendientes" },
++  { id: "approved", label: "Aprobadas/en proceso" },
+   { id: "executed", label: "Ejecutadas" },
+   { id: "declined", label: "Declinadas" },
+   { id: "expired", label: "Vencidas" },
+@@ -183,44 +186,56 @@ function InboxSection({ reloadToken }: { reloadToken: number }) {
+   // A decided card leaves the pending list, so focus lands on the stable
+   // section heading instead of falling to <body>.
+   const headingRef = useRef<HTMLHeadingElement>(null);
++  const reads = useRef(createLatestRequest());
++  const currentStatus = useRef(status);
+   const now = useNow();
+ 
+   const refresh = useCallback(async () => {
++    const isCurrent = reads.current.begin();
+     setLoading(true);
++    setLoadingMore(false);
++    setNextCursor(null);
+     setError("");
+     setDecisions({});
+     try {
+       const page = await loadInbox({ status });
++      if (!isCurrent()) return;
+       setItems(page.items);
+       setNextCursor(page.nextCursor);
+     } catch (caught) {
++      if (!isCurrent()) return;
+       setItems([]);
+       setNextCursor(null);
+       setError(describeApprovalError(caught).message);
+     } finally {
+-      setLoading(false);
++      if (isCurrent()) setLoading(false);
+     }
+   }, [status]);
+ 
+   useEffect(() => {
+     void refresh();
++    return () => reads.current.invalidate();
+   }, [refresh, reloadToken]);
+ 
+   const loadMore = async () => {
+-    if (!nextCursor) return;
++    if (!nextCursor || loadingMore || loading) return;
++    const isCurrent = reads.current.begin();
+     setLoadingMore(true);
+     try {
+       const page = await loadInbox({ status, cursor: nextCursor });
++      if (!isCurrent()) return;
+       setItems((rows) => [...rows, ...page.items.filter((item) => !rows.some((row) => row.key === item.key))]);
+       setNextCursor(page.nextCursor);
+     } catch (caught) {
+-      setError(describeApprovalError(caught).message);
++      if (isCurrent()) setError(describeApprovalError(caught).message);
+     } finally {
+-      setLoadingMore(false);
++      if (isCurrent()) setLoadingMore(false);
+     }
+   };
+ 
+   const decide = async (item: ApprovalItem, decision: ProposalDecision) => {
++    const identityVersion = getSessionVersion();
++    const isCurrent = () => identityVersion === getSessionVersion() && currentStatus.current === status;
+     // Repeating the same decision after a failure is a retry of the same
+     // intent and reuses its Idempotency-Key; a different decision is new.
+     const previous = decisions[item.key];
+@@ -228,6 +243,7 @@ function InboxSection({ reloadToken }: { reloadToken: number }) {
+     setDecisions((state) => ({ ...state, [item.key]: { intent, busy: true, error: null } }));
+     try {
+       const { item: settled, replayed } = await decideInboxItem(item, intent);
++      if (!isCurrent()) return;
+       setDecisions((state) => {
+         const next = { ...state };
+         delete next[item.key];
+@@ -241,7 +257,10 @@ function InboxSection({ reloadToken }: { reloadToken: number }) {
+         setItems((rows) => rows.map((row) => (row.key === item.key ? settled : row)));
+       }
+     } catch (caught) {
+-      setDecisions((state) => ({ ...state, [item.key]: { intent, busy: false, error: describeApprovalError(caught) } }));
++      if (!isCurrent()) return;
++      const error = describeApprovalError(caught, item.source);
++      setDecisions((state) => ({ ...state, [item.key]: { intent, busy: false, error } }));
++      if (item.source === "appointment_proposal" && error.reload) window.dispatchEvent(new Event("appointment-created"));
+     }
+   };
+ 
+@@ -256,7 +275,7 @@ function InboxSection({ reloadToken }: { reloadToken: number }) {
+       <header className="approvals-section__header approvals-section__header--inbox">
+         <h2 id="inbox-title" ref={headingRef} tabIndex={-1}><ClipboardCheck size={19} aria-hidden="true" /> Propuestas {tabLabel.toLowerCase()}</h2>
+         {!loading && !error && <span className="approvals-count" aria-label={`${items.length}${nextCursor ? " o más" : ""} propuestas`}>{items.length}{nextCursor ? "+" : ""}</span>}
+-        <Tabs ariaLabel="Filtrar por estado" panelId="inbox-list" value={status} onChange={(value) => { setAnnouncement(""); setStatus(value as ApprovalStatus); }} items={STATUS_TABS} />
++        <Tabs ariaLabel="Filtrar por estado" panelId="inbox-list" value={status} onChange={(value) => { reads.current.invalidate(); currentStatus.current = value as ApprovalStatus; setAnnouncement(""); setStatus(value as ApprovalStatus); }} items={STATUS_TABS} />
+       </header>
+       {error && <div className="form-error approvals-error" role="alert">{error}<Button compact icon={RotateCcw} onClick={() => void refresh()}>Reintentar</Button></div>}
+       <div id="inbox-list">
+diff --git a/src/views/ChatPage.tsx b/src/views/ChatPage.tsx
+index a8937bc..4e11e88 100644
+--- a/src/views/ChatPage.tsx
++++ b/src/views/ChatPage.tsx
+@@ -4,6 +4,7 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "rea
+ import { Archive, Bot, Clock3, EyeOff, Hand, Lock, MessageCircle, RotateCcw, Search, UserRoundCheck } from "lucide-react";
+ import {
+   beginClaim,
++  appointmentContextForChat,
+   canClaimHandoffs,
+   claimHandoff,
+   CLINIC_TIME_ZONE,
+@@ -21,6 +22,7 @@ import { Button } from "../components/Button";
+ import { usePersona } from "../components/PersonaContext";
+ import { Tabs } from "../components/Tabs";
+ import type { ChatConversation, ChatThreadMessage, HandoffEntry, HandoffStatus } from "../types";
++import { createLatestRequest } from "../session";
+ 
+ type ConversationStatus = NonNullable<(typeof CONVERSATION_FILTERS)[number]["status"]>;
+ type PanelView = "conversaciones" | "derivaciones";
+@@ -74,20 +76,24 @@ export function ChatPage() {
+   const [pendingCount, setPendingCount] = useState<{ count: number; more: boolean } | null>(null);
+   const [claims, setClaims] = useState<Record<number, ClaimState>>({});
+   const [notice, setNotice] = useState("");
++  const conversationPages = useRef(createLatestRequest());
++  const handoffPages = useRef(createLatestRequest());
+ 
+   const reload = () => { setNotice(""); setReloadToken((value) => value + 1); };
+ 
+   useEffect(() => {
+     let active = true;
++    conversationPages.current.invalidate();
+     setConversations(emptyList());
+     loadConversations({ status })
+       .then((page) => { if (active) setConversations({ items: page.items, nextCursor: page.nextCursor, loading: false, error: null }); })
+       .catch((caught) => { if (active) setConversations({ items: [], nextCursor: null, loading: false, error: describeChatError(caught, "conversaciones") }); });
+-    return () => { active = false; };
++    return () => { active = false; conversationPages.current.invalidate(); };
+   }, [status, reloadToken]);
+ 
+   useEffect(() => {
+     let active = true;
++    handoffPages.current.invalidate();
+     setQueue(emptyList());
+     loadHandoffs({ status: queueStatus })
+       .then((page) => {
+@@ -96,31 +102,35 @@ export function ChatPage() {
+         if (queueStatus === "pending") setPendingCount({ count: page.items.length, more: Boolean(page.nextCursor) });
+       })
+       .catch((caught) => { if (active) setQueue({ items: [], nextCursor: null, loading: false, error: describeChatError(caught, "derivaciones") }); });
+-    return () => { active = false; };
++    return () => { active = false; handoffPages.current.invalidate(); };
+   }, [queueStatus, reloadToken]);
+ 
+   const loadMoreConversations = async () => {
+-    if (!conversations.nextCursor) return;
++    if (!conversations.nextCursor || conversations.loading) return;
++    const isCurrent = conversationPages.current.begin();
+     setConversations((state) => ({ ...state, loading: true }));
+     try {
+       const page = await loadConversations({ status, cursor: conversations.nextCursor });
++      if (!isCurrent()) return;
+       setConversations((state) => {
+         const seen = new Set(state.items.map((item) => item.id));
+         return { items: [...state.items, ...page.items.filter((item) => !seen.has(item.id))], nextCursor: page.nextCursor, loading: false, error: null };
+       });
+     } catch (caught) {
+-      setConversations((state) => ({ ...state, loading: false, error: describeChatError(caught, "conversaciones") }));
++      if (isCurrent()) setConversations((state) => ({ ...state, loading: false, error: describeChatError(caught, "conversaciones") }));
+     }
+   };
+ 
+   const loadMoreHandoffs = async () => {
+-    if (!queue.nextCursor) return;
++    if (!queue.nextCursor || queue.loading) return;
++    const isCurrent = handoffPages.current.begin();
+     setQueue((state) => ({ ...state, loading: true }));
+     try {
+       const page = await loadHandoffs({ status: queueStatus, cursor: queue.nextCursor });
+-      setQueue((state) => ({ items: [...state.items, ...page.items], nextCursor: page.nextCursor, loading: false, error: null }));
++      if (!isCurrent()) return;
++      setQueue((state) => ({ items: [...state.items, ...page.items.filter((item) => !state.items.some((row) => row.id === item.id))], nextCursor: page.nextCursor, loading: false, error: null }));
+     } catch (caught) {
+-      setQueue((state) => ({ ...state, loading: false, error: describeChatError(caught, "derivaciones") }));
++      if (isCurrent()) setQueue((state) => ({ ...state, loading: false, error: describeChatError(caught, "derivaciones") }));
+     }
+   };
+ 
+@@ -218,7 +228,11 @@ export function ChatPage() {
+ 
+         <aside className="patient-panel">
+           <h2>Datos de la conversación</h2>
+-          {selected && <ConversationFacts conversation={selected} />}
++          {selected && <>
++            <ConversationFacts conversation={selected} />
++            {identity?.permissions.includes("appointments.create") && <Button compact icon={MessageCircle} onClick={() => window.dispatchEvent(new CustomEvent("open-new-appointment", { detail: appointmentContextForChat(selected) }))}>Crear cita</Button>}
++            <p className="field-note">El chat no incluye el vínculo con un paciente o lead. Para crear una cita, selecciona un registro real en el formulario.</p>
++          </>}
+           <div className="chat-scope">
+             <h3>Qué puedes hacer aquí</h3>
+             <p>Leer cada conversación completa y tomar las que el agente derivó a una persona.</p>
+@@ -255,6 +269,7 @@ function ThreadPanel({ conversation, canClaim, claim, onClaim, onReload }: { con
+   const [error, setError] = useState<ChatError | null>(null);
+   const historyRef = useRef<HTMLDivElement>(null);
+   const stickToEnd = useRef(true);
++  const messagePages = useRef(createLatestRequest());
+ 
+   const fetchPages = useCallback(async (cursor: string | null, pages: number) => {
+     const collected: ChatThreadMessage[] = [];
+@@ -270,11 +285,12 @@ function ThreadPanel({ conversation, canClaim, claim, onClaim, onReload }: { con
+ 
+   useEffect(() => {
+     let active = true;
++    messagePages.current.invalidate();
+     stickToEnd.current = true;
+     fetchPages(null, THREAD_PAGES_ON_OPEN)
+       .then(({ collected, next }) => { if (active) { setMessages(collected); setNextCursor(next); setLoading(false); } })
+       .catch((caught) => { if (active) { setError(describeChatError(caught, "mensajes")); setLoading(false); } });
+-    return () => { active = false; };
++    return () => { active = false; messagePages.current.invalidate(); };
+   }, [fetchPages, conversation.lastMessageAt]);
+ 
+   useEffect(() => {
+@@ -283,17 +299,19 @@ function ThreadPanel({ conversation, canClaim, claim, onClaim, onReload }: { con
+   }, [messages]);
+ 
+   const loadNewer = async () => {
+-    if (!nextCursor) return;
++    if (!nextCursor || loading) return;
++    const isCurrent = messagePages.current.begin();
+     setLoading(true);
+     stickToEnd.current = false;
+     try {
+       const { collected, next } = await fetchPages(nextCursor, 1);
+-      setMessages((current) => [...current, ...collected]);
++      if (!isCurrent()) return;
++      setMessages((current) => [...current, ...collected.filter((item) => !current.some((row) => row.id === item.id))]);
+       setNextCursor(next);
+     } catch (caught) {
+-      setError(describeChatError(caught, "mensajes"));
++      if (isCurrent()) setError(describeChatError(caught, "mensajes"));
+     } finally {
+-      setLoading(false);
++      if (isCurrent()) setLoading(false);
+     }
+   };
+ 
+diff --git a/test/agenda-adapter.test.ts b/test/agenda-adapter.test.ts
+index 4262a70..8eb9e51 100644
+--- a/test/agenda-adapter.test.ts
++++ b/test/agenda-adapter.test.ts
+@@ -2,10 +2,19 @@
+  * Agenda adapter unit tests — pure view-model mapping (no network).
+  */
+ import { describe, expect, it } from "vitest";
+-import { toApiError, toGridSlot, toUiStatus } from "../src/api";
++import { agendaDateKey, agendaWeekReadWindow, toApiError, toGridSlot, toUiStatus } from "../src/api";
+ import { ApiError } from "../src/contracts/client";
+ 
+ describe("toGridSlot", () => {
++  it("uses the selected clinic's day for Hoy across UTC midnight", () => {
++    expect(agendaDateKey("2026-10-05T00:30:00Z", "America/Lima")).toBe("2026-10-04");
++    expect(agendaDateKey("2026-10-05T00:30:00Z", "Asia/Tokyo")).toBe("2026-10-05");
++  });
++
++  it("queries a week bounded by local midnight instead of a fixed UTC offset", () => {
++    expect(agendaWeekReadWindow("2026-10-04", "America/Lima")).toEqual({ from: "2026-09-28T05:00:00.000Z", to: "2026-10-05T05:00:00.000Z" });
++    expect(agendaWeekReadWindow("2026-11-01", "America/New_York")).toEqual({ from: "2026-10-26T04:00:00.000Z", to: "2026-11-02T05:00:00.000Z" });
++  });
+   it("maps a UTC instant to the Lima weekday slot (Mon=0)", () => {
+     // 2026-08-10 14:00 UTC == Monday 09:00 Lima
+     const slot = toGridSlot("2026-08-10T14:00:00Z", "America/Lima");
+diff --git a/test/approvals-adapter.test.ts b/test/approvals-adapter.test.ts
+index f08bf42..0d64e88 100644
+--- a/test/approvals-adapter.test.ts
++++ b/test/approvals-adapter.test.ts
+@@ -293,12 +293,26 @@ describe("Bandeja real-mode adapter (mocked axios)", () => {
+         .toBe("El agente de Cupos liberados no está habilitado en esta clínica.");
+     });
+ 
+-    it("keeps the backend message for anything else", () => {
++    it.each([
++      [422, "INVALID_INPUT", "La propuesta de cita ya no se puede confirmar. Vuelve a cargar la bandeja."],
++      [409, "SLOT_BLOCKED", "El horario de la cita ya no está disponible. Vuelve a cargar la bandeja y consulta otro horario en Agenda."],
++      [409, "APPOINTMENT_CONFLICT", "El horario de la cita ya fue ocupado. Vuelve a cargar la bandeja y consulta otro horario en Agenda."],
++    ])("explains appointment error %s/%s and requests fresh data", (status, code, message) => {
++      expect(api.describeApprovalError(envelopeError(status, code), "appointment_proposal")).toEqual({ message, reload: true });
++    });
++
++    it("keeps the backend message for generic INVALID_INPUT", () => {
+       expect(api.describeApprovalError(envelopeError(422, "INVALID_INPUT", "The appointment proposal is no longer confirmable."))).toEqual({
+         message: "The appointment proposal is no longer confirmable.",
+         reload: false,
+       });
+     });
++
++    it("does not submit another approval for an approved proposal", async () => {
++      const item = api.toUiInboxItem({ ...reminder, status: "approved" });
++      await expect(api.decideInboxItem(item, api.beginDecision(item, "approve"))).rejects.toMatchObject({ code: "PROPOSAL_NOT_PENDING" });
++      expect(mockPost).not.toHaveBeenCalled();
++    });
+   });
+ 
+   describe("Ejecutar ahora", () => {
+diff --git a/test/chat-adapter.test.ts b/test/chat-adapter.test.ts
+index 5e83a30..b1bfda2 100644
+--- a/test/chat-adapter.test.ts
++++ b/test/chat-adapter.test.ts
+@@ -65,6 +65,16 @@ describe("Chat real-mode adapter (mocked axios)", () => {
+   beforeEach(() => { mockGet.mockReset(); mockPost.mockReset(); });
+ 
+   describe("the conversation list", () => {
++    it.each([79, 80, 81])("adds ellipsis only beyond 80 characters (%s)", (length) => {
++      const text = "x".repeat(length);
++      const row = api.toUiConversation({ ...conversation, last_message_preview: { direction: "inbound", text, occurred_at: conversation.last_message_at } }, NOW);
++      expect(row.preview).toBe(length > 80 ? "x".repeat(80) + "…" : text);
++    });
++
++    it("preserves the canonical contact id without inferring a lead from a name", () => {
++      expect(api.toUiConversation(conversation, NOW)).toMatchObject({ contactIdentityId: 109 });
++      expect(api.appointmentContextForChat(api.toUiConversation(conversation, NOW))).toEqual({ conversationId: 9, contactIdentityId: 109, displayName: "Ana Torres" });
++    });
+     it("asks for one page by status and keeps the cursor", async () => {
+       mockGet.mockResolvedValue({ data: { items: [conversation], next_cursor: "next" } });
+       const page = await api.loadConversations({ status: "human_handoff", cursor: "prev" });
+@@ -103,11 +113,11 @@ describe("Chat real-mode adapter (mocked axios)", () => {
+       expect(api.toUiConversation({ ...conversation, last_message_preview: null }, NOW).preview).toBe("Sin mensajes todavía");
+     });
+ 
+-    it("marks the clinic's own last message and the 80-character cut", () => {
++    it("marks the clinic's own last message without guessing truncation at 80", () => {
+       const long = "x".repeat(80);
+       const row = api.toUiConversation({ ...conversation, last_message_preview: { direction: "outbound", text: long, occurred_at: conversation.last_message_at } }, NOW);
+       expect(row.previewFrom).toBe("clinic");
+-      expect(row.preview).toBe(`Clínica: ${long}…`);
++      expect(row.preview).toBe(`Clínica: ${long}`);
+     });
+ 
+     it("keeps a masked phone as the backend sends it", () => {
+diff --git a/test/session-expiry.test.ts b/test/session-expiry.test.ts
+new file mode 100644
+index 0000000..e1aa241
+--- /dev/null
++++ b/test/session-expiry.test.ts
+@@ -0,0 +1,77 @@
++import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
++import { AxiosError, AxiosHeaders, type AxiosAdapter } from "axios";
++
++// Runtime imports keep these frontend tests out of the legacy NodeNext
++// compilation graph without changing its config or the application imports.
++const clientPath = "../src/contracts/client";
++const sessionPath = "../src/session";
++let client: any;
++let session: any;
++let unsubscribe = () => {};
++
++const rejected: (status: number) => AxiosAdapter = (status) => async (config) => {
++  throw new AxiosError("Refused", "ERR_BAD_REQUEST", config, undefined, {
++    status, statusText: "Refused", headers: new AxiosHeaders(), config,
++    data: { error: { code: "REFUSED", message: "Refused", details: {} } },
++  });
++};
++
++beforeEach(async () => {
++  vi.resetModules();
++  vi.stubEnv("NEXT_PUBLIC_USE_MOCKS", "false");
++  client = await import(clientPath);
++  session = await import(sessionPath);
++});
++afterEach(() => { unsubscribe(); vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
++
++describe("session expiry at the transport boundary", () => {
++  it("invalidates the shared identity for a 401 on an ordinary read", async () => {
++    const expired = vi.fn();
++    unsubscribe = client.onSessionExpired(expired);
++    client.http.defaults.adapter = rejected(401);
++    await expect(client.listPatients()).rejects.toMatchObject({ response: { status: 401 } });
++    expect(expired).toHaveBeenCalledOnce();
++  });
++
++  it("invalidates a failed mutation once and never replays it", async () => {
++    const expired = vi.fn();
++    unsubscribe = client.onSessionExpired(expired);
++    const adapter = vi.fn(rejected(401));
++    client.http.defaults.adapter = adapter;
++    await expect(client.createPatient({ full_name: "Demo" }, "intent-1")).rejects.toMatchObject({ response: { status: 401 } });
++    expect(expired).toHaveBeenCalledOnce();
++    expect(adapter).toHaveBeenCalledOnce();
++  });
++
++  it("keeps the session when a permission check returns 403", async () => {
++    const expired = vi.fn();
++    unsubscribe = client.onSessionExpired(expired);
++    client.http.defaults.adapter = rejected(403);
++    await expect(client.listPatients()).rejects.toMatchObject({ response: { status: 403 } });
++    expect(expired).not.toHaveBeenCalled();
++  });
++
++  it("ignores an old persona's late 401 after switching identity", async () => {
++    const expired = vi.fn();
++    unsubscribe = client.onSessionExpired(expired);
++    let release!: () => void;
++    let entered!: () => void;
++    const started = new Promise<void>((resolve) => { entered = resolve; });
++    const waiting = new Promise<void>((resolve) => { release = resolve; });
++    client.http.defaults.adapter = async (config: any) => { entered(); await waiting; return rejected(401)(config); };
++    const request = client.listPatients().catch((error: unknown) => error);
++    await started;
++    client.advanceSessionVersion();
++    release();
++    await request;
++    expect(expired).not.toHaveBeenCalled();
++  });
++
++  it("also invalidates on a session fetch 401 and preserves its envelope", async () => {
++    const expired = vi.fn();
++    unsubscribe = client.onSessionExpired(expired);
++    vi.stubGlobal("fetch", vi.fn(async () => Response.json({ error: { code: "ACCESS_CODE_INVALID", message: "Código inválido" } }, { status: 401 })));
++    await expect(session.choosePersona("secretaria", "wrong")).rejects.toMatchObject({ code: "ACCESS_CODE_INVALID", httpStatus: 401 });
++    expect(expired).toHaveBeenCalledOnce();
++  });
++});
+diff --git a/test/demo-view-races.test.ts b/test/demo-view-races.test.ts
+new file mode 100644
+index 0000000..15e2c01
+--- /dev/null
++++ b/test/demo-view-races.test.ts
+@@ -0,0 +1,46 @@
++import { describe, expect, it, vi } from "vitest";
++
++const sessionPath = "../src/session";
++const clientPath = "../src/contracts/client";
++
++describe("view request ownership", () => {
++  it("keeps the newer Agenda filter result when the older read finishes last", async () => {
++    const { createLatestRequest } = await import(sessionPath);
++    const requests = createLatestRequest();
++    let resolveOld!: (rows: string[]) => void;
++    const oldRows = new Promise<string[]>((resolve) => { resolveOld = resolve; });
++    const commit = vi.fn();
++    const oldCurrent = requests.begin();
++    const oldRead = oldRows.then((rows) => { if (oldCurrent()) commit(rows); });
++    const newCurrent = requests.begin();
++    if (newCurrent()) commit(["sede nueva"]);
++    resolveOld(["sede anterior"]);
++    await oldRead;
++    expect(commit.mock.calls).toEqual([[["sede nueva"]]]);
++  });
++
++  it("drops Chat page success, error and finally after a filter change", async () => {
++    const { createLatestRequest } = await import(sessionPath);
++    const requests = createLatestRequest();
++    const success = requests.begin();
++    requests.invalidate();
++    expect(success()).toBe(false);
++    const failedPage = requests.begin();
++    const renderError = vi.fn();
++    const finishLoading = vi.fn();
++    requests.invalidate();
++    await Promise.reject(new Error("old page")).catch((error) => { if (failedPage()) renderError(error); }).finally(() => { if (failedPage()) finishLoading(); });
++    expect(renderError).not.toHaveBeenCalled();
++    expect(finishLoading).not.toHaveBeenCalled();
++  });
++
++  it("cannot restore identity or a thread after expiry or persona change", async () => {
++    const { createLatestRequest } = await import(sessionPath);
++    const client = await import(clientPath);
++    const identity = createLatestRequest().begin();
++    const messages = createLatestRequest().begin();
++    client.advanceSessionVersion();
++    expect(identity()).toBe(false);
++    expect(messages()).toBe(false);
++  });
++});

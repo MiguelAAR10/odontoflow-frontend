@@ -20,7 +20,8 @@ Cada página se gatea con `useMocks` (de `src/api.ts`, controlado por
 | Página | Estado |
 |---|---|
 | Agenda, Pacientes, Caja, Inventario | **REAL** — llaman al backend de verdad cuando `NEXT_PUBLIC_USE_MOCKS=false` |
-| Chat, Agente IA | **PROTOTIPO** — las pantallas de diseño usan mocks. Sus endpoints (`/conversations`, `/agent/dashboard`) todavía no forman parte del contrato del backend operativo. |
+| Bandeja, Actividad (feed + Corridas), Productividad | **REAL** — `/agent/inbox`, `/activity`, `/agent-runs` y `/metrics/productivity` (solo personas; Productividad exige `audit.read`). El menú las muestra según los `permissions` de `/me`. |
+| Chat | **PROTOTIPO** — la pantalla de diseño usa mocks; todavía no consume `/conversations`. |
 | Asistente de voz | **PARCIAL** — detrás de `NEXT_PUBLIC_ENABLE_VOICE` (apagado por defecto), nunca hace HTTP en modo mock, produce solo borradores |
 | Configuración | **VISTA PREVIA** — muestra áreas de administración, sin guardar cambios ni gestionar roles reales |
 
@@ -43,17 +44,61 @@ npm run test:e2e:pilot    # requiere backend + PostgreSQL reales
 
 En modo real el navegador llama a `/api/backend/*` (base por defecto en
 `src/env.ts`). El Route Handler `app/api/backend/[...path]/route.ts` delega en
-`src/bff/proxy.ts`, que reenvía método, ruta, query y body al backend e inyecta
-`Authorization: Bearer $BACKEND_DEMO_TOKEN` en el servidor.
+`handleBackendRequest` (`src/bff/proxy.ts`), que primero vigila y solo después
+reenvía método, ruta, query y body al backend con el bearer inyectado en el
+servidor:
 
-- Variables solo de servidor: `BACKEND_URL` (default `http://127.0.0.1:8010`) y
-  `BACKEND_DEMO_TOKEN` (opcional). Nunca con prefijo `NEXT_PUBLIC_`; nada bajo
-  `src/` las lee (lo vigila `test/bff-secret-guard.test.ts`).
+1. **Lista blanca** (`BROWSER_ROUTES`): solo las rutas y métodos que llama el
+   cliente tipado (`src/contracts/client.ts`); lo demás → 403
+   `ROUTE_NOT_ALLOWED` sin llamar al backend. `/internal`, `/agent-tools` y
+   `POST /agent/proposals` no están. Si agregas una función al cliente, agrega
+   su ruta: `test/bff-guard.test.ts` falla si el cliente llama algo no cubierto.
+2. **Mismo origen**: toda llamada que no sea GET necesita `Origin`, y además
+   `Sec-Fetch-Site: same-origin` o un `Origin` igual al de la petición; si no →
+   403 `BFF_FORBIDDEN_ORIGIN`.
+3. **Persona firmada** (`src/bff/personas.ts`): la cookie httpOnly
+   `of_persona` vale `<persona>.<expira>.<hmac>` (HMAC-SHA256 con
+   `BFF_SESSION_SECRET`). Si verifica y la persona existe en
+   `BACKEND_DEMO_HUMANS` → el token humano de esa persona. Sin cookie, o con una
+   cookie sin firma, falsificada, vencida o malformada → 401
+   `PERSONA_REQUIRED` sin llamar al backend; la UI muestra el selector de
+   persona. No hay credencial anónima: solo las rutas solo-integración
+   (`/public/*`) usan `BACKEND_DEMO_TOKEN`, y el cliente no llama ninguna, así que
+   la lista blanca no las expone.
+
+`app/api/session/route.ts` lista las personas (sin tokens) y
+`requires_code`, y fija o borra la cookie: `POST {persona, code}` solo JSON y
+del mismo origen, con el código de `BFF_ACCESS_CODE` comparado en tiempo
+constante (incorrecto → 401, sin cookie). Cinco códigos incorrectos del mismo
+cliente (primer salto de `x-forwarded-for`; sin él, un único cubo compartido) en
+10 minutos → 429 con `Retry-After` hasta que pase la ventana, sin comparar el
+código; el contador vive en memoria del proceso y está acotado. Sin
+`BFF_ACCESS_CODE` solo se puede elegir persona en
+`localhost`/`127.0.0.1`/`[::1]` fuera de producción; en otro host, o en
+cualquier host con `NODE_ENV=production`, → 503. Salir (`{persona: null}`) solo
+exige mismo origen, nunca el código. La cookie
+es `HttpOnly; SameSite=Strict; Path=/`, dura 12 h y lleva `Secure` si la
+petición es https o trae `x-forwarded-proto: https`. El selector pide el código
+una vez y lo guarda solo en memoria. Quién está dentro, con sus roles y
+permisos, lo dice el backend en `GET /me`; el menú lateral y la Bandeja se
+gobiernan solo con esos `permissions`.
+
+- Variables solo de servidor: `BACKEND_URL` (default `http://127.0.0.1:8010`),
+  `BACKEND_DEMO_TOKEN`, `BACKEND_DEMO_HUMANS`, `BFF_ACCESS_CODE` y
+  `BFF_SESSION_SECRET` (sin secreto, uno aleatorio por proceso: las cookies
+  mueren al reiniciar; con menos de 32 caracteres se ignora igual, se avisa una
+  vez en el log por su nombre —nunca su valor— y elegir persona → 503
+  `SESSION_SECRET_TOO_SHORT`). Nunca con prefijo `NEXT_PUBLIC_`; nada bajo `src/` las
+  lee (lo vigila `test/bff-secret-guard.test.ts`).
 - Solo pasan `content-type`, `accept`, `idempotency-key`, `x-request-id`; se
-  descartan `authorization`/`cookie` del navegador. El envelope de error del
+  descartan `authorization`/`cookie` del navegador. De vuelta pasa
+  `Idempotent-Replay` para que la UI distinga un replay de una ejecución nueva. El envelope de error del
   backend pasa intacto (`toApiError` sigue igual).
-- Rechazos propios: `..`/segmentos vacíos → 400 `BFF_BAD_PATH`; `/internal/*` →
-  403 `BFF_FORBIDDEN_PATH`; backend caído → 502 `BACKEND_UNREACHABLE`.
+- Rechazos propios: `..`/segmentos vacíos → 400 `BFF_BAD_PATH`; fuera de la
+  lista blanca → 403 `ROUTE_NOT_ALLOWED` (y `/internal/*` además → 403
+  `BFF_FORBIDDEN_PATH` en `proxyToBackend`); mutación de otro origen → 403
+  `BFF_FORBIDDEN_ORIGIN`; sin persona válida → 401 `PERSONA_REQUIRED`; backend
+  caído → 502 `BACKEND_UNREACHABLE`.
 - `NEXT_PUBLIC_BACKEND_URL` solo sirve para la suite de integración en Node
   (conexión directa); `test/setup-e2e-auth.ts` agrega el bearer si el proceso
   de test tiene `BACKEND_DEMO_TOKEN`.

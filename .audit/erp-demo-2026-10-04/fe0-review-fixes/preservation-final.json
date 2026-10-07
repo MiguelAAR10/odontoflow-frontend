@@ -1,0 +1,43 @@
+{
+  "frozen_at_utc": "2026-10-04T09:01:10.317595+00:00",
+  "head": "842b8318ab7f810ad8b2397dc7fa72484a4f4f73",
+  "branch": "erp/frontend",
+  "inherited_commits": [
+    "01c7d4899a6598bbaebd4b4b7ecb58b4bd77c1dc",
+    "1eb0141f9ed20393a7767b2bce6bf91bbd1b7330",
+    "5611aaec76edc3fe1df7cece224f44acfa2b50fd",
+    "3e80b7de8d35fe56eda3ce1115a242cec68290ec",
+    "842b8318ab7f810ad8b2397dc7fa72484a4f4f73"
+  ],
+  "inherited_tools_count": 118,
+  "inherited_tools_unchanged": true,
+  "original_freeze_files_unchanged": 64,
+  "original_diff_sha256": "f2f03294da34c8def5b59ff79c53eae9627b3c2c81f29a66fa1cdce5c6d1d326",
+  "original_report_sha256": "58592db0651846290c44d488a1266f465dab391418051791921d9baed8dabaa2",
+  "changed_since_original_freeze": [
+    "docs/run-demo.md",
+    "src/components/AppShell.tsx",
+    "src/components/PersonaContext.tsx",
+    "src/views/AgendaPage.tsx",
+    "src/views/ApprovalsPage.tsx",
+    "test/demo-view-races.test.ts"
+  ],
+  "changed_since_original_count": 6,
+  "all_original_owned_files_outside_subset_unchanged": true,
+  "total_changed_files_against_head": 19,
+  "staged_diff_bytes": 0,
+  "generated_contract_unchanged": true,
+  "full_diff_hash": {
+    "sha256": "fb500697e0bee51acd9616144aa6cdc15f2f37c87e945a590b4c7ef0941122d2",
+    "bytes": 71572
+  },
+  "incremental_diff_hash": {
+    "sha256": "fe9f626fa2d5d132e8e6b8e0e31044f1bc35bd5135823760defd19c5ebf437db",
+    "bytes": 9009
+  },
+  "diff_check_exit": 0,
+  "reverse_apply_check_exits": [
+    0,
+    0
+  ]
+}

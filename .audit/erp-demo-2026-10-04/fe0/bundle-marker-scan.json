@@ -1,0 +1,12 @@
+{
+  "files_scanned": 38,
+  "markers": {
+    "BACKEND_DEMO_HUMANS": [],
+    "BACKEND_DEMO_TOKEN": [],
+    "BFF_SESSION_SECRET": [],
+    "BFF_ACCESS_CODE": [],
+    "ofk_": []
+  },
+  "scope": ".next/static/**/*.js; literal names/prefix only, no configured secret values read",
+  "limitations": "Does not prove absence of arbitrary encoded secrets; no server secret files inspected; no browser/server started."
+}

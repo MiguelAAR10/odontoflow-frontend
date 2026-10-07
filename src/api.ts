@@ -1,10 +1,6 @@
 import { USE_MOCKS } from "./env";
 import {
-  agentActivity,
   appointments,
-  automations,
-  conversations,
-  humanQueue,
   mockBalances,
   mockCharges,
   mockExecutions,
@@ -83,8 +79,6 @@ import {
 import type {
   Appointment,
   Charge,
-  ChatMessage,
-  Conversation,
   InventoryBalance,
   InventoryLocation,
   InventoryMovement,
@@ -186,6 +180,32 @@ export function currentWeekWindow(timeZone = "America/Lima"): { from: string; to
   const monday = new Date(localMidnight.getTime() - weekday * 86_400_000);
   const nextMonday = new Date(monday.getTime() + 7 * 86_400_000);
   return { from: monday.toISOString(), to: nextMonday.toISOString() };
+}
+
+/** Calendar date on a branch's wall clock, independent of the browser timezone. */
+export function agendaDateKey(instant: string, timeZone: string): string {
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date(instant));
+  return ["year", "month", "day"].map((type) => parts.find((part) => part.type === type)!.value).join("-");
+}
+
+/** Query bounds use each local midnight's actual offset, including DST changes. */
+export function agendaWeekReadWindow(dateKey: string, timeZone: string): { from: string; to: string } {
+  const date = new Date(`${dateKey}T00:00:00Z`);
+  const monday = date.getTime() - ((date.getUTCDay() + 6) % 7) * 86_400_000;
+  const midnight = (wallTime: number): string => {
+    let instant = wallTime;
+    const formatter = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" });
+    for (let index = 0; index < 4; index += 1) {
+      const parts = formatter.formatToParts(new Date(instant));
+      const part = (type: string) => Number(parts.find((item) => item.type === type)!.value);
+      const represented = Date.UTC(part("year"), part("month") - 1, part("day"), part("hour"), part("minute"), part("second"));
+      const difference = wallTime - represented;
+      instant += difference;
+      if (difference === 0) break;
+    }
+    return new Date(instant).toISOString();
+  };
+  return { from: midnight(monday), to: midnight(monday + 7 * 86_400_000) };
 }
 
 /** Patient search uses the typed contract in real mode so the topbar never
@@ -461,14 +481,6 @@ export function rescheduleReal(appointmentId: number, newStart: string, idempote
 
 export function cancelReal(appointmentId: number, idempotencyKey: string): Promise<AppointmentRead> {
   return cancelAppointmentReal(appointmentId, idempotencyKey);
-}
-
-export async function getAgentDashboard() {
-  if (!useMocks) {
-    const response = await api.get("/agent/dashboard");
-    return response.data as { activity: typeof agentActivity; queue: typeof humanQueue; automations: typeof automations };
-  }
-  return copy({ activity: agentActivity, queue: humanQueue, automations });
 }
 
 // --- FE3A service-to-cash view models and adapters --------------------------
@@ -754,7 +766,7 @@ let mockChargeSequence = 20;
 function readMockReceipt<T>(key: string, fingerprint: string): T | null {
   const receipt = mockReceipts.get(key);
   if (!receipt) return null;
-  if (receipt.fingerprint !== fingerprint) throw new ApiError(409, "IDEMPOTENCY_KEY_REUSED", "The idempotency key was already used for a different request.");
+  if (receipt.fingerprint !== fingerprint) throw new ApiError(409, "IDEMPOTENCY_KEY_REUSED", "The idempotency key was already used by a different request.");
   return copy(receipt.value as T);
 }
 
@@ -1333,27 +1345,6 @@ export async function registerTransfer(
   return toUiTransfer(await registerTransferReal(Number(productId), input, idempotencyKey));
 }
 
-export const getConversations = () => getOrMock<Conversation[]>("/conversations", conversations);
-
-export async function sendMessage(conversationId: string, text: string): Promise<ChatMessage> {
-  if (!useMocks) {
-    const response = await api.post<ChatMessage>(`/conversations/${conversationId}/messages`, { text });
-    return response.data;
-  }
-  const conversation = conversations.find((item) => item.id === conversationId);
-  if (!conversation) throw new Error("Conversación no encontrada");
-  const message: ChatMessage = {
-    id: `message-${Date.now()}`,
-    from: "staff",
-    text,
-    time: new Date().toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit", hour12: false }),
-  };
-  conversation.messages.push(message);
-  conversation.preview = text;
-  conversation.time = message.time;
-  return copy(message);
-}
-
 /* ---------------------------------------------------------------------------
  * Voice assistant — re-exported so pages keep importing from `../api`, the
  * single façade convention every other page follows. The implementation and
@@ -1373,3 +1364,78 @@ export {
   voiceEnabled,
   voiceLive,
 } from "./voice";
+
+// --- Bandeja (approvals inbox, agent runs) and the signed-in staff persona ---
+export {
+  beginDecision,
+  CATEGORY_LABEL,
+  decideInboxItem,
+  describeApprovalError,
+  loadInbox,
+  RUNNABLE_AGENTS,
+  runAgentNow,
+  toUiInboxItem,
+  type ActionableError,
+  type DecisionIntent,
+  type DecisionResult,
+  type InboxCatalogNames,
+  type InboxPageView,
+} from "./approvals";
+export {
+  ACTIVITY_AGENTS,
+  activitySentence,
+  AGENT_LABEL,
+  CLINIC_TIME_ZONE,
+  describeObservabilityError,
+  formatSoles,
+  loadActivity,
+  loadAgentRuns,
+  loadClinicLocations,
+  loadProductivity,
+  PRODUCTIVITY_MAX_SPAN_DAYS,
+  PRODUCTIVITY_PRESETS,
+  productivityPreset,
+  productivityRangeError,
+  RUNS_PAGE_SIZE,
+  toUiActivityItem,
+  toUiAgentRun,
+  toUiProductivity,
+  type ActivityFilters,
+  type ObservabilityError,
+  type ObservabilitySurface,
+  type ProductivityPreset,
+} from "./activity";
+export {
+  appointmentContextForChat,
+  beginClaim,
+  claimHandoff,
+  CONVERSATION_FILTERS,
+  CONVERSATION_PAGE_SIZE,
+  CONVERSATION_STATUS,
+  describeChatError,
+  HANDOFF_FILTERS,
+  HANDOFF_REASON_LABEL,
+  loadConversations,
+  loadHandoffs,
+  loadThread,
+  toUiConversation,
+  toUiHandoff,
+  toUiMessage,
+  type ChatError,
+  type ChatSurface,
+  type ClaimIntent,
+  type ClaimResult,
+  type ConversationFilters,
+} from "./chat";
+export {
+  canClaimHandoffs,
+  canOpen,
+  canRunAgent,
+  choosePersona,
+  hasPermissions,
+  loadIdentity,
+  loadPersonas,
+  MODULE_PERMISSIONS,
+  toStaffIdentity,
+  type PersonaSession,
+} from "./session";

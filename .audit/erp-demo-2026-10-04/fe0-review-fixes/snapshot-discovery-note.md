@@ -1,0 +1,1 @@
+La primera prueba focal también descubrió la copia de evidencia demo-view-races.test.ts bajo baseline/. Se conservan su log/exit y el fallo real de gate mock. Las copias de evidencia fueron renombradas con sufijo .snapshot, sin cambiar producto ni configuración. Se repite el RED focal para aislar el comportamiento buscado.

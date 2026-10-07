@@ -1,54 +1,49 @@
-# Ejecutar el simulador histórico end-to-end desde cero
+# Ejecutar el demo operativo de OdontoFlow
 
-Este procedimiento inicia `src/server.ts` y su interfaz de simulación. No inicia la aplicación Next.js actual. Para revisar el frontend operativo, usa las instrucciones de [README.md](../README.md).
+La aplicación actual es Next.js. `npm start` sirve su compilación en `http://127.0.0.1:5173`; `npm run dev` mantiene el desarrollo en esa dirección. Este runbook no crea ni resetea bases, emite credenciales ni inicia el backend.
 
-## 1. Base aislada
+## Preparación
 
-Levanta PostgreSQL local:
+Trabaja en el checkout frontend acordado con el coordinador. Usa las dependencias ya instaladas y un backend demo ficticio preparado por su propietario, con API, base y puertos explícitos del ensayo. No ejecutes `scripts/pilot-e2e.sh` ni los defaults históricos de PostgreSQL contra un cluster compartido.
 
-```bash
-docker compose up -d db
-```
+Configura `NEXT_PUBLIC_USE_MOCKS=false` **antes de compilar** para consumir el backend canónico. Las variables `NEXT_PUBLIC_*` quedan incorporadas durante el build. Mantén `NEXT_PUBLIC_BACKEND_URL` sin override directo: el navegador debe usar el BFF same-origin `/api/backend`.
 
-Aplica las migraciones y seeds en orden:
+El coordinador debe haber configurado en servidor `BACKEND_URL`, las personas `BACKEND_DEMO_HUMANS`, `BFF_SESSION_SECRET` y, cuando corresponda, `BFF_ACCESS_CODE`. Conserva los secretos existentes: no los imprimas, copies al navegador ni guardes en variables `NEXT_PUBLIC_*`. El acceso sin código en producción permanece cerrado por defecto y el secreto de sesión debe satisfacer la validación existente.
 
-```bash
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/001_initial.sql
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/002_simulated_channels.sql
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/migrations/003_end_to_end_followup.sql
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/seeds/001_simulated.sql
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/seeds/002_end_to_end_demo.sql
-```
+## Compilar y verificar
 
-Todos los pacientes, teléfonos, sedes, doctores y citas son ficticios.
+Ejecuta estos comandos en serie; el coordinador reserva aparte la integración DB/E2E:
 
-## 2. Compilar y verificar
-
-```bash
-npm install
+~~~bash
 npm run typecheck
-npm test
-npm run build
-```
+VITEST_MAX_THREADS=1 VITEST_MIN_THREADS=1 VITEST_MAX_FORKS=1 VITEST_MIN_FORKS=1 npm test
+NEXT_PUBLIC_USE_MOCKS=false npm run build
+~~~
 
-## 3. Iniciar
+El build comprende `next build --webpack` y la compilación del harness histórico. La suite unitaria excluye las cuatro integraciones registradas en `vitest.e2e.config.ts`. Si un comando falla, conserva su salida y exit; no desactives el typecheck ni cambies seguridad para ocultarlo. Pruebas unitarias y build no certifican la integración real del demo.
 
-```bash
+## Servir la compilación
+
+Sólo después de que el coordinador libere el puerto de este ensayo:
+
+~~~bash
 npm start
-```
+~~~
 
-Abre `http://127.0.0.1:3000`.
+Ese script ejecuta `next start -p 5173 -H 127.0.0.1`. No inicia `dist/src/server.js`. Para otro puerto, acuerda uno propio y sirve la compilación con `npx next start -p <puerto-propio> -H 127.0.0.1`; no mates procesos ajenos. No ejecutes dev y start simultáneamente sobre el mismo puerto.
 
-## 4. Demo obligatoria
+## Recorrido local y límites vigentes
 
-Pulsa **Ejecutar demo Ana**. El sistema:
+1. Elige una persona autorizada mediante el selector. El código, si el servidor lo pide, se conserva sólo en memoria. Un 401 en cualquier lectura o mutación vuelve al selector y descarta identidad/código y respuestas pendientes; esto incluye un código incorrecto al cambiar de persona. No se reproduce automáticamente una mutación. Un 403 informa la restricción de permisos y conserva la sesión.
+2. Consulta Agenda, Pacientes, Caja e Inventario según permisos backend. En Agenda, “Hoy” vuelve al día de la sede seleccionada; elegir una fecha conserva la vista día/semana. Horarios e IDs del catálogo provienen del backend.
+3. En Bandeja, revisa Pendientes y “Aprobadas/en proceso”. Una aprobación en proceso no significa ejecutada ni ofrece aprobar otra vez. Ante un conflicto de cita, vuelve a cargar la bandeja y consulta otro horario real en Agenda. Propuestas genéricas conservan códigos y mensajes backend.
+4. En Chat, lee conversaciones y toma derivaciones según permisos. “Crear cita” abre el formulario real: el contrato actual sólo proyecta `contact_identity_id`, por lo que debes seleccionar explícitamente un lead real por ID. El nombre no establece vínculo patient/lead. Si falta el perfil, regístralo antes de continuar; no se inventa uno.
+5. El historial Chat **mantiene el contrato ASC actual** y “Ver mensajes más recientes”. No ofrece “historia anterior” ni orden descendente hasta que BE0b entregue OpenAPI estable. SIM, WAITLIST y los recorridos completos siguen sujetos a sus gates.
 
-1. Restablece solo la sesión ficticia de Ana a lunes 08:55.
-2. Genera WhatsApp a las 09:00.
-3. Genera llamadas a las 12:00 y 16:00.
-4. Marca la llamada de 16:00 como `ANSWERED_CONFIRMED`.
-5. Conserva `appointment_status=CONFIRMED` y `followup_status=CONFIRMED`.
-6. Genera `SAME_DAY_09AM` y `ONE_HOUR_BEFORE` el martes.
-7. Muestra métricas, historial operativo, resumen, bandeja y cola sin duplicados.
+El backend ya limita el preview de Chat a 80 caracteres y no indica si lo truncó. Un preview recibido de exactamente 80 se muestra sin elipsis: con este contrato no se distingue de un mensaje más largo ya recortado. No se infiere truncamiento ni se amplía la API para resolver esa limitación.
 
-La demo no abre conexiones hacia Google, Meta, WhatsApp ni proveedores de llamadas.
+La verificación browser/I0, cookie firmada, same-origin, permisos y ausencia de tokens en bundle se realiza en el ensayo poseído por el coordinador. No uses capturas mock ni esta verificación local como sustituto de Q2/Q8.
+
+## Harness histórico
+
+`src/server.ts`, `src/domain/` y `src/simulation/` siguen como referencia. Para un consumidor histórico cuyo entorno aislado ya esté preparado, el entrypoint queda disponible explícitamente como `npm run start:legacy` (`node dist/src/server.js`). No es el demo ERP actual; este procedimiento no configura su DB ni lo ejecuta.

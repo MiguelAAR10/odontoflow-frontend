@@ -1,0 +1,54 @@
+{
+  "frozen_at_utc": "2026-10-04T08:13:25.391393+00:00",
+  "cwd": "/home/miguel/projects/portfolio/AI-EdgeRunners/odontoflow/.worktrees/frontend-erp",
+  "branch": "erp/frontend",
+  "head": "842b8318ab7f810ad8b2397dc7fa72484a4f4f73",
+  "main": "e508b85e61131aa95ed14d783f1e569574b96979",
+  "inherited_commits": [
+    "01c7d4899a6598bbaebd4b4b7ecb58b4bd77c1dc",
+    "1eb0141f9ed20393a7767b2bce6bf91bbd1b7330",
+    "5611aaec76edc3fe1df7cece224f44acfa2b50fd",
+    "3e80b7de8d35fe56eda3ce1115a242cec68290ec",
+    "842b8318ab7f810ad8b2397dc7fa72484a4f4f73"
+  ],
+  "inherited_commit_count": 5,
+  "inherited_tools_count": 118,
+  "inherited_tools_unchanged": true,
+  "tracked_changed_files": [
+    "README.md",
+    "docs/run-demo.md",
+    "package.json",
+    "src/api.ts",
+    "src/approvals.ts",
+    "src/chat.ts",
+    "src/components/AppShell.tsx",
+    "src/components/PersonaContext.tsx",
+    "src/contracts/client.ts",
+    "src/session.ts",
+    "src/types.ts",
+    "src/views/AgendaPage.tsx",
+    "src/views/ApprovalsPage.tsx",
+    "src/views/ChatPage.tsx",
+    "test/agenda-adapter.test.ts",
+    "test/approvals-adapter.test.ts",
+    "test/chat-adapter.test.ts"
+  ],
+  "new_test_files": [
+    "test/session-expiry.test.ts",
+    "test/demo-view-races.test.ts"
+  ],
+  "changed_file_count": 19,
+  "staged_diff_bytes": 0,
+  "generated_contract_unchanged": true,
+  "generated_contract_sha256": "42d18ff42489d766141d2270c2ee29686cb041c595087feb65d0a9a70d92b86c",
+  "readme_scope": "Only original npm start note changed (one removed/one added line).",
+  "extra_untracked_outside_authorized_scope": [],
+  "inherited_diff_unchanged": true,
+  "frozen_diff": ".audit/erp-demo-2026-10-04/fe0/frontend-fe0-a.diff",
+  "frozen_diff_hash": {
+    "sha256": "f2f03294da34c8def5b59ff79c53eae9627b3c2c81f29a66fa1cdce5c6d1d326",
+    "bytes": 68442
+  },
+  "serial_checks": true,
+  "unit_test_workers": 1
+}

@@ -1,0 +1,19 @@
+{
+  "command": [
+    "npm",
+    "test"
+  ],
+  "cwd": "/home/miguel/projects/portfolio/AI-EdgeRunners/odontoflow/.worktrees/frontend-erp",
+  "environment_overrides": {
+    "VITEST_MAX_THREADS": "1",
+    "VITEST_MIN_THREADS": "1",
+    "VITEST_MAX_FORKS": "1",
+    "VITEST_MIN_FORKS": "1"
+  },
+  "started_at_utc": "2026-10-04T07:13:48.669426+00:00",
+  "finished_at_utc": "2026-10-04T07:14:20.986077+00:00",
+  "duration_seconds": 29.386,
+  "exit_code": 0,
+  "peak_child_rss_kib": 189700,
+  "log_bytes": 2004
+}

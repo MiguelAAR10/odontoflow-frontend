@@ -34,12 +34,73 @@ export type TransferRead = components["schemas"]["TransferRead"];
 export type EntryCreate = components["schemas"]["EntryCreate"];
 export type AdjustmentCreate = components["schemas"]["AdjustmentCreate"];
 export type TransferCreate = components["schemas"]["TransferCreate"];
+export type AppointmentProposalRead = components["schemas"]["AppointmentProposalRead"];
+export type AppointmentProposalConfirm = components["schemas"]["AppointmentProposalConfirm"];
+export type AppointmentProposalDecline = components["schemas"]["AppointmentProposalDecline"];
+export type MeRead = components["schemas"]["MeRead"];
+export type InboxPage = components["schemas"]["InboxPage"];
+export type InboxItem = components["schemas"]["InboxItem"];
+export type InboxStatus = InboxItem["status"];
+export type InboxKind = InboxItem["kind"];
+export type InboxAction = InboxItem["actions"][number];
+export type ProposalApprove = components["schemas"]["ProposalApprove"];
+export type AgentRunCreate = components["schemas"]["AgentRunCreate"];
+export type AgentRunOut = components["schemas"]["AgentRunOut"];
+export type AgentRunCounts = components["schemas"]["AgentRunCounts"];
+export type JobsRunDue = components["schemas"]["JobsRunDue"];
+export type JobsRunOut = components["schemas"]["JobsRunOut"];
+export type AgentRunPage = components["schemas"]["AgentRunPage"];
+export type AgentRunKey = AgentRunOut["agent_key"];
+export type ActivityItem = components["schemas"]["ActivityItem"];
+export type ActivityPage = components["schemas"]["ActivityPage"];
+export type ProductivityReport = components["schemas"]["ProductivityReport"];
+export type AgentProposalCounts = components["schemas"]["AgentProposalCounts"];
+export type ConversationSummary = components["schemas"]["ConversationSummary"];
+export type ConversationPage = components["schemas"]["ConversationPage"];
+export type ConversationStatus = NonNullable<ConversationQuery["status"]>;
+export type MessagePreview = components["schemas"]["MessagePreview"];
+export type StaffMessageRead = components["schemas"]["StaffMessageRead"];
+export type MessagePage = components["schemas"]["MessagePage"];
+export type HandoffRead = components["schemas"]["HandoffRead"];
+export type HandoffPage = components["schemas"]["HandoffPage"];
+export type HandoffStatus = NonNullable<HandoffQuery["status"]>;
 
 type AppointmentsPath = paths["/appointments"];
 
 /** Single transport shared with `src/api.ts` (re-exported there as `api`). */
 export const http = axios.create({
   baseURL: BACKEND_URL,
+});
+
+// Browser identity generations fence late responses from a previous persona.
+// No credential or backend domain state is stored here.
+let sessionVersion = 0;
+const sessionExpiredListeners = new Set<(code?: string) => void>();
+export const getSessionVersion = (): number => sessionVersion;
+export const advanceSessionVersion = (): number => ++sessionVersion;
+export function onSessionExpired(listener: (code?: string) => void): () => void {
+  sessionExpiredListeners.add(listener);
+  return () => { sessionExpiredListeners.delete(listener); };
+}
+export function invalidateSession(expectedVersion = sessionVersion, code?: string): void {
+  if (expectedVersion !== sessionVersion) return;
+  advanceSessionVersion();
+  for (const listener of sessionExpiredListeners) listener(code);
+}
+
+const requestVersions = new WeakMap<object, number>();
+// The optional access supports the existing transport-boundary test doubles;
+// real Axios instances always supply both interceptor managers.
+http.interceptors?.request.use((config) => {
+  requestVersions.set(config, getSessionVersion());
+  return config;
+});
+http.interceptors?.response.use((response) => response, (caught: unknown) => {
+  if (axios.isAxiosError(caught) && caught.response?.status === 401) {
+    const version = caught.config && requestVersions.get(caught.config);
+    if (version !== undefined) invalidateSession(version);
+  }
+  return Promise.reject(caught);
 });
 
 export interface ApiErrorShape {
@@ -447,3 +508,185 @@ export async function registerTransfer(
 }
 
 export type { paths };
+
+// --- appointment proposals: confirm/decline (inbox source "appointment_proposal") ---
+
+export async function confirmAppointmentProposal(
+  body: AppointmentProposalConfirm,
+  idempotencyKey: string,
+): Promise<AppointmentProposalRead> {
+  const payload: AppointmentProposalConfirm = { conversation_id: body.conversation_id, confirmation_token: body.confirmation_token };
+  const response = await http.post<AppointmentProposalRead>(
+    "/scheduling/appointment-proposals/confirm",
+    payload,
+    { headers: { "Idempotency-Key": idempotencyKey } },
+  );
+  return response.data;
+}
+
+export async function declineAppointmentProposal(
+  body: AppointmentProposalDecline,
+  idempotencyKey: string,
+): Promise<AppointmentProposalRead> {
+  const payload: AppointmentProposalDecline = { conversation_id: body.conversation_id, confirmation_token: body.confirmation_token };
+  const response = await http.post<AppointmentProposalRead>(
+    "/scheduling/appointment-proposals/decline",
+    payload,
+    { headers: { "Idempotency-Key": idempotencyKey } },
+  );
+  return response.data;
+}
+
+// --- who is signed in ---------------------------------------------------------
+
+export async function getMe(): Promise<MeRead> {
+  const response = await http.get<MeRead>("/me");
+  return response.data;
+}
+
+// --- agent proposals inbox ----------------------------------------------------
+
+type InboxQuery = NonNullable<paths["/agent/inbox"]["get"]["parameters"]["query"]>;
+
+export async function listInbox(query: Pick<InboxQuery, "status" | "source" | "kind" | "location_id" | "limit" | "cursor"> = {}): Promise<InboxPage> {
+  const params: InboxQuery = {};
+  if (query.status) params.status = query.status;
+  if (query.source) params.source = query.source;
+  if (query.kind) params.kind = query.kind;
+  if (query.location_id != null) params.location_id = query.location_id;
+  if (query.limit != null) params.limit = query.limit;
+  if (query.cursor) params.cursor = query.cursor;
+  const response = await http.get<InboxPage>("/agent/inbox", { params });
+  return response.data;
+}
+
+/** A mutation result plus whether the backend replayed a prior intent
+ * (`Idempotent-Replay: true`) instead of executing it again. */
+export interface Replayable<T> {
+  data: T;
+  replayed: boolean;
+}
+
+function isReplay(headers: unknown): boolean {
+  const value = (headers as Record<string, unknown> | undefined)?.["idempotent-replay"];
+  return String(value ?? "").toLowerCase() === "true";
+}
+
+export async function approveProposal(
+  proposalId: number,
+  payloadHash: string,
+  idempotencyKey: string,
+): Promise<Replayable<InboxItem>> {
+  const payload: ProposalApprove = { payload_hash: payloadHash };
+  const response = await http.post<InboxItem>(
+    `/agent/proposals/${proposalId}/approve`,
+    payload,
+    { headers: { "Idempotency-Key": idempotencyKey } },
+  );
+  return { data: response.data, replayed: isReplay(response.headers) };
+}
+
+/** Decline is idempotent on the backend (a declined row stays declined); the
+ * intent key is still sent so every mutation carries one. */
+export async function declineProposal(proposalId: number, idempotencyKey: string): Promise<InboxItem> {
+  const response = await http.post<InboxItem>(
+    `/agent/proposals/${proposalId}/decline`,
+    null,
+    { headers: { "Idempotency-Key": idempotencyKey } },
+  );
+  return response.data;
+}
+
+// --- agent runs ("Ejecutar ahora") --------------------------------------------
+
+export async function createAgentRun(agentKey: AgentRunCreate["agent_key"], idempotencyKey: string): Promise<Replayable<AgentRunOut>> {
+  const payload: AgentRunCreate = { agent_key: agentKey };
+  const response = await http.post<AgentRunOut>("/agent-runs", payload, { headers: { "Idempotency-Key": idempotencyKey } });
+  return { data: response.data, replayed: isReplay(response.headers) };
+}
+
+/** Backfill tick. Safe to repeat (unique job keys + leases); the key is sent
+ * for consistency with every other mutation. */
+export async function runDueAgentJobs(idempotencyKey: string, limit?: number): Promise<JobsRunOut> {
+  const payload: Partial<JobsRunDue> = limit == null ? {} : { limit };
+  const response = await http.post<JobsRunOut>("/agent-runs/jobs/run-due", payload, { headers: { "Idempotency-Key": idempotencyKey } });
+  return response.data;
+}
+
+/** Run history, newest first. The contract pages by `limit` only (1–100, no cursor). */
+export async function listAgentRuns(query: { agent_key?: AgentRunKey; limit?: number } = {}): Promise<AgentRunPage> {
+  const params: NonNullable<paths["/agent-runs"]["get"]["parameters"]["query"]> = {};
+  if (query.agent_key) params.agent_key = query.agent_key;
+  if (query.limit != null) params.limit = query.limit;
+  const response = await http.get<AgentRunPage>("/agent-runs", { params });
+  return response.data;
+}
+
+// --- staff observability (human-only reads) ------------------------------------
+
+type ActivityQuery = NonNullable<paths["/activity"]["get"]["parameters"]["query"]>;
+
+/** One feed of who did what (`proposals.read`), keyset-paged by `cursor`. */
+export async function listActivity(query: ActivityQuery = {}): Promise<ActivityPage> {
+  const params: ActivityQuery = {};
+  if (query.location_id != null) params.location_id = query.location_id;
+  if (query.agent_key) params.agent_key = query.agent_key;
+  if (query.since) params.since = query.since;
+  if (query.limit != null) params.limit = query.limit;
+  if (query.cursor) params.cursor = query.cursor;
+  const response = await http.get<ActivityPage>("/activity", { params });
+  return response.data;
+}
+
+type ProductivityQuery = paths["/metrics/productivity"]["get"]["parameters"]["query"];
+
+/** Administrator report (`audit.read`): inclusive local dates, at most 92 days apart. */
+export async function getProductivity(query: ProductivityQuery): Promise<ProductivityReport> {
+  const params: ProductivityQuery = { from: query.from, to: query.to };
+  if (query.location_id != null) params.location_id = query.location_id;
+  const response = await http.get<ProductivityReport>("/metrics/productivity", { params });
+  return response.data;
+}
+
+// --- staff chat and handoff queue (human-only) ----------------------------------
+
+type ConversationQuery = NonNullable<paths["/conversations"]["get"]["parameters"]["query"]>;
+type MessageQuery = NonNullable<paths["/conversations/{conversation_id}/messages"]["get"]["parameters"]["query"]>;
+type HandoffQuery = NonNullable<paths["/handoffs"]["get"]["parameters"]["query"]>;
+
+/** Inbox by recency (`conversations.read`), keyset-paged by `cursor`. */
+export async function listStaffConversations(query: ConversationQuery = {}): Promise<ConversationPage> {
+  const params: ConversationQuery = {};
+  if (query.status) params.status = query.status;
+  if (query.location_id != null) params.location_id = query.location_id;
+  if (query.limit != null) params.limit = query.limit;
+  if (query.cursor) params.cursor = query.cursor;
+  const response = await http.get<ConversationPage>("/conversations", { params });
+  return response.data;
+}
+
+/** One thread, oldest to newest; `text` is null when redacted or expired. */
+export async function listConversationMessages(conversationId: number, query: MessageQuery = {}): Promise<MessagePage> {
+  const params: MessageQuery = {};
+  if (query.limit != null) params.limit = query.limit;
+  if (query.cursor) params.cursor = query.cursor;
+  const response = await http.get<MessagePage>(`/conversations/${conversationId}/messages`, { params });
+  return response.data;
+}
+
+/** Handoff queue, oldest first; the backend defaults `status` to `pending`. */
+export async function listHandoffs(query: HandoffQuery = {}): Promise<HandoffPage> {
+  const params: HandoffQuery = {};
+  if (query.status) params.status = query.status;
+  if (query.limit != null) params.limit = query.limit;
+  if (query.cursor) params.cursor = query.cursor;
+  const response = await http.get<HandoffPage>("/handoffs", { params });
+  return response.data;
+}
+
+/** A person takes a pending handoff (`conversations.resume`). A replay returns
+ * the live state, which may have moved on (e.g. `resolved`). */
+export async function claimHandoff(handoffId: number, idempotencyKey: string): Promise<Replayable<HandoffRead>> {
+  const response = await http.post<HandoffRead>(`/handoffs/${handoffId}/claim`, null, { headers: { "Idempotency-Key": idempotencyKey } });
+  return { data: response.data, replayed: isReplay(response.headers) };
+}

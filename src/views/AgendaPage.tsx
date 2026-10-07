@@ -19,6 +19,8 @@ import {
   deleteDemoAppointment,
   editDemoAppointment,
   currentWeekWindow,
+  agendaDateKey,
+  agendaWeekReadWindow,
   getAgendaDetail,
   getAppointments,
   getLocations,
@@ -37,6 +39,7 @@ import { Button } from "../components/Button";
 import { Drawer } from "../components/Drawer";
 import { Modal } from "../components/Modal";
 import type { Appointment } from "../types";
+import { createLatestRequest } from "../session";
 
 const HOURS = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00"];
 const WEEKDAY_LABELS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
@@ -186,6 +189,11 @@ export function AgendaPage() {
   const [rescheduleLoading, setRescheduleLoading] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [locations, setLocations] = useState<LocationRead[]>([]);
+  const calendarTimeZone = locations.find((location) => String(location.id) === locationFilter)?.timezone ?? locations[0]?.timezone ?? "America/Lima";
+  const agendaRequests = useRef(createLatestRequest());
+  const detailRequests = useRef(createLatestRequest());
+  const slotRequests = useRef(createLatestRequest());
 
   useEffect(() => {
     if (!statusOpen) return;
@@ -205,7 +213,6 @@ export function AgendaPage() {
   const selectDate = (dateKey: string) => {
     setSelectedDate(dateKey); setCalendarMonth(dateKey.slice(0, 7));
     setActiveDay((new Date(`${dateKey}T00:00:00Z`).getUTCDay() + 6) % 7);
-    setViewMode("day");
   };
   const moveMonth = (offset: number) => {
     const next = new Date(Date.UTC(monthDate.getUTCFullYear(), monthDate.getUTCMonth() + offset, 1));
@@ -213,35 +220,49 @@ export function AgendaPage() {
   };
 
   const refresh = useCallback(async (): Promise<Appointment[]> => {
+    const isCurrent = agendaRequests.current.begin();
     setLoading(true);
     setError("");
     try {
       const rows = useMocks
         ? await getAppointments()
-        : await loadAgenda({ locationId: locationFilter === "all" ? undefined : Number(locationFilter), from: new Date(new Date(weekWindow.from).getTime() + 5 * 3600000).toISOString(), to: new Date(new Date(weekWindow.to).getTime() + 5 * 3600000).toISOString() });
+        : await loadAgenda({ locationId: locationFilter === "all" ? undefined : Number(locationFilter), ...agendaWeekReadWindow(selectedDate, calendarTimeZone) });
+      if (!isCurrent()) return [];
       setAppointments(rows);
       return rows;
     } catch (caught) {
-      setError(toApiError(caught).message);
+      if (isCurrent()) setError(toApiError(caught).message);
       return [];
     } finally {
-      setLoading(false);
+      if (isCurrent()) setLoading(false);
     }
-  }, [locationFilter, weekWindow.from, weekWindow.to]);
+  }, [locationFilter, selectedDate, calendarTimeZone]);
 
   useEffect(() => {
+    setSelected(null);
+    setDetail(null);
+    setDetailLoading(false);
+    setRescheduleOpen(false);
+    setRescheduleLoading(false);
+    setCancelOpen(false);
     void refresh();
     const reload = () => void refresh();
     window.addEventListener("appointment-created", reload);
-    return () => window.removeEventListener("appointment-created", reload);
+    return () => {
+      agendaRequests.current.invalidate();
+      detailRequests.current.invalidate();
+      slotRequests.current.invalidate();
+      window.removeEventListener("appointment-created", reload);
+    };
   }, [refresh]);
 
-  const [locations, setLocations] = useState<LocationRead[]>([]);
   useEffect(() => {
     if (useMocks) return;
+    let active = true;
     void getLocations()
-      .then(setLocations)
-      .catch((caught) => setError(toApiError(caught).message));
+      .then((rows) => { if (active) setLocations(rows); })
+      .catch((caught) => { if (active) setError(toApiError(caught).message); });
+    return () => { active = false; };
   }, []);
 
   const locationChoices = useMemo(() => {
@@ -273,19 +294,25 @@ export function AgendaPage() {
   const inCell = (day: number, hour: string) => visible.filter((appointment) => appointment.day === day && Number(appointment.time.slice(0, 2)) === Number(hour.slice(0, 2)));
 
   const openDetail = (appointment: Appointment) => {
+    const isCurrent = detailRequests.current.begin();
+    slotRequests.current.invalidate();
     setSelected(appointment);
     setDetail(null);
     setError("");
     if (useMocks) return;
     setDetailLoading(true);
     void getAgendaDetail(Number(appointment.id))
-      .then(setDetail)
-      .catch((caught) => setError(toApiError(caught).message))
-      .finally(() => setDetailLoading(false));
+      .then((row) => { if (isCurrent()) setDetail(row); })
+      .catch((caught) => { if (isCurrent()) setError(toApiError(caught).message); })
+      .finally(() => { if (isCurrent()) setDetailLoading(false); });
   };
 
   const closeDetail = () => {
     if (busy) return;
+    detailRequests.current.invalidate();
+    slotRequests.current.invalidate();
+    setDetailLoading(false);
+    setRescheduleLoading(false);
     setSelected(null);
     setDetail(null);
     setRescheduleOpen(false);
@@ -335,13 +362,15 @@ export function AgendaPage() {
 
   const startReschedule = async () => {
     if (!selected?.serviceId || !selected.locationId || !selected.practitionerId) return;
+    const isCurrent = slotRequests.current.begin();
     setRescheduleOpen(true);
     setRescheduleLoading(true);
     setRescheduleSlots([]);
     setRescheduleSlot("");
     setError("");
     try {
-      const window = currentWeekWindow(selected.timeZone ?? "America/Lima");
+      const timeZone = selected.timeZone ?? "America/Lima";
+      const window = agendaWeekReadWindow(agendaDateKey(new Date().toISOString(), timeZone), timeZone);
       const slots = await getSlots({
         service_id: selected.serviceId,
         location_id: selected.locationId,
@@ -351,11 +380,11 @@ export function AgendaPage() {
       // The SlotQuery contract returns eligible practitioners. A reschedule
       // keeps the appointment's practitioner because the mutation accepts only
       // a new start, so only that practitioner's canonical slots are valid here.
-      setRescheduleSlots(slots.filter((slot) => slot.practitioner_id === selected.practitionerId));
+      if (isCurrent()) setRescheduleSlots(slots.filter((slot) => slot.practitioner_id === selected.practitionerId));
     } catch (caught) {
-      setError(toApiError(caught).message);
+      if (isCurrent()) setError(toApiError(caught).message);
     } finally {
-      setRescheduleLoading(false);
+      if (isCurrent()) setRescheduleLoading(false);
     }
   };
 
@@ -417,6 +446,7 @@ export function AgendaPage() {
             <p>{formatWeekRange(weekWindow.from)}</p>
           </div>
           <div className="filter-row filter-row--heading">
+            <Button compact onClick={() => selectDate(agendaDateKey(new Date().toISOString(), calendarTimeZone))}>Hoy</Button>
             <label className="select-control"><span className="sr-only">Periodo</span><select value={viewMode} onChange={(event) => setViewMode(event.target.value as ViewMode)}><option value="week">Semana</option><option value="day">Día</option></select><ChevronDown size={16} aria-hidden="true" /></label>
             {viewMode === "day" && <label className="select-control"><span className="sr-only">Día de la semana</span><select value={String(activeDay)} onChange={(event) => selectDate(new Date(new Date(weekWindow.from).getTime() + Number(event.target.value) * 86400000).toISOString().slice(0, 10))}>{weekDays.map((day, index) => <option key={day} value={index}>{day}</option>)}</select><ChevronDown size={16} aria-hidden="true" /></label>}
             <label className="select-control"><MapPin size={18} aria-hidden="true" /><span className="sr-only">Sede</span><select value={locationFilter} onChange={(event) => { setLocationFilter(event.target.value); setPractitionerFilter("all"); }}><option value="all">Todas las sedes</option>{locationChoices.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select><ChevronDown size={16} aria-hidden="true" /></label>

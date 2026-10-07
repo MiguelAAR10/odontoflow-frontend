@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/home/miguel/.nvm/versions/node/v24.12.0/bin/node",
+    "/home/miguel/projects/portfolio/AI-EdgeRunners/odontoflow/.worktrees/frontend-erp/node_modules/typescript/bin/tsc",
+    "--showConfig",
+    "--project",
+    "/home/miguel/projects/portfolio/AI-EdgeRunners/odontoflow/.worktrees/frontend-erp/tsconfig.json",
+    "--pretty",
+    "false"
+  ],
+  "exitCode": 0,
+  "signal": null,
+  "stdoutBytes": 0,
+  "stderrBytes": 0,
+  "validJson": false,
+  "parseError": "Unexpected end of JSON input",
+  "stdoutPrefix": ""
+}

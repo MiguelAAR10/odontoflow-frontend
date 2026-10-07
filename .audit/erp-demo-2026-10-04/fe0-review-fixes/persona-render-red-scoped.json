@@ -1,0 +1,18 @@
+{
+  "command": [
+    "npm",
+    "test",
+    "--",
+    "test/demo-view-races.test.ts"
+  ],
+  "environment_overrides": {
+    "VITEST_MAX_THREADS": "1",
+    "VITEST_MIN_THREADS": "1",
+    "VITEST_MAX_FORKS": "1",
+    "VITEST_MIN_FORKS": "1"
+  },
+  "started_at_utc": "2026-10-04T08:31:50.402575+00:00",
+  "exit_code": 1,
+  "duration_seconds": 2.055,
+  "finished_at_utc": "2026-10-04T08:31:52.457542+00:00"
+}

@@ -1,0 +1,157 @@
+{
+  "build-escalated": {
+    "command": [
+      "npm",
+      "run",
+      "build"
+    ],
+    "environment_overrides": {},
+    "started_at_utc": "2026-10-04T08:59:11.097266+00:00",
+    "exit_code": 0,
+    "duration_seconds": 34.865,
+    "finished_at_utc": "2026-10-04T08:59:48.895837+00:00",
+    "log": ".audit/erp-demo-2026-10-04/fe0-review-fixes/build-escalated.log",
+    "log_hash": {
+      "sha256": "bab30fc305484032716dcec35ee8a429cb3b687a85917be0061041e6c084b9f9",
+      "bytes": 1100
+    },
+    "tests_summary": null,
+    "files_summary": null
+  },
+  "build-sandbox": {
+    "command": [
+      "npm",
+      "run",
+      "build"
+    ],
+    "environment_overrides": {},
+    "started_at_utc": "2026-10-04T08:35:12.622942+00:00",
+    "exit_code": 1,
+    "duration_seconds": 3.196,
+    "finished_at_utc": "2026-10-04T08:35:15.819709+00:00",
+    "log": ".audit/erp-demo-2026-10-04/fe0-review-fixes/build-sandbox.log",
+    "log_hash": {
+      "sha256": "6e71aa99142722117802cc8171966b2e06fdb0753a5cf5c20cfeb807c4f5fd91",
+      "bytes": 364
+    },
+    "tests_summary": null,
+    "files_summary": null
+  },
+  "persona-render-green": {
+    "command": [
+      "npm",
+      "test",
+      "--",
+      "test/demo-view-races.test.ts"
+    ],
+    "environment_overrides": {
+      "VITEST_MAX_THREADS": "1",
+      "VITEST_MIN_THREADS": "1",
+      "VITEST_MAX_FORKS": "1",
+      "VITEST_MIN_FORKS": "1"
+    },
+    "started_at_utc": "2026-10-04T08:33:19.895038+00:00",
+    "exit_code": 0,
+    "duration_seconds": 2.056,
+    "finished_at_utc": "2026-10-04T08:33:21.951496+00:00",
+    "log": ".audit/erp-demo-2026-10-04/fe0-review-fixes/persona-render-green.log",
+    "log_hash": {
+      "sha256": "c8d4c96ecbc4fd39728ff1a7dea6f35462966300f9c4702de42fc5ac5a9e82d4",
+      "bytes": 520
+    },
+    "tests_summary": "5 passed (5)",
+    "files_summary": "1 passed (1)"
+  },
+  "persona-render-red-scoped": {
+    "command": [
+      "npm",
+      "test",
+      "--",
+      "test/demo-view-races.test.ts"
+    ],
+    "environment_overrides": {
+      "VITEST_MAX_THREADS": "1",
+      "VITEST_MIN_THREADS": "1",
+      "VITEST_MAX_FORKS": "1",
+      "VITEST_MIN_FORKS": "1"
+    },
+    "started_at_utc": "2026-10-04T08:31:50.402575+00:00",
+    "exit_code": 1,
+    "duration_seconds": 2.055,
+    "finished_at_utc": "2026-10-04T08:31:52.457542+00:00",
+    "log": ".audit/erp-demo-2026-10-04/fe0-review-fixes/persona-render-red-scoped.log",
+    "log_hash": {
+      "sha256": "f515452be4264a58eb86506c722fe32592468e66a149d354b86e4146a521a85d",
+      "bytes": 2723
+    },
+    "tests_summary": "1 failed | 4 passed (5)",
+    "files_summary": "1 failed (1)"
+  },
+  "persona-render-red": {
+    "command": [
+      "npm",
+      "test",
+      "--",
+      "test/demo-view-races.test.ts"
+    ],
+    "environment_overrides": {
+      "VITEST_MAX_THREADS": "1",
+      "VITEST_MIN_THREADS": "1",
+      "VITEST_MAX_FORKS": "1",
+      "VITEST_MIN_FORKS": "1"
+    },
+    "started_at_utc": "2026-10-04T08:30:39.464829+00:00",
+    "exit_code": 1,
+    "duration_seconds": 2.239,
+    "finished_at_utc": "2026-10-04T08:30:41.703720+00:00",
+    "log": ".audit/erp-demo-2026-10-04/fe0-review-fixes/persona-render-red.log",
+    "log_hash": {
+      "sha256": "6bfa9a6d21ddbe070e88c821d993c4850b06febc34a0957ec9116239194b1470",
+      "bytes": 5319
+    },
+    "tests_summary": "4 failed | 4 passed (8)",
+    "files_summary": "2 failed (2)"
+  },
+  "typecheck-final": {
+    "command": [
+      "npm",
+      "run",
+      "typecheck"
+    ],
+    "environment_overrides": {},
+    "started_at_utc": "2026-10-04T08:33:54.722161+00:00",
+    "exit_code": 0,
+    "duration_seconds": 9.681,
+    "finished_at_utc": "2026-10-04T08:34:04.403249+00:00",
+    "log": ".audit/erp-demo-2026-10-04/fe0-review-fixes/typecheck-final.log",
+    "log_hash": {
+      "sha256": "20eb8ed09fb7261a9593a9a8eeea86b1a516304c6c1aee0b61c30702a93d4920",
+      "bytes": 113
+    },
+    "tests_summary": null,
+    "files_summary": null
+  },
+  "unit-final": {
+    "command": [
+      "npm",
+      "test"
+    ],
+    "environment_overrides": {
+      "VITEST_MAX_THREADS": "1",
+      "VITEST_MIN_THREADS": "1",
+      "VITEST_MAX_FORKS": "1",
+      "VITEST_MIN_FORKS": "1"
+    },
+    "started_at_utc": "2026-10-04T08:34:26.526498+00:00",
+    "exit_code": 0,
+    "duration_seconds": 19.052,
+    "finished_at_utc": "2026-10-04T08:34:45.579099+00:00",
+    "log": ".audit/erp-demo-2026-10-04/fe0-review-fixes/unit-final.log",
+    "log_hash": {
+      "sha256": "1730a4b68d89131195665c10fdccf7025a336bdf821fe23d4793da83732ffe1c",
+      "bytes": 2211
+    },
+    "tests_summary": "372 passed (372)",
+    "files_summary": "30 passed (30)"
+  }
+}

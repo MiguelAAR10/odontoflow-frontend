@@ -1,0 +1,34 @@
+{
+  "frontend-fe0-a-review-fixes.md": {
+    "sha256": "9c4e0fd316bb291de310aecc43c3528737392930df81ac5686d8b180eb16c4ce",
+    "bytes": 10071
+  },
+  "review-fixes-only.diff": {
+    "sha256": "fe9f626fa2d5d132e8e6b8e0e31044f1bc35bd5135823760defd19c5ebf437db",
+    "bytes": 9009
+  },
+  "frontend-fe0-a-final.diff": {
+    "sha256": "fb500697e0bee51acd9616144aa6cdc15f2f37c87e945a590b4c7ef0941122d2",
+    "bytes": 71572
+  },
+  "source-hashes-final.json": {
+    "sha256": "aea5455777c2c9dc4d8dbb7e613d4fafbdfc007f5f035b52cead83ce74e8dfc0",
+    "bytes": 2554
+  },
+  "review-subset-hashes-final.json": {
+    "sha256": "58316aaadac7733b7b81d9b88f93808f6da763323672973702e97d610dc3233d",
+    "bytes": 839
+  },
+  "ownership-hashes-final.json": {
+    "sha256": "3430966c75b788203798fd54969b1c5312b97da3a4b24dc4b24ec3f7652a65e7",
+    "bytes": 3093
+  },
+  "preservation-final.json": {
+    "sha256": "eab7d073a9f5d3278599391eaa778d09d675621e6e4e016c68472cb9add4e132",
+    "bytes": 1496
+  },
+  "verification-index.json": {
+    "sha256": "a541771c5077453090fae072eeaae742a7970fe84b6843edf2988481399c136b",
+    "bytes": 4629
+  }
+}

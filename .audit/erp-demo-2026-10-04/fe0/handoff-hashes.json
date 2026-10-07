@@ -1,0 +1,30 @@
+{
+  "frontend-fe0-a.md": {
+    "sha256": "58592db0651846290c44d488a1266f465dab391418051791921d9baed8dabaa2",
+    "bytes": 11662
+  },
+  "frontend-fe0-a.diff": {
+    "sha256": "f2f03294da34c8def5b59ff79c53eae9627b3c2c81f29a66fa1cdce5c6d1d326",
+    "bytes": 68442
+  },
+  "source-hashes-final.json": {
+    "sha256": "7334a35cb97d72a1051903b1e4e9b679b6dcde54da54a706819fcc3278f4a455",
+    "bytes": 2554
+  },
+  "ownership-hashes-final.json": {
+    "sha256": "9d480f18c076705fdb717a62eaf42c16706da392617cfe57944a3e7062e92c1d",
+    "bytes": 3093
+  },
+  "verification-index.json": {
+    "sha256": "f4e4e9c5952b2861099deceb78711678b7c5e2ffdaca8b96414bd23b86c42568",
+    "bytes": 9712
+  },
+  "preservation-final.json": {
+    "sha256": "62f1a2f10e2edeca5b4e536ff0261dc30df58307f5b021ff6f30b96505e362b7",
+    "bytes": 1880
+  },
+  "bundle-marker-scan.json": {
+    "sha256": "15f1206896999bbb152c94d9fed101ac5fbb2f994a1027ceb528b4ee4d2d6cb3",
+    "bytes": 409
+  }
+}
