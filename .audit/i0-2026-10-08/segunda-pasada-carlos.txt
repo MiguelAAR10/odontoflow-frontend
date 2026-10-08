@@ -1,0 +1,119 @@
+Saltar al contenido
+
+OPERACIÓN
+
+Inicio
+Agenda
+Pacientes
+Bandeja
+
+GESTIÓN
+
+Caja
+Inventario
+Productividad
+
+IA & CANALES
+
+Actividad
+Chat
+Configuración
+CV
+Carlos Vega
+Administrador
+Cambiar de persona
+SEDE
+Todas las sedes
+Nueva cita
+Bandeja
+
+Lo que proponen los agentes, con su evidencia. Nada se ejecuta sin una aprobación.
+
+El backend valida cada decisión
+Ejecutar ahora
+
+Cada agente revisa los datos de la clínica y deja sus propuestas en la bandeja.
+
+Cobranza
+
+Busca saldos vencidos y propone un recordatorio de pago.
+
+Ejecutar ahora
+Inventario
+
+Revisa el stock por sede y propone traspasos o reposiciones.
+
+Ejecutar ahora
+Confirmaciones
+
+Pone en cola el recordatorio de las citas de mañana.
+
+Ejecutar ahora
+Cupos liberados
+
+Detecta cancelaciones y propone ofrecer el cupo a la lista de espera.
+
+Ejecutar ahora
+Propuestas ejecutadas
+3
+Pendientes
+Aprobadas/en proceso
+Ejecutadas
+Declinadas
+Vencidas
+Con error
+Reemplazadas
+LISTA DE ESPERA
+Ejecutada
+Ofrecer el cupo liberado de Limpieza dental
+
+3 pacientes esperan este cupo; se ofrece a 3
+
+FECHA Y HORA
+vie, 9 oct. · 09:00 a. m.
+SEDE
+ODONTO SMART Lince
+MENSAJE
+Hola, se liberó un cupo de Limpieza dental el 09/10 a las 09:00 en ODONTO SMART Lince. Responde SÍ en los próximos 30 minutos para reservarlo.
+
+Propuesto por el agente de Cupos liberados · ODONTO SMART Lince
+
+Cupo ofrecido a 3 pacientes · Decidió Lucía Ramos
+
+INVENTARIO
+Ejecutada
+Traspasar 16 cartuchos de Anestesia lidocaína 2% (cartucho) a ODONTO SMART Lince
+
+ODONTO SMART Lince tiene 4 (mínimo 10); ODONTO SMART Jesús María tiene 120 y le sobran 110
+
+DESDE
+ODONTO SMART Jesús María
+HACIA
+ODONTO SMART Lince
+CONSUMO ÚLTIMOS 7 DÍAS
+0 en ODONTO SMART Lince
+
+Propuesto por el agente de Inventario · ODONTO SMART Lince
+
+Traspaso registrado en el kardex · Decidió Carlos Vega
+
+COBRANZA
+Ejecutada
+Recordar el pago a Lucía Quispe Rojas
+
+Debe S/ 180 hace 12 días
+
+MONTO DEL CARGO
+S/ 180
+YA PAGÓ
+S/ 0
+ÚLTIMO PAGO
+Sin pagos
+ATENCIÓN DEL
+26 set.
+MENSAJE
+Hola Lucía, le escribimos de ODONTO SMART Lince. Tiene un saldo pendiente de S/ 180.00 por su atención del 26/09/2026. Puede pagarlo en la sede o responder este mensaje para coordinar. ¡Gracias!
+
+Propuesto por el agente de Cobranza · ODONTO SMART Lince
+
+Mensaje en cola de envío · Decidió Lucía Ramos

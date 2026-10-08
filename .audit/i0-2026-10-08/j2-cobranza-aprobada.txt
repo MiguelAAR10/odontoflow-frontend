@@ -1,0 +1,69 @@
+Saltar al contenido
+
+OPERACIÓN
+
+Inicio
+Agenda
+Pacientes
+Bandeja
+
+GESTIÓN
+
+Caja
+
+IA & CANALES
+
+Actividad
+Chat
+Configuración
+LR
+Lucía Ramos
+Secretaria
+Cambiar de persona
+SEDE
+Todas las sedes
+Nueva cita
+Bandeja
+
+Lo que proponen los agentes, con su evidencia. Nada se ejecuta sin una aprobación.
+
+El backend valida cada decisión
+Ejecutar ahora
+
+Cada agente revisa los datos de la clínica y deja sus propuestas en la bandeja.
+
+Cobranza
+
+Busca saldos vencidos y propone un recordatorio de pago.
+
+Ejecutar ahora
+
+Listo.
+
+9 cargos revisados
+1 propuesta nueva
+0 ya estaban propuestas
+8 omitidos
+Ver en Corridas
+Confirmaciones
+
+Pone en cola el recordatorio de las citas de mañana.
+
+Ejecutar ahora
+Cupos liberados
+
+Detecta cancelaciones y propone ofrecer el cupo a la lista de espera.
+
+Ejecutar ahora
+Aprobada y ejecutada: Recordar el pago a Lucía Quispe Rojas. Mensaje en cola de envío.
+Propuestas pendientes
+0
+Pendientes
+Aprobadas/en proceso
+Ejecutadas
+Declinadas
+Vencidas
+Con error
+Reemplazadas
+
+No hay propuestas esperando revisión. Usa «Ejecutar ahora» para que un agente revise la clínica.

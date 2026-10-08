@@ -1,0 +1,49 @@
+[
+  {
+    "source": "agent_proposal",
+    "id": 1,
+    "kind": "collection_reminder",
+    "agent_key": "cobranza",
+    "status": "pending",
+    "location_id": 1,
+    "summary": "Recordatorio de pago a Lucía Quispe Rojas — saldo S/ 180.00",
+    "reason": "Saldo vencido de S/ 180.00 hace 12 días",
+    "facts": {
+      "charge_id": 1,
+      "patient_id": 1,
+      "patient_name": "Lucía Quispe Rojas",
+      "amount": "180.00",
+      "paid": "0.00",
+      "balance": "180.00"
+    },
+    "evidence": {
+      "amount": "180.00",
+      "run_id": 1,
+      "balance": "180.00",
+      "issued_on": "2026-09-26",
+      "last_payment_at": null,
+      "days_since_issued": 12,
+      "last_payment_amount": null
+    },
+    "payload": {
+      "charge_id": 1,
+      "message_text": "Hola Lucía, le escribimos de ODONTO SMART Lince. Tiene un saldo pendiente de S/ 180.00 por su atención del 26/09/2026. Puede pagarlo en la sede o responder este mensaje para coordinar. ¡Gracias!"
+    },
+    "payload_hash": "5c4d49dc426b23929e1620d10cd324c6aca32dcf35c663a900c879af15e9caea",
+    "subject": {
+      "type": "charge",
+      "id": "1"
+    },
+    "conversation_id": 1,
+    "confirmation_token": null,
+    "expires_at": "2026-10-11T19:39:15.934466Z",
+    "created_at": "2026-10-08T19:39:15.934466Z",
+    "decided_by": null,
+    "result_ref": null,
+    "error_code": null,
+    "actions": [
+      "approve",
+      "decline"
+    ]
+  }
+]

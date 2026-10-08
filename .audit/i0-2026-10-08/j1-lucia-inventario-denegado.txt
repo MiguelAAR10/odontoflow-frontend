@@ -1,0 +1,48 @@
+Saltar al contenido
+
+OPERACIÓN
+
+Inicio
+Agenda
+Pacientes
+Bandeja
+
+GESTIÓN
+
+Caja
+
+IA & CANALES
+
+Actividad
+Chat
+Configuración
+LR
+Lucía Ramos
+Secretaria
+Cambiar de persona
+SEDE
+Todas las sedes
+Nueva cita
+Gestión de inventario
+
+Stock por producto y sede
+
+0
+Productos
+0
+Sedes
+0
+Unidades en stock
+0
+Sin stock en la sede
+Sin sedes
+Tipo: Todos
+Consumible
+Reventa
+Nuevo producto
+The principal is not authorized to perform this action.
+Reintentar
+PRODUCTO	TIPO	UNIDAD	STOCK	ESTADO	
+
+No hay productos registrados
+0 productos · balance por sede

@@ -1,0 +1,75 @@
+Saltar al contenido
+
+OPERACIÓN
+
+Inicio
+Agenda
+Pacientes
+Bandeja
+
+GESTIÓN
+
+Caja
+
+IA & CANALES
+
+Actividad
+Chat
+Configuración
+LR
+Lucía Ramos
+Secretaria
+Cambiar de persona
+SEDE
+Todas las sedes
+Nueva cita
+Bandeja
+
+Lo que proponen los agentes, con su evidencia. Nada se ejecuta sin una aprobación.
+
+El backend valida cada decisión
+Ejecutar ahora
+
+Cada agente revisa los datos de la clínica y deja sus propuestas en la bandeja.
+
+Cobranza
+
+Busca saldos vencidos y propone un recordatorio de pago.
+
+Ejecutar ahora
+Confirmaciones
+
+Pone en cola el recordatorio de las citas de mañana.
+
+Ejecutar ahora
+Cupos liberados
+
+Detecta cancelaciones y propone ofrecer el cupo a la lista de espera.
+
+Ejecutar ahora
+Propuestas pendientes
+1
+Pendientes
+Aprobadas/en proceso
+Ejecutadas
+Declinadas
+Vencidas
+Con error
+Reemplazadas
+LISTA DE ESPERA
+Pendiente
+Ofrecer el cupo liberado de Limpieza dental
+
+3 pacientes esperan este cupo; se ofrece a 3
+
+FECHA Y HORA
+vie, 9 oct. · 09:00 a. m.
+SEDE
+ODONTO SMART Lince
+MENSAJE QUE SE ENVIARÁ
+Hola, se liberó un cupo de Limpieza dental el 09/10 a las 09:00 en ODONTO SMART Lince. Responde SÍ en los próximos 30 minutos para reservarlo.
+
+Propuesto por el agente de Cupos liberados · ODONTO SMART Lince · Vence en 29 min
+
+Declinar
+Aprobar

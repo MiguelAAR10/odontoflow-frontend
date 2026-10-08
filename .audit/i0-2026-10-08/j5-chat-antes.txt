@@ -1,0 +1,91 @@
+Saltar al contenido
+
+OPERACIÓN
+
+Inicio
+Agenda
+Pacientes
+Bandeja
+
+GESTIÓN
+
+Caja
+
+IA & CANALES
+
+Actividad
+Chat
+Configuración
+LR
+Lucía Ramos
+Secretaria
+Cambiar de persona
+SEDE
+Todas las sedes
+Nueva cita
+Centro de conversaciones
+
+Las conversaciones reales de la clínica con pacientes y leads
+
+Solo lectura
+Conversaciones
+Derivaciones (1)
+Todas
+Abiertas
+Por confirmar
+Derivadas
+Cerradas
+KP
+Karina Paredes Ramírez
+Clínica: Hola, se liberó un cupo de Limpieza dental el 09/10 a las 09:00 en ODONTO SMART
+Abierta
+14:36
+DG
+Diego Gutiérrez Quispe
+Clínica: Hola, se liberó un cupo de Limpieza dental el 09/10 a las 09:00 en ODONTO SMART
+Abierta
+14:36
+MM
+Milagros Mendoza Salazar
+Clínica: Hola, se liberó un cupo de Limpieza dental el 09/10 a las 09:00 en ODONTO SMART
+Abierta
+14:36
+LQ
+Lucía Quispe Rojas
+Clínica: Hola Lucía, le escribimos de ODONTO SMART Lince. Tiene un saldo pendiente de S/
+Derivada
+14:36
+KP
+Karina Paredes Ramírez
+WhatsApp
+Abierta
+La atiende el agente automático
+
+Hoy
+
+Hola, se liberó un cupo de Limpieza dental el 09/10 a las 09:00 en ODONTO SMART Lince. Responde SÍ en los próximos 30 minutos para reservarlo.
+
+14:41
+Clínica · Entregado
+
+Solo lectura: desde aquí aún no se puede responder ni devolver la conversación al agente.
+
+Datos de la conversación
+KP
+Karina Paredes Ramírez
+Abierta
+Quién atiende
+La atiende el agente automático
+Último mensaje
+8 oct., 14:36
+Derivación
+Ninguna pendiente
+Crear cita
+
+El chat no incluye el vínculo con un paciente o lead. Para crear una cita, selecciona un registro real en el formulario.
+
+Qué puedes hacer aquí
+
+Leer cada conversación completa y tomar las que el agente derivó a una persona.
+
+Todavía no se puede responder al paciente ni devolver la conversación al agente desde esta pantalla.

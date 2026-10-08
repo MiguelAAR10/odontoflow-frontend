@@ -1,0 +1,1228 @@
+{
+  "date": "2026-10-08",
+  "verified_at": "2026-10-08T19:48:08.362702+00:00",
+  "shas": {
+    "backend": "37c51e4716ecd773bb5af5ed4fe6d8a9bd903a16",
+    "frontend": "85395ad02e17c25317bdce40521a8894e14687b4"
+  },
+  "branches": {
+    "backend": "i0/run",
+    "frontend": "i0/run"
+  },
+  "environment": {
+    "database": "odontoflow_i0_20261008",
+    "agent_database": "odontoflow_i0_20261008_agent",
+    "postgres_host": "127.0.0.1",
+    "postgres_port": 5434,
+    "backend_port": 8110,
+    "frontend_port": 3110,
+    "anchor_date": "2026-10-08",
+    "model": "none: deterministic templates",
+    "channel": "sandbox"
+  },
+  "journeys": {
+    "J1": {
+      "result": "PASS",
+      "scope": "Acceso por permisos; Lucía/Carlos /me,403 y cambio de persona; KPIs falsos registrados aparte"
+    },
+    "J2": {
+      "result": "PASS",
+      "scope": "Cobranza propuesta 1, cargo 1, outbound 1, receipt sandbox 1"
+    },
+    "J3": {
+      "result": "PASS",
+      "scope": "Inventario propuesta 2; Lucía403; Carlos aprueba; traspaso 16, dos movimientos"
+    },
+    "J4": {
+      "result": "PASS",
+      "scope": "Cita39 cancelada <48h; job1/run3/propuesta3; outbounds2,3,4 entregados en sandbox"
+    },
+    "J5": {
+      "result": "PASS",
+      "scope": "Feed humano/agente, cuatro conversaciones; handoff1 tomado por Lucía; fixture canónica sin LLM"
+    }
+  },
+  "persisted": {
+    "proposals": [
+      {
+        "id": 1,
+        "agent_key": "cobranza",
+        "kind": "collection_reminder",
+        "status": "executed",
+        "proposed_by_principal_id": 2,
+        "decided_by_principal_id": 6,
+        "result_ref": {
+          "id": 1,
+          "type": "outbound_message"
+        },
+        "error_code": null
+      },
+      {
+        "id": 2,
+        "agent_key": "inventario",
+        "kind": "inventory_transfer",
+        "status": "executed",
+        "proposed_by_principal_id": 3,
+        "decided_by_principal_id": 7,
+        "result_ref": {
+          "id": "eaf06953-2b4f-4f9e-bcdf-e29054796f4a",
+          "type": "inventory_transfer"
+        },
+        "error_code": null
+      },
+      {
+        "id": 3,
+        "agent_key": "backfill",
+        "kind": "waitlist_offer",
+        "status": "executed",
+        "proposed_by_principal_id": 4,
+        "decided_by_principal_id": 6,
+        "result_ref": {
+          "type": "waitlist_offer",
+          "entry_ids": [
+            1,
+            2,
+            3
+          ],
+          "outbound_ids": [
+            2,
+            3,
+            4
+          ]
+        },
+        "error_code": null
+      }
+    ],
+    "outbound": [
+      {
+        "id": 1,
+        "message_id": 1,
+        "conversation_id": 1,
+        "status": "delivered",
+        "attempt_count": 1
+      },
+      {
+        "id": 2,
+        "message_id": 2,
+        "conversation_id": 2,
+        "status": "delivered",
+        "attempt_count": 1
+      },
+      {
+        "id": 3,
+        "message_id": 3,
+        "conversation_id": 3,
+        "status": "delivered",
+        "attempt_count": 1
+      },
+      {
+        "id": 4,
+        "message_id": 4,
+        "conversation_id": 4,
+        "status": "delivered",
+        "attempt_count": 1
+      }
+    ],
+    "messages": [
+      {
+        "id": 1,
+        "conversation_id": 1,
+        "direction": "outbound",
+        "delivery_status": "delivered",
+        "body_text": "Hola Lucía, le escribimos de ODONTO SMART Lince. Tiene un saldo pendiente de S/ 180.00 por su atención del 26/09/2026. Puede pagarlo en la sede o responder este mensaje para coordinar. ¡Gracias!"
+      },
+      {
+        "id": 2,
+        "conversation_id": 2,
+        "direction": "outbound",
+        "delivery_status": "delivered",
+        "body_text": "Hola, se liberó un cupo de Limpieza dental el 09/10 a las 09:00 en ODONTO SMART Lince. Responde SÍ en los próximos 30 minutos para reservarlo."
+      },
+      {
+        "id": 3,
+        "conversation_id": 3,
+        "direction": "outbound",
+        "delivery_status": "delivered",
+        "body_text": "Hola, se liberó un cupo de Limpieza dental el 09/10 a las 09:00 en ODONTO SMART Lince. Responde SÍ en los próximos 30 minutos para reservarlo."
+      },
+      {
+        "id": 4,
+        "conversation_id": 4,
+        "direction": "outbound",
+        "delivery_status": "delivered",
+        "body_text": "Hola, se liberó un cupo de Limpieza dental el 09/10 a las 09:00 en ODONTO SMART Lince. Responde SÍ en los próximos 30 minutos para reservarlo."
+      }
+    ],
+    "movements": [
+      {
+        "id": 1,
+        "product_id": 1,
+        "location_id": 1,
+        "type": "ENTRADA",
+        "quantity": "4.00",
+        "transfer_id": null
+      },
+      {
+        "id": 2,
+        "product_id": 1,
+        "location_id": 2,
+        "type": "ENTRADA",
+        "quantity": "120.00",
+        "transfer_id": null
+      },
+      {
+        "id": 3,
+        "product_id": 1,
+        "location_id": 3,
+        "type": "ENTRADA",
+        "quantity": "30.00",
+        "transfer_id": null
+      },
+      {
+        "id": 4,
+        "product_id": 2,
+        "location_id": 1,
+        "type": "ENTRADA",
+        "quantity": "18.00",
+        "transfer_id": null
+      },
+      {
+        "id": 5,
+        "product_id": 2,
+        "location_id": 2,
+        "type": "ENTRADA",
+        "quantity": "25.00",
+        "transfer_id": null
+      },
+      {
+        "id": 6,
+        "product_id": 2,
+        "location_id": 3,
+        "type": "ENTRADA",
+        "quantity": "12.00",
+        "transfer_id": null
+      },
+      {
+        "id": 7,
+        "product_id": 3,
+        "location_id": 1,
+        "type": "ENTRADA",
+        "quantity": "15.00",
+        "transfer_id": null
+      },
+      {
+        "id": 8,
+        "product_id": 3,
+        "location_id": 2,
+        "type": "ENTRADA",
+        "quantity": "9.00",
+        "transfer_id": null
+      },
+      {
+        "id": 9,
+        "product_id": 3,
+        "location_id": 3,
+        "type": "ENTRADA",
+        "quantity": "11.00",
+        "transfer_id": null
+      },
+      {
+        "id": 10,
+        "product_id": 4,
+        "location_id": 1,
+        "type": "ENTRADA",
+        "quantity": "22.00",
+        "transfer_id": null
+      },
+      {
+        "id": 11,
+        "product_id": 4,
+        "location_id": 2,
+        "type": "ENTRADA",
+        "quantity": "30.00",
+        "transfer_id": null
+      },
+      {
+        "id": 12,
+        "product_id": 4,
+        "location_id": 3,
+        "type": "ENTRADA",
+        "quantity": "16.00",
+        "transfer_id": null
+      },
+      {
+        "id": 13,
+        "product_id": 5,
+        "location_id": 1,
+        "type": "ENTRADA",
+        "quantity": "60.00",
+        "transfer_id": null
+      },
+      {
+        "id": 14,
+        "product_id": 5,
+        "location_id": 2,
+        "type": "ENTRADA",
+        "quantity": "45.00",
+        "transfer_id": null
+      },
+      {
+        "id": 15,
+        "product_id": 5,
+        "location_id": 3,
+        "type": "ENTRADA",
+        "quantity": "38.00",
+        "transfer_id": null
+      },
+      {
+        "id": 16,
+        "product_id": 6,
+        "location_id": 1,
+        "type": "ENTRADA",
+        "quantity": "40.00",
+        "transfer_id": null
+      },
+      {
+        "id": 17,
+        "product_id": 6,
+        "location_id": 2,
+        "type": "ENTRADA",
+        "quantity": "3.00",
+        "transfer_id": null
+      },
+      {
+        "id": 18,
+        "product_id": 6,
+        "location_id": 3,
+        "type": "ENTRADA",
+        "quantity": "25.00",
+        "transfer_id": null
+      },
+      {
+        "id": 19,
+        "product_id": 1,
+        "location_id": 2,
+        "type": "TRANSFER_OUT",
+        "quantity": "16.00",
+        "transfer_id": "eaf06953-2b4f-4f9e-bcdf-e29054796f4a"
+      },
+      {
+        "id": 20,
+        "product_id": 1,
+        "location_id": 1,
+        "type": "TRANSFER_IN",
+        "quantity": "16.00",
+        "transfer_id": "eaf06953-2b4f-4f9e-bcdf-e29054796f4a"
+      }
+    ],
+    "receipts": [
+      {
+        "id": 1,
+        "principal_id": 6,
+        "operation": "agent_run.start",
+        "idempotency_key": "7c95195b-f78c-462f-8a92-ad133006f2d4",
+        "resource_type": "agent_run",
+        "resource_id": "1",
+        "outcome_json": {
+          "run_id": 1
+        }
+      },
+      {
+        "id": 2,
+        "principal_id": 6,
+        "operation": "agent_proposal.approve",
+        "idempotency_key": "70a11514-8b72-46b1-b15a-8d7d376defa9",
+        "resource_type": "agent_proposal",
+        "resource_id": "1",
+        "outcome_json": {
+          "proposal_id": 1
+        }
+      },
+      {
+        "id": 3,
+        "principal_id": 7,
+        "operation": "agent_run.start",
+        "idempotency_key": "69510824-c5fb-4926-85a7-bbfe1740095a",
+        "resource_type": "agent_run",
+        "resource_id": "2",
+        "outcome_json": {
+          "run_id": 2
+        }
+      },
+      {
+        "id": 5,
+        "principal_id": 7,
+        "operation": "agent_proposal.approve",
+        "idempotency_key": "7b8df760-d302-450a-9b39-c3bd5309e622",
+        "resource_type": "agent_proposal",
+        "resource_id": "2",
+        "outcome_json": {
+          "proposal_id": 2
+        }
+      },
+      {
+        "id": 6,
+        "principal_id": 7,
+        "operation": "inventory.transfers.create",
+        "idempotency_key": "69c3e5bc-dc06-48eb-96b2-1000f640ca45",
+        "resource_type": "inventory_transfer",
+        "resource_id": "eaf06953-2b4f-4f9e-bcdf-e29054796f4a",
+        "outcome_json": {
+          "reason": "Propuesta #2",
+          "status": "applied",
+          "quantity": "16.00",
+          "product_id": 1,
+          "resource_id": "eaf06953-2b4f-4f9e-bcdf-e29054796f4a",
+          "transfer_id": "eaf06953-2b4f-4f9e-bcdf-e29054796f4a",
+          "resource_type": "inventory_transfer",
+          "in_movement_id": 20,
+          "out_movement_id": 19,
+          "origin_location_id": 2,
+          "destination_location_id": 1
+        }
+      },
+      {
+        "id": 7,
+        "principal_id": 6,
+        "operation": "appointments.cancel",
+        "idempotency_key": "15f2861d-9680-4533-a9b8-86ae29679835",
+        "resource_type": "appointment",
+        "resource_id": "39",
+        "outcome_json": {
+          "state": "cancelled",
+          "status": "applied",
+          "end_utc": "2026-10-09T15:00:00+00:00",
+          "lead_id": 39,
+          "start_utc": "2026-10-09T14:00:00+00:00",
+          "patient_id": 39,
+          "service_id": 3,
+          "location_id": 1,
+          "resource_id": "39",
+          "resource_type": "appointment",
+          "organization_id": 1,
+          "practitioner_id": 1
+        }
+      },
+      {
+        "id": 8,
+        "principal_id": 6,
+        "operation": "agent_proposal.approve",
+        "idempotency_key": "7b342cc4-3920-46a8-b780-25d36b45412b",
+        "resource_type": "agent_proposal",
+        "resource_id": "3",
+        "outcome_json": {
+          "proposal_id": 3
+        }
+      },
+      {
+        "id": 9,
+        "principal_id": 8,
+        "operation": "conversations.request_handoff",
+        "idempotency_key": "32c45128-2839-44e8-b706-ce275e237f40",
+        "resource_type": "reception_handoff",
+        "resource_id": "1",
+        "outcome_json": {
+          "status": "pending",
+          "handoff_id": 1,
+          "reason_code": "requested_by_contact",
+          "resource_id": "1",
+          "resource_type": "reception_handoff",
+          "reason_summary": "Ensayo I0: paciente ficticio solicita hablar con recepción.",
+          "conversation_id": 1
+        }
+      },
+      {
+        "id": 10,
+        "principal_id": 6,
+        "operation": "reception_handoff.claim",
+        "idempotency_key": "ded5e574-d412-4eee-ab83-de441f388f98",
+        "resource_type": "reception_handoff",
+        "resource_id": "1",
+        "outcome_json": {
+          "handoff_id": 1
+        }
+      }
+    ],
+    "sandbox_receipts": [
+      {
+        "id": 1,
+        "outbound_id": 1,
+        "provider_message_id": "sandbox-1"
+      },
+      {
+        "id": 2,
+        "outbound_id": 2,
+        "provider_message_id": "sandbox-2"
+      },
+      {
+        "id": 3,
+        "outbound_id": 3,
+        "provider_message_id": "sandbox-3"
+      },
+      {
+        "id": 4,
+        "outbound_id": 4,
+        "provider_message_id": "sandbox-4"
+      }
+    ],
+    "handoffs": [
+      {
+        "id": 1,
+        "conversation_id": 1,
+        "status": "claimed",
+        "assigned_principal_id": 6
+      }
+    ],
+    "appointment": [
+      {
+        "id": 39,
+        "state": "cancelled",
+        "start_utc": "2026-10-09 14:00:00+00:00",
+        "lead_id": 39,
+        "patient_id": 39
+      }
+    ],
+    "balances": [
+      {
+        "product_id": 1,
+        "location_id": 1,
+        "raw_quantity_sum": "20.00"
+      },
+      {
+        "product_id": 1,
+        "location_id": 2,
+        "raw_quantity_sum": "136.00"
+      },
+      {
+        "product_id": 1,
+        "location_id": 3,
+        "raw_quantity_sum": "30.00"
+      },
+      {
+        "product_id": 2,
+        "location_id": 1,
+        "raw_quantity_sum": "18.00"
+      },
+      {
+        "product_id": 2,
+        "location_id": 2,
+        "raw_quantity_sum": "25.00"
+      },
+      {
+        "product_id": 2,
+        "location_id": 3,
+        "raw_quantity_sum": "12.00"
+      },
+      {
+        "product_id": 3,
+        "location_id": 1,
+        "raw_quantity_sum": "15.00"
+      },
+      {
+        "product_id": 3,
+        "location_id": 2,
+        "raw_quantity_sum": "9.00"
+      },
+      {
+        "product_id": 3,
+        "location_id": 3,
+        "raw_quantity_sum": "11.00"
+      },
+      {
+        "product_id": 4,
+        "location_id": 1,
+        "raw_quantity_sum": "22.00"
+      },
+      {
+        "product_id": 4,
+        "location_id": 2,
+        "raw_quantity_sum": "30.00"
+      },
+      {
+        "product_id": 4,
+        "location_id": 3,
+        "raw_quantity_sum": "16.00"
+      },
+      {
+        "product_id": 5,
+        "location_id": 1,
+        "raw_quantity_sum": "60.00"
+      },
+      {
+        "product_id": 5,
+        "location_id": 2,
+        "raw_quantity_sum": "45.00"
+      },
+      {
+        "product_id": 5,
+        "location_id": 3,
+        "raw_quantity_sum": "38.00"
+      },
+      {
+        "product_id": 6,
+        "location_id": 1,
+        "raw_quantity_sum": "40.00"
+      },
+      {
+        "product_id": 6,
+        "location_id": 2,
+        "raw_quantity_sum": "3.00"
+      },
+      {
+        "product_id": 6,
+        "location_id": 3,
+        "raw_quantity_sum": "25.00"
+      }
+    ]
+  },
+  "duplicate_check": {
+    "proposals": {
+      "before": 3,
+      "after": 3,
+      "identical": true
+    },
+    "outbound": {
+      "before": 4,
+      "after": 4,
+      "identical": true
+    },
+    "messages": {
+      "before": 4,
+      "after": 4,
+      "identical": true
+    },
+    "movements": {
+      "before": 20,
+      "after": 20,
+      "identical": true
+    },
+    "sandbox_receipts": {
+      "before": 4,
+      "after": 4,
+      "identical": true
+    },
+    "handoffs": {
+      "before": 1,
+      "after": 1,
+      "identical": true
+    },
+    "appointment": {
+      "before": 1,
+      "after": 1,
+      "identical": true
+    },
+    "balances": {
+      "before": 18,
+      "after": 18,
+      "identical": true
+    }
+  },
+  "security": {
+    "browser_bff_responses_checked": 309,
+    "browser_bearer_found": false,
+    "compiled_static_files_scanned": 40,
+    "evidence_files_scanned": 124,
+    "secret_found": false,
+    "same_origin_bff": true
+  },
+  "commands": [
+    {
+      "command": [
+        "create isolated databases",
+        "odontoflow_i0_20261008",
+        "odontoflow_i0_20261008_agent"
+      ],
+      "cwd": "/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/backend-i0-run",
+      "exit_code": 0,
+      "log": null,
+      "time": "2026-10-08T19:36:17.450581+00:00"
+    },
+    {
+      "command": [
+        ".venv/bin/python",
+        "-m",
+        "alembic",
+        "upgrade",
+        "head"
+      ],
+      "cwd": "/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/backend-i0-run",
+      "exit_code": 0,
+      "log": "migrate.log",
+      "time": "2026-10-08T19:36:30.205191+00:00"
+    },
+    {
+      "command": [
+        ".venv/bin/python",
+        "scripts/seed_demo.py",
+        "--anchor-date",
+        "2026-10-08",
+        "--issue-staff-credential"
+      ],
+      "cwd": "/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/backend-i0-run",
+      "exit_code": 0,
+      "log": "seed.log",
+      "time": "2026-10-08T19:36:44.494328+00:00"
+    },
+    {
+      "command": [
+        ".venv/bin/python",
+        "-m",
+        "app.run"
+      ],
+      "cwd": "/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/backend-i0-run",
+      "exit_code": 143,
+      "log": "backend.log",
+      "time": "2026-10-08T19:36:55.201798+00:00",
+      "termination": "SIGTERM after journey completion"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "cwd": "/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/frontend-i0-run",
+      "exit_code": 0,
+      "log": "typecheck.log",
+      "time": "2026-10-08T19:37:11.258008+00:00"
+    },
+    {
+      "command": [
+        "npm",
+        "test"
+      ],
+      "cwd": "/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/frontend-i0-run",
+      "exit_code": 1,
+      "log": "unit-tests.log",
+      "time": "2026-10-08T19:37:19.852255+00:00"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "cwd": "/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/frontend-i0-run",
+      "exit_code": 0,
+      "log": "build.log",
+      "time": "2026-10-08T19:38:16.500805+00:00"
+    },
+    {
+      "command": [
+        "npm",
+        "test"
+      ],
+      "cwd": "/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/frontend-i0-run",
+      "exit_code": 0,
+      "log": "unit-tests-correct-env.log",
+      "time": "2026-10-08T19:38:25.879064+00:00"
+    },
+    {
+      "command": [
+        "node",
+        "node_modules/next/dist/bin/next",
+        "start",
+        "-p",
+        "3110",
+        "-H",
+        "127.0.0.1"
+      ],
+      "cwd": "/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/frontend-i0-run",
+      "exit_code": 143,
+      "log": "frontend.log",
+      "time": "2026-10-08T19:38:40.634170+00:00",
+      "termination": "SIGTERM after journey completion"
+    },
+    {
+      "command": [
+        "python3",
+        "browser.py",
+        "discover",
+        "Lucía Ramos"
+      ],
+      "cwd": "/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/frontend-i0-run",
+      "exit_code": 0,
+      "log": null,
+      "time": "2026-10-08T19:38:45.447119+00:00"
+    },
+    {
+      "command": [
+        "python3",
+        "browser.py",
+        "j3prepare",
+        "Carlos Vega"
+      ],
+      "cwd": "/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/frontend-i0-run",
+      "exit_code": 0,
+      "log": null,
+      "time": "2026-10-08T19:39:36.768721+00:00"
+    },
+    {
+      "command": [
+        "python3",
+        "browser.py",
+        "j1j2",
+        "Lucía Ramos"
+      ],
+      "cwd": "/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/frontend-i0-run",
+      "exit_code": 1,
+      "log": null,
+      "time": "2026-10-08T19:39:47.245294+00:00"
+    },
+    {
+      "command": [
+        "db_snapshot.py",
+        "before-transfer"
+      ],
+      "cwd": "/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/backend-i0-run",
+      "exit_code": 0,
+      "log": null,
+      "time": "2026-10-08T19:40:13.033816+00:00"
+    },
+    {
+      "command": [
+        "python3",
+        "browser.py",
+        "j3deny",
+        "Lucía Ramos"
+      ],
+      "cwd": "/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/frontend-i0-run",
+      "exit_code": 0,
+      "log": null,
+      "time": "2026-10-08T19:40:14.893272+00:00"
+    },
+    {
+      "command": [
+        "python3",
+        "browser.py",
+        "j3approve",
+        "Carlos Vega"
+      ],
+      "cwd": "/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/frontend-i0-run",
+      "exit_code": 0,
+      "log": null,
+      "time": "2026-10-08T19:40:31.119611+00:00"
+    },
+    {
+      "command": [
+        "python3",
+        "browser.py",
+        "j4",
+        "Lucía Ramos"
+      ],
+      "cwd": "/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/frontend-i0-run",
+      "exit_code": 1,
+      "log": null,
+      "time": "2026-10-08T19:41:01.412684+00:00"
+    },
+    {
+      "command": [
+        "python3",
+        "browser.py",
+        "j4approve",
+        "Lucía Ramos"
+      ],
+      "cwd": "/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/frontend-i0-run",
+      "exit_code": 0,
+      "log": null,
+      "time": "2026-10-08T19:41:34.825143+00:00"
+    },
+    {
+      "command": [
+        "sandbox_ops.py",
+        "handoff"
+      ],
+      "cwd": "/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/backend-i0-run",
+      "exit_code": 0,
+      "log": null,
+      "time": "2026-10-08T19:41:42.323800+00:00"
+    },
+    {
+      "command": [
+        "db_snapshot.py",
+        "queued"
+      ],
+      "cwd": "/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/backend-i0-run",
+      "exit_code": 0,
+      "log": null,
+      "time": "2026-10-08T19:41:42.632051+00:00"
+    },
+    {
+      "command": [
+        "sandbox_ops.py",
+        "dispatch",
+        "first"
+      ],
+      "cwd": "/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/backend-i0-run",
+      "exit_code": 0,
+      "log": null,
+      "time": "2026-10-08T19:41:57.761192+00:00"
+    },
+    {
+      "command": [
+        "db_snapshot.py",
+        "delivered"
+      ],
+      "cwd": "/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/backend-i0-run",
+      "exit_code": 0,
+      "log": null,
+      "time": "2026-10-08T19:41:58.387637+00:00"
+    },
+    {
+      "command": [
+        "python3",
+        "browser.py",
+        "j5",
+        "Lucía Ramos"
+      ],
+      "cwd": "/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/frontend-i0-run",
+      "exit_code": 0,
+      "log": null,
+      "time": "2026-10-08T19:42:02.306200+00:00"
+    },
+    {
+      "command": [
+        "python3",
+        "browser.py",
+        "j5claim",
+        "Lucía Ramos"
+      ],
+      "cwd": "/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/frontend-i0-run",
+      "exit_code": 1,
+      "log": null,
+      "time": "2026-10-08T19:42:33.873408+00:00"
+    },
+    {
+      "command": [
+        "db_snapshot.py",
+        "before-replay"
+      ],
+      "cwd": "/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/backend-i0-run",
+      "exit_code": 0,
+      "log": null,
+      "time": "2026-10-08T19:42:39.614449+00:00"
+    },
+    {
+      "command": [
+        "python3",
+        "browser.py",
+        "replay",
+        "Lucía Ramos"
+      ],
+      "cwd": "/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/frontend-i0-run",
+      "exit_code": 0,
+      "log": null,
+      "time": "2026-10-08T19:42:43.378034+00:00"
+    },
+    {
+      "command": [
+        "python3",
+        "browser.py",
+        "j5verify",
+        "Lucía Ramos"
+      ],
+      "cwd": "/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/frontend-i0-run",
+      "exit_code": 0,
+      "log": null,
+      "time": "2026-10-08T19:42:56.570426+00:00"
+    },
+    {
+      "command": [
+        "python3",
+        "browser.py",
+        "replay",
+        "Carlos Vega"
+      ],
+      "cwd": "/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/frontend-i0-run",
+      "exit_code": 0,
+      "log": null,
+      "time": "2026-10-08T19:43:06.317113+00:00"
+    },
+    {
+      "command": [
+        "python3",
+        "browser.py",
+        "sessioncheck",
+        "Lucía Ramos"
+      ],
+      "cwd": "/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/frontend-i0-run",
+      "exit_code": 0,
+      "log": null,
+      "time": "2026-10-08T19:43:30.233519+00:00"
+    },
+    {
+      "command": [
+        "sandbox_ops.py",
+        "dispatch",
+        "second"
+      ],
+      "cwd": "/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/backend-i0-run",
+      "exit_code": 0,
+      "log": null,
+      "time": "2026-10-08T19:43:41.830826+00:00"
+    },
+    {
+      "command": [
+        "db_snapshot.py",
+        "after-replay"
+      ],
+      "cwd": "/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/backend-i0-run",
+      "exit_code": 0,
+      "log": null,
+      "time": "2026-10-08T19:43:42.415274+00:00"
+    },
+    {
+      "command": [
+        "python3",
+        "browser.py",
+        "finalcaptures",
+        "Lucía Ramos"
+      ],
+      "cwd": "/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/frontend-i0-run",
+      "exit_code": 0,
+      "log": null,
+      "time": "2026-10-08T19:45:16.023701+00:00"
+    },
+    {
+      "command": [
+        "python3",
+        "browser.py",
+        "stockfinal",
+        "Carlos Vega"
+      ],
+      "cwd": "/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/frontend-i0-run",
+      "exit_code": 0,
+      "log": null,
+      "time": "2026-10-08T19:45:19.438119+00:00"
+    },
+    {
+      "command": [
+        "uv",
+        "sync",
+        "--locked",
+        "--all-extras"
+      ],
+      "cwd": "/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/backend-i0-run",
+      "exit_code": 0,
+      "log": "tool-output: installation completed",
+      "time": "2026-10-08T19:45:58.572587+00:00"
+    },
+    {
+      "command": [
+        "npm",
+        "ci"
+      ],
+      "cwd": "/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/frontend-i0-run",
+      "exit_code": 0,
+      "log": "tool-output: installation completed",
+      "time": "2026-10-08T19:45:58.572687+00:00"
+    },
+    {
+      "command": [
+        "verify_evidence.py"
+      ],
+      "cwd": "/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/frontend-i0-run",
+      "exit_code": 0,
+      "log": null,
+      "time": "2026-10-08T19:45:58.572721+00:00"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "165743"
+      ],
+      "cwd": "/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/backend-i0-run",
+      "exit_code": 0,
+      "log": null,
+      "time": "2026-10-08T19:45:58.572907+00:00"
+    },
+    {
+      "command": [
+        "kill",
+        "-TERM",
+        "171562"
+      ],
+      "cwd": "/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/frontend-i0-run",
+      "exit_code": 0,
+      "log": null,
+      "time": "2026-10-08T19:45:58.573035+00:00"
+    },
+    {
+      "command": [
+        "verify shutdown: ports 8110/3110 closed"
+      ],
+      "cwd": "/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/frontend-i0-run",
+      "exit_code": 0,
+      "log": null,
+      "time": "2026-10-08T19:48:08.294603+00:00"
+    }
+  ],
+  "commits_created": [],
+  "source_changes": [],
+  "limitations": [
+    "No suite backend completa: no se modificó código; pruebas reales mediante HTTP/BFF y PostgreSQL aislado.",
+    "Los KPIs de Pacientes siguen fijos: no se certifica ausencia total de datos de demostración.",
+    "Chat conserva ASC; no se ensayaron hilos >200 mensajes.",
+    "La derivación fue preparada con request_human_handoff sobre conversación sembrada; no se ejecutó modelo.",
+    "Fallos del runner conservados: entorno unitario, selector tab, cardinalidad Backfill, campos de snapshot y claim, trace headers."
+  ],
+  "screenshots": [
+    {
+      "path": "01-lucia-agenda.png",
+      "sha256": "91d08855b39b174e07a86dfb323f129f2f72ab1b51a4006e58dfdfaebd67975c"
+    },
+    {
+      "path": "02-lucia-bandeja.png",
+      "sha256": "ad4a8478a14277cc90db6ecfd891f7f8d76084c6639343b7ae3da1c39c67b526"
+    },
+    {
+      "path": "j1-cambio-a-carlos.png",
+      "sha256": "c68f9a5211520ef8e7492b09d2756cd177e5dc9e7e0de56f3949afb079927c24"
+    },
+    {
+      "path": "j1-carlos-agenda.png",
+      "sha256": "6c6ac46413897af671aa2129ff83e7ff886b6ab0ae48a79ccac6ed6b76721d5d"
+    },
+    {
+      "path": "j1-carlos-caja.png",
+      "sha256": "62830d52204bf8f9f4663840cff1ffdaecc92640d18c57e454535a4c91e9abfe"
+    },
+    {
+      "path": "j1-carlos-inventario.png",
+      "sha256": "893c0cd696ead8e7ae1d95b96a3e05e9eca1f3822da0de0512d2d2cecd2be168"
+    },
+    {
+      "path": "j1-carlos-pacientes.png",
+      "sha256": "1157f1dedf573832fb91a91acd0556935311674129baf612f3e6a61f61fa31be"
+    },
+    {
+      "path": "j1-lucia-agenda.png",
+      "sha256": "3eb42524c0a49f707924dcc20b2f543b601147bf05af29d805b0e9f465a1f3f2"
+    },
+    {
+      "path": "j1-lucia-caja.png",
+      "sha256": "2b36b27eb3265d1aaf0ec83a25f6be26029e8cead272e12f81456f556645243e"
+    },
+    {
+      "path": "j1-lucia-inventario-denegado.png",
+      "sha256": "e47e4c1a7a2b203b25d71cad545560bcbfb41e8eec6c438f79f6bd6a63c39b9f"
+    },
+    {
+      "path": "j1-lucia-pacientes.png",
+      "sha256": "e2cbe1e21986e2de2a5710d05b0174a537104fdee1bc9fbc0a1f74d18c39431f"
+    },
+    {
+      "path": "j1-sesion-cerrada.png",
+      "sha256": "76461fdffdd5c033805193d8f243cc62a7019bef1cc16708dfb46504138114d3"
+    },
+    {
+      "path": "j1j2-error.png",
+      "sha256": "5276848f879b0304d886704226bd6f2da843b68584bbb9d178a3c302db40782c"
+    },
+    {
+      "path": "j2-cobranza-aprobada.png",
+      "sha256": "5276848f879b0304d886704226bd6f2da843b68584bbb9d178a3c302db40782c"
+    },
+    {
+      "path": "j2-cobranza-ejecutada.png",
+      "sha256": "07ad7f919182221f9216e16c249ffcb61f58dfb380e34be9a6157bd4b9d23ad3"
+    },
+    {
+      "path": "j2-cobranza-propuesta.png",
+      "sha256": "a69b57f82782cd8554d6475ba29d1a980c40b16511abc130327c6ef954d82b95"
+    },
+    {
+      "path": "j3-lucia-sin-aprobar.png",
+      "sha256": "e4779f8dba7ce564b4c000fdadcc2467e4bc97a08e915654bdf99236675972d3"
+    },
+    {
+      "path": "j3-stock-carlos.png",
+      "sha256": "3edded1a996f83e3916dd18051fdc81b25103e38fa926d395c797a4aa196e671"
+    },
+    {
+      "path": "j3-stock-lince-20-final.png",
+      "sha256": "a968068fd09e7a08d451eb558f1e5d2fd7fd13db41e79db77122173300aea5e9"
+    },
+    {
+      "path": "j3-traspaso-aprobado.png",
+      "sha256": "c6125994e4882e50c4b798d4acafae77e364044984b5d1b36335360e6298786d"
+    },
+    {
+      "path": "j3-traspaso-propuesto-carlos.png",
+      "sha256": "b6ede2d9bb1ca56ee6d2424ce64244c77a4aa264bdbd8a799bcbab2e8d599633"
+    },
+    {
+      "path": "j4-backfill-aprobadas.png",
+      "sha256": "4391f8271a209d62cbd671139dd06deda5df0d829985733adb91670eee98e5be"
+    },
+    {
+      "path": "j4-backfill-propuestas.png",
+      "sha256": "edac0ac876f30c0207403a213ac73aa07e9e80b86e588c0038b85efc7764ac18"
+    },
+    {
+      "path": "j4-bandeja-ejecutadas.png",
+      "sha256": "d36feb244044206a2e55a3ca5e040c5c97cf1d32b9402e12cdcdd75aff3e7c81"
+    },
+    {
+      "path": "j4-cita-39-antes.png",
+      "sha256": "d1c2678333a2e25e8c7a320314cb4bc7de5d56b9b1d5c51afd1c0f32761590d3"
+    },
+    {
+      "path": "j4-cita-cancelada.png",
+      "sha256": "569cfa3c37f0c960eabb3836e20bf7967b1836b0325c5c774d5084ff93d978e3"
+    },
+    {
+      "path": "j4-error.png",
+      "sha256": "6dc33496d58fae9c346f2a1812e5a81ec1b87d5858490af330d039aede30b12c"
+    },
+    {
+      "path": "j4-oferta-entregada-chat.png",
+      "sha256": "0f4d3674bba18124eb5e319aba0706008efdae2afa7159f28046680b691d1752"
+    },
+    {
+      "path": "j5-actividad-con-cobranza.png",
+      "sha256": "a903a67d4ae258417522944c1cb425a9d3e4b691eae50e3916e4bbd79c7529ba"
+    },
+    {
+      "path": "j5-actividad-lucia.png",
+      "sha256": "f7de6701400c209d067237ae98fedbc96fbc9268d12ac64d406eef4052c4a232"
+    },
+    {
+      "path": "j5-chat-antes.png",
+      "sha256": "bdf7140eb4b39b6e9660dad0ceb3f29ab239c778eb89396885e5f159ed4c4f73"
+    },
+    {
+      "path": "j5-chat-cobranza-entregada.png",
+      "sha256": "987461b3b85217beb05f6778829a7bb2ed03afbe290f15439c9d904678b21772"
+    },
+    {
+      "path": "j5-conversacion-tomada.png",
+      "sha256": "13b9c15b3f44edaf733c2af35b669772dc4bf05eca4ff12ea963a8bc9f5f5835"
+    },
+    {
+      "path": "j5-derivacion-pendiente.png",
+      "sha256": "8fe0029abc96cced28da2442993ca3940e5d3bcb57e0c876add913fd4faf126a"
+    },
+    {
+      "path": "j5-tomada-persistida-final.png",
+      "sha256": "f6767440df180dab53cf576bc214af733ad75a59f25fe48361e92a6663dff2b2"
+    },
+    {
+      "path": "j5-tomada-persistida.png",
+      "sha256": "63dfc375f322d16a2d57ef2b1ed9d55030b77f6454c0f1e8119398d2639cb314"
+    },
+    {
+      "path": "j5claim-error.png",
+      "sha256": "13b9c15b3f44edaf733c2af35b669772dc4bf05eca4ff12ea963a8bc9f5f5835"
+    },
+    {
+      "path": "segunda-pasada-carlos.png",
+      "sha256": "e1bf5aac1a94ee875580dc35d7b0f6cf3321bf6da1c587e0ad23b2e73bfb0f31"
+    },
+    {
+      "path": "segunda-pasada-lucia.png",
+      "sha256": "416a7fde7fbec5fdb5fbed7118902510edf7afde46cb4302cefcb87987fbdfaf"
+    }
+  ]
+}

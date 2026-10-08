@@ -1,0 +1,296 @@
+Saltar al contenido
+
+OPERACIÓN
+
+Inicio
+Agenda
+Pacientes
+Bandeja
+
+GESTIÓN
+
+Caja
+Inventario
+Productividad
+
+IA & CANALES
+
+Actividad
+Chat
+Configuración
+CV
+Carlos Vega
+Administrador
+Cambiar de persona
+SEDE
+Todas las sedes
+Nueva cita
+Pacientes
+
+Directorio clínico de las tres sedes
+
+Nuevo paciente
+1284
+Pacientes registrados
+37
+Nuevos este mes
+16
+Leads por contactar
+Todas las sedes
+Lince
+Jesús María
+Magdalena
+Todos los estados
+Activo
+Lead
+Pendiente
+40 pacientes
+PACIENTE	DNI	TELÉFONO	SEDE	PRÓXIMA CITA	ESTADO	
+
+AC
+Alonso Cárdenas Huamán
+Por definir
+	70171927	+51990000017		Sin cita	Activo	
+Ver ficha
+
+AC
+Alonso Cárdenas Huamán
+Por definir
+	70256547	+51990000037		Sin cita	Activo	
+Ver ficha
+
+AS
+Ana Sofía Castillo Ticona
+Por definir
+	70133848	+51990000008		Sin cita	Activo	
+Ver ficha
+
+AS
+Ana Sofía Castillo Ticona
+Por definir
+	70218468	+51990000028		Sin cita	Activo	
+Ver ficha
+
+CV
+Carmen Vargas Chávez
+Por definir
+	70125386	+51990000006		Sin cita	Activo	
+Ver ficha
+
+CV
+Carmen Vargas Chávez
+Por definir
+	70210006	+51990000026		Sin cita	Activo	
+Ver ficha
+
+CE
+Christian Espinoza Castillo
+Por definir
+	70163465	+51990000015		Sin cita	Activo	
+Ver ficha
+
+CE
+Christian Espinoza Castillo
+Por definir
+	70248085	+51990000035		Sin cita	Activo	
+Ver ficha
+
+DG
+Diego Gutiérrez Quispe
+Por definir
+	70146541	+51990000011		Sin cita	Activo	
+Ver ficha
+
+DG
+Diego Gutiérrez Quispe
+Por definir
+	70231161	+51990000031		Sin cita	Activo	
+Ver ficha
+
+FP
+Fiorella Palomino Torres
+Por definir
+	70176158	+51990000018		Sin cita	Activo	
+Ver ficha
+
+FP
+Fiorella Palomino Torres
+Por definir
+	70260778	+51990000038		Sin cita	Activo	
+Ver ficha
+
+GC
+Gabriela Ccori Flores
+Por definir
+	70159234	+51990000014		Sin cita	Activo	
+Ver ficha
+
+GC
+Gabriela Ccori Flores
+Por definir
+	70243854	+51990000034		Sin cita	Activo	
+Ver ficha
+
+JC
+Jorge Chávez Palomino
+Por definir
+	70121155	+51990000005		Sin cita	Activo	
+Ver ficha
+
+JC
+Jorge Chávez Palomino
+Por definir
+	70205775	+51990000025		Sin cita	Activo	
+Ver ficha
+
+JF
+José Flores Mendoza
+Por definir
+	70104231	+51990000001		Sin cita	Activo	
+Ver ficha
+
+JF
+José Flores Mendoza
+Por definir
+	70188851	+51990000021		Sin cita	Activo	
+Ver ficha
+
+JC
+Julio César Salazar Ccori
+Por definir
+	70155003	+51990000013		Sin cita	Activo	
+Ver ficha
+
+JC
+Julio César Salazar Ccori
+Por definir
+	70239623	+51990000033		Sin cita	Activo	
+Ver ficha
+
+KP
+Karina Paredes Ramírez
+Por definir
+	70150772	+51990000012		Sin cita	Activo	
+Ver ficha
+
+KP
+Karina Paredes Ramírez
+Por definir
+	70235392	+51990000032		Sin cita	Activo	
+Ver ficha
+
+LQ
+Lucía Quispe Rojas
+Por definir
+	70100000	+51990000000		Sin cita	Activo	
+Ver ficha
+
+LQ
+Lucía Quispe Rojas
+Por definir
+	70184620	+51990000020		Sin cita	Activo	
+Ver ficha
+
+LR
+Luis Rojas Mamani
+Por definir
+	70112693	+51990000003		Sin cita	Activo	
+Ver ficha
+
+LR
+Luis Rojas Mamani
+Por definir
+	70197313	+51990000023		Sin cita	Activo	
+Ver ficha
+
+MF
+María Fernanda Huamán Cárdenas
+Por definir
+	70108462	+51990000002		Sin cita	Activo	
+Ver ficha
+
+MF
+María Fernanda Huamán Cárdenas
+Por definir
+	70193082	+51990000022		Sin cita	Activo	
+Ver ficha
+
+MÁ
+Miguel Ángel Ramírez Paredes
+Por definir
+	70129617	+51990000007		Sin cita	Activo	
+Ver ficha
+
+MÁ
+Miguel Ángel Ramírez Paredes
+Por definir
+	70214237	+51990000027		Sin cita	Activo	
+Ver ficha
+
+MM
+Milagros Mendoza Salazar
+Por definir
+	70142310	+51990000010		Sin cita	Activo	
+Ver ficha
+
+MM
+Milagros Mendoza Salazar
+Por definir
+	70226930	+51990000030		Sin cita	Activo	
+Ver ficha
+
+PV
+Pilar Villanueva Espinoza
+Por definir
+	70167696	+51990000016		Sin cita	Activo	
+Ver ficha
+
+PV
+Pilar Villanueva Espinoza
+Por definir
+	70252316	+51990000036		Sin cita	Activo	
+Ver ficha
+
+RT
+Renzo Torres Vargas
+Por definir
+	70138079	+51990000009		Sin cita	Activo	
+Ver ficha
+
+RT
+Renzo Torres Vargas
+Por definir
+	70222699	+51990000029		Sin cita	Activo	
+Ver ficha
+
+RM
+Rosa Mamani Gutiérrez
+Por definir
+	70116924	+51990000004		Sin cita	Activo	
+Ver ficha
+
+RM
+Rosa Mamani Gutiérrez
+Por definir
+	70201544	+51990000024		Sin cita	Activo	
+Ver ficha
+
+ÓT
+Óscar Ticona Villanueva
+Por definir
+	70180389	+51990000019		Sin cita	Activo	
+Ver ficha
+
+ÓT
+Óscar Ticona Villanueva
+Por definir
+	70265009	+51990000039		Sin cita	Activo	
+Ver ficha
+Mostrando 40 de 1,284 pacientes
+‹
+1
+2
+3
+›
+25 por página
+50 por página

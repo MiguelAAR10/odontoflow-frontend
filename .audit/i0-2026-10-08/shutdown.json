@@ -1,0 +1,20 @@
+{
+  "owned_pids": [
+    165743,
+    171562
+  ],
+  "signal": "SIGTERM",
+  "databases_preserved": [
+    "odontoflow_i0_20261008",
+    "odontoflow_i0_20261008_agent"
+  ],
+  "ports_released": [
+    8110,
+    3110
+  ],
+  "server_exit_codes": {
+    "backend": 143,
+    "frontend": 143
+  },
+  "verified_stopped": true
+}

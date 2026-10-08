@@ -1,0 +1,522 @@
+{
+  "proposals": [
+    {
+      "id": 1,
+      "agent_key": "cobranza",
+      "kind": "collection_reminder",
+      "status": "executed",
+      "proposed_by_principal_id": 2,
+      "decided_by_principal_id": 6,
+      "result_ref": {
+        "id": 1,
+        "type": "outbound_message"
+      },
+      "error_code": null
+    },
+    {
+      "id": 2,
+      "agent_key": "inventario",
+      "kind": "inventory_transfer",
+      "status": "executed",
+      "proposed_by_principal_id": 3,
+      "decided_by_principal_id": 7,
+      "result_ref": {
+        "id": "eaf06953-2b4f-4f9e-bcdf-e29054796f4a",
+        "type": "inventory_transfer"
+      },
+      "error_code": null
+    },
+    {
+      "id": 3,
+      "agent_key": "backfill",
+      "kind": "waitlist_offer",
+      "status": "executed",
+      "proposed_by_principal_id": 4,
+      "decided_by_principal_id": 6,
+      "result_ref": {
+        "type": "waitlist_offer",
+        "entry_ids": [
+          1,
+          2,
+          3
+        ],
+        "outbound_ids": [
+          2,
+          3,
+          4
+        ]
+      },
+      "error_code": null
+    }
+  ],
+  "outbound": [
+    {
+      "id": 1,
+      "message_id": 1,
+      "conversation_id": 1,
+      "status": "delivered",
+      "attempt_count": 1
+    },
+    {
+      "id": 2,
+      "message_id": 2,
+      "conversation_id": 2,
+      "status": "delivered",
+      "attempt_count": 1
+    },
+    {
+      "id": 3,
+      "message_id": 3,
+      "conversation_id": 3,
+      "status": "delivered",
+      "attempt_count": 1
+    },
+    {
+      "id": 4,
+      "message_id": 4,
+      "conversation_id": 4,
+      "status": "delivered",
+      "attempt_count": 1
+    }
+  ],
+  "messages": [
+    {
+      "id": 1,
+      "conversation_id": 1,
+      "direction": "outbound",
+      "delivery_status": "delivered",
+      "body_text": "Hola Lucía, le escribimos de ODONTO SMART Lince. Tiene un saldo pendiente de S/ 180.00 por su atención del 26/09/2026. Puede pagarlo en la sede o responder este mensaje para coordinar. ¡Gracias!"
+    },
+    {
+      "id": 2,
+      "conversation_id": 2,
+      "direction": "outbound",
+      "delivery_status": "delivered",
+      "body_text": "Hola, se liberó un cupo de Limpieza dental el 09/10 a las 09:00 en ODONTO SMART Lince. Responde SÍ en los próximos 30 minutos para reservarlo."
+    },
+    {
+      "id": 3,
+      "conversation_id": 3,
+      "direction": "outbound",
+      "delivery_status": "delivered",
+      "body_text": "Hola, se liberó un cupo de Limpieza dental el 09/10 a las 09:00 en ODONTO SMART Lince. Responde SÍ en los próximos 30 minutos para reservarlo."
+    },
+    {
+      "id": 4,
+      "conversation_id": 4,
+      "direction": "outbound",
+      "delivery_status": "delivered",
+      "body_text": "Hola, se liberó un cupo de Limpieza dental el 09/10 a las 09:00 en ODONTO SMART Lince. Responde SÍ en los próximos 30 minutos para reservarlo."
+    }
+  ],
+  "movements": [
+    {
+      "id": 1,
+      "product_id": 1,
+      "location_id": 1,
+      "type": "ENTRADA",
+      "quantity": "4.00",
+      "transfer_id": null
+    },
+    {
+      "id": 2,
+      "product_id": 1,
+      "location_id": 2,
+      "type": "ENTRADA",
+      "quantity": "120.00",
+      "transfer_id": null
+    },
+    {
+      "id": 3,
+      "product_id": 1,
+      "location_id": 3,
+      "type": "ENTRADA",
+      "quantity": "30.00",
+      "transfer_id": null
+    },
+    {
+      "id": 4,
+      "product_id": 2,
+      "location_id": 1,
+      "type": "ENTRADA",
+      "quantity": "18.00",
+      "transfer_id": null
+    },
+    {
+      "id": 5,
+      "product_id": 2,
+      "location_id": 2,
+      "type": "ENTRADA",
+      "quantity": "25.00",
+      "transfer_id": null
+    },
+    {
+      "id": 6,
+      "product_id": 2,
+      "location_id": 3,
+      "type": "ENTRADA",
+      "quantity": "12.00",
+      "transfer_id": null
+    },
+    {
+      "id": 7,
+      "product_id": 3,
+      "location_id": 1,
+      "type": "ENTRADA",
+      "quantity": "15.00",
+      "transfer_id": null
+    },
+    {
+      "id": 8,
+      "product_id": 3,
+      "location_id": 2,
+      "type": "ENTRADA",
+      "quantity": "9.00",
+      "transfer_id": null
+    },
+    {
+      "id": 9,
+      "product_id": 3,
+      "location_id": 3,
+      "type": "ENTRADA",
+      "quantity": "11.00",
+      "transfer_id": null
+    },
+    {
+      "id": 10,
+      "product_id": 4,
+      "location_id": 1,
+      "type": "ENTRADA",
+      "quantity": "22.00",
+      "transfer_id": null
+    },
+    {
+      "id": 11,
+      "product_id": 4,
+      "location_id": 2,
+      "type": "ENTRADA",
+      "quantity": "30.00",
+      "transfer_id": null
+    },
+    {
+      "id": 12,
+      "product_id": 4,
+      "location_id": 3,
+      "type": "ENTRADA",
+      "quantity": "16.00",
+      "transfer_id": null
+    },
+    {
+      "id": 13,
+      "product_id": 5,
+      "location_id": 1,
+      "type": "ENTRADA",
+      "quantity": "60.00",
+      "transfer_id": null
+    },
+    {
+      "id": 14,
+      "product_id": 5,
+      "location_id": 2,
+      "type": "ENTRADA",
+      "quantity": "45.00",
+      "transfer_id": null
+    },
+    {
+      "id": 15,
+      "product_id": 5,
+      "location_id": 3,
+      "type": "ENTRADA",
+      "quantity": "38.00",
+      "transfer_id": null
+    },
+    {
+      "id": 16,
+      "product_id": 6,
+      "location_id": 1,
+      "type": "ENTRADA",
+      "quantity": "40.00",
+      "transfer_id": null
+    },
+    {
+      "id": 17,
+      "product_id": 6,
+      "location_id": 2,
+      "type": "ENTRADA",
+      "quantity": "3.00",
+      "transfer_id": null
+    },
+    {
+      "id": 18,
+      "product_id": 6,
+      "location_id": 3,
+      "type": "ENTRADA",
+      "quantity": "25.00",
+      "transfer_id": null
+    },
+    {
+      "id": 19,
+      "product_id": 1,
+      "location_id": 2,
+      "type": "TRANSFER_OUT",
+      "quantity": "16.00",
+      "transfer_id": "eaf06953-2b4f-4f9e-bcdf-e29054796f4a"
+    },
+    {
+      "id": 20,
+      "product_id": 1,
+      "location_id": 1,
+      "type": "TRANSFER_IN",
+      "quantity": "16.00",
+      "transfer_id": "eaf06953-2b4f-4f9e-bcdf-e29054796f4a"
+    }
+  ],
+  "receipts": [
+    {
+      "id": 1,
+      "principal_id": 6,
+      "operation": "agent_run.start",
+      "idempotency_key": "7c95195b-f78c-462f-8a92-ad133006f2d4",
+      "resource_type": "agent_run",
+      "resource_id": "1",
+      "outcome_json": {
+        "run_id": 1
+      }
+    },
+    {
+      "id": 2,
+      "principal_id": 6,
+      "operation": "agent_proposal.approve",
+      "idempotency_key": "70a11514-8b72-46b1-b15a-8d7d376defa9",
+      "resource_type": "agent_proposal",
+      "resource_id": "1",
+      "outcome_json": {
+        "proposal_id": 1
+      }
+    },
+    {
+      "id": 3,
+      "principal_id": 7,
+      "operation": "agent_run.start",
+      "idempotency_key": "69510824-c5fb-4926-85a7-bbfe1740095a",
+      "resource_type": "agent_run",
+      "resource_id": "2",
+      "outcome_json": {
+        "run_id": 2
+      }
+    },
+    {
+      "id": 5,
+      "principal_id": 7,
+      "operation": "agent_proposal.approve",
+      "idempotency_key": "7b8df760-d302-450a-9b39-c3bd5309e622",
+      "resource_type": "agent_proposal",
+      "resource_id": "2",
+      "outcome_json": {
+        "proposal_id": 2
+      }
+    },
+    {
+      "id": 6,
+      "principal_id": 7,
+      "operation": "inventory.transfers.create",
+      "idempotency_key": "69c3e5bc-dc06-48eb-96b2-1000f640ca45",
+      "resource_type": "inventory_transfer",
+      "resource_id": "eaf06953-2b4f-4f9e-bcdf-e29054796f4a",
+      "outcome_json": {
+        "reason": "Propuesta #2",
+        "status": "applied",
+        "quantity": "16.00",
+        "product_id": 1,
+        "resource_id": "eaf06953-2b4f-4f9e-bcdf-e29054796f4a",
+        "transfer_id": "eaf06953-2b4f-4f9e-bcdf-e29054796f4a",
+        "resource_type": "inventory_transfer",
+        "in_movement_id": 20,
+        "out_movement_id": 19,
+        "origin_location_id": 2,
+        "destination_location_id": 1
+      }
+    },
+    {
+      "id": 7,
+      "principal_id": 6,
+      "operation": "appointments.cancel",
+      "idempotency_key": "15f2861d-9680-4533-a9b8-86ae29679835",
+      "resource_type": "appointment",
+      "resource_id": "39",
+      "outcome_json": {
+        "state": "cancelled",
+        "status": "applied",
+        "end_utc": "2026-10-09T15:00:00+00:00",
+        "lead_id": 39,
+        "start_utc": "2026-10-09T14:00:00+00:00",
+        "patient_id": 39,
+        "service_id": 3,
+        "location_id": 1,
+        "resource_id": "39",
+        "resource_type": "appointment",
+        "organization_id": 1,
+        "practitioner_id": 1
+      }
+    },
+    {
+      "id": 8,
+      "principal_id": 6,
+      "operation": "agent_proposal.approve",
+      "idempotency_key": "7b342cc4-3920-46a8-b780-25d36b45412b",
+      "resource_type": "agent_proposal",
+      "resource_id": "3",
+      "outcome_json": {
+        "proposal_id": 3
+      }
+    },
+    {
+      "id": 9,
+      "principal_id": 8,
+      "operation": "conversations.request_handoff",
+      "idempotency_key": "32c45128-2839-44e8-b706-ce275e237f40",
+      "resource_type": "reception_handoff",
+      "resource_id": "1",
+      "outcome_json": {
+        "status": "pending",
+        "handoff_id": 1,
+        "reason_code": "requested_by_contact",
+        "resource_id": "1",
+        "resource_type": "reception_handoff",
+        "reason_summary": "Ensayo I0: paciente ficticio solicita hablar con recepción.",
+        "conversation_id": 1
+      }
+    }
+  ],
+  "sandbox_receipts": [
+    {
+      "id": 1,
+      "outbound_id": 1,
+      "provider_message_id": "sandbox-1"
+    },
+    {
+      "id": 2,
+      "outbound_id": 2,
+      "provider_message_id": "sandbox-2"
+    },
+    {
+      "id": 3,
+      "outbound_id": 3,
+      "provider_message_id": "sandbox-3"
+    },
+    {
+      "id": 4,
+      "outbound_id": 4,
+      "provider_message_id": "sandbox-4"
+    }
+  ],
+  "handoffs": [
+    {
+      "id": 1,
+      "conversation_id": 1,
+      "status": "pending",
+      "assigned_principal_id": null
+    }
+  ],
+  "appointment": [
+    {
+      "id": 39,
+      "state": "cancelled",
+      "start_utc": "2026-10-09 14:00:00+00:00",
+      "lead_id": 39,
+      "patient_id": 39
+    }
+  ],
+  "balances": [
+    {
+      "product_id": 1,
+      "location_id": 1,
+      "raw_quantity_sum": "20.00"
+    },
+    {
+      "product_id": 1,
+      "location_id": 2,
+      "raw_quantity_sum": "136.00"
+    },
+    {
+      "product_id": 1,
+      "location_id": 3,
+      "raw_quantity_sum": "30.00"
+    },
+    {
+      "product_id": 2,
+      "location_id": 1,
+      "raw_quantity_sum": "18.00"
+    },
+    {
+      "product_id": 2,
+      "location_id": 2,
+      "raw_quantity_sum": "25.00"
+    },
+    {
+      "product_id": 2,
+      "location_id": 3,
+      "raw_quantity_sum": "12.00"
+    },
+    {
+      "product_id": 3,
+      "location_id": 1,
+      "raw_quantity_sum": "15.00"
+    },
+    {
+      "product_id": 3,
+      "location_id": 2,
+      "raw_quantity_sum": "9.00"
+    },
+    {
+      "product_id": 3,
+      "location_id": 3,
+      "raw_quantity_sum": "11.00"
+    },
+    {
+      "product_id": 4,
+      "location_id": 1,
+      "raw_quantity_sum": "22.00"
+    },
+    {
+      "product_id": 4,
+      "location_id": 2,
+      "raw_quantity_sum": "30.00"
+    },
+    {
+      "product_id": 4,
+      "location_id": 3,
+      "raw_quantity_sum": "16.00"
+    },
+    {
+      "product_id": 5,
+      "location_id": 1,
+      "raw_quantity_sum": "60.00"
+    },
+    {
+      "product_id": 5,
+      "location_id": 2,
+      "raw_quantity_sum": "45.00"
+    },
+    {
+      "product_id": 5,
+      "location_id": 3,
+      "raw_quantity_sum": "38.00"
+    },
+    {
+      "product_id": 6,
+      "location_id": 1,
+      "raw_quantity_sum": "40.00"
+    },
+    {
+      "product_id": 6,
+      "location_id": 2,
+      "raw_quantity_sum": "3.00"
+    },
+    {
+      "product_id": 6,
+      "location_id": 3,
+      "raw_quantity_sum": "25.00"
+    }
+  ]
+}
