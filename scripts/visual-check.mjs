@@ -10,13 +10,14 @@ const screenshotDir = resolve(process.env.VISUAL_SCREENSHOT_DIR ?? join(repoRoot
 const externalServer = Boolean(process.env.VISUAL_BASE_URL);
 const baseUrl = process.env.VISUAL_BASE_URL ?? "http://127.0.0.1:5189";
 const nextBin = join(repoRoot, "node_modules", "next", "dist", "bin", "next");
-const appEnv = { ...process.env, NEXT_PUBLIC_USE_MOCKS: "true" };
+const real = process.argv.includes("--real");
+const appEnv = { ...process.env, NEXT_PUBLIC_USE_MOCKS: real ? "false" : "true" };
 const routes = [
   ["agenda", "Agenda de citas"],
   ["pacientes", "Pacientes"],
   ["caja", "Cobros"],
   ["inventario", "Gestión de inventario"],
-  ["agente", "Agente IA"],
+  ["agente", "Actividad"],
   ["chat", "Centro de conversaciones"],
   ["configuracion", "Configuración"],
 ];
@@ -84,6 +85,21 @@ try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
+
+  if (real) {
+    await page.goto(`${baseUrl}/agenda`, { waitUntil: "networkidle" });
+    const picker = page.getByRole("heading", { name: "Elige quién eres", exact: true });
+    if (await picker.count()) {
+      const code = page.getByLabel("Código de acceso");
+      if (await code.count()) {
+        assert.ok(process.env.BFF_ACCESS_CODE, "--real requiere BFF_ACCESS_CODE del env privado del RUN_ID");
+        await code.fill(process.env.BFF_ACCESS_CODE);
+      }
+      await page.getByRole("button", { name: new RegExp(process.env.VISUAL_PERSONA ?? "Carlos Vega") }).click();
+      await picker.waitFor({ state: "hidden" });
+      await page.waitForLoadState("networkidle");
+    }
+  }
 
   for (const [route, heading] of routes) {
     const response = await page.goto(`${baseUrl}/${route}`, { waitUntil: "networkidle" });
