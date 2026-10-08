@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { ChevronDown, Eye, Plus, Search, UserRoundPlus, Users } from "lucide-react";
+import { ChevronDown, Eye, Plus, Search, Users } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { createPatient, getPatients, loadPatientHistory, loadPatients, newIdempotencyKey, toApiError, useMocks } from "../api";
 import { Badge, statusTone } from "../components/Badge";
@@ -91,9 +91,7 @@ export function PatientsPage() {
     <section className="page">
       <div className="page-heading page-heading--with-actions"><div><h1>Pacientes</h1><p>Directorio clínico de las tres sedes</p></div><Button variant="primary" icon={Plus} onClick={() => setNewOpen(true)}>Nuevo paciente</Button></div>
       <div className="kpi-grid kpi-grid--patients">
-        <KpiCard icon={Users} value={1284} label="Pacientes registrados" tone="blue" />
-        <KpiCard icon={UserRoundPlus} value={37} label="Nuevos este mes" tone="cyan" />
-        <KpiCard icon={Users} value={16} label="Leads por contactar" tone="amber" />
+        <KpiCard icon={Users} value={patients.length} label="Pacientes registrados" tone="blue" />
       </div>
       <section className="panel table-panel">
         <div className="table-toolbar">
@@ -105,7 +103,7 @@ export function PatientsPage() {
         {error && <div className="form-error" role="alert">{error}</div>}
         {loading && <div className="table-loading" role="status">Cargando pacientes…</div>}
         {!loading && <DataTable columns={columns} rows={visible} rowKey={(patient) => patient.id} />}
-        <div className="pagination"><span>Mostrando {visible.length} de 1,284 pacientes</span><div><button disabled>‹</button><button className="page-active">1</button><button>2</button><button>3</button><button>›</button></div><select aria-label="Filas por página"><option>25 por página</option><option>50 por página</option></select></div>
+        <div className="pagination"><span>Mostrando {visible.length} de {patients.length} pacientes</span><div /><span className="text-muted">Vista completa</span></div>
       </section>
 
       <Modal title="Ficha del paciente" open={Boolean(selected)} onClose={() => setSelected(null)}>
