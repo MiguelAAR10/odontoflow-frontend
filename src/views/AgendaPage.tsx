@@ -43,7 +43,7 @@ import { createLatestRequest } from "../session";
 
 const HOURS = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00"];
 const WEEKDAY_LABELS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
-const AGENDA_STATES = ["Pendiente", "En espera", "Ausente", "Confirmada", "Cancelada", "En consulta", "Atendida", "Reprogramada"];
+const AGENDA_STATES = ["Pendiente", "Ausente", "Confirmada", "Cancelada", "Atendida"];
 
 function weekForDate(dateKey: string) {
   const date = new Date(`${dateKey}T00:00:00Z`);
@@ -141,8 +141,8 @@ function appointmentCardStyle(appointment: Appointment): { top: string; height: 
 }
 
 function StatusIcon({ status }: { status: string }) {
-  if (status === "Confirmada") return <CheckCircle2 size={17} aria-hidden="true" />;
-  if (status === "Cancelada") return <XCircle size={17} aria-hidden="true" />;
+  if (status === "Confirmada" || status === "Atendida") return <CheckCircle2 size={17} aria-hidden="true" />;
+  if (status === "Cancelada" || status === "Ausente") return <XCircle size={17} aria-hidden="true" />;
   return <Clock3 size={17} aria-hidden="true" />;
 }
 
@@ -495,7 +495,7 @@ export function AgendaPage() {
         <div className="summary-stats">
           <div><CalendarDays className="text-blue" aria-hidden="true" /><strong>{dayAppointments.length}</strong><span>citas</span></div>
           <div><CheckCircle2 className="text-green" aria-hidden="true" /><strong>{dayAppointments.filter((item) => item.status === "Confirmada").length}</strong><span>confirmadas</span></div>
-          <div><Clock3 className="text-amber" aria-hidden="true" /><strong>{dayAppointments.filter((item) => item.status !== "Confirmada" && item.status !== "Cancelada").length}</strong><span>pendientes</span></div>
+          <div><Clock3 className="text-amber" aria-hidden="true" /><strong>{dayAppointments.filter((item) => agendaState(item.status) === "Pendiente").length}</strong><span>pendientes</span></div>
         </div>
         <div className="summary-divider" />
         <h2>Agenda por odontólogo</h2>

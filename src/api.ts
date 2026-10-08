@@ -132,6 +132,8 @@ export function toGridSlot(startUtc: string, timeZone: string): { day: number; t
 export function toUiStatus(state: string): Appointment["status"] {
   if (state === "confirmed") return "Confirmada";
   if (state === "cancelled") return "Cancelada";
+  if (state === "completed") return "Atendida";
+  if (state === "no_show") return "Ausente";
   return "Por confirmar";
 }
 

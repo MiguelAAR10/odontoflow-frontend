@@ -37,7 +37,7 @@ export interface Appointment {
   treatment: string;
   doctor: string;
   branch: string;
-  status: "Confirmada" | "Por confirmar" | "No respondió" | "Cancelada";
+  status: "Confirmada" | "Por confirmar" | "No respondió" | "Cancelada" | "Atendida" | "Ausente";
   /** Real-mode scheduling identity used by filters and slot actions. */
   leadId?: number;
   serviceId?: number;
