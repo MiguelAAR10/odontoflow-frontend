@@ -1,0 +1,36 @@
+{
+  "http_status": 200,
+  "request": {
+    "tool_version": "1.1",
+    "tool_name": "request_human_handoff",
+    "conversation_id": 1,
+    "request_id": "e078e176-24dd-4746-8c9a-fdbbee19ad42",
+    "correlation_id": "002d22be-4dd9-46c4-ba0a-d909108ef2d3",
+    "idempotency_key": "32c45128-2839-44e8-b706-ce275e237f40",
+    "arguments": {
+      "reason_code": "requested_by_contact",
+      "reason_summary": "Ensayo I0: paciente ficticio solicita hablar con recepción."
+    }
+  },
+  "body": {
+    "tool_version": "1.1",
+    "status": "success",
+    "data": {
+      "handoff": {
+        "status": "pending",
+        "resource_type": "reception_handoff",
+        "resource_id": "1",
+        "handoff_id": 1,
+        "conversation_id": 1,
+        "reason_code": "requested_by_contact",
+        "reason_summary": "Ensayo I0: paciente ficticio solicita hablar con recepción."
+      },
+      "replayed": false
+    },
+    "error": null,
+    "request_id": "e078e176-24dd-4746-8c9a-fdbbee19ad42",
+    "correlation_id": "002d22be-4dd9-46c4-ba0a-d909108ef2d3",
+    "duration_ms": 21
+  },
+  "fixture": "Solicitud explícita mediante herramienta canónica; sin LLM. El seed no crea derivaciones."
+}

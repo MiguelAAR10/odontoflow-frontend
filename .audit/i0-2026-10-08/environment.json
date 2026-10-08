@@ -1,0 +1,11 @@
+{
+  "database": "odontoflow_i0_20261008",
+  "agent_database": "odontoflow_i0_20261008_agent",
+  "postgres_host": "127.0.0.1",
+  "postgres_port": 5434,
+  "backend_port": 8110,
+  "frontend_port": 3110,
+  "anchor_date": "2026-10-08",
+  "model": "none: deterministic templates",
+  "channel": "sandbox"
+}

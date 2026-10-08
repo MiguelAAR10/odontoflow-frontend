@@ -1,0 +1,8 @@
+go('/chat');page.locator('button.conversation-item').filter(has_text='Lucía Quispe Rojas').click()
+expect(page.locator('.message-panel')).to_contain_text('Tiene un saldo pendiente')
+expect(page.locator('.message-panel')).to_contain_text('Entregado')
+snap('j5-tomada-persistida-final')
+page.locator('button.conversation-item').filter(has_text='Karina Paredes Ramírez').click()
+expect(page.locator('.message-panel')).to_contain_text('se liberó un cupo')
+expect(page.locator('.message-panel')).to_contain_text('Entregado')
+snap('j4-oferta-entregada-chat')

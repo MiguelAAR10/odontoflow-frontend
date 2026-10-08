@@ -1,0 +1,473 @@
+Saltar al contenido
+
+OPERACIÓN
+
+Inicio
+Agenda
+Pacientes
+Bandeja
+
+GESTIÓN
+
+Caja
+
+IA & CANALES
+
+Actividad
+Chat
+Configuración
+LR
+Lucía Ramos
+Secretaria
+Cambiar de persona
+SEDE
+Todas las sedes
+Nueva cita
+Actividad
+
+Quién hizo qué en la clínica: las personas del equipo y los agentes, en orden.
+
+Lo que pasó
+Sede
+Todas las sedes
+ODONTO SMART Jesús María
+ODONTO SMART Lince
+ODONTO SMART Magdalena
+Agente
+Todos
+Recepción
+Cobranza
+Confirmaciones
+Cupos liberados
+Inventario
+Hoy
+02:42 p. m.
+LR
+
+Lucía Ramos tomó una derivación
+(Persona)
+
+Persona
+
+02:41 p. m.
+
+local-sandbox-dispatcher registró la entrega de un mensaje
+(Integración)
+
+Integración
+
+02:41 p. m.
+
+local-sandbox-dispatcher · outbound.sandbox.received
+(Integración)
+
+Integración
+
+02:41 p. m.
+
+local-sandbox-dispatcher registró la entrega de un mensaje
+(Integración)
+
+Integración
+
+02:41 p. m.
+
+local-sandbox-dispatcher · outbound.sandbox.received
+(Integración)
+
+Integración
+
+02:41 p. m.
+
+local-sandbox-dispatcher registró la entrega de un mensaje
+(Integración)
+
+Integración
+
+02:41 p. m.
+
+local-sandbox-dispatcher · outbound.sandbox.received
+(Integración)
+
+Integración
+
+02:41 p. m.
+
+local-sandbox-dispatcher registró la entrega de un mensaje
+(Integración)
+
+Integración
+
+02:41 p. m.
+
+local-sandbox-dispatcher · outbound.sandbox.received
+(Integración)
+
+Integración
+
+02:41 p. m.
+
+El agente local-sales-agent-v0 usó una herramienta
+(Agente)
+
+Agente
+
+02:41 p. m.
+
+El agente local-sales-agent-v0 derivó una conversación a una persona
+(Agente)
+
+Agente
+
+02:41 p. m.
+LR
+
+Lucía Ramos ejecutó una propuesta aprobada del agente de Cupos liberados
+(Persona)
+
+Persona
+ODONTO SMART Lince
+
+02:41 p. m.
+LR
+
+Lucía Ramos encoló un mensaje
+(Persona)
+
+Persona
+
+02:41 p. m.
+LR
+
+Lucía Ramos encoló un mensaje
+(Persona)
+
+Persona
+
+02:41 p. m.
+LR
+
+Lucía Ramos encoló un mensaje
+(Persona)
+
+Persona
+
+02:41 p. m.
+LR
+
+Lucía Ramos · waitlist_entry.offered
+(Persona)
+
+Persona
+
+02:41 p. m.
+LR
+
+Lucía Ramos · waitlist_entry.offered
+(Persona)
+
+Persona
+
+02:41 p. m.
+LR
+
+Lucía Ramos · waitlist_entry.offered
+(Persona)
+
+Persona
+
+02:41 p. m.
+LR
+
+Lucía Ramos aprobó una propuesta del agente de Cupos liberados
+(Persona)
+
+Persona
+ODONTO SMART Lince
+
+02:41 p. m.
+
+El agente local-sales-agent-v0 usó una herramienta
+(Agente)
+
+Agente
+
+02:40 p. m.
+
+El agente de Cupos liberados propuso una acción para aprobar
+(Agente)
+
+Agente
+ODONTO SMART Lince
+
+02:40 p. m.
+LR
+
+Lucía Ramos completó una corrida del agente de Cupos liberados
+(Persona)
+
+Persona
+
+02:40 p. m.
+LR
+
+Lucía Ramos canceló una cita
+(Persona)
+
+Persona
+ODONTO SMART Lince
+
+02:40 p. m.
+CV
+
+Carlos Vega ejecutó una propuesta aprobada del agente de Inventario
+(Persona)
+
+Persona
+ODONTO SMART Lince
+
+02:40 p. m.
+CV
+
+Carlos Vega · inventory_transfer.created
+(Persona)
+
+Persona
+
+02:40 p. m.
+CV
+
+Carlos Vega aprobó una propuesta del agente de Inventario
+(Persona)
+
+Persona
+ODONTO SMART Lince
+
+02:39 p. m.
+
+El agente de Inventario propuso una acción para aprobar
+(Agente)
+
+Agente
+ODONTO SMART Lince
+
+02:39 p. m.
+CV
+
+Carlos Vega completó una corrida del agente de Inventario
+(Persona)
+
+Persona
+
+02:39 p. m.
+LR
+
+Lucía Ramos ejecutó una propuesta aprobada del agente de Cobranza
+(Persona)
+
+Persona
+ODONTO SMART Lince
+
+02:39 p. m.
+LR
+
+Lucía Ramos encoló un mensaje
+(Persona)
+
+Persona
+
+02:39 p. m.
+LR
+
+Lucía Ramos aprobó una propuesta del agente de Cobranza
+(Persona)
+
+Persona
+ODONTO SMART Lince
+
+02:39 p. m.
+
+El agente de Cobranza propuso una acción para aprobar
+(Agente)
+
+Agente
+ODONTO SMART Lince
+
+02:39 p. m.
+LR
+
+Lucía Ramos completó una corrida del agente de Cobranza
+(Persona)
+
+Persona
+
+02:36 p. m.
+
+Sistema agregó a la lista de espera
+(Sistema)
+
+Sistema
+
+02:36 p. m.
+
+Sistema agregó a la lista de espera
+(Sistema)
+
+Sistema
+
+02:36 p. m.
+
+Sistema agregó a la lista de espera
+(Sistema)
+
+Sistema
+
+02:36 p. m.
+
+Sistema · reorder_point.set
+(Sistema)
+
+Sistema
+
+02:36 p. m.
+
+Sistema · reorder_point.set
+(Sistema)
+
+Sistema
+
+02:36 p. m.
+
+Sistema · reorder_point.set
+(Sistema)
+
+Sistema
+
+02:36 p. m.
+
+Sistema · inventory_entry.created
+(Sistema)
+
+Sistema
+
+02:36 p. m.
+
+Sistema · inventory_entry.created
+(Sistema)
+
+Sistema
+
+02:36 p. m.
+
+Sistema · inventory_entry.created
+(Sistema)
+
+Sistema
+
+02:36 p. m.
+
+Sistema · product.created
+(Sistema)
+
+Sistema
+
+02:36 p. m.
+
+Sistema · inventory_entry.created
+(Sistema)
+
+Sistema
+
+02:36 p. m.
+
+Sistema · inventory_entry.created
+(Sistema)
+
+Sistema
+
+02:36 p. m.
+
+Sistema · inventory_entry.created
+(Sistema)
+
+Sistema
+
+02:36 p. m.
+
+Sistema · product.created
+(Sistema)
+
+Sistema
+
+02:36 p. m.
+
+Sistema · inventory_entry.created
+(Sistema)
+
+Sistema
+
+02:36 p. m.
+
+Sistema · inventory_entry.created
+(Sistema)
+
+Sistema
+
+02:36 p. m.
+
+Sistema · inventory_entry.created
+(Sistema)
+
+Sistema
+
+Cargar más
+Corridas de los agentes
+
+Cada revisión que hizo un agente: a mano desde la Bandeja, programada o por un mensaje.
+
+Agente
+Todos
+Recepción
+Cobranza
+Confirmaciones
+Cupos liberados
+Inventario
+Cupos liberados
+Completada
+
+8 oct., 02:40 p. m. · Automática · 1 s
+
+Revisados
+1
+Propuestas nuevas
+1
+Ya propuestas
+0
+Omitidos
+0
+Inventario
+Completada
+
+8 oct., 02:39 p. m. · Manual · 1 s
+
+Revisados
+1
+Propuestas nuevas
+1
+Ya propuestas
+0
+Omitidos
+0
+Cobranza
+Completada
+
+8 oct., 02:39 p. m. · Manual · 1 s
+
+Revisados
+9
+Propuestas nuevas
+1
+Ya propuestas
+0
+Omitidos
+8

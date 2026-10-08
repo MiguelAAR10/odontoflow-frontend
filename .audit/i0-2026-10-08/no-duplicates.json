@@ -1,0 +1,42 @@
+{
+  "proposals": {
+    "before": 3,
+    "after": 3,
+    "identical": true
+  },
+  "outbound": {
+    "before": 4,
+    "after": 4,
+    "identical": true
+  },
+  "messages": {
+    "before": 4,
+    "after": 4,
+    "identical": true
+  },
+  "movements": {
+    "before": 20,
+    "after": 20,
+    "identical": true
+  },
+  "sandbox_receipts": {
+    "before": 4,
+    "after": 4,
+    "identical": true
+  },
+  "handoffs": {
+    "before": 1,
+    "after": 1,
+    "identical": true
+  },
+  "appointment": {
+    "before": 1,
+    "after": 1,
+    "identical": true
+  },
+  "balances": {
+    "before": 18,
+    "after": 18,
+    "identical": true
+  }
+}

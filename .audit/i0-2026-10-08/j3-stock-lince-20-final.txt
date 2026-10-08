@@ -1,0 +1,101 @@
+Saltar al contenido
+
+OPERACIÓN
+
+Inicio
+Agenda
+Pacientes
+Bandeja
+
+GESTIÓN
+
+Caja
+Inventario
+Productividad
+
+IA & CANALES
+
+Actividad
+Chat
+Configuración
+CV
+Carlos Vega
+Administrador
+Cambiar de persona
+SEDE
+Todas las sedes
+Nueva cita
+Gestión de inventario
+
+Stock por producto y sede
+
+6
+Productos
+3
+Sedes
+175
+Unidades en ODONTO SMART Lince
+0
+Sin stock en la sede
+ODONTO SMART Jesús María
+ODONTO SMART Lince
+ODONTO SMART Magdalena
+Tipo: Todos
+Consumible
+Reventa
+Nuevo producto
+PRODUCTO	TIPO	UNIDAD	STOCK EN ODONTO SMART LINCE	ESTADO	
+
+A
+Anestesia lidocaína 2% (cartucho)
+	Consumible	cartucho	20 cartucho	Activo	
+Entrada
+Ajuste
+Transferir
+Kardex
+
+
+C
+Cepillo dental suave
+	Reventa	unidad	60 unidad	Activo	
+Entrada
+Ajuste
+Transferir
+Kardex
+
+
+G
+Guantes de nitrilo talla M (caja x100)
+	Consumible	caja	18 caja	Activo	
+Entrada
+Ajuste
+Transferir
+Kardex
+
+
+H
+Hilo dental 50 m
+	Reventa	unidad	40 unidad	Activo	
+Entrada
+Ajuste
+Transferir
+Kardex
+
+
+M
+Mascarilla quirúrgica (caja x50)
+	Consumible	caja	22 caja	Activo	
+Entrada
+Ajuste
+Transferir
+Kardex
+
+
+R
+Resina compuesta A2 (jeringa 4 g)
+	Consumible	jeringa	15 jeringa	Activo	
+Entrada
+Ajuste
+Transferir
+Kardex
+6 productos · balance por sede

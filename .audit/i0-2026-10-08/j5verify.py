@@ -1,0 +1,6 @@
+go('/chat');page.locator('button.conversation-item').filter(has_text='Lucía Quispe Rojas').click();expect(page.locator('.message-panel')).to_contain_text('La atiende Lucía Ramos');snap('j5-tomada-persistida')
+log({'claimed_handoffs':api('/handoffs?status=claimed')})
+go('/agente');page.get_by_role('button',name='Cargar más',exact=True).first.click()
+expect(page.locator('main')).to_contain_text('Lucía Ramos aprobó una propuesta del agente de Cobranza')
+snap('j5-actividad-con-cobranza');log({'activity_final':api('/activity?limit=100')})
+print('Chat asignado a Lucía; feed incluye Cobranza después de paginar.')

@@ -1,0 +1,30 @@
+{
+  "http_status": 200,
+  "request": {
+    "tool_version": "1.1",
+    "tool_name": "request_human_handoff",
+    "conversation_id": 1,
+    "request_id": "4ebedccf-71fe-43f0-a131-1d0652e1eb33",
+    "correlation_id": "e127d880-3267-4136-badf-2460f7c4a3b3",
+    "idempotency_key": "90f6eb6a-1453-4202-99d2-27e3a3a28cbf",
+    "arguments": {
+      "reason_code": "requested_by_contact",
+      "reason_summary": "Ensayo I0: paciente ficticio solicita hablar con recepción."
+    }
+  },
+  "body": {
+    "tool_version": "1.1",
+    "status": "error",
+    "data": null,
+    "error": {
+      "code": "INVALID_INPUT",
+      "message": "Tool envelope trace identifiers must match the HTTP trace headers.",
+      "retryable": false,
+      "details": {}
+    },
+    "request_id": "dfea5b3c-8fe0-484d-a4ff-dfa5f933a940",
+    "correlation_id": "dfea5b3c-8fe0-484d-a4ff-dfa5f933a940",
+    "duration_ms": 4
+  },
+  "fixture": "Solicitud explícita mediante herramienta canónica; sin LLM. El seed no crea derivaciones."
+}

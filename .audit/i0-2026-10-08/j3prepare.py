@@ -1,0 +1,10 @@
+for path,name in [('/agenda','agenda'),('/pacientes','pacientes'),('/caja','caja'),('/inventario','inventario')]:
+ go(path); snap('j1-carlos-'+name)
+ assert 'No tienes permisos' not in page.locator('main').inner_text()
+ print(name,page.locator('main').inner_text()[:200])
+go('/aprobaciones')
+page.locator('li.agent-run').filter(has=page.get_by_role('heading',name='Inventario',exact=True)).get_by_role('button',name='Ejecutar ahora').click()
+expect(page.locator('article.approval-card')).to_have_count(1)
+snap('j3-traspaso-propuesto-carlos')
+items=api('/agent/inbox?status=pending')['body']['items']; (OUT/'inventory-proposal.json').write_text(json.dumps(items,indent=2,ensure_ascii=False))
+print(json.dumps(items,ensure_ascii=False)[:2500])

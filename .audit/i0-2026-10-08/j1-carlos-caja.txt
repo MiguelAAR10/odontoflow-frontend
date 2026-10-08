@@ -1,0 +1,322 @@
+Saltar al contenido
+
+OPERACIÓN
+
+Inicio
+Agenda
+Pacientes
+Bandeja
+
+GESTIÓN
+
+Caja
+Inventario
+Productividad
+
+IA & CANALES
+
+Actividad
+Chat
+Configuración
+CV
+Carlos Vega
+Administrador
+Cambiar de persona
+SEDE
+Todas las sedes
+Nueva cita
+Cobros
+
+Cargos por servicios y pagos registrados
+
+Saldos y estados vienen del backend
+Cobros
+Por facturar
+Cobranza
+Conciliación
+S/ 1,220.00
+Pagado en filas cargadas
+S/ 1,000.00
+Saldo en filas cargadas
+24
+Cargos cargados
+Todos los medios
+Efectivo
+Tarjeta
+Yape
+Plin
+Transferencia
+Link de pago
+24 cargos
+PACIENTE	ATENCIÓN	ATENDIDA	MONTO	PAGADO	SALDO	MEDIOS	ESTADO	
+
+Miguel Ángel Ramírez Paredes
+Radiografía panorámica · Cargo #8
+	
+ODONTO SMART Lince
+Dra. Andrea Salazar
+	6 oct. · 10:20 a. m.	S/ 90.00	S/ 90.00	S/ 0.00	
+Plin
+	Pagado	
+Cobrar
+
+
+Jorge Chávez Palomino
+Consulta odontológica · Cargo #6
+	
+ODONTO SMART Lince
+Dra. Andrea Salazar
+	6 oct. · 09:20 a. m.	S/ 60.00	S/ 20.00	S/ 40.00	
+Plin
+	Parcial	
+Cobrar
+Seguimiento
+
+
+Rosa Mamani Gutiérrez
+Profilaxis infantil · Cargo #5
+	
+ODONTO SMART Jesús María
+Dra. Camila Herrera
+	5 oct. · 09:20 a. m.	S/ 90.00	S/ 0.00	S/ 90.00	—	Pendiente	
+Cobrar
+Seguimiento
+
+
+José Flores Mendoza
+Limpieza dental · Cargo #22
+	
+ODONTO SMART Jesús María
+Dra. Camila Herrera
+	3 oct. · 09:20 a. m.	S/ 120.00	S/ 20.00	S/ 100.00	
+Yape
+	Parcial	
+Cobrar
+Seguimiento
+
+
+Alonso Cárdenas Huamán
+Radiografía panorámica · Cargo #18
+	
+ODONTO SMART Jesús María
+Dra. Valeria Ruiz
+	29 set. · 10:20 a. m.	S/ 90.00	S/ 20.00	S/ 70.00	
+Efectivo
+	Parcial	
+Cobrar
+Seguimiento
+
+
+María Fernanda Huamán Cárdenas
+Limpieza dental · Cargo #3
+	
+ODONTO SMART Jesús María
+Dra. Valeria Ruiz
+	29 set. · 09:20 a. m.	S/ 120.00	S/ 0.00	S/ 120.00	—	Pendiente	
+Cobrar
+Seguimiento
+
+
+Gabriela Ccori Flores
+Consulta odontológica · Cargo #15
+	
+ODONTO SMART Lince
+Dr. Carlos Mendoza
+	28 set. · 09:20 a. m.	S/ 60.00	S/ 60.00	S/ 0.00	
+Yape
+	Pagado	
+Cobrar
+
+
+Renzo Torres Vargas
+Radiografía panorámica · Cargo #10
+	
+ODONTO SMART Jesús María
+Dra. Camila Herrera
+	26 set. · 09:20 a. m.	S/ 90.00	S/ 90.00	S/ 0.00	
+Efectivo
+	Pagado	
+Cobrar
+
+
+Lucía Quispe Rojas
+Extracción simple · Cargo #1
+	
+ODONTO SMART Lince
+Dra. Andrea Salazar
+	26 set. · 09:20 a. m.	S/ 180.00	S/ 0.00	S/ 180.00	—	Pendiente	
+Cobrar
+Seguimiento
+
+
+Luis Rojas Mamani
+Control mensual ortodoncia · Cargo #4
+	
+ODONTO SMART Lince
+Dr. Carlos Mendoza
+	23 set. · 09:20 a. m.	S/ 150.00	S/ 50.00	S/ 100.00	
+Efectivo
+	Parcial	
+Cobrar
+Seguimiento
+
+
+Diego Gutiérrez Quispe
+Radiografía panorámica · Cargo #12
+	
+ODONTO SMART Lince
+Dra. Andrea Salazar
+	22 set. · 09:20 a. m.	S/ 90.00	S/ 20.00	S/ 70.00	
+Efectivo
+	Parcial	
+Cobrar
+Seguimiento
+
+
+Julio César Salazar Ccori
+Radiografía panorámica · Cargo #14
+	
+ODONTO SMART Jesús María
+Dra. Valeria Ruiz
+	19 set. · 09:20 a. m.	S/ 90.00	S/ 90.00	S/ 0.00	
+Tarjeta
+	Pagado	
+Cobrar
+
+
+Óscar Ticona Villanueva
+Consulta odontológica · Cargo #20
+	
+ODONTO SMART Jesús María
+Dra. Valeria Ruiz
+	18 set. · 09:20 a. m.	S/ 60.00	S/ 60.00	S/ 0.00	
+Transferencia
+	Pagado	
+Cobrar
+
+
+José Flores Mendoza
+Evaluación + diagnóstico · Cargo #2
+	
+ODONTO SMART Magdalena
+Dr. Sebastián Torres
+	18 set. · 09:20 a. m.	S/ 80.00	S/ 30.00	S/ 50.00	
+Yape
+	Parcial	
+Cobrar
+Seguimiento
+
+
+Pilar Villanueva Espinoza
+Limpieza dental · Cargo #17
+	
+ODONTO SMART Jesús María
+Dra. Valeria Ruiz
+	16 set. · 09:20 a. m.	S/ 120.00	S/ 120.00	S/ 0.00	
+Tarjeta
+	Pagado	
+Cobrar
+
+
+Lucía Quispe Rojas
+Consulta odontológica · Cargo #21
+	
+ODONTO SMART Magdalena
+Dr. Sebastián Torres
+	12 set. · 09:20 a. m.	S/ 60.00	S/ 60.00	S/ 0.00	
+Yape
+	Pagado	
+Cobrar
+
+
+Fiorella Palomino Torres
+Limpieza dental · Cargo #19
+	
+ODONTO SMART Jesús María
+Dra. Valeria Ruiz
+	8 set. · 09:20 a. m.	S/ 120.00	S/ 20.00	S/ 100.00	
+Plin
+	Parcial	
+Cobrar
+Seguimiento
+
+
+María Fernanda Huamán Cárdenas
+Consulta odontológica · Cargo #23
+	
+ODONTO SMART Lince
+Dra. Andrea Salazar
+	5 set. · 09:20 a. m.	S/ 60.00	S/ 20.00	S/ 40.00	
+Tarjeta
+	Parcial	
+Cobrar
+Seguimiento
+
+
+Christian Espinoza Castillo
+Limpieza dental · Cargo #16
+	
+ODONTO SMART Jesús María
+Dra. Valeria Ruiz
+	3 set. · 09:20 a. m.	S/ 120.00	S/ 120.00	S/ 0.00	
+Transferencia
+	Pagado	
+Cobrar
+
+
+Karina Paredes Ramírez
+Evaluación + diagnóstico · Cargo #13
+	
+ODONTO SMART Lince
+Dra. Andrea Salazar
+	3 set. · 09:20 a. m.	S/ 80.00	S/ 80.00	S/ 0.00	
+Transferencia
+	Pagado	
+Cobrar
+
+
+Luis Rojas Mamani
+Evaluación + diagnóstico · Cargo #24
+	
+ODONTO SMART Magdalena
+Dr. Sebastián Torres
+	1 set. · 09:20 a. m.	S/ 80.00	S/ 80.00	S/ 0.00	
+Plin
+	Pagado	
+Cobrar
+
+
+Ana Sofía Castillo Ticona
+Consulta odontológica · Cargo #9
+	
+ODONTO SMART Magdalena
+Dr. Sebastián Torres
+	31 ago. · 09:20 a. m.	S/ 60.00	S/ 20.00	S/ 40.00	
+Plin
+	Parcial	
+Cobrar
+Seguimiento
+
+
+Milagros Mendoza Salazar
+Consulta odontológica · Cargo #11
+	
+ODONTO SMART Jesús María
+Dra. Valeria Ruiz
+	25 ago. · 10:20 a. m.	S/ 60.00	S/ 60.00	S/ 0.00	
+Plin
+	Pagado	
+Cobrar
+
+
+Carmen Vargas Chávez
+Radiografía panorámica · Cargo #7
+	
+ODONTO SMART Jesús María
+Dra. Valeria Ruiz
+	25 ago. · 09:20 a. m.	S/ 90.00	S/ 90.00	S/ 0.00	
+Tarjeta
+	Pagado	
+Cobrar
+24 cargos registrados
+Vista completa

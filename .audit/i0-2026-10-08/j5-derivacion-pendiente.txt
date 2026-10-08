@@ -1,0 +1,84 @@
+Saltar al contenido
+
+OPERACIÓN
+
+Inicio
+Agenda
+Pacientes
+Bandeja
+
+GESTIÓN
+
+Caja
+
+IA & CANALES
+
+Actividad
+Chat
+Configuración
+LR
+Lucía Ramos
+Secretaria
+Cambiar de persona
+SEDE
+Todas las sedes
+Nueva cita
+Centro de conversaciones
+
+Las conversaciones reales de la clínica con pacientes y leads
+
+Solo lectura
+Conversaciones
+Derivaciones (1)
+Pendientes
+Tomadas
+Resueltas
+
+Conversaciones que el agente pasó a una persona, de la más antigua a la más reciente.
+
+Lucía Quispe Rojas
+Pendiente
+
+Pidió hablar con una persona
+
+Ensayo I0: paciente ficticio solicita hablar con recepción.
+
+Derivada hace un momento
+
+Tomar
+Ver chat
+LQ
+Lucía Quispe Rojas
+WhatsApp
+Derivada
+Esperando a una persona del equipo
+Tomar
+
+Hoy
+
+Hola Lucía, le escribimos de ODONTO SMART Lince. Tiene un saldo pendiente de S/ 180.00 por su atención del 26/09/2026. Puede pagarlo en la sede o responder este mensaje para coordinar. ¡Gracias!
+
+14:39
+Clínica · Entregado
+
+Solo lectura: desde aquí aún no se puede responder ni devolver la conversación al agente.
+
+Datos de la conversación
+LQ
+Lucía Quispe Rojas
+Derivada
+Quién atiende
+Esperando a una persona del equipo
+Último mensaje
+8 oct., 14:36
+Derivación
+Pendiente de tomar
+Crear cita
+
+El chat no incluye el vínculo con un paciente o lead. Para crear una cita, selecciona un registro real en el formulario.
+
+Qué puedes hacer aquí
+
+Leer cada conversación completa y tomar las que el agente derivó a una persona.
+
+Todavía no se puede responder al paciente ni devolver la conversación al agente desde esta pantalla.

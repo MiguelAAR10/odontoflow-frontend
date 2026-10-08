@@ -1,0 +1,31 @@
+{
+  "claimed": 4,
+  "delivered": 4,
+  "failed": 0,
+  "statuses": [
+    {
+      "outbound_id": 1,
+      "status": "delivered",
+      "attempt_count": 1,
+      "next_attempt_at": "2026-10-08T19:41:57.537295Z"
+    },
+    {
+      "outbound_id": 2,
+      "status": "delivered",
+      "attempt_count": 1,
+      "next_attempt_at": "2026-10-08T19:41:57.611791Z"
+    },
+    {
+      "outbound_id": 3,
+      "status": "delivered",
+      "attempt_count": 1,
+      "next_attempt_at": "2026-10-08T19:41:57.676503Z"
+    },
+    {
+      "outbound_id": 4,
+      "status": "delivered",
+      "attempt_count": 1,
+      "next_attempt_at": "2026-10-08T19:41:57.744424Z"
+    }
+  ]
+}

@@ -1,0 +1,90 @@
+Saltar al contenido
+
+OPERACIÓN
+
+Inicio
+Agenda
+Pacientes
+Bandeja
+
+GESTIÓN
+
+Caja
+Inventario
+Productividad
+
+IA & CANALES
+
+Actividad
+Chat
+Configuración
+CV
+Carlos Vega
+Administrador
+Cambiar de persona
+SEDE
+Todas las sedes
+Nueva cita
+Bandeja
+
+Lo que proponen los agentes, con su evidencia. Nada se ejecuta sin una aprobación.
+
+El backend valida cada decisión
+Ejecutar ahora
+
+Cada agente revisa los datos de la clínica y deja sus propuestas en la bandeja.
+
+Cobranza
+
+Busca saldos vencidos y propone un recordatorio de pago.
+
+Ejecutar ahora
+Inventario
+
+Revisa el stock por sede y propone traspasos o reposiciones.
+
+Ejecutar ahora
+
+Listo.
+
+1 faltante de stock revisado
+1 propuesta nueva
+0 ya estaban propuestas
+0 omitidos
+Ver en Corridas
+Confirmaciones
+
+Pone en cola el recordatorio de las citas de mañana.
+
+Ejecutar ahora
+Cupos liberados
+
+Detecta cancelaciones y propone ofrecer el cupo a la lista de espera.
+
+Ejecutar ahora
+Propuestas pendientes
+1
+Pendientes
+Aprobadas/en proceso
+Ejecutadas
+Declinadas
+Vencidas
+Con error
+Reemplazadas
+INVENTARIO
+Pendiente
+Traspasar 16 cartuchos de Anestesia lidocaína 2% (cartucho) a ODONTO SMART Lince
+
+ODONTO SMART Lince tiene 4 (mínimo 10); ODONTO SMART Jesús María tiene 120 y le sobran 110
+
+DESDE
+ODONTO SMART Jesús María
+HACIA
+ODONTO SMART Lince
+CONSUMO ÚLTIMOS 7 DÍAS
+0 en ODONTO SMART Lince
+
+Propuesto por el agente de Inventario · ODONTO SMART Lince · Vence en 3 d
+
+Declinar
+Aprobar

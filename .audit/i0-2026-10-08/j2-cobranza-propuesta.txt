@@ -1,0 +1,87 @@
+Saltar al contenido
+
+OPERACIÓN
+
+Inicio
+Agenda
+Pacientes
+Bandeja
+
+GESTIÓN
+
+Caja
+
+IA & CANALES
+
+Actividad
+Chat
+Configuración
+LR
+Lucía Ramos
+Secretaria
+Cambiar de persona
+SEDE
+Todas las sedes
+Nueva cita
+Bandeja
+
+Lo que proponen los agentes, con su evidencia. Nada se ejecuta sin una aprobación.
+
+El backend valida cada decisión
+Ejecutar ahora
+
+Cada agente revisa los datos de la clínica y deja sus propuestas en la bandeja.
+
+Cobranza
+
+Busca saldos vencidos y propone un recordatorio de pago.
+
+Ejecutar ahora
+
+Listo.
+
+9 cargos revisados
+1 propuesta nueva
+0 ya estaban propuestas
+8 omitidos
+Ver en Corridas
+Confirmaciones
+
+Pone en cola el recordatorio de las citas de mañana.
+
+Ejecutar ahora
+Cupos liberados
+
+Detecta cancelaciones y propone ofrecer el cupo a la lista de espera.
+
+Ejecutar ahora
+Propuestas pendientes
+1
+Pendientes
+Aprobadas/en proceso
+Ejecutadas
+Declinadas
+Vencidas
+Con error
+Reemplazadas
+COBRANZA
+Pendiente
+Recordar el pago a Lucía Quispe Rojas
+
+Debe S/ 180 hace 12 días
+
+MONTO DEL CARGO
+S/ 180
+YA PAGÓ
+S/ 0
+ÚLTIMO PAGO
+Sin pagos
+ATENCIÓN DEL
+26 set.
+MENSAJE QUE SE ENVIARÁ
+Hola Lucía, le escribimos de ODONTO SMART Lince. Tiene un saldo pendiente de S/ 180.00 por su atención del 26/09/2026. Puede pagarlo en la sede o responder este mensaje para coordinar. ¡Gracias!
+
+Propuesto por el agente de Cobranza · ODONTO SMART Lince · Vence en 3 d
+
+Declinar
+Aprobar

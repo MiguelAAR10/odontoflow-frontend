@@ -1,0 +1,52 @@
+[
+  {
+    "source": "agent_proposal",
+    "id": 3,
+    "kind": "waitlist_offer",
+    "agent_key": "backfill",
+    "status": "pending",
+    "location_id": 1,
+    "summary": "Cupo libre — ofrecer a 3 pacientes en lista de espera (cita #39)",
+    "reason": "Cancelación: Limpieza dental 09/10 09:00 en ODONTO SMART Lince; 3 pacientes en lista de espera, se ofrece a 3",
+    "facts": null,
+    "evidence": {
+      "run_id": 3,
+      "job_key": "backfill:event:27",
+      "matched": 3,
+      "service": "Limpieza dental",
+      "location": "ODONTO SMART Lince",
+      "start_utc": "2026-10-09T14:00:00+00:00",
+      "offered_to": [
+        1,
+        2,
+        3
+      ],
+      "appointment_id": 39
+    },
+    "payload": {
+      "entry_ids": [
+        1,
+        2,
+        3
+      ],
+      "message_text": "Hola, se liberó un cupo de Limpieza dental el 09/10 a las 09:00 en ODONTO SMART Lince. Responde SÍ en los próximos 30 minutos para reservarlo.",
+      "appointment_id": 39
+    },
+    "payload_hash": "4fcce2967cb61b390193b53d1465426aa7bdc104bbd0060553c3cde80eb772c6",
+    "subject": {
+      "type": "appointment",
+      "id": "39"
+    },
+    "conversation_id": null,
+    "confirmation_token": null,
+    "expires_at": "2026-10-08T20:10:56.496950Z",
+    "created_at": "2026-10-08T19:40:56.496950Z",
+    "decided_by": null,
+    "result_ref": null,
+    "error_code": null,
+    "actions": [
+      "approve",
+      "decline"
+    ]
+  }
+]

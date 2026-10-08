@@ -1,0 +1,76 @@
+Saltar al contenido
+
+OPERACIÓN
+
+Inicio
+Agenda
+Pacientes
+Bandeja
+
+GESTIÓN
+
+Caja
+
+IA & CANALES
+
+Actividad
+Chat
+Configuración
+LR
+Lucía Ramos
+Secretaria
+Cambiar de persona
+SEDE
+Todas las sedes
+Nueva cita
+Bandeja
+
+Lo que proponen los agentes, con su evidencia. Nada se ejecuta sin una aprobación.
+
+El backend valida cada decisión
+Ejecutar ahora
+
+Cada agente revisa los datos de la clínica y deja sus propuestas en la bandeja.
+
+Cobranza
+
+Busca saldos vencidos y propone un recordatorio de pago.
+
+Ejecutar ahora
+Confirmaciones
+
+Pone en cola el recordatorio de las citas de mañana.
+
+Ejecutar ahora
+Cupos liberados
+
+Detecta cancelaciones y propone ofrecer el cupo a la lista de espera.
+
+Ejecutar ahora
+Propuestas pendientes
+1
+Pendientes
+Aprobadas/en proceso
+Ejecutadas
+Declinadas
+Vencidas
+Con error
+Reemplazadas
+INVENTARIO
+Pendiente
+Traspasar 16 cartuchos de Anestesia lidocaína 2% (cartucho) a ODONTO SMART Lince
+
+ODONTO SMART Lince tiene 4 (mínimo 10); ODONTO SMART Jesús María tiene 120 y le sobran 110
+
+DESDE
+ODONTO SMART Jesús María
+HACIA
+ODONTO SMART Lince
+CONSUMO ÚLTIMOS 7 DÍAS
+0 en ODONTO SMART Lince
+
+Propuesto por el agente de Inventario · ODONTO SMART Lince · Vence en 2 d
+
+Tu rol solo puede declinar esta propuesta.
+
+Declinar
