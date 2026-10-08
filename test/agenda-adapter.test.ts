@@ -2,8 +2,11 @@
  * Agenda adapter unit tests — pure view-model mapping (no network).
  */
 import { describe, expect, it } from "vitest";
-import { agendaDateKey, agendaWeekReadWindow, toApiError, toGridSlot, toUiStatus } from "../src/api";
-import { ApiError } from "../src/contracts/client";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { agendaDateKey, agendaWeekReadWindow, toApiError, toGridSlot, toUiAppointment, toUiStatus } from "../src/api";
+import { ApiError, type AppointmentListItem } from "../src/contracts/client";
+import { Badge, statusTone } from "../src/components/Badge";
 
 describe("toGridSlot", () => {
   it("uses the selected clinic's day for Hoy across UTC midnight", () => {
@@ -34,9 +37,39 @@ describe("toGridSlot", () => {
 });
 
 describe("toUiStatus", () => {
-  it("maps the backend states into the agenda vocabulary", () => {
-    expect(toUiStatus("confirmed")).toBe("Confirmada");
-    expect(toUiStatus("cancelled")).toBe("Cancelada");
+  // AppointmentRead/ListItem expose state as string in OpenAPI. These four
+  // states are enforced by the backend's ck_appointments_state constraint.
+  const states = [
+    ["confirmed", "Confirmada", "green"],
+    ["cancelled", "Cancelada", "red"],
+    ["completed", "Atendida", "green"],
+    ["no_show", "Ausente", "red"],
+  ] as const;
+
+  it.each(states)("labels backend state %s as %s", (state, label) => {
+    expect(toUiStatus(state)).toBe(label);
+  });
+
+  it.each(states)("preserves backend state %s in the agenda view model", (state, label) => {
+    const row: AppointmentListItem = {
+      id: 1, lead_id: 2, service_id: 3, practitioner_id: 4, location_id: 5,
+      start_utc: "2026-10-05T14:00:00Z", end_utc: "2026-10-05T14:30:00Z",
+      state, lead_name: "Paciente prueba", service_name: "Evaluación",
+      practitioner_name: "Dra. Prueba", location_name: "Sede prueba",
+    };
+    expect(toUiAppointment(row, new Map([[5, "America/Lima"]])).status).toBe(label);
+  });
+
+  it.each(states)("renders the %s agenda badge with %s and semantic tone %s", (state, label, tone) => {
+    const status = toUiStatus(state);
+    expect(statusTone(status)).toBe(tone);
+    expect(renderToStaticMarkup(createElement(Badge, { tone: statusTone(status), children: status })))
+      .toBe(`<span class="badge badge--${tone}">${label}</span>`);
+  });
+
+  it("preserves the existing fallback for an unrecognized state", () => {
+    expect(toUiStatus("unknown")).toBe("Por confirmar");
+    expect(statusTone(toUiStatus("unknown"))).toBe("amber");
   });
 });
 
