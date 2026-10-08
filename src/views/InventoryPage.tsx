@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { ArrowRightLeft, ArrowUpDown, Boxes, ChevronDown, ClipboardPen, MapPin, PackagePlus, Plus, Search, SlidersHorizontal } from "lucide-react";
-import { createProduct, loadInventoryData, loadMovements, loadProductBalance, newIdempotencyKey, registerAdjustment, registerEntry, registerTransfer, sumAvailable, toApiError } from "../api";
+import { ApiError, createProduct, loadInventoryData, loadMovements, loadProductBalance, newIdempotencyKey, registerAdjustment, registerEntry, registerTransfer, sumAvailable, toApiError } from "../api";
 import { Badge, statusTone } from "../components/Badge";
 import { Button } from "../components/Button";
 import { type Column, DataTable } from "../components/DataTable";
@@ -41,6 +41,13 @@ function formatInstant(iso: string): string {
 const locationName = (locations: InventoryLocation[], id: string): string =>
   locations.find((location) => location.id === id)?.name ?? "sede";
 
+function inventoryLoadError(caught: unknown): ApiError {
+  const error = toApiError(caught);
+  return error.httpStatus === 403
+    ? new ApiError(error.httpStatus, error.code, "Tu rol no permite acceder al inventario.", error.details)
+    : error;
+}
+
 export function InventoryPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [locations, setLocations] = useState<InventoryLocation[]>([]);
@@ -49,7 +56,7 @@ export function InventoryPage() {
   const [kind, setKind] = useState("Todos");
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<ApiError | null>(null);
 
   const [newOpen, setNewOpen] = useState(false);
   const [entryTarget, setEntryTarget] = useState<Product | null>(null);
@@ -63,7 +70,7 @@ export function InventoryPage() {
 
   const refresh = useCallback(async () => {
     setLoading(true);
-    setError("");
+    setError(null);
     try {
       const data = await loadInventoryData();
       setProducts(data.products);
@@ -71,7 +78,7 @@ export function InventoryPage() {
       const active = data.locations.find((location) => location.isActive);
       setSelectedLocationId((current) => current || active?.id || "");
     } catch (caught) {
-      setError(toApiError(caught).message);
+      setError(inventoryLoadError(caught));
     } finally {
       setLoading(false);
     }
@@ -84,13 +91,13 @@ export function InventoryPage() {
     if (!products.length || !selectedLocationId) return;
     let cancelled = false;
     setLoading(true);
-    setError("");
+    setError(null);
     Promise.all(products.map((product) => loadProductBalance(product.id, selectedLocationId)))
       .then((rows) => {
         if (!cancelled) setBalances(new Map(rows.map((row) => [row.productId, row.available])));
       })
       .catch((caught) => {
-        if (!cancelled) setError(toApiError(caught).message);
+        if (!cancelled) setError(inventoryLoadError(caught));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -237,6 +244,15 @@ export function InventoryPage() {
     { key: "transferId", header: "Transferencia", render: (row) => row.transferId ?? "—" },
   ];
 
+  if (error?.httpStatus === 403) {
+    return (
+      <section className="page">
+        <div className="page-heading"><h1>Gestión de inventario</h1><p>Stock por producto y sede</p></div>
+        <div className="approvals-notice" role="alert"><h2>Sin acceso</h2><p>{error.message}</p></div>
+      </section>
+    );
+  }
+
   return (
     <section className="page">
       <div className="page-heading"><h1>Gestión de inventario</h1><p>Stock por producto y sede</p></div>
@@ -253,7 +269,7 @@ export function InventoryPage() {
           <label className="search-control"><Search size={18} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar producto" aria-label="Buscar producto" /></label>
           <Button variant="primary" icon={Plus} onClick={() => { setNewOpen(true); setMutationError(""); }}>Nuevo producto</Button>
         </div>
-        {error && <div className="form-error" role="alert">{error}<Button compact onClick={() => void refresh()}>Reintentar</Button></div>}
+        {error && <div className="form-error" role="alert">{error.message}<Button compact onClick={() => void refresh()}>Reintentar</Button></div>}
         {loading && <div className="table-loading" role="status">Cargando inventario…</div>}
         {!loading && <DataTable className="inventory-table" columns={columns} rows={filtered} rowKey={(product) => product.id} emptyMessage="No hay productos registrados" />}
         <div className="pagination"><span>{filtered.length} productos · balance por sede</span><div /></div>

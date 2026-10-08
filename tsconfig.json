@@ -46,6 +46,7 @@
     "test/cash-adapter.test.ts",
     "test/cash-transport.test.ts",
     "test/inventory-adapter.test.ts",
+    "test/inventory-view.test.tsx",
     "test/voice-adapter.test.ts",
     "test/home-registry.test.ts",
     "test/home-adapter.test.ts",
