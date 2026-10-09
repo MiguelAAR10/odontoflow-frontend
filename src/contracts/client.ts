@@ -182,6 +182,26 @@ export async function listServices(): Promise<ServiceRead[]> {
   return response.data;
 }
 
+export async function createLocation(
+  input: components["schemas"]["LocationCreate"],
+  idempotencyKey: string,
+): Promise<LocationRead> {
+  const response = await http.post<LocationRead>("/locations", input, {
+    headers: { "Idempotency-Key": idempotencyKey },
+  });
+  return response.data;
+}
+
+export async function createService(
+  input: components["schemas"]["ServiceCreate"],
+  idempotencyKey: string,
+): Promise<ServiceRead> {
+  const response = await http.post<ServiceRead>("/services", input, {
+    headers: { "Idempotency-Key": idempotencyKey },
+  });
+  return response.data;
+}
+
 export async function listEligiblePractitioners(
   serviceId: number,
   locationId: number,
