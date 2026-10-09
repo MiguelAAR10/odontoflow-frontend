@@ -3,6 +3,7 @@
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import shlex
@@ -63,6 +64,7 @@ class Journeys:
         self.result = {'base': args.base, 'api': args.api, 'journeys': {}, 'intents': [],
                        'responses': [], 'replay': {}, 'started_at': datetime.now(timezone.utc).isoformat()}
         self.person = None
+        self.session_epoch = 0
         self.requests = {}
         self.inventory = None
         self.page_errors = []
@@ -91,15 +93,17 @@ class Journeys:
 
     def on_request(self, request):
         if '/api/backend/' in request.url:
-            self.requests[request] = self.person
+            self.requests[request] = (self.person, self.session_epoch)
 
     def on_response(self, response):
         if '/api/backend/' not in response.url:
             return
         request = response.request
         check('authorization' not in request.headers, 'Browser exposed a bearer credential')
+        requested_as, requested_epoch = self.requests.get(request, (None, -1))
         row = {'path': urlsplit(response.url).path, 'method': request.method, 'status': response.status,
-               'requested_as': self.requests.get(request), 'received_as': self.person}
+               'requested_as': requested_as, 'received_as': self.person,
+               'requested_epoch': requested_epoch, 'received_epoch': self.session_epoch}
         self.result['responses'].append(row)
         if request.method == 'POST' and re.search(r'/(approve|claim)$', row['path']) and response.status == 200:
             if response.headers.get('idempotent-replay') != 'true':
@@ -130,26 +134,52 @@ class Journeys:
         from playwright.sync_api import expect
         if self.person == person:
             return self.get('/me')
+        previous = self.person
+        start = len(self.result['responses'])
+        # Observe before the first action that invalidates the old session.
+        # Epochs also distinguish logout/login of the same named person.
         if self.page.get_by_role('heading', name='Elige quién eres', exact=True).count() == 0:
             self.page.get_by_role('button', name=re.compile('Cambiar de persona')).click()
         code = self.page.get_by_label('Código de acceso')
         if code.count():
             code.fill(self.env['BFF_ACCESS_CODE'])
-        previous = self.person
-        # Attribute requests started by the new UI identity to the chosen session.
+        self.session_epoch += 1
         self.person = person
         self.page.get_by_role('button', name=re.compile(person)).last.click()
         self.page.wait_for_load_state('networkidle')
         expect(self.page.get_by_role('heading', name='Elige quién eres', exact=True)).to_have_count(0)
         expect(self.page.locator('.persona-switcher__text')).to_contain_text(person)
-        start = len(self.result['responses'])
         self.page.wait_for_timeout(2000)
-        late = [row for row in self.result['responses'][start:] if row['requested_as'] != person]
-        self.result.setdefault('session_switches', []).append({'from': previous, 'to': person, 'wait_ms': 2000, 'late_responses': len(late)})
+        late = self.late_responses(start)
+        self.result.setdefault('session_switches', []).append({'from': previous, 'to': person, 'wait_ms': 2000, 'late_responses': len(late),
+                                                            'response_start': start, 'response_end': len(self.result['responses']),
+                                                            'epoch': self.session_epoch})
         check(not late, f'Late responses from previous session: {late}')
         me = self.get('/me')
         check(me['principal']['display_name'] == person and me['principal']['type'] == 'human', f'Wrong /me: {me}')
         return me
+
+    def late_responses(self, start):
+        return [row for row in self.result['responses'][start:]
+                if row['requested_epoch'] != self.session_epoch]
+
+    def logout(self):
+        from playwright.sync_api import expect
+        start = len(self.result['responses'])
+        self.session_epoch += 1
+        self.person = None
+        self.page.evaluate("async () => { await fetch('/api/session', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({persona:null})}); }")
+        check(self.api('/me')['status'] == 401, 'Logout must return 401')
+        self.go('/agenda')
+        expect(self.page.get_by_role('heading', name='Elige quién eres', exact=True)).to_be_visible()
+        self.page.wait_for_timeout(2000)
+        late = self.late_responses(start)
+        receipt = {'status': 401, 'wait_ms': 2000, 'late_responses': len(late),
+                   'response_start': start, 'response_end': len(self.result['responses']),
+                   'epoch': self.session_epoch}
+        self.result['journeys']['J1']['logout'] = receipt
+        check(not late, f'Late backend responses after logout: {late}')
+        return receipt
 
     def snap(self, journey, step):
         relative = f'shots/{journey}-{step}'
@@ -241,16 +271,7 @@ class Journeys:
         check(me['principal']['display_name'] == 'Lucía Ramos', '403 destroyed session')
         self.result['journeys']['J1'].update(proposal_id=self.inventory['id'], denied=denied, me_after_403=me)
         self.snap('J1', 'rechazo')
-        self.page.evaluate("async () => { await fetch('/api/session', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({persona:null})}); }")
-        self.person = None
-        check(self.api('/me')['status'] == 401, 'Logout must return 401')
-        self.go('/agenda')
-        expect(self.page.get_by_role('heading', name='Elige quién eres', exact=True)).to_be_visible()
-        start = len(self.result['responses'])
-        self.page.wait_for_timeout(2000)
-        late = self.result['responses'][start:]
-        check(not late, f'Late backend responses after logout: {late}')
-        self.result['journeys']['J1']['logout'] = {'status': 401, 'wait_ms': 2000, 'late_responses': len(late)}
+        self.result['journeys']['J1']['logout'] = self.logout()
         self.snap('J1', 'efecto')
         self.choose('Lucía Ramos')
 
@@ -469,8 +490,10 @@ class Journeys:
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--base', required=True)
-    parser.add_argument('--api', default='http://127.0.0.1:8110')
+    parser.add_argument('--base', default=os.environ.get('E2E_BASE_URL',
+                        'http://127.0.0.1:' + os.environ.get('FRONTEND_PORT', '3120')))
+    parser.add_argument('--api', default=os.environ.get('E2E_API_URL',
+                        'http://127.0.0.1:' + os.environ.get('API_PORT', '8120')))
     parser.add_argument('--run-dir', type=Path, required=True)
     parser.add_argument('--journeys', default='J1,J2,J3,J4,J5')
     parser.add_argument('--replay', action='store_true')
