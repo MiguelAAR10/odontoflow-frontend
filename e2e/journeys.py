@@ -400,6 +400,30 @@ class Journeys:
         self.snap('J5', 'efecto')
         self.result['journeys']['J5'].update(handoff=claimed, conversation_id=handoff['conversation_id'], activity=activity)
 
+    def J6(self):
+        me = self.choose('Carlos Vega')
+        check('audit.read' in me['permissions'], 'Carlos requires audit.read for Productividad')
+        self.result['journeys']['J6']['persona'] = me['principal']['display_name']
+        routes = []
+        for path in ('/caja', '/productividad', '/configuracion', '/home', '/chat'):
+            row = {'path': path, 'result': 'FAIL'}
+            start = len(self.result['responses'])
+            error_start = len(self.page_errors)
+            try:
+                self.go(path)
+                main = self.page.locator('main').inner_text()
+                check('No tienes permisos' not in main, f'Carlos denied {path}')
+                errors = [r for r in self.result['responses'][start:] if r['status'] >= 400]
+                check(not errors, f'Backend errors on {path}: {errors}')
+                check(not self.page_errors[error_start:], f'Browser errors on {path}: {self.page_errors[error_start:]}')
+                row['result'] = 'PASS'
+            except Exception as error:
+                row['error'] = self.redact(error)
+            self.snap('J6', path.strip('/'))
+            routes.append(row)
+        self.result['journeys']['J6']['routes'] = routes
+        check(all(row['result'] == 'PASS' for row in routes), f'J6 route failures: {routes}')
+
     def replay(self):
         before = self.snapshot()
         results = []
@@ -429,7 +453,7 @@ class Journeys:
     def run(self):
         from playwright.sync_api import sync_playwright
         selected = self.args.journeys.split(',')
-        check(all(x in ('J1', 'J2', 'J3', 'J4', 'J5') for x in selected), 'Unknown journey')
+        check(all(x in ('J1', 'J2', 'J3', 'J4', 'J5', 'J6') for x in selected), 'Unknown journey')
         if 'J3' in selected and 'J1' not in selected:
             selected.append('J1')
         selected = sorted(set(selected))
@@ -495,7 +519,7 @@ def main():
     parser.add_argument('--api', default=os.environ.get('E2E_API_URL',
                         'http://127.0.0.1:' + os.environ.get('API_PORT', '8120')))
     parser.add_argument('--run-dir', type=Path, required=True)
-    parser.add_argument('--journeys', default='J1,J2,J3,J4,J5')
+    parser.add_argument('--journeys', default='J1,J2,J3,J4,J5,J6')
     parser.add_argument('--replay', action='store_true')
     args = parser.parse_args()
     runner = None
