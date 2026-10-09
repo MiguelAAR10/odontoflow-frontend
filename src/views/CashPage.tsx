@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
   ArrowUpRight,
   CalendarClock,
@@ -90,6 +90,15 @@ function renderPaymentHistory(payments: Payment[], timeZone?: string) {
   </ul>;
 }
 
+type MutationIntent = { signature: string; key: string };
+
+function intentKey(ref: { current: MutationIntent | null }, signature: string): string {
+  if (ref.current?.signature !== signature) {
+    ref.current = { signature, key: newIdempotencyKey() };
+  }
+  return ref.current.key;
+}
+
 export function CashPage() {
   const [tab, setTab] = useState<CashTab>("charges");
   const [charges, setCharges] = useState<Charge[]>([]);
@@ -112,6 +121,10 @@ export function CashPage() {
   const [followUpAction, setFollowUpAction] = useState<FollowUpAction | null>(null);
   const [selectedFollowUp, setSelectedFollowUp] = useState<ChargeFollowUp | null>(null);
   const [busy, setBusy] = useState(false);
+  const submitting = useRef(false);
+  const paymentIntent = useRef<MutationIntent | null>(null);
+  const followUpIntent = useRef<MutationIntent | null>(null);
+  const verificationIntent = useRef<MutationIntent | null>(null);
   const [success, setSuccess] = useState("");
   const [payError, setPayError] = useState("");
   const [verifyTarget, setVerifyTarget] = useState<Payment | null>(null);
@@ -173,6 +186,7 @@ export function CashPage() {
   }, [charges, method, query]);
 
   const openCharge = (charge: Charge, nextMode: PaymentMode = "full") => {
+    paymentIntent.current = null;
     setSelected(charge);
     setPaymentMode(nextMode);
     setAmount(nextMode === "full" ? String(charge.outstanding) : "");
@@ -186,18 +200,19 @@ export function CashPage() {
 
   const submitPayment = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!selected || paymentMode === "later") return;
-    const paymentAmount = Number(amount);
+    if (submitting.current || !selected || paymentMode === "later") return;
+    const payload = {
+      amount: Number(amount),
+      method: paymentMethod,
+      ...(reference.trim() ? { reference: reference.trim() } : {}),
+      ...(receiver.trim() ? { receiver: receiver.trim() } : {}),
+      ...(reconciliationNote.trim() ? { reconciliation_note: reconciliationNote.trim() } : {}),
+    };
+    submitting.current = true;
     setBusy(true);
     setPayError("");
     try {
-      await registerPayment(selected.id, {
-        amount: paymentAmount,
-        method: paymentMethod,
-        ...(reference.trim() ? { reference: reference.trim() } : {}),
-        ...(receiver.trim() ? { receiver: receiver.trim() } : {}),
-        ...(reconciliationNote.trim() ? { reconciliation_note: reconciliationNote.trim() } : {}),
-      }, newIdempotencyKey());
+      await registerPayment(selected.id, payload, intentKey(paymentIntent, JSON.stringify([selected.id, payload])));
       setSuccess("Pago registrado. La confirmación bancaria sigue pendiente cuando corresponda.");
       const [nextCharges, nextReconciliation] = await Promise.all([loadCharges(), loadReconciliationPayments()]);
       setCharges(nextCharges);
@@ -205,15 +220,19 @@ export function CashPage() {
       const next = nextCharges.find((charge) => charge.id === selected.id);
       if (next) setSelected(next);
       setAmount(next && paymentMode === "full" ? String(next.outstanding) : "");
+      // Retain the receipt if refreshing fails after the mutation succeeded.
+      paymentIntent.current = null;
     } catch (caught) {
       setPayError(toApiError(caught).message);
     } finally {
+      submitting.current = false;
       setBusy(false);
     }
   };
 
   const openFollowUpModal = (charge: Charge, action: FollowUpAction = "open", existing?: ChargeFollowUp) => {
     setSelected(charge);
+    followUpIntent.current = null;
     setSelectedFollowUp(existing ?? null);
     setFollowUpAction(action);
     setFollowUpDate(existing?.nextFollowUpOn ?? clinicToday(charge.locationTimeZone));
@@ -223,23 +242,31 @@ export function CashPage() {
 
   const submitFollowUp = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!selected || !followUpAction) return;
+    if (submitting.current || !selected || !followUpAction) return;
+    if (followUpAction !== "open" && !selectedFollowUp) return;
+    const payload = {
+      ...(followUpAction !== "close" ? { next_follow_up_on: followUpDate } : {}),
+      ...(followUpNote.trim() ? { note: followUpNote.trim() } : {}),
+    };
+    submitting.current = true;
     setBusy(true);
     setPayError("");
     try {
+      const key = intentKey(followUpIntent, JSON.stringify([selected.id, followUpAction, selectedFollowUp?.id, payload]));
       if (followUpAction === "open") {
         await openFollowUpRecord(selected.id, {
           next_follow_up_on: followUpDate,
           ...(followUpNote.trim() ? { note: followUpNote.trim() } : {}),
-        }, newIdempotencyKey());
+        }, key);
       } else if (followUpAction === "reschedule" && selectedFollowUp) {
         await rescheduleFollowUpRecord(selectedFollowUp.id, {
           next_follow_up_on: followUpDate,
           ...(followUpNote.trim() ? { note: followUpNote.trim() } : {}),
-        }, newIdempotencyKey());
+        }, key);
       } else if (followUpAction === "close" && selectedFollowUp) {
-        await closeFollowUpRecord(selectedFollowUp.id, { ...(followUpNote.trim() ? { note: followUpNote.trim() } : {}) }, newIdempotencyKey());
+        await closeFollowUpRecord(selectedFollowUp.id, { ...(followUpNote.trim() ? { note: followUpNote.trim() } : {}) }, key);
       }
+      followUpIntent.current = null;
       setFollowUpAction(null);
       setSelectedFollowUp(null);
       const [nextCharges, nextFollowUps] = await Promise.all([loadCharges(), loadFollowUps({ active: true })]);
@@ -249,24 +276,29 @@ export function CashPage() {
     } catch (caught) {
       setPayError(toApiError(caught).message);
     } finally {
+      submitting.current = false;
       setBusy(false);
     }
   };
 
   const submitVerification = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!verifyTarget?.reference) return;
+    if (submitting.current || !verifyTarget?.reference) return;
+    const payload = { ...(verifyNote.trim() ? { reconciliation_note: verifyNote.trim() } : {}) };
+    submitting.current = true;
     setBusy(true);
     setError("");
     try {
-      const saved = await verifyPaymentRecord(verifyTarget.id, { ...(verifyNote.trim() ? { reconciliation_note: verifyNote.trim() } : {}) }, newIdempotencyKey());
+      const saved = await verifyPaymentRecord(verifyTarget.id, payload, intentKey(verificationIntent, JSON.stringify([verifyTarget.id, payload])));
       setReconciliation((current) => current.filter((payment) => payment.id !== saved.id));
+      verificationIntent.current = null;
       setVerifyTarget(null);
       setVerifyNote("");
       setSuccess("Pago marcado como verificado.");
     } catch (caught) {
       setError(toApiError(caught).message);
     } finally {
+      submitting.current = false;
       setBusy(false);
     }
   };
@@ -312,7 +344,7 @@ export function CashPage() {
     { key: "date", header: "Registrado", render: (payment) => formatInstant(payment.paidAt) },
     { key: "amount", header: "Monto", render: (payment) => money(payment.amount) },
     { key: "state", header: "Estado", render: () => <Badge tone="amber">Sin verificar</Badge> },
-    { key: "actions", header: "", render: (payment) => payment.reference ? <Button compact variant="primary" icon={ShieldCheck} onClick={() => { setVerifyTarget(payment); setVerifyNote(""); }}>Verificar</Button> : <span className="text-muted">Histórico · no verificable</span> },
+    { key: "actions", header: "", render: (payment) => payment.reference ? <Button compact variant="primary" icon={ShieldCheck} onClick={() => { verificationIntent.current = null; setVerifyTarget(payment); setVerifyNote(""); }}>Verificar</Button> : <span className="text-muted">Histórico · no verificable</span> },
   ];
 
   const heading = tab === "charges" ? ["Cobros", "Cargos por servicios y pagos registrados"] : tab === "uncharged" ? ["Por facturar", "Atenciones ejecutadas sin cargo asociado"] : tab === "collections" ? ["Cobranza", "Seguimientos activos ordenados por el servidor"] : ["Conciliación", "Pagos digitales pendientes de verificación"];
