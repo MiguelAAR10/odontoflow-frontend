@@ -26,6 +26,7 @@ import {
   type HandoffStatus,
   type MeRead,
   type MessagePage,
+  type MessageQuery,
   type Replayable,
   type StaffMessageRead,
 } from "./contracts/client";
@@ -256,13 +257,15 @@ export async function loadConversations(filters: ConversationFilters, now: Date 
   return { items: page.items.map((row) => toUiConversation(row, now)), nextCursor: page.next_cursor };
 }
 
-/** One page of a thread, oldest first; `nextCursor` leads to newer messages. */
-export async function loadThread(conversationId: number, options: { cursor?: string | null; limit?: number } = {}, now: Date = new Date()): Promise<ChatThreadPage> {
+/** Always displayed oldest first; by default `nextCursor` leads to older messages. */
+export async function loadThread(conversationId: number, options: MessageQuery = {}, now: Date = new Date()): Promise<ChatThreadPage> {
   const limit = options.limit ?? MESSAGE_PAGE_SIZE;
+  const order = options.order ?? "desc";
   const page = USE_MOCKS
-    ? mockListMessages(conversationId, options.cursor ?? null, limit)
-    : await listConversationMessages(conversationId, { ...(options.cursor ? { cursor: options.cursor } : {}), limit });
-  return { messages: page.items.map((message) => toUiMessage(message, now)), nextCursor: page.next_cursor };
+    ? mockListMessages(conversationId, options.cursor ?? null, limit, order)
+    : await listConversationMessages(conversationId, { ...(options.cursor ? { cursor: options.cursor } : {}), limit, order });
+  const chronological = order === "desc" ? [...page.items].reverse() : page.items;
+  return { messages: chronological.map((message) => toUiMessage(message, now)), nextCursor: page.next_cursor };
 }
 
 export async function loadHandoffs(filters: { status?: HandoffStatus; cursor?: string | null; limit?: number }, now: Date = new Date()): Promise<HandoffQueuePage> {
@@ -369,11 +372,11 @@ function mockListConversations(status: ConversationStatus | null, cursor: string
   return keysetPage(rows, (row) => [row.last_message_at, row.id], cursor, limit, true);
 }
 
-function mockListMessages(conversationId: number, cursor: string | null, limit: number): MessagePage {
+function mockListMessages(conversationId: number, cursor: string | null, limit: number, order: MessageQuery["order"]): MessagePage {
   requireMockHuman("conversations.read");
   const rows = mockConversationMessages[conversationId];
   if (!rows) throw new ApiError(404, "NOT_FOUND", "Conversation not found.");
-  return keysetPage(rows, (row) => [row.occurred_at, row.id], cursor, limit, false);
+  return keysetPage(rows, (row) => [row.occurred_at, row.id], cursor, limit, order === "desc");
 }
 
 function mockListHandoffs(status: HandoffStatus, cursor: string | null, limit: number): HandoffPage {

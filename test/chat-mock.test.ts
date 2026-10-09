@@ -54,11 +54,11 @@ describe("Chat mock mode", () => {
     expect(urgent.messages.every((item) => item.text !== null || item.unavailableLabel)).toBe(true);
   });
 
-  it("pages a thread forward and answers 404 for an unknown conversation", async () => {
+  it("pages a thread backward and answers 404 for an unknown conversation", async () => {
     const first = await api.loadThread(17, { limit: 4 });
     expect(first.messages).toHaveLength(4);
     const rest = await api.loadThread(17, { cursor: first.nextCursor, limit: 4 });
-    expect(rest.messages[0]!.occurredAt >= first.messages[3]!.occurredAt).toBe(true);
+    expect(rest.messages[rest.messages.length - 1]!.occurredAt <= first.messages[0]!.occurredAt).toBe(true);
     expect(new Set([...first.messages, ...rest.messages].map((item) => item.id)).size).toBe(mocks.mockConversationMessages[17]!.length);
     await expect(failure(api.loadThread(999))).resolves.toMatchObject({ httpStatus: 404, code: "NOT_FOUND" });
   });

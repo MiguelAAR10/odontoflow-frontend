@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Archive, Bot, Clock3, EyeOff, Hand, Lock, MessageCircle, RotateCcw, Search, UserRoundCheck } from "lucide-react";
 import {
   beginClaim,
@@ -26,10 +26,6 @@ import { createLatestRequest } from "../session";
 
 type ConversationStatus = NonNullable<(typeof CONVERSATION_FILTERS)[number]["status"]>;
 type PanelView = "conversaciones" | "derivaciones";
-
-/** A thread opens with up to this many pages (oldest first) so the newest
- * messages are on screen; longer threads offer "Ver mensajes más recientes". */
-const THREAD_PAGES_ON_OPEN = 4;
 
 interface ListState<T> {
   items: T[];
@@ -271,43 +267,49 @@ function ThreadPanel({ conversation, canClaim, claim, onClaim, onReload }: { con
   const stickToEnd = useRef(true);
   const messagePages = useRef(createLatestRequest());
 
-  const fetchPages = useCallback(async (cursor: string | null, pages: number) => {
-    const collected: ChatThreadMessage[] = [];
-    let next = cursor;
-    for (let index = 0; index < pages; index += 1) {
-      const page = await loadThread(conversation.id, { cursor: next });
-      collected.push(...page.messages);
-      next = page.nextCursor;
-      if (!next) break;
-    }
-    return { collected, next };
-  }, [conversation.id]);
+  const prependScroll = useRef<{ height: number; top: number } | null>(null);
+
+  const fetchPage = useCallback((cursor: string | null) =>
+    loadThread(conversation.id, { cursor, order: "desc" }), [conversation.id]);
 
   useEffect(() => {
     let active = true;
     messagePages.current.invalidate();
     stickToEnd.current = true;
-    fetchPages(null, THREAD_PAGES_ON_OPEN)
-      .then(({ collected, next }) => { if (active) { setMessages(collected); setNextCursor(next); setLoading(false); } })
+    prependScroll.current = null;
+    setLoading(true);
+    setError(null);
+    fetchPage(null)
+      .then((page) => { if (active) { setMessages(page.messages); setNextCursor(page.nextCursor); setLoading(false); } })
       .catch((caught) => { if (active) { setError(describeChatError(caught, "mensajes")); setLoading(false); } });
     return () => { active = false; messagePages.current.invalidate(); };
-  }, [fetchPages, conversation.lastMessageAt]);
+  }, [fetchPage, conversation.lastMessageAt]);
 
-  useEffect(() => {
-    if (!stickToEnd.current || !historyRef.current) return;
-    historyRef.current.scrollTop = historyRef.current.scrollHeight;
+  useLayoutEffect(() => {
+    const history = historyRef.current;
+    if (!history) return;
+    const previous = prependScroll.current;
+    if (previous) {
+      history.scrollTop = previous.top + history.scrollHeight - previous.height;
+      prependScroll.current = null;
+    } else if (stickToEnd.current) {
+      history.scrollTop = history.scrollHeight;
+    }
   }, [messages]);
 
-  const loadNewer = async () => {
+  const loadOlder = async () => {
     if (!nextCursor || loading) return;
     const isCurrent = messagePages.current.begin();
     setLoading(true);
+    setError(null);
     stickToEnd.current = false;
     try {
-      const { collected, next } = await fetchPages(nextCursor, 1);
+      const page = await fetchPage(nextCursor);
       if (!isCurrent()) return;
-      setMessages((current) => [...current, ...collected.filter((item) => !current.some((row) => row.id === item.id))]);
-      setNextCursor(next);
+      const history = historyRef.current;
+      if (history) prependScroll.current = { height: history.scrollHeight, top: history.scrollTop };
+      setMessages((current) => [...page.messages.filter((item) => !current.some((row) => row.id === item.id)), ...current]);
+      setNextCursor(page.nextCursor);
     } catch (caught) {
       if (isCurrent()) setError(describeChatError(caught, "mensajes"));
     } finally {
@@ -332,6 +334,7 @@ function ThreadPanel({ conversation, canClaim, claim, onClaim, onReload }: { con
       {claim?.error && <div className="chat-list-error" role="alert"><p>{claim.error.message}</p>{claim.error.reload && <Button compact icon={RotateCcw} onClick={onReload}>Volver a cargar</Button>}</div>}
       {error && <div className="chat-list-error" role="alert"><p>{error.message}</p>{error.reload && <Button compact icon={RotateCcw} onClick={onReload}>Volver a cargar</Button>}</div>}
       {!error && !loading && messages.length === 0 && <p className="chat-filter-empty">Esta conversación todavía no tiene mensajes.</p>}
+      {nextCursor && <button type="button" className="chat-load-more" disabled={loading} onClick={() => void loadOlder()}>Ver anteriores</button>}
       {messages.map((message, index) => <Fragment key={message.id}>
         {(index === 0 || messages[index - 1]!.dayLabel !== message.dayLabel) && <p className="message-day"><span>{message.dayLabel}</span></p>}
         <div className={`message-bubble message-bubble--${message.from === "patient" ? "patient" : "agent"}${message.unavailable ? " message-bubble--unavailable" : ""}`}>
@@ -340,8 +343,7 @@ function ThreadPanel({ conversation, canClaim, claim, onClaim, onReload }: { con
           {message.from === "clinic" && <small className={message.deliveryFailed ? "message-bubble__delivery--failed" : undefined}>Clínica{message.deliveryLabel ? ` · ${message.deliveryLabel}` : ""}</small>}
         </div>
       </Fragment>)}
-      {loading && <p className="chat-filter-empty" role="status">Cargando mensajes…</p>}
-      {!loading && nextCursor && <button type="button" className="chat-load-more" onClick={() => void loadNewer()}>Ver mensajes más recientes</button>}
+      {loading && messages.length === 0 && <p className="chat-filter-empty" role="status">Cargando mensajes…</p>}
     </div>
     <p className="chat-readonly-note" role="note"><Lock size={16} aria-hidden="true" />Solo lectura: desde aquí aún no se puede responder ni devolver la conversación al agente.</p>
   </section>;
