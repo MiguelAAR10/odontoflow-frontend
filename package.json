@@ -11,6 +11,7 @@
     "build": "next build --webpack && tsc -p tsconfig.backend.json",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.backend.json --noEmit",
     "test": "vitest run",
+    "e2e:journeys": "python3 e2e/journeys.py",
     "test:visual": "node scripts/visual-check.mjs",
     "start": "next start -p 5173 -H 127.0.0.1",
     "start:legacy": "node dist/src/server.js",
