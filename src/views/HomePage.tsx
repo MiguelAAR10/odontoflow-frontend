@@ -16,6 +16,7 @@ import {
 } from "../home/registry";
 import { nowMinutes, splitWorklist } from "../home/schedule";
 import type { HomePatient } from "../home/types";
+import { PendingDecisions } from "../home/PendingDecisions";
 
 /** Width at which the persistent AIRI rail still leaves the worklist legible.
  *  Below it the same rail content is served by the contextual drawer. */
@@ -649,7 +650,7 @@ function AiriRail({
         <div className="home-composer">
           <label htmlFor={composerId}>Entrada de AIRI (no disponible)</label>
           <input id={composerId} disabled aria-describedby={`${composerId}-ayuda`} />
-          <p id={`${composerId}-ayuda`}>Disponible cuando AIRI pueda ejecutar solicitudes.</p>
+          <p id={`${composerId}-ayuda`}>Las solicitudes a AIRI llegan en una versión futura; por ahora puedes buscar pacientes y revisar decisiones.</p>
         </div>
       </div>
     </div>
@@ -834,6 +835,8 @@ export function HomePage() {
             onLocate={locatePatient}
             onRetry={() => void refreshWorklist()}
           />
+
+          <PendingDecisions />
 
           <nav className="home-links" aria-label="Accesos de recepción">
             <Link className="home-link" href="/agenda">
