@@ -11701,6 +11701,8 @@ export interface operations {
             query?: {
                 limit?: number;
                 cursor?: string | null;
+                /** @description Chronological order. Desc returns newest first; its cursor fetches older messages. */
+                order?: "asc" | "desc";
             };
             header?: {
                 "X-Request-Id"?: string;
