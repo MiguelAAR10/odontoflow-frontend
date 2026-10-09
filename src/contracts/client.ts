@@ -651,7 +651,7 @@ export async function getProductivity(query: ProductivityQuery): Promise<Product
 // --- staff chat and handoff queue (human-only) ----------------------------------
 
 type ConversationQuery = NonNullable<paths["/conversations"]["get"]["parameters"]["query"]>;
-type MessageQuery = NonNullable<paths["/conversations/{conversation_id}/messages"]["get"]["parameters"]["query"]>;
+export type MessageQuery = NonNullable<paths["/conversations/{conversation_id}/messages"]["get"]["parameters"]["query"]>;
 type HandoffQuery = NonNullable<paths["/handoffs"]["get"]["parameters"]["query"]>;
 
 /** Inbox by recency (`conversations.read`), keyset-paged by `cursor`. */
@@ -665,11 +665,12 @@ export async function listStaffConversations(query: ConversationQuery = {}): Pro
   return response.data;
 }
 
-/** One thread, oldest to newest; `text` is null when redacted or expired. */
+/** One thread in the requested order; `text` is null when redacted or expired. */
 export async function listConversationMessages(conversationId: number, query: MessageQuery = {}): Promise<MessagePage> {
   const params: MessageQuery = {};
   if (query.limit != null) params.limit = query.limit;
   if (query.cursor) params.cursor = query.cursor;
+  if (query.order) params.order = query.order;
   const response = await http.get<MessagePage>(`/conversations/${conversationId}/messages`, { params });
   return response.data;
 }

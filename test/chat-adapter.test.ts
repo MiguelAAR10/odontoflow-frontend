@@ -132,12 +132,25 @@ describe("Chat real-mode adapter (mocked axios)", () => {
   });
 
   describe("a thread", () => {
-    it("pages oldest to newest without re-sorting", async () => {
-      mockGet.mockResolvedValue({ data: { items: [message({ id: 1 }), message({ id: 2, direction: "outbound", delivery_status: "delivered" })], next_cursor: "c2" } });
+    it("keeps the cursor while displaying descending pages oldest to newest", async () => {
+      mockGet.mockResolvedValue({ data: { items: [message({ id: 2, direction: "outbound", delivery_status: "delivered" }), message({ id: 1 })], next_cursor: "c2" } });
       const page = await api.loadThread(9, { cursor: "c1" }, NOW);
-      expect(mockGet).toHaveBeenCalledWith("/conversations/9/messages", { params: { cursor: "c1", limit: 50 } });
+      expect(mockGet).toHaveBeenCalledWith("/conversations/9/messages", { params: { cursor: "c1", limit: 50, order: "desc" } });
       expect(page.messages.map((item) => item.id)).toEqual([1, 2]);
       expect(page.nextCursor).toBe("c2");
+    });
+
+    it("requests the latest page by default and displays it chronologically", async () => {
+      mockGet.mockResolvedValue({ data: { items: [
+        message({ id: 3, occurred_at: "2026-10-02T16:30:00Z" }),
+        message({ id: 2, occurred_at: "2026-10-02T16:00:00Z" }),
+        message({ id: 1, occurred_at: "2026-10-02T16:00:00Z" }),
+      ], next_cursor: "older" } });
+      const page = await api.loadThread(9);
+      expect(mockGet).toHaveBeenCalledWith("/conversations/9/messages", { params: { limit: 50, order: "desc" } });
+      expect(page.messages.map((item) => item.id)).toEqual([1, 2, 3]);
+      expect(page.messages.map((item) => item.occurredAt)).toEqual([...page.messages.map((item) => item.occurredAt)].sort());
+      expect(page.nextCursor).toBe("older");
     });
 
     it("tells who wrote it and how delivery went", () => {
