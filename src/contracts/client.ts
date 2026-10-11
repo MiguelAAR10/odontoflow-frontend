@@ -23,6 +23,7 @@ export type {
   AdminAuditEventRead,
   AdminAvailabilityRuleRead,
   AdminCapabilityRead,
+  AdminEntityType,
   AdminToggleRead,
   PractitionerProfileRead,
   PractitionerRosterRead,

@@ -48,6 +48,7 @@
     "test/activity-adapter.test.ts",
     "test/activity-mock.test.ts",
     "test/chat-adapter.test.ts",
-    "test/chat-mock.test.ts"
+    "test/chat-mock.test.ts",
+    "test/practitioners-adapter.test.ts"
   ]
 }

@@ -62,6 +62,7 @@
     "test/bff-guard.test.ts",
     "test/activity-adapter.test.ts",
     "test/activity-mock.test.ts",
+    "test/practitioners-adapter.test.ts",
     "vitest.config.ts",
     "next.config.ts",
     ".next/dev/types/**/*.ts"
