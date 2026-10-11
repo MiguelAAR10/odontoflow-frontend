@@ -162,6 +162,61 @@ describe("D · route allowlist", () => {
     expect(fetchMock.mock.calls[0]![0]).toBe("http://backend.test/agent/proposals/3/approve");
   });
 
+  it.each([
+    ["POST", "practitioners"],
+    ["POST", "capabilities"],
+    ["POST", "availability-rules"],
+    ["GET", "admin/practitioners"],
+    ["GET", "admin/practitioners/3/history"],
+    ["POST", "admin/practitioners/3/profile"],
+    ["POST", "admin/practitioners/3/deactivate"],
+    ["POST", "admin/practitioners/3/reactivate"],
+    ["POST", "admin/capabilities/11/deactivate"],
+    ["POST", "admin/capabilities/11/reactivate"],
+    ["POST", "admin/availability-rules/21/deactivate"],
+    ["POST", "admin/availability-rules/21/reactivate"],
+    ["POST", "admin/locations/2/deactivate"],
+    ["POST", "admin/locations/2/reactivate"],
+    ["POST", "admin/services/4/deactivate"],
+    ["POST", "admin/services/4/reactivate"],
+  ])("allows the ADMIN-01 route %s /%s", (method, path) => {
+    expect(isRouteAllowed(method, segments(path))).toBe(true);
+  });
+
+  it.each([
+    ["GET", "admin"],
+    ["GET", "admin/practitioners/3"],
+    ["POST", "admin/practitioners"],
+    ["DELETE", "admin/practitioners/3"],
+    ["PATCH", "admin/services/4/deactivate"],
+    ["GET", "admin/practitioners/3/deactivate"],
+    ["POST", "admin/practitioners/3/history"],
+    ["POST", "admin/practitioners/3/deactivate/extra"],
+    ["POST", "admin/locations/2"],
+    ["GET", "admin/locations"],
+    ["GET", "admin/audit"],
+    ["POST", "admin/agents/1/deactivate"],
+    ["GET", "capabilities"],
+    ["GET", "availability-rules"],
+  ])("keeps %s /%s outside the allowlist", (method, path) => {
+    expect(isRouteAllowed(method, segments(path))).toBe(false);
+  });
+
+  it("forwards an admin deactivation with its idempotency key and the persona's bearer", async () => {
+    const fetchMock = upstream();
+    const path = "admin/practitioners/3/deactivate";
+    const response = await handleBackendRequest(
+      request(path, { method: "POST", cookie: personaCookie("administrador"), headers: { "idempotency-key": "k-admin-1" } }),
+      segments(path),
+      options(fetchMock),
+    );
+    expect(response.status).toBe(200);
+    expect(fetchMock.mock.calls[0]![0]).toBe("http://backend.test/admin/practitioners/3/deactivate");
+    const headers = new Headers(fetchMock.mock.calls[0]![1]!.headers);
+    expect(headers.get("idempotency-key")).toBe("k-admin-1");
+    expect(headers.get("authorization")).toBe("Bearer ofk_carlos");
+  });
+
   it("covers every backend call the browser client makes", () => {
     const sources = ["src/contracts/client.ts", "src/api.ts"].map((file) => readFileSync(join(process.cwd(), file), "utf8")).join("\n");
     const calls = [...sources.matchAll(/\b(?:http|api)\.(get|post|put|patch|delete)\s*(?:<[^()]*?>)?\(\s*(["'`])(.*?)\2/gs)].map((match) => ({

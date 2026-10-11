@@ -8,7 +8,25 @@
 
 import axios, { AxiosError } from "axios";
 import type { components, paths } from "./api";
+import type {
+  AdminAuditEventRead,
+  AdminToggleRead,
+  PractitionerProfileRead,
+  PractitionerProfileUpdate,
+  PractitionerRosterRead,
+} from "./admin";
 import { BACKEND_URL } from "../env";
+
+// TODO(B7): reemplazar por tipos generados de openapi (`components["schemas"][...]`)
+// y borrar `./admin`. Hasta entonces el contrato `/admin` está escrito a mano.
+export type {
+  AdminAuditEventRead,
+  AdminAvailabilityRuleRead,
+  AdminCapabilityRead,
+  AdminToggleRead,
+  PractitionerProfileRead,
+  PractitionerRosterRead,
+} from "./admin";
 
 export type AppointmentListItem = components["schemas"]["AppointmentListItem"];
 export type AppointmentRead = components["schemas"]["AppointmentRead"];
@@ -200,6 +218,76 @@ export async function createService(
     headers: { "Idempotency-Key": idempotencyKey },
   });
   return response.data;
+}
+
+// --- ADMIN-01 reversible administration ------------------------------------
+
+export type CapabilityRead = components["schemas"]["CapabilityRead"];
+export type AvailabilityRuleRead = components["schemas"]["AvailabilityRuleRead"];
+export type AdminEntity = "practitioners" | "capabilities" | "availability-rules" | "locations" | "services";
+
+const keyed = (idempotencyKey: string) => ({ headers: { "Idempotency-Key": idempotencyKey } });
+
+export async function listPractitionerRoster(): Promise<PractitionerRosterRead[]> {
+  const response = await http.get<PractitionerRosterRead[]>("/admin/practitioners");
+  return response.data;
+}
+
+export async function listPractitionerHistory(practitionerId: number): Promise<AdminAuditEventRead[]> {
+  const response = await http.get<AdminAuditEventRead[]>(`/admin/practitioners/${practitionerId}/history`);
+  return response.data;
+}
+
+export async function renamePractitioner(practitionerId: number, displayName: string, idempotencyKey: string): Promise<PractitionerProfileRead> {
+  const body: PractitionerProfileUpdate = { display_name: displayName };
+  const response = await http.post<PractitionerProfileRead>(`/admin/practitioners/${practitionerId}/profile`, body, keyed(idempotencyKey));
+  return response.data;
+}
+
+export async function createPractitioner(input: components["schemas"]["PractitionerCreate"], idempotencyKey: string): Promise<PractitionerRead> {
+  const response = await http.post<PractitionerRead>("/practitioners", input, keyed(idempotencyKey));
+  return response.data;
+}
+
+export async function createCapability(input: components["schemas"]["CapabilityCreate"], idempotencyKey: string): Promise<CapabilityRead> {
+  const response = await http.post<CapabilityRead>("/capabilities", input, keyed(idempotencyKey));
+  return response.data;
+}
+
+export async function createAvailabilityRule(input: components["schemas"]["AvailabilityRuleCreate"], idempotencyKey: string): Promise<AvailabilityRuleRead> {
+  const response = await http.post<AvailabilityRuleRead>("/availability-rules", input, keyed(idempotencyKey));
+  return response.data;
+}
+
+type Toggle = (id: number, reason: string | undefined, idempotencyKey: string) => Promise<{ data: AdminToggleRead }>;
+
+/** Literal paths on purpose: `test/bff-guard.test.ts` matches every call against the allowlist. */
+const ADMIN_TOGGLES: Record<AdminEntity, { deactivate: Toggle; reactivate: Toggle }> = {
+  practitioners: {
+    deactivate: (id, reason, key) => http.post<AdminToggleRead>(`/admin/practitioners/${id}/deactivate`, { reason }, keyed(key)),
+    reactivate: (id, _reason, key) => http.post<AdminToggleRead>(`/admin/practitioners/${id}/reactivate`, undefined, keyed(key)),
+  },
+  capabilities: {
+    deactivate: (id, reason, key) => http.post<AdminToggleRead>(`/admin/capabilities/${id}/deactivate`, { reason }, keyed(key)),
+    reactivate: (id, _reason, key) => http.post<AdminToggleRead>(`/admin/capabilities/${id}/reactivate`, undefined, keyed(key)),
+  },
+  "availability-rules": {
+    deactivate: (id, reason, key) => http.post<AdminToggleRead>(`/admin/availability-rules/${id}/deactivate`, { reason }, keyed(key)),
+    reactivate: (id, _reason, key) => http.post<AdminToggleRead>(`/admin/availability-rules/${id}/reactivate`, undefined, keyed(key)),
+  },
+  locations: {
+    deactivate: (id, reason, key) => http.post<AdminToggleRead>(`/admin/locations/${id}/deactivate`, { reason }, keyed(key)),
+    reactivate: (id, _reason, key) => http.post<AdminToggleRead>(`/admin/locations/${id}/reactivate`, undefined, keyed(key)),
+  },
+  services: {
+    deactivate: (id, reason, key) => http.post<AdminToggleRead>(`/admin/services/${id}/deactivate`, { reason }, keyed(key)),
+    reactivate: (id, _reason, key) => http.post<AdminToggleRead>(`/admin/services/${id}/reactivate`, undefined, keyed(key)),
+  },
+};
+
+export async function setAdminActive(entity: AdminEntity, id: number, active: boolean, idempotencyKey: string, reason?: string): Promise<AdminToggleRead> {
+  const toggle = ADMIN_TOGGLES[entity][active ? "reactivate" : "deactivate"];
+  return (await toggle(id, reason, idempotencyKey)).data;
 }
 
 export async function listEligiblePractitioners(

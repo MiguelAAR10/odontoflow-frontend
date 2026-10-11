@@ -165,6 +165,24 @@ export const BROWSER_ROUTES: readonly BrowserRoute[] = [
   { method: "GET", path: "conversations/:id/messages" },
   { method: "GET", path: "handoffs" },
   { method: "POST", path: "handoffs/:id/claim" },
+  // ADMIN-01: reversible administration. Altas keep their existing routes;
+  // every deactivate/reactivate lives under /admin and is a POST.
+  { method: "POST", path: "practitioners" },
+  { method: "POST", path: "capabilities" },
+  { method: "POST", path: "availability-rules" },
+  { method: "GET", path: "admin/practitioners" },
+  { method: "GET", path: "admin/practitioners/:id/history" },
+  { method: "POST", path: "admin/practitioners/:id/profile" },
+  { method: "POST", path: "admin/practitioners/:id/deactivate" },
+  { method: "POST", path: "admin/practitioners/:id/reactivate" },
+  { method: "POST", path: "admin/capabilities/:id/deactivate" },
+  { method: "POST", path: "admin/capabilities/:id/reactivate" },
+  { method: "POST", path: "admin/availability-rules/:id/deactivate" },
+  { method: "POST", path: "admin/availability-rules/:id/reactivate" },
+  { method: "POST", path: "admin/locations/:id/deactivate" },
+  { method: "POST", path: "admin/locations/:id/reactivate" },
+  { method: "POST", path: "admin/services/:id/deactivate" },
+  { method: "POST", path: "admin/services/:id/reactivate" },
 ];
 
 const ID_SEGMENT = /^[A-Za-z0-9_-]{1,64}$/;
