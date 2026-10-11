@@ -2,7 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createElement, type ReactNode } from "react";
 import { act, create, type ReactTestInstance, type ReactTestRenderer } from "react-test-renderer";
 
-const { mockGet, mockPost } = vi.hoisted(() => ({ mockGet: vi.fn(), mockPost: vi.fn() }));
+const { mockGet, mockPost, persona } = vi.hoisted(() => ({
+  mockGet: vi.fn(), mockPost: vi.fn(),
+  persona: { current: { identity: null as unknown, loading: false } },
+}));
 vi.mock("axios", () => ({
   default: {
     create: () => ({ get: mockGet, post: mockPost }),
@@ -10,6 +13,8 @@ vi.mock("axios", () => ({
   },
 }));
 vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams() }));
+// The panel decides what it offers from the backend's `/me` permissions (via the persona context), never from a role name.
+vi.mock("../src/components/PersonaContext", () => ({ usePersona: () => persona.current }));
 // The test renderer has no DOM (`document`, `self`): the dialog focus trap and
 // next/link's viewport prefetch both need one, so each is replaced by its plain equivalent.
 vi.mock("../src/components/useFocusTrap", () => ({ useFocusTrap: () => {} }));
@@ -17,6 +22,12 @@ vi.mock("next/link", async () => {
   const { createElement } = await import("react");
   return { default: ({ href, children, ...rest }: { href: string; children?: ReactNode }) => createElement("a", { href, ...rest }, children) };
 });
+
+const ADMIN_GRANTS = ["practitioners.read", "practitioners.manage", "capabilities.manage", "availability.manage", "locations.manage", "services.manage", "audit.read"];
+const asIdentity = (roles: string[], permissions: string[]) => {
+  persona.current = { identity: { principalType: "human", displayName: "Persona", organizationName: "ODONTO SMART", roles, permissions }, loading: false };
+};
+const asAdministrador = () => asIdentity(["Administrador"], ADMIN_GRANTS);
 
 const roster = [
   { id: 1, display_name: "Dra. Andrea Salazar", platform_active: true, membership_active: true, deactivated_at: null, future_confirmed_appointments: 2, capabilities: [], availability_rules: [] },
@@ -32,6 +43,7 @@ describe("PractitionersPanel", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.stubEnv("NEXT_PUBLIC_USE_MOCKS", "false");
+    asAdministrador();
     mockGet.mockReset();
     mockPost.mockReset();
     mockGet.mockImplementation(async (url: string) => {
@@ -106,6 +118,7 @@ describe("PractitionersPanel · management", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.stubEnv("NEXT_PUBLIC_USE_MOCKS", "false");
+    asAdministrador();
     mockGet.mockReset();
     mockPost.mockReset();
     doctors = [
@@ -225,13 +238,55 @@ describe("PractitionersPanel · management", () => {
   });
 
   it("says 'Sin acceso' when the backend refuses the profile (403)", async () => {
-    mockPost.mockRejectedValueOnce(axiosFailure(403, "FORBIDDEN", "Missing permission practitioners.manage"));
+    mockPost.mockRejectedValueOnce(axiosFailure(403, "PERMISSION_DENIED", "The principal is not authorized to perform this action."));
     await mount();
     await manage("Dra. Andrea Salazar");
     await deactivateDoctor("Fin de contrato");
     const alert = root().find((node) => node.props.role === "alert");
     expect(text(alert)).toContain("Sin acceso");
+    expect(text(alert)).toContain("Tu sesión sigue activa");
     expect(text(alert)).not.toContain("citas futuras");
+    // The roster stays on screen: a 403 refuses one action, it does not end the visit.
+    expect(text(root())).toContain("Dr. Renato Paredes");
+  });
+
+  it("offers nothing to change to a profile without *.manage, even if it is called Administrador", async () => {
+    asIdentity(["Administrador"], ["practitioners.read"]);
+    await mount();
+    expect(root().findAll((node) => node.type === "form" && node.props["aria-label"] === "Nuevo doctor")).toHaveLength(0);
+    expect(text(root())).toContain("Tu perfil puede consultar los doctores, pero no administrarlos.");
+    await manage("Dra. Andrea Salazar");
+    expect(buttons("Desactivar")).toHaveLength(0);
+    expect(buttons("Reactivar")).toHaveLength(0);
+    expect(buttons("Guardar nombre")).toHaveLength(0);
+    expect(buttons("Añadir servicio")).toHaveLength(0);
+    expect(buttons("Añadir horario")).toHaveLength(0);
+    expect(buttons("Ver historial")).toHaveLength(0);
+    expect(text(root())).toContain("Dra. Andrea Salazar");
+    expect(text(root())).toContain("Limpieza dental");
+    expect(mockPost).not.toHaveBeenCalled();
+  });
+
+  it("offers every change to a profile that holds the grants, whatever its role is called", async () => {
+    asIdentity(["Secretaria"], ADMIN_GRANTS);
+    await mount();
+    expect(form("Nuevo doctor")).toBeDefined();
+    await manage("Dra. Andrea Salazar");
+    expect(buttons("Desactivar").length).toBeGreaterThan(0);
+    expect(buttons("Ver historial")).toHaveLength(1);
+  });
+
+  it("offers each section only with its own grant: services with capabilities.manage, nothing else", async () => {
+    asIdentity(["Recepción"], ["practitioners.read", "capabilities.manage"]);
+    await mount();
+    await manage("Dra. Andrea Salazar");
+    expect(root().findAll((node) => node.type === "button" && node.props["aria-label"] === `Desactivar Limpieza dental en ${lince}`)).toHaveLength(1);
+    expect(buttons("Añadir servicio")).toHaveLength(1);
+    expect(root().findAll((node) => node.type === "button" && String(node.props["aria-label"]).startsWith("Desactivar horario"))).toHaveLength(0);
+    expect(buttons("Añadir horario")).toHaveLength(0);
+    expect(buttons("Guardar nombre")).toHaveLength(0);
+    expect(root().findAll((node) => node.type === "section" && node.props["aria-labelledby"] === "doctor-state")
+      .flatMap((section) => section.findAll((node) => node.type === "button"))).toHaveLength(0);
   });
 
   it("links the conflict to the Agenda, lists the appointments and never understates the full count", async () => {
@@ -422,7 +477,7 @@ describe("PractitionersPanel · management", () => {
       if (url === "/admin/practitioners") return { data: doctors };
       if (url === "/services") return { data: catalogServices };
       if (url === "/locations") return { data: catalogSites };
-      throw axiosFailure(403, "FORBIDDEN", "Missing permission audit.read");
+      throw axiosFailure(403, "PERMISSION_DENIED", "The principal is not authorized to perform this action.");
     });
     await mount();
     await manage("Dra. Andrea Salazar");
@@ -431,7 +486,7 @@ describe("PractitionersPanel · management", () => {
   });
 
   it("shows 'Sin acceso' instead of the table when the roster itself is refused", async () => {
-    mockGet.mockImplementation(async () => { throw axiosFailure(403, "FORBIDDEN", "Missing permission practitioners.read"); });
+    mockGet.mockImplementation(async () => { throw axiosFailure(403, "PERMISSION_DENIED", "The principal is not authorized to perform this action."); });
     await mount();
     expect(text(root().find((node) => node.props.role === "alert"))).toContain("Sin acceso");
     expect(root().findAll((node) => node.type === "table")).toHaveLength(0);
@@ -448,6 +503,7 @@ describe("SettingsPage · administration", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.stubEnv("NEXT_PUBLIC_USE_MOCKS", "false");
+    asAdministrador();
     mockGet.mockReset();
     mockPost.mockReset();
     locations = [
@@ -525,8 +581,26 @@ describe("SettingsPage · administration", () => {
     expect(mockPost).toHaveBeenCalledWith("/admin/services/1/deactivate", { reason: "Ya no se ofrece" }, { headers: { "Idempotency-Key": expect.any(String) } });
   });
 
+  it("shows no Acciones nor Nueva sede / Nuevo servicio to a profile without locations.manage / services.manage", async () => {
+    asIdentity(["Administrador"], ["practitioners.read", "locations.read", "services.read"]);
+    await mount();
+    expect(root().findAll((node) => node.type === "th").map(text).filter((header) => header === "Acciones")).toHaveLength(1);
+    expect(root().findAll((node) => node.type === "form" && ["Nueva sede", "Nuevo servicio"].includes(node.props["aria-label"]))).toHaveLength(0);
+    expect(text(root())).toContain(lince);
+    expect(text(root())).toContain("Limpieza dental");
+  });
+
+  it("gives Sedes and Servicios their actions independently, by grant", async () => {
+    asIdentity(["Administrador"], ["practitioners.read", "services.manage"]);
+    await mount();
+    expect(root().findAll((node) => node.type === "button" && node.props["aria-label"] === `Desactivar sede ${lince}`)).toHaveLength(0);
+    expect(buttonLabelled("Desactivar servicio Limpieza dental")).toBeDefined();
+    expect(root().findAll((node) => node.type === "form" && node.props["aria-label"] === "Nuevo servicio")).toHaveLength(1);
+    expect(root().findAll((node) => node.type === "form" && node.props["aria-label"] === "Nueva sede")).toHaveLength(0);
+  });
+
   it("says 'Sin acceso' when the profile cannot administer sites", async () => {
-    mockPost.mockRejectedValueOnce(axiosFailure(403, "FORBIDDEN", "Missing permission locations.manage"));
+    mockPost.mockRejectedValueOnce(axiosFailure(403, "PERMISSION_DENIED", "The principal is not authorized to perform this action."));
     await mount();
     await click(buttonLabelled(`Desactivar sede ${lince}`));
     await confirm("Desactivar sede", "Remodelación");

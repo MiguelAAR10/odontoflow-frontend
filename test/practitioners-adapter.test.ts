@@ -17,12 +17,16 @@ const byName = (roster: Roster, name: string) => roster.find((row) => row.displa
 /** An active doctor nothing depends on: the one a demo can switch off. */
 const freeDoctor = (roster: Roster) => roster.find((row) => row.membership_active && row.future_confirmed_appointments === 0)!;
 
+/** Demo mode answers as the chosen persona would be answered by the backend: by its `/me` permissions. */
+const asPersona = async (key: "secretaria" | "administrador") => (await import("../src/session")).choosePersona(key);
+
 describe("practitioners adapter (mocks)", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.resetModules();
     vi.stubEnv("NEXT_PUBLIC_USE_MOCKS", "true");
     mockGet.mockReset();
     mockPost.mockReset();
+    await asPersona("administrador");
   });
   afterEach(() => vi.unstubAllEnvs());
 
@@ -102,7 +106,7 @@ describe("practitioners adapter (mocks)", () => {
 
   it("toggles a capability and a schedule rule on their own, without touching the doctor", async () => {
     const adapter = await load();
-    const andrea = byName(await adapter.loadRoster(), "Andrea Salazar");
+    const andrea = byName(await adapter.loadRoster(), "Carlos Mendoza");
     const capability = andrea.capabilities.find((item) => item.is_active)!;
     const rule = andrea.availability_rules.find((item) => item.is_active)!;
 
@@ -111,14 +115,14 @@ describe("practitioners adapter (mocks)", () => {
     const ruleOff = await adapter.toggleAdminEntity("availability-rules", rule.id, false, "k-11", "Cambia de horario");
     expect(ruleOff).toMatchObject({ entity_type: "availability_rule", id: rule.id, practitioner_id: andrea.id, is_active: false });
 
-    let after = byName(await adapter.loadRoster(), "Andrea Salazar");
+    let after = byName(await adapter.loadRoster(), "Carlos Mendoza");
     expect(after.capabilities.find((item) => item.id === capability.id)).toMatchObject({ is_active: false });
     expect(after.availability_rules.find((item) => item.id === rule.id)).toMatchObject({ is_active: false });
     expect(after.membership_active).toBe(true);
 
     await adapter.toggleAdminEntity("capabilities", capability.id, true, "k-12");
     await adapter.toggleAdminEntity("availability-rules", rule.id, true, "k-13");
-    after = byName(await adapter.loadRoster(), "Andrea Salazar");
+    after = byName(await adapter.loadRoster(), "Carlos Mendoza");
     expect(after.capabilities.find((item) => item.id === capability.id)).toMatchObject({ is_active: true, deactivated_at: null });
     expect(after.availability_rules.find((item) => item.id === rule.id)).toMatchObject({ is_active: true, deactivated_at: null });
   });
@@ -126,8 +130,9 @@ describe("practitioners adapter (mocks)", () => {
   it("switches locations and services off and on in the settings catalogs", async () => {
     const adapter = await load();
     const settings = await import("../src/settings");
-    const [location] = await settings.loadSettingsLocations();
-    const [service] = await settings.loadSettingsServices();
+    // Nothing is booked in Magdalena nor for Ortodoncia: the backend lets them go.
+    const location = (await settings.loadSettingsLocations()).find((row) => row.name === "Magdalena");
+    const service = (await settings.loadSettingsServices()).find((row) => row.name === "Ortodoncia");
 
     const locationOff = await adapter.toggleAdminEntity("locations", location!.id, false, "k-14", "Remodelación");
     expect(locationOff).toMatchObject({ entity_type: "location", id: location!.id, practitioner_id: null, is_active: false });
@@ -197,6 +202,90 @@ describe("practitioners adapter (mocks)", () => {
     const untouched = await adapter.loadHistory(busy.id);
     await adapter.toggleAdminEntity("practitioners", busy.id, false, "k-28", "Motivo").catch(() => undefined);
     expect(await adapter.loadHistory(busy.id)).toHaveLength(untouched.length);
+  });
+
+  it("guards what the backend guards: a doctor, a capability, a site or a service with future confirmed appointments (409 + ids), never a schedule", async () => {
+    const adapter = await load();
+    const settings = await import("../src/settings");
+    const andrea = byName(await adapter.loadRoster(), "Andrea Salazar");
+    const booked = andrea.capabilities.find((item) => item.service_name === "Limpieza dental" && item.location_name === "Lince")!;
+    const lince = (await settings.loadSettingsLocations()).find((row) => row.name === "Lince")!;
+    const cleaning = (await settings.loadSettingsServices()).find((row) => row.name === "Limpieza dental")!;
+    for (const [entity, id] of [["practitioners", andrea.id], ["capabilities", booked.id], ["locations", lince.id], ["services", cleaning.id]] as const) {
+      const failure = await adapter.toggleAdminEntity(entity, id, false, `guard-${entity}`, "Motivo claro").catch((caught: unknown) => caught);
+      expect(failure).toMatchObject({ httpStatus: 409, code: "APPOINTMENT_CONFLICT", details: { reason: "future_appointments" } });
+      expect((failure as { details: { appointment_ids: number[] } }).details.appointment_ids.length).toBeGreaterThan(0);
+    }
+    const rule = andrea.availability_rules.find((item) => item.is_active)!;
+    await expect(adapter.toggleAdminEntity("availability-rules", rule.id, false, "guard-rule", "Cambia de horario")).resolves.toMatchObject({ is_active: false });
+  });
+
+  it("lists in the 409 exactly the appointments the roster counts for that doctor", async () => {
+    const adapter = await load();
+    const andrea = byName(await adapter.loadRoster(), "Andrea Salazar");
+    const failure = await adapter.toggleAdminEntity("practitioners", andrea.id, false, "count", "Motivo claro").catch((caught: unknown) => caught);
+    expect((failure as { details: { appointment_ids: number[] } }).details.appointment_ids).toHaveLength(andrea.future_confirmed_appointments);
+  });
+
+  it("answers a profile without *.manage like the backend: roster readable, every change and the history 403 PERMISSION_DENIED, nothing changes", async () => {
+    await asPersona("secretaria");
+    const adapter = await load();
+    const roster = await adapter.loadRoster();
+    const free = freeDoctor(roster);
+    const denied = { httpStatus: 403, code: "PERMISSION_DENIED" };
+    await expect(adapter.toggleAdminEntity("practitioners", free.id, false, "s-1", "Fin de contrato")).rejects.toMatchObject(denied);
+    await expect(adapter.toggleAdminEntity("capabilities", free.capabilities[0]!.id, false, "s-2", "Pausa temporal")).rejects.toMatchObject(denied);
+    await expect(adapter.toggleAdminEntity("availability-rules", free.availability_rules[0]!.id, false, "s-3", "Pausa temporal")).rejects.toMatchObject(denied);
+    await expect(adapter.toggleAdminEntity("locations", 3, false, "s-4", "Remodelación")).rejects.toMatchObject(denied);
+    await expect(adapter.toggleAdminEntity("services", 3, false, "s-5", "Ya no se ofrece")).rejects.toMatchObject(denied);
+    await expect(adapter.renameRosterPractitioner(free.id, "Otro nombre", "s-6")).rejects.toMatchObject(denied);
+    await expect(adapter.addPractitioner({ display_name: "Dr. Nuevo", is_active: true }, "s-7")).rejects.toMatchObject(denied);
+    await expect(adapter.addCapability({ practitioner_id: free.id, service_id: 5, location_id: 3, is_active: true }, "s-8")).rejects.toMatchObject(denied);
+    await expect(adapter.addAvailabilityRule({ practitioner_id: free.id, location_id: 1, day_of_week: 6, start_local: "09:00:00", end_local: "12:00:00" }, "s-9")).rejects.toMatchObject(denied);
+    await expect(adapter.loadHistory(free.id)).rejects.toMatchObject(denied);
+    expect(await adapter.loadRoster()).toEqual(roster);
+  });
+
+  it("gives the demo administrador the *.manage grants of the backend profile (B8), and the secretaria none", async () => {
+    const { mockStaff } = await import("../src/mockData");
+    const grants = ["practitioners.manage", "capabilities.read", "capabilities.manage", "availability.manage", "locations.manage", "services.manage"];
+    const permissionsOf = (key: string) => mockStaff.find((staff) => staff.key === key)!.me.permissions;
+    expect(permissionsOf("administrador")).toEqual(expect.arrayContaining(grants));
+    expect(permissionsOf("secretaria").filter((code) => grants.includes(code))).toEqual([]);
+  });
+
+  it("scopes an idempotency key to one command like PF4: the same key on another command is a new change", async () => {
+    const adapter = await load();
+    const free = freeDoctor(await adapter.loadRoster());
+    await adapter.toggleAdminEntity("practitioners", free.id, false, "shared-key", "Fin de contrato");
+    await expect(adapter.toggleAdminEntity("practitioners", free.id, true, "shared-key")).resolves.toMatchObject({ is_active: true });
+  });
+
+  it("refuses a key another person already used for the same command (IDEMPOTENCY_KEY_REUSED), even with the same data", async () => {
+    const adapter = await load();
+    const free = freeDoctor(await adapter.loadRoster());
+    await adapter.toggleAdminEntity("practitioners", free.id, false, "k-person", "Fin de contrato");
+    const session = await import("../src/session");
+    const { mockStaff } = await import("../src/mockData");
+    mockStaff.find((staff) => staff.key === "secretaria")!.me.permissions.push("practitioners.manage");
+    await session.choosePersona("secretaria");
+    await expect(adapter.toggleAdminEntity("practitioners", free.id, false, "k-person", "Fin de contrato"))
+      .rejects.toMatchObject({ httpStatus: 409, code: "IDEMPOTENCY_KEY_REUSED" });
+  });
+
+  it("does not pretend the altas are idempotent: the backend ignores the key there, so a retry creates another doctor", async () => {
+    const adapter = await load();
+    const a = await adapter.addPractitioner({ display_name: "Dra. Repetida", is_active: true }, "same");
+    const b = await adapter.addPractitioner({ display_name: "Dra. Repetida", is_active: true }, "same");
+    expect(b.id).not.toBe(a.id);
+  });
+
+  it("adds a capability on a site or service that is switched off, like the backend (it only checks they exist)", async () => {
+    const adapter = await load();
+    const free = freeDoctor(await adapter.loadRoster());
+    await adapter.toggleAdminEntity("services", 3, false, "svc-off", "Ya no se ofrece");
+    await expect(adapter.addCapability({ practitioner_id: free.id, service_id: 3, location_id: 3, is_active: true }, "cap-on-off"))
+      .resolves.toMatchObject({ service_id: 3, location_id: 3 });
   });
 
   it("never touches the network in mock mode", async () => {

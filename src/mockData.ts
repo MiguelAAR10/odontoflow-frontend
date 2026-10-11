@@ -322,7 +322,11 @@ const SECRETARIA_PERMISSIONS = [
   "payments.read", "practitioners.read", "proposals.decide", "proposals.read", "services.read", "visits.create", "visits.read",
   "waitlist.manage", "waitlist.read",
 ];
-const ADMINISTRADOR_PERMISSIONS = [...SECRETARIA_PERMISSIONS, "audit.read", "movements.create", "movements.read", "payments.reverse", "products.create", "products.read", "reorder_points.manage"].sort();
+const ADMINISTRADOR_PERMISSIONS = [
+  ...SECRETARIA_PERMISSIONS, "audit.read", "movements.create", "movements.read", "payments.reverse", "products.create", "products.read", "reorder_points.manage",
+  // ADMIN-01 (B8): reversible administration of doctors, their services and hours, sites and the catalog. Human-only.
+  "practitioners.manage", "capabilities.read", "capabilities.manage", "availability.manage", "locations.manage", "services.manage",
+].sort();
 
 export const mockStaff: Array<{ key: string; role: string; me: MeRead }> = [
   {
@@ -620,11 +624,25 @@ function rosterRule(id: number, locationId: number, day: number, start: string, 
   };
 }
 
+/** Upcoming confirmed appointments the backend's guard (`app/administration/guards.py`) would find:
+ * they block switching off their doctor, that doctor's service at that site, the site and the service.
+ * Lince, Jesús María, Limpieza, Evaluación and Endodoncia are booked; Magdalena, Ortodoncia and
+ * Control are free, so a demo can switch them off. Schedules are never guarded. */
+export const mockFutureAppointments: Array<{ id: number; practitioner_id: number; service_id: number; location_id: number }> = [
+  { id: 101, practitioner_id: 1, service_id: 1, location_id: 1 },
+  { id: 102, practitioner_id: 1, service_id: 2, location_id: 1 },
+  { id: 103, practitioner_id: 1, service_id: 1, location_id: 2 },
+  { id: 301, practitioner_id: 3, service_id: 5, location_id: 2 },
+  { id: 302, practitioner_id: 3, service_id: 2, location_id: 2 },
+];
+
+const futureAppointmentsOf = (practitionerId: number) => mockFutureAppointments.filter((row) => row.practitioner_id === practitionerId).length;
+
 export const mockRoster: PractitionerRosterRead[] = [
   {
     // Multi-site: her own Lince days plus the Saturdays she now covers in Jesús María. Has bookings, so she cannot be switched off.
     id: 1, display_name: "Dra. Andrea Salazar", platform_active: true, membership_active: true, deactivated_at: null,
-    future_confirmed_appointments: 3,
+    future_confirmed_appointments: futureAppointmentsOf(1),
     capabilities: [rosterCapability(11, 1, 1), rosterCapability(12, 2, 1), rosterCapability(13, 1, 2), rosterCapability(14, 2, 2)],
     availability_rules: [rosterRule(21, 1, 0, "09:00", "13:00"), rosterRule(22, 1, 2, "09:00", "13:00"), rosterRule(23, 1, 4, "09:00", "13:00"), rosterRule(24, 2, 5, "09:00", "17:00")],
   },
@@ -638,14 +656,14 @@ export const mockRoster: PractitionerRosterRead[] = [
   {
     // No longer works Saturdays: that rule is switched off, her weekdays are not.
     id: 3, display_name: "Dra. Valeria Ruiz", platform_active: true, membership_active: true, deactivated_at: null,
-    future_confirmed_appointments: 2,
+    future_confirmed_appointments: futureAppointmentsOf(3),
     capabilities: [rosterCapability(51, 5, 2), rosterCapability(52, 2, 2)],
     availability_rules: [rosterRule(61, 2, 0, "09:00", "14:00"), rosterRule(62, 2, 1, "09:00", "14:00"), rosterRule(63, 2, 3, "09:00", "14:00"), rosterRule(64, 2, 5, "09:00", "17:00", "2026-10-03T16:00:00Z")],
   },
   {
     // One capability paused (equipment in maintenance); the others keep publishing slots.
     id: 4, display_name: "Dr. Sebastián Torres", platform_active: true, membership_active: true, deactivated_at: null,
-    future_confirmed_appointments: 1,
+    future_confirmed_appointments: futureAppointmentsOf(4),
     capabilities: [rosterCapability(71, 2, 3), rosterCapability(72, 4, 3), rosterCapability(73, 5, 3, "2026-10-05T14:30:00Z")],
     availability_rules: [rosterRule(81, 3, 1, "14:00", "20:00"), rosterRule(82, 3, 3, "14:00", "20:00"), rosterRule(83, 3, 4, "14:00", "20:00")],
   },

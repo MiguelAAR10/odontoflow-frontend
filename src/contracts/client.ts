@@ -8,27 +8,18 @@
 
 import axios, { AxiosError } from "axios";
 import type { components, paths } from "./api";
-import type {
-  AdminAuditEventRead,
-  AdminToggleRead,
-  PractitionerProfileRead,
-  PractitionerProfileUpdate,
-  PractitionerRosterRead,
-} from "./admin";
 import { BACKEND_URL } from "../env";
 
-// TODO(B7): reemplazar por tipos generados de openapi
-// Apuntar estos tipos a `components["schemas"][...]` y borrar `./admin`: hasta entonces
-// el contrato `/admin` está escrito a mano porque el router del backend (B7) aún no se integra.
-export type {
-  AdminAuditEventRead,
-  AdminAvailabilityRuleRead,
-  AdminCapabilityRead,
-  AdminEntityType,
-  AdminToggleRead,
-  PractitionerProfileRead,
-  PractitionerRosterRead,
-} from "./admin";
+// ADMIN-01 (/admin, backend B7): generated from the backend's OpenAPI like every other contract.
+export type PractitionerRosterRead = components["schemas"]["PractitionerRosterRead"];
+export type AdminCapabilityRead = components["schemas"]["AdminCapabilityRead"];
+export type AdminAvailabilityRuleRead = components["schemas"]["AdminAvailabilityRuleRead"];
+export type AdminAuditEventRead = components["schemas"]["AdminAuditEventRead"];
+export type AdminToggleRead = components["schemas"]["AdminToggleRead"];
+export type AdminEntityType = AdminToggleRead["entity_type"];
+export type PractitionerProfileRead = components["schemas"]["PractitionerProfileRead"];
+type PractitionerProfileUpdate = components["schemas"]["PractitionerProfileUpdate"];
+type DeactivationRequest = components["schemas"]["DeactivationRequest"];
 
 export type AppointmentListItem = components["schemas"]["AppointmentListItem"];
 export type AppointmentRead = components["schemas"]["AppointmentRead"];
@@ -228,7 +219,11 @@ export type CapabilityRead = components["schemas"]["CapabilityRead"];
 export type AvailabilityRuleRead = components["schemas"]["AvailabilityRuleRead"];
 export type AdminEntity = "practitioners" | "capabilities" | "availability-rules" | "locations" | "services";
 
+/** Every /admin mutation runs through PF4: an identical retry with the same key replays the
+ * stored outcome (`Idempotent-Replay: true`), other data with that key is 409 IDEMPOTENCY_KEY_REUSED.
+ * The three altas below keep sending it for the day their routes adopt PF4; today the backend ignores it there. */
 const keyed = (idempotencyKey: string) => ({ headers: { "Idempotency-Key": idempotencyKey } });
+const reasoned = (reason: string | undefined): DeactivationRequest => ({ reason: reason ?? "" });
 
 export async function listPractitionerRoster(): Promise<PractitionerRosterRead[]> {
   const response = await http.get<PractitionerRosterRead[]>("/admin/practitioners");
@@ -266,23 +261,23 @@ type Toggle = (id: number, reason: string | undefined, idempotencyKey: string) =
 /** Literal paths on purpose: `test/bff-guard.test.ts` matches every call against the allowlist. */
 const ADMIN_TOGGLES: Record<AdminEntity, { deactivate: Toggle; reactivate: Toggle }> = {
   practitioners: {
-    deactivate: (id, reason, key) => http.post<AdminToggleRead>(`/admin/practitioners/${id}/deactivate`, { reason }, keyed(key)),
+    deactivate: (id, reason, key) => http.post<AdminToggleRead>(`/admin/practitioners/${id}/deactivate`, reasoned(reason), keyed(key)),
     reactivate: (id, _reason, key) => http.post<AdminToggleRead>(`/admin/practitioners/${id}/reactivate`, undefined, keyed(key)),
   },
   capabilities: {
-    deactivate: (id, reason, key) => http.post<AdminToggleRead>(`/admin/capabilities/${id}/deactivate`, { reason }, keyed(key)),
+    deactivate: (id, reason, key) => http.post<AdminToggleRead>(`/admin/capabilities/${id}/deactivate`, reasoned(reason), keyed(key)),
     reactivate: (id, _reason, key) => http.post<AdminToggleRead>(`/admin/capabilities/${id}/reactivate`, undefined, keyed(key)),
   },
   "availability-rules": {
-    deactivate: (id, reason, key) => http.post<AdminToggleRead>(`/admin/availability-rules/${id}/deactivate`, { reason }, keyed(key)),
+    deactivate: (id, reason, key) => http.post<AdminToggleRead>(`/admin/availability-rules/${id}/deactivate`, reasoned(reason), keyed(key)),
     reactivate: (id, _reason, key) => http.post<AdminToggleRead>(`/admin/availability-rules/${id}/reactivate`, undefined, keyed(key)),
   },
   locations: {
-    deactivate: (id, reason, key) => http.post<AdminToggleRead>(`/admin/locations/${id}/deactivate`, { reason }, keyed(key)),
+    deactivate: (id, reason, key) => http.post<AdminToggleRead>(`/admin/locations/${id}/deactivate`, reasoned(reason), keyed(key)),
     reactivate: (id, _reason, key) => http.post<AdminToggleRead>(`/admin/locations/${id}/reactivate`, undefined, keyed(key)),
   },
   services: {
-    deactivate: (id, reason, key) => http.post<AdminToggleRead>(`/admin/services/${id}/deactivate`, { reason }, keyed(key)),
+    deactivate: (id, reason, key) => http.post<AdminToggleRead>(`/admin/services/${id}/deactivate`, reasoned(reason), keyed(key)),
     reactivate: (id, _reason, key) => http.post<AdminToggleRead>(`/admin/services/${id}/reactivate`, undefined, keyed(key)),
   },
 };

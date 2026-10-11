@@ -17,6 +17,8 @@ import {
   addAvailabilityRule, addCapability, addPractitioner, loadHistory, loadRoster, renameRosterPractitioner, toggleAdminEntity,
   type AdminEntity,
 } from "../practitioners";
+import { usePersona } from "../components/PersonaContext";
+import { adminGrants, type AdminGrants } from "../session";
 import { loadSettingsLocations, loadSettingsServices } from "../settings";
 import { SettingsError } from "./SettingsError";
 
@@ -234,12 +236,14 @@ function actorLabel(event: AdminAuditEventRead): string {
 
 interface DoctorDetailProps {
   doctor: PractitionerRosterRead;
+  /** What this profile may change, from its `/me` grants. */
+  grants: AdminGrants;
   mutation: Mutation;
   refresh: () => Promise<void>;
   onDeactivate: (target: DeactivateTarget) => void;
 }
 
-function DoctorDetail({ doctor, mutation, refresh, onDeactivate }: DoctorDetailProps) {
+function DoctorDetail({ doctor, grants, mutation, refresh, onDeactivate }: DoctorDetailProps) {
   const [name, setName] = useState(doctor.display_name);
   const [services, setServices] = useState<ServiceRead[]>([]);
   const [sites, setSites] = useState<LocationRead[]>([]);
@@ -254,7 +258,9 @@ function DoctorDetail({ doctor, mutation, refresh, onDeactivate }: DoctorDetailP
   const active = doctor.membership_active;
   const busy = mutation.busy;
 
+  const canAdd = grants.capabilities || grants.schedules;
   useEffect(() => {
+    if (!canAdd) return;
     let cancelled = false;
     Promise.all([loadSettingsServices(), loadSettingsLocations()]).then(([serviceRows, siteRows]) => {
       if (cancelled) return;
@@ -265,7 +271,7 @@ function DoctorDetail({ doctor, mutation, refresh, onDeactivate }: DoctorDetailP
       if (!cancelled) setCatalog("failed");
     });
     return () => { cancelled = true; };
-  }, []);
+  }, [canAdd]);
 
   // The history is read on demand and kept fresh: every change reloads the roster, and with it this list.
   useEffect(() => {
@@ -344,7 +350,7 @@ function DoctorDetail({ doctor, mutation, refresh, onDeactivate }: DoctorDetailP
   return <div>
     <section style={sectionStyle} aria-labelledby="doctor-data">
       <h3 id="doctor-data" style={{ margin: 0 }}>Datos</h3>
-      <form className="form-grid" aria-label="Datos del doctor" aria-busy={busy} onSubmit={submitRename}>
+      {!grants.doctors ? <p style={{ margin: 0 }}><strong>{doctor.display_name}</strong></p> : <form className="form-grid" aria-label="Datos del doctor" aria-busy={busy} onSubmit={submitRename}>
         {renameError && <div className="field--wide"><SettingsError error={renameError} /></div>}
         <label className="field field--wide">
           <span>Nombre</span>
@@ -353,7 +359,7 @@ function DoctorDetail({ doctor, mutation, refresh, onDeactivate }: DoctorDetailP
         <div className="form-actions field--wide">
           <Button type="submit" variant="primary" disabled={busy || !name.trim() || name.trim() === doctor.display_name}>Guardar nombre</Button>
         </div>
-      </form>
+      </form>}
     </section>
 
     <section style={sectionStyle} aria-labelledby="doctor-state">
@@ -372,33 +378,33 @@ function DoctorDetail({ doctor, mutation, refresh, onDeactivate }: DoctorDetailP
       {active && doctor.future_confirmed_appointments > 0 && <p className="field-note">
         Hoy tiene {doctor.future_confirmed_appointments} {doctor.future_confirmed_appointments === 1 ? "cita futura confirmada" : "citas futuras confirmadas"}: para desactivarlo, reprográmalas o cancélalas antes en la Agenda.
       </p>}
-      <div className="form-actions">
+      {grants.doctors && <div className="form-actions">
         {active
           ? <Button variant="danger" icon={Power} disabled={busy} onClick={() => onDeactivate({
             entity: "practitioners", id: doctor.id, title: "Desactivar doctor", subject: doctor.display_name, futureAppointments: doctor.future_confirmed_appointments,
           })}>Desactivar</Button>
           : <Button variant="primary" icon={RotateCcw} disabled={busy} onClick={() => void reactivate("practitioners", doctor.id, "state")}>Reactivar</Button>}
-      </div>
+      </div>}
     </section>
 
     <section style={sectionStyle} aria-labelledby="doctor-services">
       <h3 id="doctor-services" style={{ margin: 0 }}>Servicios que atiende</h3>
       {capabilitiesError && <SettingsError error={capabilitiesError} />}
-      <RowsTable label="Servicios que atiende" headers={["Servicio", "Sede", "Estado", "Acciones"]} empty="Aún no atiende ningún servicio. Añade el primero.">
+      <RowsTable label="Servicios que atiende" headers={grants.capabilities ? ["Servicio", "Sede", "Estado", "Acciones"] : ["Servicio", "Sede", "Estado"]} empty={grants.capabilities ? "Aún no atiende ningún servicio. Añade el primero." : "Aún no atiende ningún servicio."}>
         {doctor.capabilities.map((row) => <tr key={row.id}>
           <td><strong>{row.service_name}</strong></td>
           <td>{row.location_name}</td>
           <td><StateBadge active={row.is_active} since={row.deactivated_at} /></td>
-          <td>
+          {grants.capabilities && <td>
             {row.is_active
               ? <Button compact icon={Power} disabled={busy} aria-label={`Desactivar ${row.service_name} en ${row.location_name}`} onClick={() => onDeactivate({
                 entity: "capabilities", id: row.id, title: "Desactivar servicio del doctor", subject: `${row.service_name} · ${row.location_name} (${doctor.display_name})`,
               })}>Desactivar</Button>
               : <Button compact icon={RotateCcw} disabled={busy} aria-label={`Reactivar ${row.service_name} en ${row.location_name}`} onClick={() => void reactivate("capabilities", row.id, "capabilities")}>Reactivar</Button>}
-          </td>
+          </td>}
         </tr>)}
       </RowsTable>
-      <form className="form-grid" aria-label="Añadir servicio" aria-busy={busy} onSubmit={submitCapability}>
+      {grants.capabilities && <form className="form-grid" aria-label="Añadir servicio" aria-busy={busy} onSubmit={submitCapability}>
         <h4 className="field--wide" style={{ margin: 0 }}>Añadir servicio</h4>
         {addCapabilityError && (existing && Number.isInteger(existingId)
           ? <div className="approvals-notice field--wide" role="alert">
@@ -424,30 +430,30 @@ function DoctorDetail({ doctor, mutation, refresh, onDeactivate }: DoctorDetailP
         {catalog === "failed" && <p className="field-note field--wide" role="status">No se pudo cargar el catálogo de servicios y sedes. Cierra y vuelve a abrir esta ficha para reintentar.</p>}
         {!active && <p className="field-note field--wide">Reactiva al doctor para añadirle servicios.</p>}
         <div className="form-actions field--wide"><Button type="submit" variant="primary" icon={Plus} disabled={addDisabled}>Añadir servicio</Button></div>
-      </form>
+      </form>}
     </section>
 
     <section style={sectionStyle} aria-labelledby="doctor-hours">
       <h3 id="doctor-hours" style={{ margin: 0 }}>Horarios</h3>
-      <p className="field-note">Para cambiar un horario, desactiva el actual y añade el nuevo; el historial guarda ambos.</p>
+      {grants.schedules && <p className="field-note">Para cambiar un horario, desactiva el actual y añade el nuevo; el historial guarda ambos.</p>}
       {rulesError && <SettingsError error={rulesError} />}
-      <RowsTable label="Horarios" headers={["Día", "Horario", "Sede", "Estado", "Acciones"]} empty="Aún no tiene horarios. Añade el primero.">
+      <RowsTable label="Horarios" headers={grants.schedules ? ["Día", "Horario", "Sede", "Estado", "Acciones"] : ["Día", "Horario", "Sede", "Estado"]} empty={grants.schedules ? "Aún no tiene horarios. Añade el primero." : "Aún no tiene horarios."}>
         {doctor.availability_rules.map((row) => <tr key={row.id}>
           <td><strong>{dayName(row.day_of_week)}</strong></td>
           <td>{hhmm(row.start_local)}–{hhmm(row.end_local)}</td>
           <td>{row.location_name}</td>
           <td><StateBadge active={row.is_active} since={row.deactivated_at} /></td>
-          <td>
+          {grants.schedules && <td>
             {row.is_active
               ? <Button compact icon={Power} disabled={busy} aria-label={`Desactivar horario del ${dayName(row.day_of_week)} en ${row.location_name}`} onClick={() => onDeactivate({
                 entity: "availability-rules", id: row.id, title: "Desactivar horario",
                 subject: `${dayName(row.day_of_week)} ${hhmm(row.start_local)}–${hhmm(row.end_local)} · ${row.location_name} (${doctor.display_name})`,
               })}>Desactivar</Button>
               : <Button compact icon={RotateCcw} disabled={busy} aria-label={`Reactivar horario del ${dayName(row.day_of_week)} en ${row.location_name}`} onClick={() => void reactivate("availability-rules", row.id, "rules")}>Reactivar</Button>}
-          </td>
+          </td>}
         </tr>)}
       </RowsTable>
-      <form className="form-grid" aria-label="Añadir horario" aria-busy={busy} onSubmit={submitRule}>
+      {grants.schedules && <form className="form-grid" aria-label="Añadir horario" aria-busy={busy} onSubmit={submitRule}>
         <h4 className="field--wide" style={{ margin: 0 }}>Añadir horario</h4>
         {addRuleError && <div className="field--wide"><SettingsError error={addRuleError} /></div>}
         <label className="field">
@@ -473,10 +479,10 @@ function DoctorDetail({ doctor, mutation, refresh, onDeactivate }: DoctorDetailP
         </label>
         {!active && <p className="field-note field--wide">Reactiva al doctor para añadirle horarios.</p>}
         <div className="form-actions field--wide"><Button type="submit" variant="primary" icon={Plus} disabled={addDisabled}>Añadir horario</Button></div>
-      </form>
+      </form>}
     </section>
 
-    <section style={sectionStyle} aria-labelledby="doctor-history">
+    {grants.history && <section style={sectionStyle} aria-labelledby="doctor-history">
       <h3 id="doctor-history" style={{ margin: 0 }}>Historial</h3>
       <div className="form-actions" style={{ justifyContent: "flex-start" }}>
         <Button icon={History} aria-expanded={historyOpen} onClick={() => setHistoryOpen((open) => !open)}>{historyOpen ? "Ocultar historial" : "Ver historial"}</Button>
@@ -498,7 +504,7 @@ function DoctorDetail({ doctor, mutation, refresh, onDeactivate }: DoctorDetailP
                 </li>;
               })}
             </ol>)}
-    </section>
+    </section>}
   </div>;
 }
 
@@ -513,6 +519,9 @@ export function PractitionersPanel() {
   const [dialog, setDialog] = useState<DeactivateTarget | null>(null);
   const [newName, setNewName] = useState("");
   const mutation = useIntentMutation();
+  const { identity } = usePersona();
+  const grants = adminGrants(identity);
+  const readOnly = !grants.doctors && !grants.capabilities && !grants.schedules;
   const mounted = useRef(true);
   const latestRead = useRef(0);
 
@@ -602,7 +611,8 @@ export function PractitionersPanel() {
           columns={columns} rows={visible} rowKey={(row) => String(row.id)}
           emptyMessage={roster.length ? "No hay doctores activos. Activa «Mostrar inactivos» para ver al resto." : "No hay doctores registrados. Añade el primero."}
         />
-        <form className="form-grid" aria-label="Nuevo doctor" aria-busy={mutation.busy} onSubmit={submitNewDoctor} style={{ padding: "var(--space-5)" }}>
+        {readOnly && <p className="field-note" role="note" style={{ padding: "var(--space-5)", margin: 0 }}>Tu perfil puede consultar los doctores, pero no administrarlos.</p>}
+        {grants.doctors && <form className="form-grid" aria-label="Nuevo doctor" aria-busy={mutation.busy} onSubmit={submitNewDoctor} style={{ padding: "var(--space-5)" }}>
           <h3 className="field--wide" style={{ margin: 0 }}>Nuevo doctor</h3>
           {createError && <div className="field--wide"><SettingsError error={createError} /></div>}
           <label className="field">
@@ -612,12 +622,12 @@ export function PractitionersPanel() {
           <div className="form-actions field--wide">
             <Button type="submit" variant="primary" icon={Plus} disabled={mutation.busy || !newName.trim()}>{mutation.busy ? "Guardando…" : "Crear doctor"}</Button>
           </div>
-        </form>
+        </form>}
       </>}
     </section>
     {/* Escape closes the topmost overlay only: the dialog first, then the drawer. */}
     <Drawer title={selected?.display_name ?? "Doctor"} open={selected !== null} width="wide" onClose={() => { if (!dialog) setSelectedId(null); }}>
-      {selected && <DoctorDetail key={selected.id} doctor={selected} mutation={mutation} refresh={refresh} onDeactivate={openDialog} />}
+      {selected && <DoctorDetail key={selected.id} doctor={selected} grants={grants} mutation={mutation} refresh={refresh} onDeactivate={openDialog} />}
     </Drawer>
     <DeactivateDialog target={dialog} busy={mutation.busy} error={mutation.errorFor("deactivate")} onCancel={cancelDialog} onConfirm={confirmDeactivation} />
   </>;

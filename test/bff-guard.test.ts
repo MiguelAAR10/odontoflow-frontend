@@ -232,6 +232,27 @@ describe("D · route allowlist", () => {
     expect(uncovered).toEqual([]);
   });
 
+  it("allows exactly the /admin operations the generated OpenAPI contract publishes, no more and no less", () => {
+    const generated = readFileSync(join(process.cwd(), "src/contracts/api.ts"), "utf8");
+    const published = [...generated.matchAll(/^ {4}"(\/admin\/[^"]+)": \{\n([\s\S]*?)^ {4}\};/gm)].flatMap((match) =>
+      [...match[2]!.matchAll(/^ {8}(get|post|put|patch|delete): operations\[/gm)].map((op) =>
+        `${op[1]!.toUpperCase()} ${match[1]!.slice(1).replace(/\{[^}]+\}/g, ":id")}`));
+    expect(published).toHaveLength(13);
+    const allowed = BROWSER_ROUTES.filter((route) => route.path.startsWith("admin/")).map((route) => `${route.method} ${route.path}`);
+    expect([...allowed].sort()).toEqual([...published].sort());
+  });
+
+  it("returns the backend's Idempotent-Replay header so the UI can tell a replay from a new change", async () => {
+    const fetchMock = vi.fn(async () => new Response("{}", { status: 200, headers: { "content-type": "application/json", "idempotent-replay": "true" } }));
+    const path = "admin/services/4/reactivate";
+    const response = await handleBackendRequest(
+      request(path, { method: "POST", cookie: personaCookie("administrador"), headers: { "idempotency-key": "k-admin-2" } }),
+      segments(path),
+      options(fetchMock),
+    );
+    expect(response.headers.get("idempotent-replay")).toBe("true");
+  });
+
   it("the allowlist only names GET and POST routes", () => {
     expect(new Set(BROWSER_ROUTES.map((route) => route.method))).toEqual(new Set(["GET", "POST"]));
   });
