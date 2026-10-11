@@ -6,6 +6,14 @@ const FOCUSABLE =
   'a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])';
 
 /**
+ * Open dialogs, oldest first. They can stack (a Modal opened from a Drawer) and
+ * each listens on `document`, so only the topmost one may react to the keyboard:
+ * otherwise their Tab traps fight (focus keeps jumping to the Modal's first
+ * control) and one Escape closes both.
+ */
+const openDialogs: object[] = [];
+
+/**
  * Dialog focus contract shared by Drawer and Modal: while `open`, Escape
  * closes, Tab/Shift+Tab wrap inside `ref`, focus moves into the dialog unless
  * an inner control already holds it (e.g. `autoFocus`), and on close focus
@@ -28,9 +36,12 @@ export function useFocusTrap(ref: RefObject<HTMLElement | null>, open: boolean, 
 
   useEffect(() => {
     if (!open) return;
+    const token = {};
+    openDialogs.push(token);
     const node = ref.current;
     if (node && !node.contains(document.activeElement)) node.focus();
     const onKeyDown = (event: KeyboardEvent) => {
+      if (openDialogs[openDialogs.length - 1] !== token) return;
       if (event.key === "Escape") {
         onCloseRef.current();
         return;
@@ -56,6 +67,7 @@ export function useFocusTrap(ref: RefObject<HTMLElement | null>, open: boolean, 
     document.addEventListener("keydown", onKeyDown);
     return () => {
       document.removeEventListener("keydown", onKeyDown);
+      openDialogs.splice(openDialogs.indexOf(token), 1);
       const restore = restoreRef.current;
       restoreRef.current = null;
       if (restore?.isConnected) restore.focus();

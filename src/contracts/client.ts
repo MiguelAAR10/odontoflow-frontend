@@ -17,8 +17,9 @@ import type {
 } from "./admin";
 import { BACKEND_URL } from "../env";
 
-// TODO(B7): reemplazar por tipos generados de openapi (`components["schemas"][...]`)
-// y borrar `./admin`. Hasta entonces el contrato `/admin` está escrito a mano.
+// TODO(B7): reemplazar por tipos generados de openapi
+// Apuntar estos tipos a `components["schemas"][...]` y borrar `./admin`: hasta entonces
+// el contrato `/admin` está escrito a mano porque el router del backend (B7) aún no se integra.
 export type {
   AdminAuditEventRead,
   AdminAvailabilityRuleRead,

@@ -1,7 +1,6 @@
+// TODO(B7): reemplazar por tipos generados de openapi
 /**
  * ADMIN-01 contract for the `/admin/*` routes (plan §2.6, backend tasks B6–B7).
- *
- * TODO(B7): reemplazar por tipos generados de openapi
  *
  * Temporary, deliberate exception to "contracts are generated, never
  * handwritten": the backend `/admin` router is still being written, so

@@ -63,6 +63,8 @@
     "test/activity-adapter.test.ts",
     "test/activity-mock.test.ts",
     "test/practitioners-adapter.test.ts",
+    "test/practitioners-panel.test.tsx",
+    "test/focus-trap-stack.test.tsx",
     "vitest.config.ts",
     "next.config.ts",
     ".next/dev/types/**/*.ts"

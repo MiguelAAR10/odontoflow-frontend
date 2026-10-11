@@ -14,7 +14,7 @@ const sections = [
 export default function SettingsRoute() {
   return <section className="page settings-page">
     <div className="page-heading"><div><h1>Configuración</h1><p>Administración global de la clínica</p></div></div>
-    <div className="settings-intro"><ShieldCheck size={22} aria-hidden="true" /><div><strong>Espacio del administrador</strong><p>Consulta y registra las sedes y los servicios de la clínica.</p></div></div>
+    <div className="settings-intro"><ShieldCheck size={22} aria-hidden="true" /><div><strong>Espacio del administrador</strong><p>Consulta y administra los doctores, las sedes y los servicios de la clínica.</p></div></div>
     <SettingsPage />
     <div className="settings-grid">{sections.map(({ title, description, icon: Icon }) => <article className="settings-card" key={title}><Icon size={24} aria-hidden="true" /><h2>{title}</h2><p>{description}</p><span>Próximamente</span></article>)}</div>
   </section>;
