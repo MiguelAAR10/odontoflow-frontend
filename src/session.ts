@@ -135,6 +135,35 @@ export function canOpen(identity: StaffIdentity | null, path: string): boolean {
   return !required || hasPermissions(identity, required);
 }
 
+/** ADMIN-01: what Configuración may offer, straight from the backend's grants
+ * (`require_permission` in `app/administration`, the altas and the catalog).
+ * A grant can be scoped to a site, so the backend may still answer 403 for one
+ * row: the UI shows it as "Sin acceso" and keeps the session. */
+export interface AdminGrants {
+  /** Rename, switch off/on and create doctors. */
+  doctors: boolean;
+  /** A doctor's services per site: switch off/on and add. */
+  capabilities: boolean;
+  /** A doctor's weekly schedule: switch off/on and add. */
+  schedules: boolean;
+  locations: boolean;
+  services: boolean;
+  /** The doctor's audit history. */
+  history: boolean;
+}
+
+export function adminGrants(identity: StaffIdentity | null): AdminGrants {
+  const has = (code: string) => hasPermissions(identity, [code]);
+  return {
+    doctors: has("practitioners.manage"),
+    capabilities: has("capabilities.manage"),
+    schedules: has("availability.manage"),
+    locations: has("locations.manage"),
+    services: has("services.manage"),
+    history: has("audit.read"),
+  };
+}
+
 /** "Tomar" a handoff: the claim needs `conversations.resume`, and the backend
  * also requires `conversations.read` right after it. People only. */
 export function canClaimHandoffs(identity: StaffIdentity | null): boolean {

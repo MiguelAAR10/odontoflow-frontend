@@ -1,15 +1,20 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
-import { MapPin, Plus, Stethoscope } from "lucide-react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { MapPin, Plus, Power, RotateCcw, Stethoscope } from "lucide-react";
 import { ApiError, newIdempotencyKey, toApiError, type LocationRead, type ServiceRead } from "../contracts/client";
 import { Badge } from "../components/Badge";
 import { Button } from "../components/Button";
 import { DataTable, type Column } from "../components/DataTable";
+import { usePersona } from "../components/PersonaContext";
+import { toggleAdminEntity } from "../practitioners";
+import { adminGrants } from "../session";
 import {
   createSettingsLocation, createSettingsService, loadSettingsLocations, loadSettingsServices,
   type LocationCreate, type ServiceCreate,
 } from "../settings";
+import { DeactivateDialog, PractitionersPanel, useIntentMutation, type DeactivateTarget } from "./PractitionersPanel";
+import { SettingsError } from "./SettingsError";
 
 function useSettingsCatalog<T extends { id: number }, Input>(
   load: () => Promise<T[]>,
@@ -35,6 +40,16 @@ function useSettingsCatalog<T extends { id: number }, Input>(
     return () => { cancelled = true; };
   }, [load]);
 
+  /** Reads the catalog again, e.g. after a row was switched off or on. */
+  const reload = useCallback(async () => {
+    try {
+      setRows(await load());
+      setLoadError(null);
+    } catch (caught) {
+      setLoadError(toApiError(caught));
+    }
+  }, [load]);
+
   async function save(input: Input, form: HTMLFormElement) {
     if (busyRef.current || loading || loadError) return;
     busyRef.current = true;
@@ -58,14 +73,7 @@ function useSettingsCatalog<T extends { id: number }, Input>(
     }
   }
 
-  return { rows, loading, loadError, mutationError, busy, save };
-}
-
-function SettingsError({ error }: { error: ApiError }) {
-  return <div className="approvals-notice" role="alert">
-    <h3>{error.httpStatus === 403 ? "Sin acceso" : "No se pudo completar la solicitud"}</h3>
-    <p>{error.message}</p>
-  </div>;
+  return { rows, loading, loadError, mutationError, busy, save, reload };
 }
 
 const locationColumns: Column<LocationRead>[] = [
@@ -82,6 +90,45 @@ const serviceColumns: Column<ServiceRead>[] = [
 export function SettingsPage() {
   const locations = useSettingsCatalog<LocationRead, LocationCreate>(loadSettingsLocations, createSettingsLocation);
   const services = useSettingsCatalog<ServiceRead, ServiceCreate>(loadSettingsServices, createSettingsService);
+  const admin = useIntentMutation();
+  const { identity } = usePersona();
+  const grants = adminGrants(identity);
+  const [dialog, setDialog] = useState<DeactivateTarget | null>(null);
+
+  /** "Acciones": Desactivar asks for a reason (and explains a future-appointment 409); Reactivar needs none. */
+  function actionsColumn<T extends { id: number; name: string; is_active: boolean }>(
+    entity: "locations" | "services", noun: string, reload: () => Promise<void>,
+  ): Column<T> {
+    return {
+      key: "actions", header: "Acciones",
+      render: (row) => row.is_active
+        ? <Button compact icon={Power} disabled={admin.busy} aria-label={`Desactivar ${noun} ${row.name}`} onClick={() => {
+          admin.clear();
+          setDialog({ entity, id: row.id, title: `Desactivar ${noun}`, subject: row.name });
+        }}>Desactivar</Button>
+        : <Button compact icon={RotateCcw} disabled={admin.busy} aria-label={`Reactivar ${noun} ${row.name}`} onClick={() => void admin.run(entity, { op: "reactivate", entity, id: row.id }, async (key) => {
+          await toggleAdminEntity(entity, row.id, true, key);
+          await reload();
+        })}>Reactivar</Button>,
+    };
+  }
+
+  async function confirmDeactivation(reason: string) {
+    if (!dialog) return;
+    const { entity, id } = dialog;
+    const reload = entity === "locations" ? locations.reload : services.reload;
+    const ok = await admin.run("deactivate", { op: "deactivate", entity, id, reason }, async (key) => {
+      await toggleAdminEntity(entity, id, false, key, reason);
+      await reload();
+    });
+    if (ok) setDialog(null);
+  }
+
+  // Acciones and the altas follow the profile's grants; the backend still decides each row (403 → "Sin acceso").
+  const locationTable = grants.locations ? [...locationColumns, actionsColumn<LocationRead>("locations", "sede", locations.reload)] : locationColumns;
+  const serviceTable = grants.services ? [...serviceColumns, actionsColumn<ServiceRead>("services", "servicio", services.reload)] : serviceColumns;
+  const locationsToggleError = admin.errorFor("locations");
+  const servicesToggleError = admin.errorFor("services");
 
   function submitLocation(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -101,32 +148,39 @@ export function SettingsPage() {
   }
 
   return <div style={{ display: "grid", gap: "var(--space-6)", marginBottom: "var(--space-6)" }}>
+    <PractitionersPanel />
     <section className="panel table-panel table-panel--flush" aria-labelledby="settings-locations">
       <div className="panel-header"><h2 id="settings-locations"><MapPin size={20} aria-hidden="true" /> Sedes</h2></div>
-      {locations.loadError ? <SettingsError error={locations.loadError} /> : locations.mutationError?.httpStatus === 403 ? <SettingsError error={locations.mutationError} /> : locations.loading ? <p role="status" className="empty-state">Cargando sedes…</p> : <>
-        <DataTable columns={locationColumns} rows={locations.rows} rowKey={(row) => String(row.id)} emptyMessage="No hay sedes registradas. Añade la primera sede." />
-        <form className="form-grid" onSubmit={submitLocation} style={{ padding: "var(--space-5)" }} aria-label="Nueva sede" aria-busy={locations.busy}>
+      {locations.loadError ? <SettingsError error={locations.loadError} /> : locations.loading ? <p role="status" className="empty-state">Cargando sedes…</p> : <>
+        {locationsToggleError && <SettingsError error={locationsToggleError} />}
+        <DataTable columns={locationTable} rows={locations.rows} rowKey={(row) => String(row.id)} emptyMessage="No hay sedes registradas. Añade la primera sede." />
+        {grants.locations && <form className="form-grid" onSubmit={submitLocation} style={{ padding: "var(--space-5)" }} aria-label="Nueva sede" aria-busy={locations.busy}>
           <h3 className="field--wide" style={{ margin: 0 }}>Nueva sede</h3>
           {locations.mutationError && <div className="field--wide"><SettingsError error={locations.mutationError} /></div>}
           <label className="field"><span>Nombre de la sede</span><input name="name" required disabled={locations.busy} /></label>
           <label className="field"><span>Zona horaria</span><input name="timezone" placeholder="America/Lima" required disabled={locations.busy} aria-describedby="settings-timezone-help" /><small id="settings-timezone-help">Usa un identificador de zona horaria, como America/Lima.</small></label>
           <div className="form-actions field--wide"><Button type="submit" variant="primary" icon={Plus} disabled={locations.busy}>{locations.busy ? "Guardando…" : "Crear sede"}</Button></div>
-        </form>
+        </form>}
       </>}
     </section>
     <section className="panel table-panel table-panel--flush" aria-labelledby="settings-services">
       <div className="panel-header"><h2 id="settings-services"><Stethoscope size={20} aria-hidden="true" /> Servicios</h2></div>
-      {services.loadError ? <SettingsError error={services.loadError} /> : services.mutationError?.httpStatus === 403 ? <SettingsError error={services.mutationError} /> : services.loading ? <p role="status" className="empty-state">Cargando servicios…</p> : <>
-        <DataTable columns={serviceColumns} rows={services.rows} rowKey={(row) => String(row.id)} emptyMessage="No hay servicios registrados. Añade el primer servicio." />
-        <form className="form-grid" onSubmit={submitService} style={{ padding: "var(--space-5)" }} aria-label="Nuevo servicio" aria-busy={services.busy}>
+      {services.loadError ? <SettingsError error={services.loadError} /> : services.loading ? <p role="status" className="empty-state">Cargando servicios…</p> : <>
+        {servicesToggleError && <SettingsError error={servicesToggleError} />}
+        <DataTable columns={serviceTable} rows={services.rows} rowKey={(row) => String(row.id)} emptyMessage="No hay servicios registrados. Añade el primer servicio." />
+        {grants.services && <form className="form-grid" onSubmit={submitService} style={{ padding: "var(--space-5)" }} aria-label="Nuevo servicio" aria-busy={services.busy}>
           <h3 className="field--wide" style={{ margin: 0 }}>Nuevo servicio</h3>
           {services.mutationError && <div className="field--wide"><SettingsError error={services.mutationError} /></div>}
           <label className="field"><span>Nombre del servicio</span><input name="name" required disabled={services.busy} /></label>
           <label className="field"><span>Duración (minutos)</span><input name="duration" type="number" min="1" step="1" required disabled={services.busy} /></label>
           <label className="field"><span>Activo</span><select name="active" defaultValue="true" disabled={services.busy}><option value="true">Sí</option><option value="false">No</option></select></label>
           <div className="form-actions field--wide"><Button type="submit" variant="primary" icon={Plus} disabled={services.busy}>{services.busy ? "Guardando…" : "Crear servicio"}</Button></div>
-        </form>
+        </form>}
       </>}
     </section>
+    <DeactivateDialog
+      target={dialog} busy={admin.busy} error={admin.errorFor("deactivate")}
+      onCancel={() => { admin.clear(); setDialog(null); }} onConfirm={confirmDeactivation}
+    />
   </div>;
 }

@@ -51,6 +51,17 @@ describe("session expiry at the transport boundary", () => {
     expect(expired).not.toHaveBeenCalled();
   });
 
+  it("keeps the session when /admin refuses a profile without *.manage (403 PERMISSION_DENIED)", async () => {
+    const expired = vi.fn();
+    unsubscribe = client.onSessionExpired(expired);
+    const version = client.getSessionVersion();
+    client.http.defaults.adapter = rejected(403);
+    await expect(client.setAdminActive("practitioners", 5, false, "intent-admin", "Fin de contrato")).rejects.toMatchObject({ response: { status: 403 } });
+    await expect(client.listPractitionerRoster()).rejects.toMatchObject({ response: { status: 403 } });
+    expect(expired).not.toHaveBeenCalled();
+    expect(client.getSessionVersion()).toBe(version);
+  });
+
   it("ignores an old persona's late 401 after switching identity", async () => {
     const expired = vi.fn();
     unsubscribe = client.onSessionExpired(expired);
