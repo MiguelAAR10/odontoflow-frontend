@@ -1,47 +1,47 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" class="pj-cepillo">
-  <title>Cepillo turquesa · Agenda</title>
-  <desc>Personaje 02 de la familia OdontoFlow: cepillo dental en diagonal ascendente, mango turquesa grueso con extremo en cápsula, cuello estrecho y cabezal con tres mechones de cerdas blancas redondeadas. Dos ojos cápsula negros en la parte alta del mango, inclinados con el cepillo. Tres destellos amarillos de cuatro puntas. Luz arriba/izquierda. SVG nativo dibujado a mano; la animación vive fuera, en personajes.css y personajes-A.css.</desc>
+  <title>Cepillo azul · Agenda</title>
+  <desc>Personaje 02 de la familia OdontoFlow: cepillo dental en diagonal ascendente, mango azul grueso con extremo en cápsula, cuello estrecho y cabezal con tres mechones de cerdas blancas redondeadas. Dos ojos cápsula negros en la parte alta del mango, inclinados con el cepillo. Tres destellos amarillos de cuatro puntas. Luz arriba/izquierda. SVG nativo dibujado a mano; la animación vive fuera, en personajes.css y personajes-A.css. v2 (2026-10-13, RECOLOR-FAMILIA): paleta única de 5 colores intensos + neutros, reflejos satinados y grano fino (.pj-grain, se apaga a ≤ 24 px); geometría e IDs de v1 intactos.</desc>
   <defs>
-    <!-- Base: borde izquierdo cian luminoso hacia turquesa profundo a la derecha (perpendicular al eje del mango) -->
+    <!-- Base: borde izquierdo azul claro hacia azul profundo a la derecha (perpendicular al eje del mango) -->
     <linearGradient id="cp-base" gradientUnits="userSpaceOnUse" x1="250" y1="700" x2="481" y2="796">
-      <stop offset="0" stop-color="#6CFAF6"/>
-      <stop offset="0.14" stop-color="#3BE9EA"/>
-      <stop offset="0.5" stop-color="#22DDE3"/>
-      <stop offset="1" stop-color="#12D0E0"/>
+      <stop offset="0" stop-color="#4F80FF"/>
+      <stop offset="0.14" stop-color="#184CE5"/>
+      <stop offset="0.5" stop-color="#123CC1"/>
+      <stop offset="1" stop-color="#0E32A8"/>
     </linearGradient>
-    <!-- Sombra del material: turquesa profundo en el borde derecho de mango y cabezal -->
+    <!-- Sombra del material: azul profundo en el borde derecho de mango y cabezal -->
     <linearGradient id="cp-shade-right" gradientUnits="userSpaceOnUse" x1="554" y1="231" x2="702" y2="293">
-      <stop offset="0" stop-color="#08B6D3" stop-opacity="0"/>
-      <stop offset="0.55" stop-color="#05B1D0" stop-opacity="0.7"/>
-      <stop offset="1" stop-color="#009CC6" stop-opacity="0.95"/>
+      <stop offset="0" stop-color="#0A2788" stop-opacity="0"/>
+      <stop offset="0.55" stop-color="#092580" stop-opacity="0.7"/>
+      <stop offset="1" stop-color="#071E6C" stop-opacity="0.95"/>
     </linearGradient>
     <!-- Pliegue: sombra cromática en el cuello, bajo el cabezal -->
     <radialGradient id="cp-shade-neck" gradientUnits="userSpaceOnUse" cx="505" cy="405" r="78">
-      <stop offset="0" stop-color="#03A9CC" stop-opacity="0.8"/>
-      <stop offset="1" stop-color="#03A9CC" stop-opacity="0"/>
+      <stop offset="0" stop-color="#082278" stop-opacity="0.8"/>
+      <stop offset="1" stop-color="#082278" stop-opacity="0"/>
     </radialGradient>
     <!-- Pliegue: extremo del mango, abajo a la derecha -->
     <radialGradient id="cp-shade-tip" gradientUnits="userSpaceOnUse" cx="420" cy="905" r="120">
-      <stop offset="0" stop-color="#06B0D1" stop-opacity="0.75"/>
-      <stop offset="1" stop-color="#06B0D1" stop-opacity="0"/>
+      <stop offset="0" stop-color="#0A2683" stop-opacity="0.75"/>
+      <stop offset="1" stop-color="#0A2683" stop-opacity="0"/>
     </radialGradient>
-    <!-- Cerdas: blanco arriba/izquierda, azul perla en la punta redonda y el borde inferior de cada mechón -->
+    <!-- Cerdas: blanco arriba/izquierda, gris claro en la punta redonda y el borde inferior de cada mechón -->
     <linearGradient id="cp-bristle" x1="0.25" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#FFFFFF"/>
-      <stop offset="0.55" stop-color="#F6F8FB"/>
-      <stop offset="0.82" stop-color="#DDE7F4"/>
-      <stop offset="1" stop-color="#C4D5EB"/>
+      <stop offset="0.55" stop-color="#F8F8F8"/>
+      <stop offset="0.82" stop-color="#E6E6E6"/>
+      <stop offset="1" stop-color="#D3D3D3"/>
     </linearGradient>
     <linearGradient id="cp-star" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#FFE88A"/>
-      <stop offset="0.5" stop-color="#FFDA55"/>
-      <stop offset="1" stop-color="#FFB53D"/>
+      <stop offset="0" stop-color="#FFD31C"/>
+      <stop offset="0.5" stop-color="#FFCB0C"/>
+      <stop offset="1" stop-color="#FFC706"/>
     </linearGradient>
-    <!-- Punta de las cerdas: azul perla en el extremo redondo (a lo largo del mechón) -->
+    <!-- Punta de las cerdas: gris claro en el extremo redondo (a lo largo del mechón) -->
     <linearGradient id="cp-bristle-tip" gradientUnits="userSpaceOnUse" x1="640" y1="250" x2="812" y2="300">
-      <stop offset="0" stop-color="#BFD2EC" stop-opacity="0"/>
-      <stop offset="0.6" stop-color="#C6D6EE" stop-opacity="0.25"/>
-      <stop offset="1" stop-color="#B7CBEA" stop-opacity="0.9"/>
+      <stop offset="0" stop-color="#D0D0D0" stop-opacity="0"/>
+      <stop offset="0.6" stop-color="#D4D4D4" stop-opacity="0.25"/>
+      <stop offset="1" stop-color="#CCCCCC" stop-opacity="0.9"/>
     </linearGradient>
     <clipPath id="cp-clip-b2"><path d="M609.4 213 L738.1 266.8 C766.1 278.6 779.3 310.7 767.6 338.7 C755.9 366.7 723.7 379.9 695.7 368.2 L568.2 314.9 Z"/></clipPath>
     <clipPath id="cp-clip-b3"><path d="M576.3 295.1 L709.6 362.5 C734.7 375.1 744.8 405.8 732.1 430.9 C719.5 455.9 688.8 466 663.8 453.3 L552.3 397 C544.4 393 540.7 383.2 544 375 Z"/></clipPath>
@@ -49,6 +49,14 @@
     <clipPath id="cp-clip-body">
       <path d="M581 89 C611 86 641 101 657 128 C665 148 584 380 563 406 C552 414 545 428 546 450 C550 491 552 525 547 566 C537 635 509 715 484 780 C462 835 427 923 363 940 C314 952 257 923 238 876 C220 832 231 791 246 748 C272 677 309 596 349 531 C369 498 456 399 459 377 C449 361 442 351 441 330 C440 297 478 218 492 185 C511 142 526 95 581 89 Z"/>
     </clipPath>
+    <!-- Grano compartido: ruido fino gris (motas oscuras y claras) sobre el cuerpo; se apaga a <= 24 px -->
+    <filter id="cp-grain" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="11" stitchTiles="stitch" result="n"/>
+      <feColorMatrix in="n" result="d" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1.5 0 0 0 -0.75"/>
+      <feColorMatrix in="n" result="w" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  -1.5 0 0 0 0.75"/>
+      <feMerge><feMergeNode in="d"/><feMergeNode in="w"/></feMerge>
+    </filter>
+    <style>@media (max-width: 24px) { .pj-grain { display: none; } }</style>
   </defs>
 
   <g id="decorations-back">
@@ -65,23 +73,24 @@
       <path id="body-shape" fill="url(#cp-base)" d="M581 89 C611 86 641 101 657 128 C665 148 584 380 563 406 C552 414 545 428 546 450 C550 491 552 525 547 566 C537 635 509 715 484 780 C462 835 427 923 363 940 C314 952 257 923 238 876 C220 832 231 791 246 748 C272 677 309 596 349 531 C369 498 456 399 459 377 C449 361 442 351 441 330 C440 297 478 218 492 185 C511 142 526 95 581 89 Z"/>
       <g id="body-shade" clip-path="url(#cp-clip-body)">
         <rect x="220" y="80" width="460" height="880" fill="url(#cp-shade-right)"/>
-        <path id="head-side" fill="#04ADCE" d="M618 152 C628 140 640 132 668 126 L566 412 L522 384 Z"/>
+        <path id="head-side" fill="#09237C" d="M618 152 C628 140 640 132 668 126 L566 412 L522 384 Z"/>
         <circle cx="505" cy="405" r="78" fill="url(#cp-shade-neck)"/>
         <circle cx="420" cy="905" r="120" fill="url(#cp-shade-tip)"/>
       </g>
     </g>
 
+    <rect class="pj-grain" x="0" y="0" width="1024" height="1024" fill="#808080" clip-path="url(#cp-clip-body)" filter="url(#cp-grain)" opacity="0.32"/>
     <g id="character-details">
       <g id="bristles">
         <path id="bristle-3" fill="url(#cp-bristle)" d="M576.3 295.1 L709.6 362.5 C734.7 375.1 744.8 405.8 732.1 430.9 C719.5 455.9 688.8 466 663.8 453.3 L552.3 397 C544.4 393 540.7 383.2 544 375 Z"/>
-        <path id="bristle-groove-3" fill="#D6E0F0" clip-path="url(#cp-clip-b3)" d="M603.8 226.9 L732.3 280.7 C760.3 292.4 773.5 324.6 761.8 352.6 C750.1 380.6 717.9 393.8 689.9 382.1 L562.6 328.8 Z"/>
+        <path id="bristle-groove-3" fill="#DFDFDF" clip-path="url(#cp-clip-b3)" d="M603.8 226.9 L732.3 280.7 C760.3 292.4 773.5 324.6 761.8 352.6 C750.1 380.6 717.9 393.8 689.9 382.1 L562.6 328.8 Z"/>
         <path id="bristle-2" fill="url(#cp-bristle)" d="M609.4 213 L738.1 266.8 C766.1 278.6 779.3 310.7 767.6 338.7 C755.9 366.7 723.7 379.9 695.7 368.2 L568.2 314.9 Z"/>
-        <path id="bristle-groove-2" fill="#D6E0F0" clip-path="url(#cp-clip-b2)" d="M636.6 145.7 L766.5 187.2 C795.3 196.4 811.2 227.2 802 256 C792.8 284.9 762 300.8 733.2 291.6 L595.4 247.6 Z"/>
+        <path id="bristle-groove-2" fill="#DFDFDF" clip-path="url(#cp-clip-b2)" d="M636.6 145.7 L766.5 187.2 C795.3 196.4 811.2 227.2 802 256 C792.8 284.9 762 300.8 733.2 291.6 L595.4 247.6 Z"/>
         <path id="bristle-1" fill="url(#cp-bristle)" d="M655.6 136 L771.1 172.9 C799.9 182.1 815.8 212.9 806.6 241.7 C797.4 270.6 766.6 286.5 737.7 277.3 L601.1 233.7 L637 144.8 C639.9 137.6 648.2 133.7 655.6 136 Z"/>
         <rect id="bristle-shade" clip-path="url(#cp-clip-bristles)" x="540" y="120" width="290" height="360" fill="url(#cp-bristle-tip)"/>
       </g>
-      <rect id="highlight-arc" fill="#D8FFFD" x="-78" y="-11" width="156" height="22" rx="11" transform="translate(296 690) rotate(-65)"/>
-      <ellipse id="highlight-dot" fill="#D8FFFD" cx="520" cy="166" rx="11" ry="22" transform="rotate(23 520 166)"/>
+      <rect id="highlight-arc" opacity="0.42" fill="#FFFFFF" x="-78" y="-11" width="156" height="22" rx="11" transform="translate(296 690) rotate(-65)"/>
+      <ellipse id="highlight-dot" opacity="0.42" fill="#FFFFFF" cx="520" cy="166" rx="11" ry="22" transform="rotate(23 520 166)"/>
     </g>
 
     <g id="eyes">

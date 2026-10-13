@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="150 150 724 724" color="#0B0B0D">
+  <title>AIRI · isotipo monocromo</title>
+  <desc>Silueta del Diente en un solo color (currentColor) con los ojos calados.</desc>
+  <defs></defs>
+  <mask id="m-ojos" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1024"><rect width="1024" height="1024" fill="#FFFFFF"/><g fill="#000000"><g transform="translate(457 481) rotate(-15.7)"><rect x="-37.5" y="-68" width="75" height="136" rx="37.5"/></g><g transform="translate(593 441) rotate(-15.5)"><rect x="-37.5" y="-68.5" width="75" height="137" rx="37.5"/></g></g></mask><path d="M390 252 C430 252 462 263 495 263 C535 263 590 200 682 198 C772 196 824 280 825 365 C826 430 798 480 792 535 C788 590 820 640 819 705 C818 772 787 815 737 815 C700 814 670 790 640 752 C612 715 600 662 565 662 C535 662 522 700 515 760 C508 820 490 864 432 864 C385 864 350 810 330 750 C318 700 300 655 265 605 C225 555 197 505 197 445 C197 330 290 252 390 252 Z" fill="currentColor" mask="url(#m-ojos)"/>
+</svg>

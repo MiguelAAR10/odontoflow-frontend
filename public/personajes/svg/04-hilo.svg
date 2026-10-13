@@ -1,61 +1,69 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" class="pj-hilo">
   <title>Hilo dental amarillo · Confirmaciones</title>
-  <desc>Personaje 04 de la familia OdontoFlow: dispensador de hilo dental amarillo intenso, estuche de esquinas muy redondas en tres cuartos con cara frontal más clara, tapa abierta detrás con interior ámbar y borde claro, y una hebra blanca gruesa que sale del estuche, hace un arco y cae a la izquierda en un gancho de punta redonda. Dos ojos cápsula negros en la cara frontal. Destello amarillo a la izquierda y menta a la derecha. Luz arriba/izquierda. SVG nativo dibujado a mano; la animación vive fuera, en personajes.css y personajes-A.css.</desc>
+  <desc>Personaje 04 de la familia OdontoFlow: dispensador de hilo dental amarillo intenso, estuche de esquinas muy redondas en tres cuartos con cara frontal más clara, tapa abierta detrás con interior amarillo profundo y borde claro, y una hebra blanca gruesa que sale del estuche, hace un arco y cae a la izquierda en un gancho de punta redonda. Dos ojos cápsula negros en la cara frontal. Dos destellos amarillos. Luz arriba/izquierda. SVG nativo dibujado a mano; la animación vive fuera, en personajes.css y personajes-A.css. v2 (2026-10-13, RECOLOR-FAMILIA): paleta única de 5 colores intensos + neutros, reflejos satinados y grano fino (.pj-grain, se apaga a ≤ 24 px); geometría e IDs de v1 intactos.</desc>
   <defs>
     <!-- Tapa: canto superior claro hacia amarillo base (perpendicular a la tapa, inclinada −16°) -->
     <linearGradient id="hl-lid" gradientUnits="userSpaceOnUse" x1="480" y1="232" x2="519" y2="366">
-      <stop offset="0" stop-color="#FFE47E"/>
-      <stop offset="0.35" stop-color="#FFD23C"/>
-      <stop offset="1" stop-color="#FFC21A"/>
+      <stop offset="0" stop-color="#FFDC3A"/>
+      <stop offset="0.35" stop-color="#FFC300"/>
+      <stop offset="1" stop-color="#F5B000"/>
     </linearGradient>
     <!-- Interior de la tapa: ámbar profundo, pared derecha iluminada -->
     <linearGradient id="hl-lid-inner" gradientUnits="userSpaceOnUse" x1="320" y1="420" x2="760" y2="300">
-      <stop offset="0" stop-color="#F29400"/>
-      <stop offset="0.7" stop-color="#E88600"/>
-      <stop offset="1" stop-color="#F7A60C"/>
+      <stop offset="0" stop-color="#D99500"/>
+      <stop offset="0.7" stop-color="#CF8D00"/>
+      <stop offset="1" stop-color="#E7A100"/>
     </linearGradient>
     <!-- Paredes del estuche (tres cuartos): ámbar hacia abajo/derecha -->
     <linearGradient id="hl-side" gradientUnits="userSpaceOnUse" x1="360" y1="520" x2="800" y2="820">
-      <stop offset="0" stop-color="#FFC628"/>
-      <stop offset="0.5" stop-color="#F9AE05"/>
-      <stop offset="1" stop-color="#EC9B00"/>
+      <stop offset="0" stop-color="#F9B800"/>
+      <stop offset="0.5" stop-color="#E39E00"/>
+      <stop offset="1" stop-color="#D39000"/>
     </linearGradient>
     <!-- Cara frontal: más clara arriba/izquierda -->
     <linearGradient id="hl-face" gradientUnits="userSpaceOnUse" x1="430" y1="470" x2="830" y2="760">
-      <stop offset="0" stop-color="#FFD957"/>
-      <stop offset="0.38" stop-color="#FFCB2C"/>
-      <stop offset="1" stop-color="#FFBE16"/>
+      <stop offset="0" stop-color="#FFCE10"/>
+      <stop offset="0.38" stop-color="#FABA00"/>
+      <stop offset="1" stop-color="#F2AD00"/>
     </linearGradient>
     <!-- Sombra del material: borde inferior del estuche -->
     <linearGradient id="hl-shade-bottom" gradientUnits="userSpaceOnUse" x1="0" y1="640" x2="0" y2="850">
-      <stop offset="0" stop-color="#E89B00" stop-opacity="0"/>
-      <stop offset="0.6" stop-color="#E89B00" stop-opacity="0.6"/>
-      <stop offset="1" stop-color="#DE8D00" stop-opacity="0.95"/>
+      <stop offset="0" stop-color="#CF8D00" stop-opacity="0"/>
+      <stop offset="0.6" stop-color="#CF8D00" stop-opacity="0.6"/>
+      <stop offset="1" stop-color="#C48400" stop-opacity="0.95"/>
     </linearGradient>
     <!-- Pliegue: la tapa se mete detrás del estuche -->
     <radialGradient id="hl-shade-hinge" gradientUnits="userSpaceOnUse" cx="760" cy="392" r="90">
-      <stop offset="0" stop-color="#E89B00" stop-opacity="0.75"/>
-      <stop offset="1" stop-color="#E89B00" stop-opacity="0"/>
+      <stop offset="0" stop-color="#CF8D00" stop-opacity="0.75"/>
+      <stop offset="1" stop-color="#CF8D00" stop-opacity="0"/>
     </radialGradient>
     <!-- Hebra: blanco, sombra fría abajo/derecha -->
     <linearGradient id="hl-thread" gradientUnits="userSpaceOnUse" x1="200" y1="380" x2="430" y2="700">
       <stop offset="0" stop-color="#FFFFFF"/>
-      <stop offset="0.6" stop-color="#F9FAFD"/>
-      <stop offset="1" stop-color="#DCE3F0"/>
+      <stop offset="0.6" stop-color="#FAFAFA"/>
+      <stop offset="1" stop-color="#E2E2E2"/>
     </linearGradient>
     <linearGradient id="hl-star-warm" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#FFE88A"/>
-      <stop offset="0.5" stop-color="#FFDA55"/>
-      <stop offset="1" stop-color="#FFB53D"/>
+      <stop offset="0" stop-color="#FFD31C"/>
+      <stop offset="0.5" stop-color="#FFCB0C"/>
+      <stop offset="1" stop-color="#FFC706"/>
     </linearGradient>
     <linearGradient id="hl-star-mint" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#9BF7DA"/>
-      <stop offset="0.5" stop-color="#45E5BC"/>
-      <stop offset="1" stop-color="#22CFA2"/>
+      <stop offset="0" stop-color="#FFD421"/>
+      <stop offset="0.5" stop-color="#FFC402"/>
+      <stop offset="1" stop-color="#F9B800"/>
     </linearGradient>
     <clipPath id="hl-clip-body">
       <path d="M430 476 L744 391 C770 384 812 383 828 400 C848 425 882 595 884 632 C887 677 868 716 836 747 C777 805 627 839 546 843 C509 845 469 835 439 811 C391 772 350 659 341 598 C336 562 349 547 370 521 C385 500 405 484 430 476 Z"/>
     </clipPath>
+    <!-- Grano compartido: ruido fino gris (motas oscuras y claras) sobre el cuerpo; se apaga a <= 24 px -->
+    <filter id="hl-grain" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="11" stitchTiles="stitch" result="n"/>
+      <feColorMatrix in="n" result="d" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1.5 0 0 0 -0.75"/>
+      <feColorMatrix in="n" result="w" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  -1.5 0 0 0 0.75"/>
+      <feMerge><feMergeNode in="d"/><feMergeNode in="w"/></feMerge>
+    </filter>
+    <style>@media (max-width: 24px) { .pj-grain { display: none; } }</style>
   </defs>
 
   <g id="decorations-back">
@@ -71,7 +79,7 @@
     </g>
 
     <g id="thread">
-      <path id="thread-edge" fill="none" stroke="#C9D3E6" stroke-width="41" stroke-linecap="round" stroke-linejoin="round" d="M540 482 C541 420 512 373 461 373 C410 373 368 405 350 440 C336 470 324 520 314 556 C300 610 270 668 199 669 C158 670 132 646 133 603"/>
+      <path id="thread-edge" fill="none" stroke="#D2D2D2" stroke-width="41" stroke-linecap="round" stroke-linejoin="round" d="M540 482 C541 420 512 373 461 373 C410 373 368 405 350 440 C336 470 324 520 314 556 C300 610 270 668 199 669 C158 670 132 646 133 603"/>
       <path id="thread-strand" fill="none" stroke="url(#hl-thread)" stroke-width="36" stroke-linecap="round" stroke-linejoin="round" d="M540 482 C541 420 512 373 461 373 C410 373 368 405 350 440 C336 470 324 520 314 556 C300 610 270 668 199 669 C158 670 132 646 133 603"/>
     </g>
 
@@ -84,9 +92,10 @@
       <path id="body-face" fill="url(#hl-face)" transform="translate(97.1 89) scale(0.8766 0.835)" d="M430 476 L744 391 C770 384 812 383 828 400 C848 425 882 595 884 632 C887 677 868 716 836 747 C777 805 627 839 546 843 C509 845 469 835 439 811 C391 772 350 659 341 598 C336 562 349 547 370 521 C385 500 405 484 430 476 Z"/>
     </g>
 
+    <rect class="pj-grain" x="0" y="0" width="1024" height="1024" fill="#808080" clip-path="url(#hl-clip-body)" filter="url(#hl-grain)" opacity="0.32"/>
     <g id="character-details">
-      <rect id="highlight-arc" fill="#FFF1B8" x="-46" y="-11" width="92" height="22" rx="11" transform="translate(463 521) rotate(-42)"/>
-      <ellipse id="highlight-dot" fill="#FFF1B8" cx="318" cy="330" rx="12" ry="24" transform="rotate(38 318 330)"/>
+      <rect id="highlight-arc" opacity="0.42" fill="#FFFFFF" x="-46" y="-11" width="92" height="22" rx="11" transform="translate(463 521) rotate(-42)"/>
+      <ellipse id="highlight-dot" opacity="0.42" fill="#FFFFFF" cx="318" cy="330" rx="12" ry="24" transform="rotate(38 318 330)"/>
     </g>
 
     <g id="eyes">

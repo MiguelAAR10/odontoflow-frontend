@@ -1,45 +1,45 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" class="pj-escudo">
   <title>Escudo protector · Identidad</title>
-  <desc>Personaje 07 de la familia OdontoFlow: escudo verde menta, ancho arriba y de punta redonda, inclinado a la derecha, con marco biselado (faceta de sombra esmeralda a la derecha), panel menta claro con dos ojos cápsula negros y dos bracitos cápsula por detrás. Cuatro destellos menta. Luz arriba/izquierda. SVG nativo dibujado a mano; la animación vive fuera (personajes.css y personajes-B.css).</desc>
+  <desc>Personaje 07 de la familia OdontoFlow: escudo verde, ancho arriba y de punta redonda, inclinado a la derecha, con marco biselado (faceta de sombra verde profundo a la derecha), panel blanco con dos ojos cápsula negros y dos bracitos cápsula por detrás. Cuatro destellos amarillos. Luz arriba/izquierda. SVG nativo dibujado a mano; la animación vive fuera (personajes.css y personajes-B.css). v2 (2026-10-13, RECOLOR-FAMILIA): paleta única de 5 colores intensos + neutros, reflejos satinados y grano fino (.pj-grain, se apaga a ≤ 24 px); geometría e IDs de v1 intactos.</desc>
   <defs>
-    <!-- Luz arriba/izquierda: marco menta luminoso que se satura hacia abajo/derecha -->
+    <!-- Luz arriba/izquierda: marco verde claro que se satura hacia abajo/derecha -->
     <linearGradient id="sc-base" gradientUnits="userSpaceOnUse" x1="250" y1="200" x2="700" y2="760">
-      <stop offset="0" stop-color="#62F3C0"/>
-      <stop offset="0.45" stop-color="#2DE6A4"/>
-      <stop offset="1" stop-color="#1AD093"/>
+      <stop offset="0" stop-color="#2FD068"/>
+      <stop offset="0.45" stop-color="#0EA344"/>
+      <stop offset="1" stop-color="#098336"/>
     </linearGradient>
     <!-- Faceta de sombra del bisel: lado derecho e inferior del marco -->
     <linearGradient id="sc-facet" gradientUnits="userSpaceOnUse" x1="620" y1="200" x2="720" y2="800">
-      <stop offset="0" stop-color="#16C690"/>
-      <stop offset="0.55" stop-color="#0AAE7C"/>
-      <stop offset="1" stop-color="#079C77"/>
+      <stop offset="0" stop-color="#077831"/>
+      <stop offset="0.55" stop-color="#045A25"/>
+      <stop offset="1" stop-color="#03481E"/>
     </linearGradient>
-    <!-- Panel interior: menta casi blanco arriba/izquierda, menta claro abajo/derecha -->
+    <!-- Panel interior: blanco arriba/izquierda, gris claro abajo/derecha -->
     <linearGradient id="sc-panel" gradientUnits="userSpaceOnUse" x1="320" y1="290" x2="690" y2="720">
-      <stop offset="0" stop-color="#F1FFF5"/>
-      <stop offset="0.5" stop-color="#D3FCE2"/>
-      <stop offset="1" stop-color="#ABF2C7"/>
+      <stop offset="0" stop-color="#FBFBFB"/>
+      <stop offset="0.5" stop-color="#F1F1F1"/>
+      <stop offset="1" stop-color="#E0E0E0"/>
     </linearGradient>
     <!-- Pliegue suave del panel bajo el borde derecho -->
     <radialGradient id="sc-panel-fold" gradientUnits="userSpaceOnUse" cx="700" cy="560" r="170">
-      <stop offset="0" stop-color="#8EE8B4" stop-opacity="0.7"/>
-      <stop offset="1" stop-color="#8EE8B4" stop-opacity="0"/>
+      <stop offset="0" stop-color="#BDBDBD" stop-opacity="0.7"/>
+      <stop offset="1" stop-color="#BDBDBD" stop-opacity="0"/>
     </radialGradient>
     <linearGradient id="sc-arm" gradientUnits="userSpaceOnUse" x1="130" y1="340" x2="290" y2="560">
-      <stop offset="0" stop-color="#4FF0B7"/>
-      <stop offset="1" stop-color="#18C98F"/>
+      <stop offset="0" stop-color="#1EC25A"/>
+      <stop offset="1" stop-color="#077C33"/>
     </linearGradient>
     <linearGradient id="sc-arm-back" gradientUnits="userSpaceOnUse" x1="720" y1="640" x2="850" y2="810">
-      <stop offset="0" stop-color="#2DE3A2"/>
-      <stop offset="1" stop-color="#10B784"/>
+      <stop offset="0" stop-color="#0EA143"/>
+      <stop offset="1" stop-color="#05662A"/>
     </linearGradient>
     <linearGradient id="sc-star" gradientUnits="userSpaceOnUse" x1="140" y1="150" x2="270" y2="290">
-      <stop offset="0" stop-color="#DEFDE7"/>
-      <stop offset="1" stop-color="#8AF5BC"/>
+      <stop offset="0" stop-color="#FFD72B"/>
+      <stop offset="1" stop-color="#FFD118"/>
     </linearGradient>
     <linearGradient id="sc-star-r" gradientUnits="userSpaceOnUse" x1="845" y1="550" x2="935" y2="700">
-      <stop offset="0" stop-color="#DEFDE7"/>
-      <stop offset="1" stop-color="#8AF5BC"/>
+      <stop offset="0" stop-color="#FFD72B"/>
+      <stop offset="1" stop-color="#FFD118"/>
     </linearGradient>
     <clipPath id="sc-clip-body">
       <path d="M217 539 C220 481 223 395 239 341 C249 305 266 257 284 225 C297 203 306 202 330 201 C437 196 495 155 584 141 C601 138 607 142 619 152 C643 173 666 198 690 220 C752 276 809 294 866 337 C882 350 889 370 887 390 C883 437 851 521 831 565 C804 624 762 684 721 734 C673 792 570 841 498 860 C474 867 432 876 409 867 C386 859 351 823 335 804 C302 767 271 720 251 675 C234 636 215 582 217 539 Z"/>
@@ -47,6 +47,14 @@
     <clipPath id="sc-clip-panel">
       <path d="M293 399 C300 360 318 296 343 279 C352 274 368 273 382 272 C440 266 520 248 566 235 C574 233 578 236 583 241 C640 300 690 340 762 372 C778 380 788 390 784 410 C760 490 712 590 670 630 C610 690 530 745 468 768 C448 776 430 780 418 774 C340 700 286 600 283 500 C282 467 286 432 293 399 Z"/>
     </clipPath>
+    <!-- Grano compartido: ruido fino gris (motas oscuras y claras) sobre el cuerpo; se apaga a <= 24 px -->
+    <filter id="sc-grain" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="11" stitchTiles="stitch" result="n"/>
+      <feColorMatrix in="n" result="d" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1.5 0 0 0 -0.75"/>
+      <feColorMatrix in="n" result="w" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  -1.5 0 0 0 0.75"/>
+      <feMerge><feMergeNode in="d"/><feMergeNode in="w"/></feMerge>
+    </filter>
+    <style>@media (max-width: 24px) { .pj-grain { display: none; } }</style>
   </defs>
 
   <g id="decorations-back">
@@ -74,6 +82,7 @@
       <circle id="panel-fold" cx="700" cy="560" r="170" fill="url(#sc-panel-fold)" clip-path="url(#sc-clip-panel)"/>
     </g>
 
+    <rect class="pj-grain" x="0" y="0" width="1024" height="1024" fill="#808080" clip-path="url(#sc-clip-body)" filter="url(#sc-grain)" opacity="0.32"/>
     <g id="character-details">
       <rect id="highlight-arc" fill="#FFFFFF" fill-opacity="0.7" x="-50" y="-10" width="100" height="20" rx="10" transform="translate(266 292) rotate(-62)"/>
       <ellipse id="highlight-dot" fill="#FFFFFF" fill-opacity="0.7" cx="249" cy="378" rx="9" ry="16" transform="rotate(20 249 378)"/>

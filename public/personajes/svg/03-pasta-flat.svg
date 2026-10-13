@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" class="pj-pasta">
-  <title>Pasta dental rosa · Cobranza (flat)</title>
-  <desc>Variante plana del personaje 03 para 32–48 px: seis colores sólidos (rosa, rosa profundo de borde, crema de la franja, blanco de tapa, lavanda de borde y estrías, negro de ojos). Construcción tipo pegatina: cada pieza en su color de borde y la cara desplazada arriba/izquierda; la base sellada se separa con un trazo del color de borde. Sin destellos ni degradados. Misma silueta y mismos IDs que la premium; ojos un 8 % más anchos.</desc>
+  <title>Pasta dental roja · Cobranza (flat)</title>
+  <desc>Variante plana del personaje 03 para 32–48 px: seis colores sólidos (rojo, rojo profundo de borde, crema de la franja, blanco de tapa, gris claro de borde y estrías, negro de ojos). Construcción tipo pegatina: cada pieza en su color de borde y la cara desplazada arriba/izquierda; la base sellada se separa con un trazo del color de borde. Sin destellos ni degradados. Misma silueta y mismos IDs que la premium; ojos un 8 % más anchos. v2 (2026-10-13, RECOLOR-FAMILIA): paleta única de 5 colores intensos + neutros, reflejos satinados y grano fino (.pj-grain, se apaga a ≤ 24 px); geometría e IDs de v1 intactos.</desc>
   <defs>
     <clipPath id="psf-clip-face">
       <path transform="translate(23 20) scale(0.93)" d="M476 204 L709 250 L710 264 C739 281 757 300 756 335 C745 400 676 715 655 857 L645 885 L250 795 L241 735 C284 571 337 413 398 257 C416 222 438 209 476 204 Z"/>
@@ -14,25 +14,25 @@
 
   <g id="character">
     <g id="arm-left">
-      <path fill="#D92376" d="M299 531 C267 512 246 500 225 467 C211 445 198 413 209 387 C219 365 244 354 267 364 C296 377 300 418 330 438 L362 470 L342 548 Z"/>
-      <path fill="#FA559B" transform="translate(23 20) scale(0.93)" d="M299 531 C267 512 246 500 225 467 C211 445 198 413 209 387 C219 365 244 354 267 364 C296 377 300 418 330 438 L362 470 L342 548 Z"/>
+      <path fill="#62070C" d="M299 531 C267 512 246 500 225 467 C211 445 198 413 209 387 C219 365 244 354 267 364 C296 377 300 418 330 438 L362 470 L342 548 Z"/>
+      <path fill="#D71E1D" transform="translate(23 20) scale(0.93)" d="M299 531 C267 512 246 500 225 467 C211 445 198 413 209 387 C219 365 244 354 267 364 C296 377 300 418 330 438 L362 470 L342 548 Z"/>
     </g>
     <g id="arm-right">
-      <path fill="#D92376" d="M712 553 C740 551 770 530 797 525 C825 520 851 536 850 566 C849 598 817 620 791 632 C759 646 727 649 693 650 L662 640 L684 540 Z"/>
-      <path fill="#FA559B" transform="translate(23 20) scale(0.93)" d="M712 553 C740 551 770 530 797 525 C825 520 851 536 850 566 C849 598 817 620 791 632 C759 646 727 649 693 650 L662 640 L684 540 Z"/>
+      <path fill="#62070C" d="M712 553 C740 551 770 530 797 525 C825 520 851 536 850 566 C849 598 817 620 791 632 C759 646 727 649 693 650 L662 640 L684 540 Z"/>
+      <path fill="#D71E1D" transform="translate(23 20) scale(0.93)" d="M712 553 C740 551 770 530 797 525 C825 520 851 536 850 566 C849 598 817 620 791 632 C759 646 727 649 693 650 L662 640 L684 540 Z"/>
     </g>
 
     <g id="character-body">
-      <path id="body-shape" fill="#D92376" d="M476 204 L709 250 L710 264 C739 281 757 300 756 335 C745 400 676 715 655 857 L645 885 L250 795 L241 735 C284 571 337 413 398 257 C416 222 438 209 476 204 Z M657 842 C655 862 663 881 659 900 C656 917 646 925 630 927 C577 933 293 846 242 816 C228 808 219 800 219 783 C219 765 232 748 242 733 C380 765 520 805 657 842 Z"/>
-      <path id="body-face" fill="#FA559B" transform="translate(23 20) scale(0.93)" d="M476 204 L709 250 L710 264 C739 281 757 300 756 335 C745 400 676 715 655 857 L645 885 L250 795 L241 735 C284 571 337 413 398 257 C416 222 438 209 476 204 Z"/>
-      <path id="band" fill="#FDDCEC" clip-path="url(#psf-clip-face)" transform="translate(23 20) scale(0.93)" d="M230 676 C300 610 380 570 470 543 C560 517 690 502 770 412 L790 545 C720 590 680 612 610 627 C520 645 430 655 366 695 C326 720 296 748 238 800 Z"/>
-      <path id="body-base" fill="#FA559B" stroke="#D92376" stroke-width="14" stroke-linejoin="round" transform="translate(23 20) scale(0.93)" d="M657 842 C655 862 663 881 659 900 C656 917 646 925 630 927 C577 933 293 846 242 816 C228 808 219 800 219 783 C219 765 232 748 242 733 C380 765 520 805 657 842 Z"/>
+      <path id="body-shape" fill="#62070C" d="M476 204 L709 250 L710 264 C739 281 757 300 756 335 C745 400 676 715 655 857 L645 885 L250 795 L241 735 C284 571 337 413 398 257 C416 222 438 209 476 204 Z M657 842 C655 862 663 881 659 900 C656 917 646 925 630 927 C577 933 293 846 242 816 C228 808 219 800 219 783 C219 765 232 748 242 733 C380 765 520 805 657 842 Z"/>
+      <path id="body-face" fill="#D71E1D" transform="translate(23 20) scale(0.93)" d="M476 204 L709 250 L710 264 C739 281 757 300 756 335 C745 400 676 715 655 857 L645 885 L250 795 L241 735 C284 571 337 413 398 257 C416 222 438 209 476 204 Z"/>
+      <path id="band" fill="#E4E4E4" clip-path="url(#psf-clip-face)" transform="translate(23 20) scale(0.93)" d="M230 676 C300 610 380 570 470 543 C560 517 690 502 770 412 L790 545 C720 590 680 612 610 627 C520 645 430 655 366 695 C326 720 296 748 238 800 Z"/>
+      <path id="body-base" fill="#D71E1D" stroke="#62070C" stroke-width="14" stroke-linejoin="round" transform="translate(23 20) scale(0.93)" d="M657 842 C655 862 663 881 659 900 C656 917 646 925 630 927 C577 933 293 846 242 816 C228 808 219 800 219 783 C219 765 232 748 242 733 C380 765 520 805 657 842 Z"/>
     </g>
 
     <g id="cap">
-      <path id="cap-shape" fill="#CDB8E8" d="M561 77 C622 74 683 90 713 118 C723 128 725 144 723 159 L711 247 C709 258 702 263 692 262 C640 258 560 236 500 213 C490 209 485 201 488 192 L526 101 C532 87 545 78 561 77 Z"/>
-      <path fill="#FCFCFF" transform="translate(23 20) scale(0.93)" d="M561 77 C622 74 683 90 713 118 C723 128 725 144 723 159 L711 247 C709 258 702 263 692 262 C640 258 560 236 500 213 C490 209 485 201 488 192 L526 101 C532 87 545 78 561 77 Z"/>
-      <g id="cap-ridges" fill="#CDB8E8" clip-path="url(#psf-clip-cap)">
+      <path id="cap-shape" fill="#CCCCCC" d="M561 77 C622 74 683 90 713 118 C723 128 725 144 723 159 L711 247 C709 258 702 263 692 262 C640 258 560 236 500 213 C490 209 485 201 488 192 L526 101 C532 87 545 78 561 77 Z"/>
+      <path fill="#FCFCFC" transform="translate(23 20) scale(0.93)" d="M561 77 C622 74 683 90 713 118 C723 128 725 144 723 159 L711 247 C709 258 702 263 692 262 C640 258 560 236 500 213 C490 209 485 201 488 192 L526 101 C532 87 545 78 561 77 Z"/>
+      <g id="cap-ridges" fill="#CCCCCC" clip-path="url(#psf-clip-cap)">
         <path transform="translate(23 20) scale(0.93)" d="M573 272.3 L627.2 123.4 C629.4 117.1 626.2 110.3 620 108 C613.8 105.7 606.9 108.9 604.6 115.2 L550.5 264.1 Z"/>
         <path transform="translate(23 20) scale(0.93)" d="M653.2 294.3 L687.6 138.7 C689.3 131.1 684.5 123.7 677 122 C669.5 120.3 662 125.1 660.3 132.6 L625.8 288.3 Z"/>
       </g>

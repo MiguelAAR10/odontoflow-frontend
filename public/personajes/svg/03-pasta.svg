@@ -1,58 +1,58 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" class="pj-pasta">
-  <title>Pasta dental rosa · Cobranza</title>
-  <desc>Personaje 03 de la familia OdontoFlow: tubo de pasta rosa intenso inclinado como si bailara, hombros redondeados, base sellada más ancha, franja blanca ondulante en diagonal, tapa blanca con estrías lavanda y dos bracitos cortos detrás del tubo. Dos ojos cápsula negros sobre la franja. Dos destellos blancos de cuatro puntas. Luz arriba/izquierda. SVG nativo dibujado a mano; la animación vive fuera, en personajes.css y personajes-A.css.</desc>
+  <title>Pasta dental roja · Cobranza</title>
+  <desc>Personaje 03 de la familia OdontoFlow: tubo de pasta rojo intenso inclinado como si bailara, hombros redondeados, base sellada más ancha, franja blanca ondulante en diagonal, tapa blanca con estrías gris claro y dos bracitos cortos detrás del tubo. Dos ojos cápsula negros sobre la franja. Dos destellos blancos de cuatro puntas. Luz arriba/izquierda. SVG nativo dibujado a mano; la animación vive fuera, en personajes.css y personajes-A.css. v2 (2026-10-13, RECOLOR-FAMILIA): paleta única de 5 colores intensos + neutros, reflejos satinados y grano fino (.pj-grain, se apaga a ≤ 24 px); geometría e IDs de v1 intactos.</desc>
   <defs>
-    <!-- Base: canto izquierdo rosa claro hacia rosa intenso (perpendicular al eje del tubo, inclinado 18,5°) -->
+    <!-- Base: canto izquierdo rojo claro hacia rojo intenso (perpendicular al eje del tubo, inclinado 18,5°) -->
     <linearGradient id="ps-base" gradientUnits="userSpaceOnUse" x1="300" y1="550" x2="670" y2="674">
-      <stop offset="0" stop-color="#FD88BF"/>
-      <stop offset="0.09" stop-color="#FB64A7"/>
-      <stop offset="0.4" stop-color="#FA559B"/>
-      <stop offset="1" stop-color="#F74B93"/>
+      <stop offset="0" stop-color="#FF5A45"/>
+      <stop offset="0.09" stop-color="#E62922"/>
+      <stop offset="0.4" stop-color="#D71E1D"/>
+      <stop offset="1" stop-color="#CA191A"/>
     </linearGradient>
-    <!-- Sombra del material: canto derecho rosa profundo -->
+    <!-- Sombra del material: canto derecho rojo profundo -->
     <linearGradient id="ps-shade-right" gradientUnits="userSpaceOnUse" x1="702" y1="235" x2="815" y2="273">
-      <stop offset="0" stop-color="#E0397D" stop-opacity="0"/>
-      <stop offset="0.5" stop-color="#DE367B" stop-opacity="0.6"/>
-      <stop offset="1" stop-color="#D92376" stop-opacity="0.95"/>
+      <stop offset="0" stop-color="#8F0C12" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#880B11" stop-opacity="0.6"/>
+      <stop offset="1" stop-color="#62070C" stop-opacity="0.95"/>
     </linearGradient>
     <!-- Pliegue: sombra de la tapa sobre los hombros -->
     <linearGradient id="ps-shade-cap" gradientUnits="userSpaceOnUse" x1="606" y1="236" x2="597" y2="288">
-      <stop offset="0" stop-color="#D92376" stop-opacity="0.7"/>
-      <stop offset="1" stop-color="#D92376" stop-opacity="0"/>
+      <stop offset="0" stop-color="#62070C" stop-opacity="0.7"/>
+      <stop offset="1" stop-color="#62070C" stop-opacity="0"/>
     </linearGradient>
-    <!-- Franja blanca: rosa crema, más rosada hacia la derecha -->
+    <!-- Franja blanca: blanco, gris claro hacia la derecha -->
     <linearGradient id="ps-band" gradientUnits="userSpaceOnUse" x1="260" y1="640" x2="760" y2="520">
-      <stop offset="0" stop-color="#FFEAF4"/>
-      <stop offset="0.6" stop-color="#FDDCEC"/>
-      <stop offset="1" stop-color="#FBD0E5"/>
+      <stop offset="0" stop-color="#EFEFEF"/>
+      <stop offset="0.6" stop-color="#E4E4E4"/>
+      <stop offset="1" stop-color="#DBDBDB"/>
     </linearGradient>
-    <!-- Base sellada: rosa algo más profundo, canto superior claro -->
+    <!-- Base sellada: rojo algo más profundo, canto superior claro -->
     <linearGradient id="ps-seal" gradientUnits="userSpaceOnUse" x1="300" y1="720" x2="560" y2="960">
-      <stop offset="0" stop-color="#FB5CA2"/>
-      <stop offset="0.3" stop-color="#F84991"/>
-      <stop offset="1" stop-color="#E9367F"/>
+      <stop offset="0" stop-color="#E0221E"/>
+      <stop offset="0.3" stop-color="#C9181A"/>
+      <stop offset="1" stop-color="#980E13"/>
     </linearGradient>
     <!-- Brazos: punta iluminada, raíz en sombra junto al tubo -->
     <linearGradient id="ps-arm-left" gradientUnits="userSpaceOnUse" x1="215" y1="380" x2="330" y2="500">
-      <stop offset="0" stop-color="#FC71B0"/>
-      <stop offset="0.55" stop-color="#F9519A"/>
-      <stop offset="1" stop-color="#E23C82"/>
+      <stop offset="0" stop-color="#F1372A"/>
+      <stop offset="0.55" stop-color="#D21C1C"/>
+      <stop offset="1" stop-color="#970D13"/>
     </linearGradient>
     <linearGradient id="ps-arm-right" gradientUnits="userSpaceOnUse" x1="700" y1="560" x2="850" y2="610">
-      <stop offset="0" stop-color="#E23C82"/>
-      <stop offset="0.35" stop-color="#F9519A"/>
-      <stop offset="1" stop-color="#F7478F"/>
+      <stop offset="0" stop-color="#970D13"/>
+      <stop offset="0.35" stop-color="#D21C1C"/>
+      <stop offset="1" stop-color="#C41719"/>
     </linearGradient>
-    <!-- Tapa: blanco arriba/izquierda, lavanda a la derecha -->
+    <!-- Tapa: blanco arriba/izquierda, gris claro a la derecha -->
     <linearGradient id="ps-cap" gradientUnits="userSpaceOnUse" x1="500" y1="120" x2="725" y2="200">
       <stop offset="0" stop-color="#FFFFFF"/>
-      <stop offset="0.55" stop-color="#F8F2FA"/>
-      <stop offset="1" stop-color="#E8DAF4"/>
+      <stop offset="0.55" stop-color="#F4F4F4"/>
+      <stop offset="1" stop-color="#DFDFDF"/>
     </linearGradient>
     <linearGradient id="ps-star" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#FFFFFF"/>
-      <stop offset="0.6" stop-color="#FFF6F9"/>
-      <stop offset="1" stop-color="#FFDDEB"/>
+      <stop offset="0" stop-color="#FFD72B"/>
+      <stop offset="0.6" stop-color="#FFD72B"/>
+      <stop offset="1" stop-color="#FFD72B"/>
     </linearGradient>
     <clipPath id="ps-clip-body">
       <path d="M476 204 L709 250 L710 264 C739 281 757 300 756 335 C745 400 676 715 655 857 L645 885 L250 795 L241 735 C284 571 337 413 398 257 C416 222 438 209 476 204 Z"/>
@@ -60,6 +60,14 @@
     <clipPath id="ps-clip-cap">
       <path d="M561 77 C622 74 683 90 713 118 C723 128 725 144 723 159 L711 247 C709 258 702 263 692 262 C640 258 560 236 500 213 C490 209 485 201 488 192 L526 101 C532 87 545 78 561 77 Z"/>
     </clipPath>
+    <!-- Grano compartido: ruido fino gris (motas oscuras y claras) sobre el cuerpo; se apaga a <= 24 px -->
+    <filter id="ps-grain" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="11" stitchTiles="stitch" result="n"/>
+      <feColorMatrix in="n" result="d" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1.5 0 0 0 -0.75"/>
+      <feColorMatrix in="n" result="w" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  -1.5 0 0 0 0.75"/>
+      <feMerge><feMergeNode in="d"/><feMergeNode in="w"/></feMerge>
+    </filter>
+    <style>@media (max-width: 24px) { .pj-grain { display: none; } }</style>
   </defs>
 
   <g id="decorations-back">
@@ -89,15 +97,16 @@
     <g id="cap">
       <path id="cap-shape" fill="url(#ps-cap)" d="M561 77 C622 74 683 90 713 118 C723 128 725 144 723 159 L711 247 C709 258 702 263 692 262 C640 258 560 236 500 213 C490 209 485 201 488 192 L526 101 C532 87 545 78 561 77 Z"/>
       <g id="cap-ridges" clip-path="url(#ps-clip-cap)">
-        <path fill="#EADDF5" d="M514.5 253.9 L569.3 111.2 C571.5 105.5 568.7 99.2 563 97 C557.3 94.8 551 97.7 548.8 103.3 L494 246.1 Z"/>
-        <path fill="#E4D4F2" d="M573 272.3 L627.2 123.4 C629.4 117.1 626.2 110.3 620 108 C613.8 105.7 606.9 108.9 604.6 115.2 L550.5 264.1 Z"/>
-        <path fill="#D7C1EC" d="M653.2 294.3 L687.6 138.7 C689.3 131.1 684.5 123.7 677 122 C669.5 120.3 662 125.1 660.3 132.6 L625.8 288.3 Z"/>
+        <path fill="#E1E1E1" d="M514.5 253.9 L569.3 111.2 C571.5 105.5 568.7 99.2 563 97 C557.3 94.8 551 97.7 548.8 103.3 L494 246.1 Z"/>
+        <path fill="#DADADA" d="M573 272.3 L627.2 123.4 C629.4 117.1 626.2 110.3 620 108 C613.8 105.7 606.9 108.9 604.6 115.2 L550.5 264.1 Z"/>
+        <path fill="#CCCCCC" d="M653.2 294.3 L687.6 138.7 C689.3 131.1 684.5 123.7 677 122 C669.5 120.3 662 125.1 660.3 132.6 L625.8 288.3 Z"/>
       </g>
     </g>
 
+    <rect class="pj-grain" x="0" y="0" width="1024" height="1024" fill="#808080" clip-path="url(#ps-clip-body)" filter="url(#ps-grain)" opacity="0.32"/>
     <g id="character-details">
-      <rect id="highlight-arc" fill="#FFD3E8" x="-58" y="-13" width="116" height="26" rx="13" transform="translate(395 345) rotate(-71.8)"/>
-      <ellipse id="highlight-dot" fill="#FFD3E8" cx="432" cy="250" rx="13" ry="22" transform="rotate(35 432 250)"/>
+      <rect id="highlight-arc" opacity="0.42" fill="#FFFFFF" x="-58" y="-13" width="116" height="26" rx="13" transform="translate(395 345) rotate(-71.8)"/>
+      <ellipse id="highlight-dot" opacity="0.42" fill="#FFFFFF" cx="432" cy="250" rx="13" ry="22" transform="rotate(35 432 250)"/>
     </g>
 
     <g id="eyes">

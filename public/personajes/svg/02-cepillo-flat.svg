@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" class="pj-cepillo">
-  <title>Cepillo turquesa · Agenda (flat)</title>
-  <desc>Variante plana del personaje 02 para 32–48 px: seis colores sólidos (turquesa, turquesa profundo de borde y sombra, blanco de cerdas, azul perla de borde de cerdas, negro de ojos). Construcción tipo pegatina: silueta en el color de borde y cara desplazada arriba/izquierda; surcos de las cerdas marcados por el borde de cada mechón. Sin destellos ni degradados. Misma silueta y mismos IDs que la premium; ojos un 8 % más anchos.</desc>
+  <title>Cepillo azul · Agenda (flat)</title>
+  <desc>Variante plana del personaje 02 para 32–48 px: seis colores sólidos (azul, azul profundo de borde y sombra, blanco de cerdas, gris claro de borde de cerdas, negro de ojos). Construcción tipo pegatina: silueta en el color de borde y cara desplazada arriba/izquierda; surcos de las cerdas marcados por el borde de cada mechón. Sin destellos ni degradados. Misma silueta y mismos IDs que la premium; ojos un 8 % más anchos. v2 (2026-10-13, RECOLOR-FAMILIA): paleta única de 5 colores intensos + neutros, reflejos satinados y grano fino (.pj-grain, se apaga a ≤ 24 px); geometría e IDs de v1 intactos.</desc>
   <defs>
     <clipPath id="cpf-clip-face">
       <path transform="translate(23 20) scale(0.93)" d="M581 89 C611 86 641 101 657 128 C665 148 584 380 563 406 C552 414 545 428 546 450 C550 491 552 525 547 566 C537 635 509 715 484 780 C462 835 427 923 363 940 C314 952 257 923 238 876 C220 832 231 791 246 748 C272 677 309 596 349 531 C369 498 456 399 459 377 C449 361 442 351 441 330 C440 297 478 218 492 185 C511 142 526 95 581 89 Z"/>
@@ -11,17 +11,17 @@
 
   <g id="character">
     <g id="character-body">
-      <path id="body-shape" fill="#06A6C8" d="M581 89 C611 86 641 101 657 128 C665 148 584 380 563 406 C552 414 545 428 546 450 C550 491 552 525 547 566 C537 635 509 715 484 780 C462 835 427 923 363 940 C314 952 257 923 238 876 C220 832 231 791 246 748 C272 677 309 596 349 531 C369 498 456 399 459 377 C449 361 442 351 441 330 C440 297 478 218 492 185 C511 142 526 95 581 89 Z"/>
-      <path id="body-face" fill="#22DDE3" transform="translate(23 20) scale(0.93)" d="M581 89 C611 86 641 101 657 128 C665 148 584 380 563 406 C552 414 545 428 546 450 C550 491 552 525 547 566 C537 635 509 715 484 780 C462 835 427 923 363 940 C314 952 257 923 238 876 C220 832 231 791 246 748 C272 677 309 596 349 531 C369 498 456 399 459 377 C449 361 442 351 441 330 C440 297 478 218 492 185 C511 142 526 95 581 89 Z"/>
-      <path id="body-shade" fill="#0FC4DC" clip-path="url(#cpf-clip-face)" d="M628 100 L720 100 L720 1000 L290 1000 C350 900 425 790 462 660 C482 590 494 530 498 470 C502 430 512 400 530 380 Z"/>
+      <path id="body-shape" fill="#082277" d="M581 89 C611 86 641 101 657 128 C665 148 584 380 563 406 C552 414 545 428 546 450 C550 491 552 525 547 566 C537 635 509 715 484 780 C462 835 427 923 363 940 C314 952 257 923 238 876 C220 832 231 791 246 748 C272 677 309 596 349 531 C369 498 456 399 459 377 C449 361 442 351 441 330 C440 297 478 218 492 185 C511 142 526 95 581 89 Z"/>
+      <path id="body-face" fill="#123CC1" transform="translate(23 20) scale(0.93)" d="M581 89 C611 86 641 101 657 128 C665 148 584 380 563 406 C552 414 545 428 546 450 C550 491 552 525 547 566 C537 635 509 715 484 780 C462 835 427 923 363 940 C314 952 257 923 238 876 C220 832 231 791 246 748 C272 677 309 596 349 531 C369 498 456 399 459 377 C449 361 442 351 441 330 C440 297 478 218 492 185 C511 142 526 95 581 89 Z"/>
+      <path id="body-shade" fill="#0D2F9E" clip-path="url(#cpf-clip-face)" d="M628 100 L720 100 L720 1000 L290 1000 C350 900 425 790 462 660 C482 590 494 530 498 470 C502 430 512 400 530 380 Z"/>
     </g>
 
     <g id="character-details">
       <g id="bristles">
-        <path fill="#BCCDE8" d="M576.3 295.1 L709.6 362.5 C734.7 375.1 744.8 405.8 732.1 430.9 C719.5 455.9 688.8 466 663.8 453.3 L552.3 397 C544.4 393 540.7 383.2 544 375 Z"/>
-        <path fill="#BCCDE8" d="M609.4 213 L738.1 266.8 C766.1 278.6 779.3 310.7 767.6 338.7 C755.9 366.7 723.7 379.9 695.7 368.2 L568.2 314.9 Z"/>
-        <path fill="#BCCDE8" d="M655.6 136 L771.1 172.9 C799.9 182.1 815.8 212.9 806.6 241.7 C797.4 270.6 766.6 286.5 737.7 277.3 L601.1 233.7 L637 144.8 C639.9 137.6 648.2 133.7 655.6 136 Z"/>
-        <g transform="translate(23 20) scale(0.93)" fill="#FCFCFF" stroke="#BCCDE8" stroke-width="13" stroke-linejoin="round">
+        <path fill="#CCCCCC" d="M576.3 295.1 L709.6 362.5 C734.7 375.1 744.8 405.8 732.1 430.9 C719.5 455.9 688.8 466 663.8 453.3 L552.3 397 C544.4 393 540.7 383.2 544 375 Z"/>
+        <path fill="#CCCCCC" d="M609.4 213 L738.1 266.8 C766.1 278.6 779.3 310.7 767.6 338.7 C755.9 366.7 723.7 379.9 695.7 368.2 L568.2 314.9 Z"/>
+        <path fill="#CCCCCC" d="M655.6 136 L771.1 172.9 C799.9 182.1 815.8 212.9 806.6 241.7 C797.4 270.6 766.6 286.5 737.7 277.3 L601.1 233.7 L637 144.8 C639.9 137.6 648.2 133.7 655.6 136 Z"/>
+        <g transform="translate(23 20) scale(0.93)" fill="#FCFCFC" stroke="#CCCCCC" stroke-width="13" stroke-linejoin="round">
           <path id="bristle-3" d="M576.3 295.1 L709.6 362.5 C734.7 375.1 744.8 405.8 732.1 430.9 C719.5 455.9 688.8 466 663.8 453.3 L552.3 397 C544.4 393 540.7 383.2 544 375 Z"/>
           <path id="bristle-2" d="M609.4 213 L738.1 266.8 C766.1 278.6 779.3 310.7 767.6 338.7 C755.9 366.7 723.7 379.9 695.7 368.2 L568.2 314.9 Z"/>
           <path id="bristle-1" d="M655.6 136 L771.1 172.9 C799.9 182.1 815.8 212.9 806.6 241.7 C797.4 270.6 766.6 286.5 737.7 277.3 L601.1 233.7 L637 144.8 C639.9 137.6 648.2 133.7 655.6 136 Z"/>

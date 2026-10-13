@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" class="pj-hilo">
   <title>Hilo dental amarillo · Confirmaciones (flat)</title>
-  <desc>Variante plana del personaje 04 para 32–48 px: cinco colores sólidos (amarillo, ámbar de borde, ámbar del interior de la tapa, blanco de la hebra, negro de ojos). Construcción tipo pegatina: tapa y estuche en su color de borde con la cara desplazada arriba/izquierda; la hebra se engrosa y lleva contorno ámbar para leerse también sobre blanco. Sin destellos ni degradados. Misma silueta y mismos IDs que la premium; ojos un 8 % más anchos.</desc>
+  <desc>Variante plana del personaje 04 para 32–48 px: cinco colores sólidos (amarillo, amarillo profundo de borde, amarillo profundo del interior de la tapa, blanco de la hebra, negro de ojos). Construcción tipo pegatina: tapa y estuche en su color de borde con la cara desplazada arriba/izquierda; la hebra se engrosa y lleva contorno amarillo profundo para leerse también sobre blanco. Sin destellos ni degradados. Misma silueta y mismos IDs que la premium; ojos un 8 % más anchos. v2 (2026-10-13, RECOLOR-FAMILIA): paleta única de 5 colores intensos + neutros, reflejos satinados y grano fino (.pj-grain, se apaga a ≤ 24 px); geometría e IDs de v1 intactos.</desc>
   <defs>
     <clipPath id="hlf-clip-lid">
       <path transform="translate(23 20) scale(0.93)" d="M372 513 C345 511 318 495 301 474 C286 454 273 405 274 380 C276 343 304 308 332 287 C384 250 615 190 681 184 C746 179 791 221 793 285 C794 323 793 360 789 396 L700 440 L430 525 Z"/>
@@ -11,19 +11,19 @@
 
   <g id="character">
     <g id="lid">
-      <path id="lid-shape" fill="#D98200" d="M372 513 C345 511 318 495 301 474 C286 454 273 405 274 380 C276 343 304 308 332 287 C384 250 615 190 681 184 C746 179 791 221 793 285 C794 323 793 360 789 396 L700 440 L430 525 Z"/>
-      <path fill="#FFC21A" transform="translate(23 20) scale(0.93)" d="M372 513 C345 511 318 495 301 474 C286 454 273 405 274 380 C276 343 304 308 332 287 C384 250 615 190 681 184 C746 179 791 221 793 285 C794 323 793 360 789 396 L700 440 L430 525 Z"/>
-      <path id="lid-inner" fill="#F09A00" clip-path="url(#hlf-clip-lid)" d="M372 342 L712 245 C740 238 758 258 759 290 L758 362 L420 520 L362 498 C333 486 317 460 318 430 C320 384 338 352 372 342 Z"/>
+      <path id="lid-shape" fill="#BF8000" d="M372 513 C345 511 318 495 301 474 C286 454 273 405 274 380 C276 343 304 308 332 287 C384 250 615 190 681 184 C746 179 791 221 793 285 C794 323 793 360 789 396 L700 440 L430 525 Z"/>
+      <path fill="#F5B000" transform="translate(23 20) scale(0.93)" d="M372 513 C345 511 318 495 301 474 C286 454 273 405 274 380 C276 343 304 308 332 287 C384 250 615 190 681 184 C746 179 791 221 793 285 C794 323 793 360 789 396 L700 440 L430 525 Z"/>
+      <path id="lid-inner" fill="#D79300" clip-path="url(#hlf-clip-lid)" d="M372 342 L712 245 C740 238 758 258 759 290 L758 362 L420 520 L362 498 C333 486 317 460 318 430 C320 384 338 352 372 342 Z"/>
     </g>
 
     <g id="thread" fill="none" stroke-linecap="round" stroke-linejoin="round">
-      <path stroke="#D98200" stroke-width="62" d="M540 482 C541 420 512 373 461 373 C410 373 368 405 350 440 C336 470 324 520 314 556 C300 610 270 668 199 669 C158 670 132 646 133 603"/>
-      <path id="thread-strand" stroke="#FCFCFF" stroke-width="40" d="M540 482 C541 420 512 373 461 373 C410 373 368 405 350 440 C336 470 324 520 314 556 C300 610 270 668 199 669 C158 670 132 646 133 603"/>
+      <path stroke="#BF8000" stroke-width="62" d="M540 482 C541 420 512 373 461 373 C410 373 368 405 350 440 C336 470 324 520 314 556 C300 610 270 668 199 669 C158 670 132 646 133 603"/>
+      <path id="thread-strand" stroke="#FCFCFC" stroke-width="40" d="M540 482 C541 420 512 373 461 373 C410 373 368 405 350 440 C336 470 324 520 314 556 C300 610 270 668 199 669 C158 670 132 646 133 603"/>
     </g>
 
     <g id="character-body">
-      <path id="body-shape" fill="#D98200" d="M430 476 L744 391 C770 384 812 383 828 400 C848 425 882 595 884 632 C887 677 868 716 836 747 C777 805 627 839 546 843 C509 845 469 835 439 811 C391 772 350 659 341 598 C336 562 349 547 370 521 C385 500 405 484 430 476 Z"/>
-      <path id="body-face" fill="#FFC21A" transform="translate(23 20) scale(0.93)" d="M430 476 L744 391 C770 384 812 383 828 400 C848 425 882 595 884 632 C887 677 868 716 836 747 C777 805 627 839 546 843 C509 845 469 835 439 811 C391 772 350 659 341 598 C336 562 349 547 370 521 C385 500 405 484 430 476 Z"/>
+      <path id="body-shape" fill="#BF8000" d="M430 476 L744 391 C770 384 812 383 828 400 C848 425 882 595 884 632 C887 677 868 716 836 747 C777 805 627 839 546 843 C509 845 469 835 439 811 C391 772 350 659 341 598 C336 562 349 547 370 521 C385 500 405 484 430 476 Z"/>
+      <path id="body-face" fill="#F5B000" transform="translate(23 20) scale(0.93)" d="M430 476 L744 391 C770 384 812 383 828 400 C848 425 882 595 884 632 C887 677 868 716 836 747 C777 805 627 839 546 843 C509 845 469 835 439 811 C391 772 350 659 341 598 C336 562 349 547 370 521 C385 500 405 484 430 476 Z"/>
     </g>
 
     <g id="character-details"/>

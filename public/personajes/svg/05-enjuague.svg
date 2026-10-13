@@ -1,53 +1,53 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" class="pj-enjuague">
   <title>Enjuague bucal · Caja</title>
-  <desc>Personaje 05 de la familia OdontoFlow: frasco de enjuague bucal rojo intenso (distinto del rosa de la Pasta), ancho abajo, hombros sinuosos y cuello corto, en leve diagonal; panel rojo profundo de esquinas muy redondeadas con dos ojos cápsula negros; tapa blanca grande ladeada a la derecha con luz lavanda. Cuatro burbujas y dos destellos a los lados. Luz arriba/izquierda. SVG nativo dibujado a mano; la animación vive fuera (personajes.css y personajes-B.css).</desc>
+  <desc>Personaje 05 de la familia OdontoFlow: frasco de enjuague bucal azul intenso (contraste máximo con el azul de la Pasta, su pareja en cobro), ancho abajo, hombros sinuosos y cuello corto, en leve diagonal; panel azul profundo de esquinas muy redondeadas con dos ojos cápsula negros; tapa blanca grande ladeada a la derecha con luz gris claro. Cuatro burbujas y dos destellos a los lados. Luz arriba/izquierda. SVG nativo dibujado a mano; la animación vive fuera (personajes.css y personajes-B.css). v2 (2026-10-13, RECOLOR-FAMILIA): paleta única de 5 colores intensos + neutros, reflejos satinados y grano fino (.pj-grain, se apaga a ≤ 24 px); geometría e IDs de v1 intactos.</desc>
   <defs>
     <!-- Luz arriba/izquierda: rojo claro translúcido en el hombro que se satura hacia el centro -->
     <linearGradient id="en-base" gradientUnits="userSpaceOnUse" x1="230" y1="360" x2="620" y2="760">
-      <stop offset="0" stop-color="#FF8A80"/>
-      <stop offset="0.4" stop-color="#FF4F4C"/>
-      <stop offset="1" stop-color="#FF3B3B"/>
+      <stop offset="0" stop-color="#4F80FF"/>
+      <stop offset="0.4" stop-color="#2058F5"/>
+      <stop offset="1" stop-color="#194FEA"/>
     </linearGradient>
     <!-- Sombra del material: borde derecho -->
     <linearGradient id="en-shade-right" gradientUnits="userSpaceOnUse" x1="640" y1="0" x2="812" y2="0">
-      <stop offset="0" stop-color="#D21F2C" stop-opacity="0"/>
-      <stop offset="0.65" stop-color="#D21F2C" stop-opacity="0.55"/>
-      <stop offset="1" stop-color="#C21827" stop-opacity="0.85"/>
+      <stop offset="0" stop-color="#0D2F9E" stop-opacity="0"/>
+      <stop offset="0.65" stop-color="#0D2F9E" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#092582" stop-opacity="0.85"/>
     </linearGradient>
     <!-- Sombra del material: base -->
     <linearGradient id="en-shade-bottom" gradientUnits="userSpaceOnUse" x1="0" y1="760" x2="0" y2="936">
-      <stop offset="0" stop-color="#D21F2C" stop-opacity="0"/>
-      <stop offset="1" stop-color="#D21F2C" stop-opacity="0.75"/>
+      <stop offset="0" stop-color="#0D2F9E" stop-opacity="0"/>
+      <stop offset="1" stop-color="#0D2F9E" stop-opacity="0.75"/>
     </linearGradient>
     <!-- Pliegue bajo la tapa: el cuello queda en sombra -->
     <radialGradient id="en-shade-neck" gradientUnits="userSpaceOnUse" cx="640" cy="360" r="120">
-      <stop offset="0" stop-color="#D21F2C" stop-opacity="0.8"/>
-      <stop offset="1" stop-color="#D21F2C" stop-opacity="0"/>
+      <stop offset="0" stop-color="#0D2F9E" stop-opacity="0.8"/>
+      <stop offset="1" stop-color="#0D2F9E" stop-opacity="0"/>
     </radialGradient>
     <!-- Panel rojo profundo -->
     <linearGradient id="en-panel" gradientUnits="userSpaceOnUse" x1="360" y1="450" x2="690" y2="800">
-      <stop offset="0" stop-color="#E41D2E"/>
-      <stop offset="0.6" stop-color="#CC1426"/>
-      <stop offset="1" stop-color="#B80F22"/>
+      <stop offset="0" stop-color="#0F36B1"/>
+      <stop offset="0.6" stop-color="#0A2889"/>
+      <stop offset="1" stop-color="#071E6C"/>
     </linearGradient>
-    <!-- Tapa blanca con luz lavanda -->
+    <!-- Tapa blanca con luz gris claro -->
     <linearGradient id="en-cap" gradientUnits="userSpaceOnUse" x1="520" y1="140" x2="760" y2="350">
-      <stop offset="0" stop-color="#FCFCFF"/>
-      <stop offset="0.55" stop-color="#F1EFFF"/>
-      <stop offset="1" stop-color="#D6D0FA"/>
+      <stop offset="0" stop-color="#FCFCFC"/>
+      <stop offset="0.55" stop-color="#F1F1F1"/>
+      <stop offset="1" stop-color="#D4D4D4"/>
     </linearGradient>
     <linearGradient id="en-cap-shade" gradientUnits="userSpaceOnUse" x1="690" y1="0" x2="792" y2="0">
-      <stop offset="0" stop-color="#C9C1F5" stop-opacity="0"/>
-      <stop offset="1" stop-color="#C9C1F5" stop-opacity="0.9"/>
+      <stop offset="0" stop-color="#CCCCCC" stop-opacity="0"/>
+      <stop offset="1" stop-color="#CCCCCC" stop-opacity="0.9"/>
     </linearGradient>
     <linearGradient id="en-bubble" gradientUnits="objectBoundingBox" x1="0.15" y1="0.1" x2="0.85" y2="0.9">
-      <stop offset="0" stop-color="#FF8A80"/>
-      <stop offset="0.55" stop-color="#FF4B4B"/>
-      <stop offset="1" stop-color="#E02A36"/>
+      <stop offset="0" stop-color="#366BFF"/>
+      <stop offset="0.55" stop-color="#265EF9"/>
+      <stop offset="1" stop-color="#1950EC"/>
     </linearGradient>
     <linearGradient id="en-star" gradientUnits="objectBoundingBox" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#FFE3DF"/>
-      <stop offset="1" stop-color="#FF8A80"/>
+      <stop offset="0" stop-color="#FFD72B"/>
+      <stop offset="1" stop-color="#FFD118"/>
     </linearGradient>
     <clipPath id="en-clip-body">
       <path d="M201 705 C207 630 276 566 292 500 C303 455 274 423 306 368 C319 346 338 328 361 317 C383 307 481 294 487 283 C495 268 515 238 540 228 L735 300 C738 330 730 352 723 372 C719 386 787 450 797 469 C806 487 810 509 808 529 C802 589 755 605 740 650 C719 708 718 785 700 846 C694 868 684 888 667 904 C642 927 605 935 572 934 C509 931 421 903 362 879 C319 861 265 835 234 800 C211 775 199 739 201 705 Z"/>
@@ -55,6 +55,14 @@
     <clipPath id="en-clip-cap">
       <path d="M478 254 C480 242 525 143 534 130 C542 117 551 110 567 108 C607 103 695 136 732 154 C754 165 787 184 790 211 C792 226 758 333 749 350 C745 359 742 364 731 366 C708 369 579 319 552 307 C537 300 500 284 488 274 C480 268 477 265 478 254 Z"/>
     </clipPath>
+    <!-- Grano compartido: ruido fino gris (motas oscuras y claras) sobre el cuerpo; se apaga a <= 24 px -->
+    <filter id="en-grain" x="0" y="0" width="1" height="1" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="11" stitchTiles="stitch" result="n"/>
+      <feColorMatrix in="n" result="d" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1.5 0 0 0 -0.75"/>
+      <feColorMatrix in="n" result="w" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  -1.5 0 0 0 0.75"/>
+      <feMerge><feMergeNode in="d"/><feMergeNode in="w"/></feMerge>
+    </filter>
+    <style>@media (max-width: 24px) { .pj-grain { display: none; } }</style>
   </defs>
 
   <g id="decorations-back">
@@ -96,10 +104,11 @@
           <rect x="690" y="100" width="110" height="280" fill="url(#en-cap-shade)"/>
           <rect fill="#FFFFFF" fill-opacity="0.7" x="-200" y="-70" width="400" height="66" transform="translate(650 150) rotate(22)"/>
         </g>
-        <rect id="cap-highlight" fill="#FFFFFF" x="-44" y="-9" width="88" height="18" rx="9" transform="translate(522 214) rotate(-66)"/>
+        <rect id="cap-highlight" opacity="0.42" fill="#FFFFFF" x="-44" y="-9" width="88" height="18" rx="9" transform="translate(522 214) rotate(-66)"/>
       </g>
     </g>
 
+    <rect class="pj-grain" x="0" y="0" width="1024" height="1024" fill="#808080" clip-path="url(#en-clip-body)" filter="url(#en-grain)" opacity="0.32"/>
     <g id="character-details">
       <rect id="highlight-arc" fill="#FFFFFF" fill-opacity="0.85" x="-46" y="-13" width="92" height="26" rx="13" transform="translate(372 346) rotate(-28)"/>
       <ellipse id="highlight-dot" fill="#FFFFFF" fill-opacity="0.7" cx="768" cy="508" rx="12" ry="26" transform="rotate(-8 768 508)"/>
