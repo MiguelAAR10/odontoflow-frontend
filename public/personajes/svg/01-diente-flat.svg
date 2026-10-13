@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <title>Diente brillante · AIRI (flat)</title>
+  <desc>Variante plana del personaje 01 para 32–48 px: cuatro colores sólidos (marfil, perla claro, azul borde, negro de ojos); construcción tipo pegatina: silueta azul y cara marfil desplazada arriba/izquierda, así el borde se lee también sobre blanco, sin destellos ni degradados. Misma silueta, mismos IDs que la premium; ojos un 8 % más anchos para leer pequeño.</desc>
+  <defs>
+    <clipPath id="dtf-clip-face">
+      <path transform="translate(23 20) scale(0.93)" d="M390 252 C430 252 462 263 495 263 C535 263 590 200 682 198 C772 196 824 280 825 365 C826 430 798 480 792 535 C788 590 820 640 819 705 C818 772 787 815 737 815 C700 814 670 790 640 752 C612 715 600 662 565 662 C535 662 522 700 515 760 C508 820 490 864 432 864 C385 864 350 810 330 750 C318 700 300 655 265 605 C225 555 197 505 197 445 C197 330 290 252 390 252 Z"/>
+    </clipPath>
+  </defs>
+
+  <g id="decorations-back"/>
+
+  <g id="character">
+    <g id="character-body">
+      <path id="body-shape" fill="#C9D6FF" d="M390 252 C430 252 462 263 495 263 C535 263 590 200 682 198 C772 196 824 280 825 365 C826 430 798 480 792 535 C788 590 820 640 819 705 C818 772 787 815 737 815 C700 814 670 790 640 752 C612 715 600 662 565 662 C535 662 522 700 515 760 C508 820 490 864 432 864 C385 864 350 810 330 750 C318 700 300 655 265 605 C225 555 197 505 197 445 C197 330 290 252 390 252 Z"/>
+      <path id="body-face" fill="#FCFCFF" transform="translate(23 20) scale(0.93)" d="M390 252 C430 252 462 263 495 263 C535 263 590 200 682 198 C772 196 824 280 825 365 C826 430 798 480 792 535 C788 590 820 640 819 705 C818 772 787 815 737 815 C700 814 670 790 640 752 C612 715 600 662 565 662 C535 662 522 700 515 760 C508 820 490 864 432 864 C385 864 350 810 330 750 C318 700 300 655 265 605 C225 555 197 505 197 445 C197 330 290 252 390 252 Z"/>
+      <path id="body-shade" fill="#E3EBFF" clip-path="url(#dtf-clip-face)" d="M812 262 C784 340 762 430 765 528 C768 612 792 660 786 722 C781 772 742 790 700 772 C672 760 650 738 632 742 L620 900 L900 900 L900 240 Z M318 776 C372 816 452 822 522 780 L540 900 L300 900 Z"/>
+    </g>
+
+    <g id="character-details"/>
+
+    <g id="eyes">
+      <g id="eyes-state">
+        <g id="eye-left" transform="translate(457 481) rotate(-15.7)">
+          <rect class="eye" x="-40.5" y="-70" width="81" height="140" rx="40.5" fill="#020204"/>
+        </g>
+        <g id="eye-right" transform="translate(593 441) rotate(-15.5)">
+          <rect class="eye" x="-40.5" y="-70" width="81" height="140" rx="40.5" fill="#020204"/>
+        </g>
+      </g>
+    </g>
+  </g>
+
+  <g id="decorations-front"/>
+</svg>

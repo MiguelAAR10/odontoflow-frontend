@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <title>Diente brillante · AIRI</title>
+  <desc>Personaje 01 de la familia OdontoFlow: molar blanco marfil, asimétrico e inclinado, con dos ojos cápsula negros, sombra azul perla abajo/derecha y dos destellos de cuatro puntas. Luz arriba/izquierda. SVG nativo dibujado a mano; la animación vive fuera, en personajes.css.</desc>
+  <defs>
+    <!-- Luz: arriba/izquierda. Base marfil con hombro izquierdo apenas gris para que lea el brillo -->
+    <linearGradient id="dt-base" gradientUnits="userSpaceOnUse" x1="210" y1="260" x2="600" y2="620">
+      <stop offset="0" stop-color="#ECEEF5"/>
+      <stop offset="0.32" stop-color="#FAFBFD"/>
+      <stop offset="0.62" stop-color="#FFFFFF"/>
+    </linearGradient>
+    <!-- Sombra del material: azul perla hacia el borde derecho -->
+    <linearGradient id="dt-shade-right" gradientUnits="userSpaceOnUse" x1="640" y1="0" x2="826" y2="0">
+      <stop offset="0" stop-color="#DCE7FF" stop-opacity="0"/>
+      <stop offset="0.7" stop-color="#DCE7FF" stop-opacity="0.75"/>
+      <stop offset="1" stop-color="#C6D3FF" stop-opacity="0.95"/>
+    </linearGradient>
+    <!-- Sombra del material: raíces abajo -->
+    <linearGradient id="dt-shade-bottom" gradientUnits="userSpaceOnUse" x1="0" y1="640" x2="0" y2="866">
+      <stop offset="0" stop-color="#D3DEFF" stop-opacity="0"/>
+      <stop offset="0.6" stop-color="#D3DEFF" stop-opacity="0.7"/>
+      <stop offset="1" stop-color="#BBCBFF" stop-opacity="1"/>
+    </linearGradient>
+    <!-- Pliegue suave entre corona y raíz izquierda -->
+    <radialGradient id="dt-shade-knee" gradientUnits="userSpaceOnUse" cx="292" cy="640" r="88">
+      <stop offset="0" stop-color="#D3DEFF" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#D3DEFF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="dt-star-warm" gradientUnits="userSpaceOnUse" x1="180" y1="140" x2="290" y2="285">
+      <stop offset="0" stop-color="#FFE88A"/>
+      <stop offset="0.5" stop-color="#FFDA55"/>
+      <stop offset="1" stop-color="#FFB53D"/>
+    </linearGradient>
+    <linearGradient id="dt-star-cool" gradientUnits="userSpaceOnUse" x1="835" y1="480" x2="910" y2="570">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#D6E4FF"/>
+    </linearGradient>
+    <clipPath id="dt-clip-body">
+      <path d="M390 252 C430 252 462 263 495 263 C535 263 590 200 682 198 C772 196 824 280 825 365 C826 430 798 480 792 535 C788 590 820 640 819 705 C818 772 787 815 737 815 C700 814 670 790 640 752 C612 715 600 662 565 662 C535 662 522 700 515 760 C508 820 490 864 432 864 C385 864 350 810 330 750 C318 700 300 655 265 605 C225 555 197 505 197 445 C197 330 290 252 390 252 Z"/>
+    </clipPath>
+  </defs>
+
+  <g id="decorations-back">
+    <g id="sparkle-back">
+      <path fill="url(#dt-star-warm)" d="M217.9 138.5 C222.3 130.0 232.9 128.9 239.1 136.3 C247.6 170.0 272.7 189.9 308.3 190.9 C317.0 195.3 318.1 205.6 310.5 211.6 C275.9 220.1 255.4 244.8 254.1 279.5 C249.7 288.0 239.1 289.1 232.9 281.7 C224.4 248.0 199.3 228.1 163.7 227.1 C155.0 222.7 153.9 212.4 161.5 206.4 C196.1 197.9 216.6 173.2 217.9 138.5 Z"/>
+    </g>
+  </g>
+
+  <g id="character">
+    <g id="character-body">
+      <path id="body-shape" fill="url(#dt-base)" d="M390 252 C430 252 462 263 495 263 C535 263 590 200 682 198 C772 196 824 280 825 365 C826 430 798 480 792 535 C788 590 820 640 819 705 C818 772 787 815 737 815 C700 814 670 790 640 752 C612 715 600 662 565 662 C535 662 522 700 515 760 C508 820 490 864 432 864 C385 864 350 810 330 750 C318 700 300 655 265 605 C225 555 197 505 197 445 C197 330 290 252 390 252 Z"/>
+      <g id="body-shade" clip-path="url(#dt-clip-body)">
+        <rect x="600" y="180" width="240" height="700" fill="url(#dt-shade-right)"/>
+        <rect x="180" y="620" width="660" height="260" fill="url(#dt-shade-bottom)"/>
+        <circle cx="292" cy="640" r="88" fill="url(#dt-shade-knee)"/>
+      </g>
+    </g>
+
+    <g id="character-details">
+      <rect id="highlight-arc" fill="#FFFFFF" x="-49" y="-14" width="98" height="28" rx="14" transform="translate(306 334) rotate(-38)"/>
+      <ellipse id="highlight-dot" fill="#FFFFFF" cx="255" cy="415" rx="14" ry="25" transform="rotate(20 255 415)"/>
+    </g>
+
+    <g id="eyes">
+      <g id="eyes-state">
+        <g id="eye-left" transform="translate(457 481) rotate(-15.7)">
+          <rect class="eye" x="-37.5" y="-68" width="75" height="136" rx="37.5" fill="#020204"/>
+        </g>
+        <g id="eye-right" transform="translate(593 441) rotate(-15.5)">
+          <rect class="eye" x="-37.5" y="-68.5" width="75" height="137" rx="37.5" fill="#020204"/>
+        </g>
+      </g>
+    </g>
+  </g>
+
+  <g id="decorations-front">
+    <g id="sparkle-front">
+      <path fill="url(#dt-star-cool)" d="M862.2 473.5 C865.6 468.0 872.4 468.0 875.8 473.5 C878.9 497.1 893.4 512.5 915.8 515.9 C921.0 519.4 921.0 526.6 915.8 530.1 C893.4 533.5 878.9 548.9 875.8 572.5 C872.4 578.0 865.6 578.0 862.2 572.5 C859.1 548.9 844.6 533.5 822.2 530.1 C817.0 526.6 817.0 519.4 822.2 515.9 C844.6 512.5 859.1 497.1 862.2 473.5 Z"/>
+    </g>
+  </g>
+</svg>

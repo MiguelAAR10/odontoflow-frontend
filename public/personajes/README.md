@@ -14,3 +14,7 @@ Personajes del equipo de agentes de OdontoFlow (generados con ChatGPT el 13/10/2
 
 - `*.webp`: 512×512, fondo transparente (se quitó el negro conectado al borde; los ojos se conservan). Úsalos en la UI.
 - `original/*.png`: originales 1254×1254 con fondo negro. No borrar.
+
+## SVG nativos (animables)
+
+`svg/`: personajes redibujados en SVG según `odontoflow-planning/docs/brand/manual-personajes-svg.md`. Estados por clase en el `<svg>` raíz (`is-idle`, `is-thinking`, `is-working`, `is-handoff`, `is-done`, `is-needs-you`) con `personajes.css`; `mirada.js` hace que los ojos sigan el puntero. Hoy: 01 Diente (premium y flat).
