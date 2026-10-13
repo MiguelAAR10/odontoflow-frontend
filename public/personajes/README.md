@@ -17,4 +17,4 @@ Personajes del equipo de agentes de OdontoFlow (generados con ChatGPT el 13/10/2
 
 ## SVG nativos (animables)
 
-`svg/`: personajes redibujados en SVG según `odontoflow-planning/docs/brand/manual-personajes-svg.md`. Estados por clase en el `<svg>` raíz (`is-idle`, `is-thinking`, `is-working`, `is-handoff`, `is-done`, `is-needs-you`) con `personajes.css`; `mirada.js` hace que los ojos sigan el puntero. Hoy: 01 Diente (premium y flat).
+`svg/`: personajes redibujados en SVG según `odontoflow-planning/docs/brand/manual-personajes-svg.md`. Estados por clase en el `<svg>` raíz (`is-idle`, `is-thinking`, `is-working`, `is-handoff`, `is-done`, `is-needs-you`) con `personajes.css`; `mirada.js` hace que los ojos sigan el puntero. Los 7 personajes (premium y flat); piezas propias en `personajes-A.css` y `personajes-B.css`. Hilo en amarillo y Enjuague en rojo.

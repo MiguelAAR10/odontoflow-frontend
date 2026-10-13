@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" class="pj-cepillo">
+  <title>Cepillo turquesa · Agenda</title>
+  <desc>Personaje 02 de la familia OdontoFlow: cepillo dental en diagonal ascendente, mango turquesa grueso con extremo en cápsula, cuello estrecho y cabezal con tres mechones de cerdas blancas redondeadas. Dos ojos cápsula negros en la parte alta del mango, inclinados con el cepillo. Tres destellos amarillos de cuatro puntas. Luz arriba/izquierda. SVG nativo dibujado a mano; la animación vive fuera, en personajes.css y personajes-A.css.</desc>
+  <defs>
+    <!-- Base: borde izquierdo cian luminoso hacia turquesa profundo a la derecha (perpendicular al eje del mango) -->
+    <linearGradient id="cp-base" gradientUnits="userSpaceOnUse" x1="250" y1="700" x2="481" y2="796">
+      <stop offset="0" stop-color="#6CFAF6"/>
+      <stop offset="0.14" stop-color="#3BE9EA"/>
+      <stop offset="0.5" stop-color="#22DDE3"/>
+      <stop offset="1" stop-color="#12D0E0"/>
+    </linearGradient>
+    <!-- Sombra del material: turquesa profundo en el borde derecho de mango y cabezal -->
+    <linearGradient id="cp-shade-right" gradientUnits="userSpaceOnUse" x1="554" y1="231" x2="702" y2="293">
+      <stop offset="0" stop-color="#08B6D3" stop-opacity="0"/>
+      <stop offset="0.55" stop-color="#05B1D0" stop-opacity="0.7"/>
+      <stop offset="1" stop-color="#009CC6" stop-opacity="0.95"/>
+    </linearGradient>
+    <!-- Pliegue: sombra cromática en el cuello, bajo el cabezal -->
+    <radialGradient id="cp-shade-neck" gradientUnits="userSpaceOnUse" cx="505" cy="405" r="78">
+      <stop offset="0" stop-color="#03A9CC" stop-opacity="0.8"/>
+      <stop offset="1" stop-color="#03A9CC" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Pliegue: extremo del mango, abajo a la derecha -->
+    <radialGradient id="cp-shade-tip" gradientUnits="userSpaceOnUse" cx="420" cy="905" r="120">
+      <stop offset="0" stop-color="#06B0D1" stop-opacity="0.75"/>
+      <stop offset="1" stop-color="#06B0D1" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Cerdas: blanco arriba/izquierda, azul perla en la punta redonda y el borde inferior de cada mechón -->
+    <linearGradient id="cp-bristle" x1="0.25" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="0.55" stop-color="#F6F8FB"/>
+      <stop offset="0.82" stop-color="#DDE7F4"/>
+      <stop offset="1" stop-color="#C4D5EB"/>
+    </linearGradient>
+    <linearGradient id="cp-star" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFE88A"/>
+      <stop offset="0.5" stop-color="#FFDA55"/>
+      <stop offset="1" stop-color="#FFB53D"/>
+    </linearGradient>
+    <!-- Punta de las cerdas: azul perla en el extremo redondo (a lo largo del mechón) -->
+    <linearGradient id="cp-bristle-tip" gradientUnits="userSpaceOnUse" x1="640" y1="250" x2="812" y2="300">
+      <stop offset="0" stop-color="#BFD2EC" stop-opacity="0"/>
+      <stop offset="0.6" stop-color="#C6D6EE" stop-opacity="0.25"/>
+      <stop offset="1" stop-color="#B7CBEA" stop-opacity="0.9"/>
+    </linearGradient>
+    <clipPath id="cp-clip-b2"><path d="M609.4 213 L738.1 266.8 C766.1 278.6 779.3 310.7 767.6 338.7 C755.9 366.7 723.7 379.9 695.7 368.2 L568.2 314.9 Z"/></clipPath>
+    <clipPath id="cp-clip-b3"><path d="M576.3 295.1 L709.6 362.5 C734.7 375.1 744.8 405.8 732.1 430.9 C719.5 455.9 688.8 466 663.8 453.3 L552.3 397 C544.4 393 540.7 383.2 544 375 Z"/></clipPath>
+    <clipPath id="cp-clip-bristles"><path d="M655.6 136 L771.1 172.9 C799.9 182.1 815.8 212.9 806.6 241.7 C797.4 270.6 766.6 286.5 737.7 277.3 L601.1 233.7 L637 144.8 C639.9 137.6 648.2 133.7 655.6 136 Z"/><path d="M609.4 213 L738.1 266.8 C766.1 278.6 779.3 310.7 767.6 338.7 C755.9 366.7 723.7 379.9 695.7 368.2 L568.2 314.9 Z"/><path d="M576.3 295.1 L709.6 362.5 C734.7 375.1 744.8 405.8 732.1 430.9 C719.5 455.9 688.8 466 663.8 453.3 L552.3 397 C544.4 393 540.7 383.2 544 375 Z"/></clipPath>
+    <clipPath id="cp-clip-body">
+      <path d="M581 89 C611 86 641 101 657 128 C665 148 584 380 563 406 C552 414 545 428 546 450 C550 491 552 525 547 566 C537 635 509 715 484 780 C462 835 427 923 363 940 C314 952 257 923 238 876 C220 832 231 791 246 748 C272 677 309 596 349 531 C369 498 456 399 459 377 C449 361 442 351 441 330 C440 297 478 218 492 185 C511 142 526 95 581 89 Z"/>
+    </clipPath>
+  </defs>
+
+  <g id="decorations-back">
+    <g id="sparkle-back">
+      <path fill="url(#cp-star)" d="M306.1 235.4 C309.8 229.0 317.2 229.0 320.9 235.4 C324.3 262.9 340.3 280.8 364.8 284.7 C370.5 288.8 370.5 297.2 364.8 301.3 C340.3 305.2 324.3 323.1 320.9 350.6 C317.2 357.0 309.8 357.0 306.1 350.6 C302.7 323.1 286.7 305.2 262.2 301.3 C256.5 297.2 256.5 288.8 262.2 284.7 C286.7 280.8 302.7 262.9 306.1 235.4 Z"/>
+    </g>
+    <g id="sparkle-back-2">
+      <path fill="url(#cp-star)" d="M392.1 173.3 C394.1 170.0 397.9 170.0 399.9 173.3 C401.7 187.5 410.1 196.7 423.0 198.7 C426.0 200.9 426.0 205.1 423.0 207.3 C410.1 209.3 401.7 218.5 399.9 232.7 C397.9 236.0 394.1 236.0 392.1 232.7 C390.3 218.5 381.9 209.3 369.0 207.3 C366.0 205.1 366.0 200.9 369.0 198.7 C381.9 196.7 390.3 187.5 392.1 173.3 Z"/>
+    </g>
+  </g>
+
+  <g id="character">
+    <g id="character-body">
+      <path id="body-shape" fill="url(#cp-base)" d="M581 89 C611 86 641 101 657 128 C665 148 584 380 563 406 C552 414 545 428 546 450 C550 491 552 525 547 566 C537 635 509 715 484 780 C462 835 427 923 363 940 C314 952 257 923 238 876 C220 832 231 791 246 748 C272 677 309 596 349 531 C369 498 456 399 459 377 C449 361 442 351 441 330 C440 297 478 218 492 185 C511 142 526 95 581 89 Z"/>
+      <g id="body-shade" clip-path="url(#cp-clip-body)">
+        <rect x="220" y="80" width="460" height="880" fill="url(#cp-shade-right)"/>
+        <path id="head-side" fill="#04ADCE" d="M618 152 C628 140 640 132 668 126 L566 412 L522 384 Z"/>
+        <circle cx="505" cy="405" r="78" fill="url(#cp-shade-neck)"/>
+        <circle cx="420" cy="905" r="120" fill="url(#cp-shade-tip)"/>
+      </g>
+    </g>
+
+    <g id="character-details">
+      <g id="bristles">
+        <path id="bristle-3" fill="url(#cp-bristle)" d="M576.3 295.1 L709.6 362.5 C734.7 375.1 744.8 405.8 732.1 430.9 C719.5 455.9 688.8 466 663.8 453.3 L552.3 397 C544.4 393 540.7 383.2 544 375 Z"/>
+        <path id="bristle-groove-3" fill="#D6E0F0" clip-path="url(#cp-clip-b3)" d="M603.8 226.9 L732.3 280.7 C760.3 292.4 773.5 324.6 761.8 352.6 C750.1 380.6 717.9 393.8 689.9 382.1 L562.6 328.8 Z"/>
+        <path id="bristle-2" fill="url(#cp-bristle)" d="M609.4 213 L738.1 266.8 C766.1 278.6 779.3 310.7 767.6 338.7 C755.9 366.7 723.7 379.9 695.7 368.2 L568.2 314.9 Z"/>
+        <path id="bristle-groove-2" fill="#D6E0F0" clip-path="url(#cp-clip-b2)" d="M636.6 145.7 L766.5 187.2 C795.3 196.4 811.2 227.2 802 256 C792.8 284.9 762 300.8 733.2 291.6 L595.4 247.6 Z"/>
+        <path id="bristle-1" fill="url(#cp-bristle)" d="M655.6 136 L771.1 172.9 C799.9 182.1 815.8 212.9 806.6 241.7 C797.4 270.6 766.6 286.5 737.7 277.3 L601.1 233.7 L637 144.8 C639.9 137.6 648.2 133.7 655.6 136 Z"/>
+        <rect id="bristle-shade" clip-path="url(#cp-clip-bristles)" x="540" y="120" width="290" height="360" fill="url(#cp-bristle-tip)"/>
+      </g>
+      <rect id="highlight-arc" fill="#D8FFFD" x="-78" y="-11" width="156" height="22" rx="11" transform="translate(296 690) rotate(-65)"/>
+      <ellipse id="highlight-dot" fill="#D8FFFD" cx="520" cy="166" rx="11" ry="22" transform="rotate(23 520 166)"/>
+    </g>
+
+    <g id="eyes">
+      <g id="eyes-state">
+        <g id="eye-left" transform="translate(394.2 560.3) rotate(22)">
+          <rect class="eye" x="-22" y="-40" width="44" height="80" rx="22" fill="#020204"/>
+        </g>
+        <g id="eye-right" transform="translate(469.4 587.5) rotate(21.2)">
+          <rect class="eye" x="-22" y="-40" width="44" height="80" rx="22" fill="#020204"/>
+        </g>
+      </g>
+    </g>
+  </g>
+
+  <g id="decorations-front">
+    <g id="sparkle-front">
+      <path fill="url(#cp-star)" d="M632.0 512.9 C634.7 508.0 640.3 508.0 643.0 512.9 C645.6 534.0 657.5 547.7 675.8 550.6 C680.0 553.8 680.0 560.2 675.8 563.4 C657.5 566.3 645.6 580.0 643.0 601.1 C640.3 606.0 634.7 606.0 632.0 601.1 C629.4 580.0 617.5 566.3 599.2 563.4 C595.0 560.2 595.0 553.8 599.2 550.6 C617.5 547.7 629.4 534.0 632.0 512.9 Z"/>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,98 @@
+/* Personajes OdontoFlow · piezas propias de la familia B (05 Enjuague, 06 Espejo, 07 Escudo).
+ * Se carga DESPUÉS de personajes.css y reutiliza sus estados (is-idle … is-needs-you).
+ * Cada maestro trae una clase raíz (pj-enjuague, pj-espejo, pj-escudo) para no tocar a otros
+ * personajes que comparten IDs del manual (arm-left, cap…).
+ * Solo transform y opacity. Unidades px = unidades del viewBox 1024. Los pivotes van en
+ * coordenadas absolutas del viewBox (transform-box: view-box).
+ */
+
+/* ---------- Diferenciación corporal del contrato Astra §3 ---------- */
+/* Fichas (Espejo) se ladea −4° al pensar; Identidad (Escudo) trabaja sin rotar */
+.personaje.pj-espejo.is-thinking #character { animation-name: pfb-tilt-4; }
+@keyframes pfb-tilt-4 { from { transform: rotate(0); } to { transform: rotate(-4deg); } }
+.personaje.pj-escudo.is-working #character { animation-name: pfb-work-lift; }
+@keyframes pfb-work-lift {
+  0%, 100% { transform: translateY(0); }
+  25% { transform: translateY(-21px); }
+  75% { transform: translateY(-11px); }
+}
+
+/* ---------- 07 Escudo · brazos (pivote en el hombro, detrás del cuerpo) ---------- */
+.personaje.pj-escudo #arm-left { transform-box: view-box; transform-origin: 244px 505px; }
+.personaje.pj-escudo #arm-right { transform-box: view-box; transform-origin: 749px 669px; }
+/* R: el brazo izquierdo saluda muy suave al ritmo de la respiración */
+.personaje.pj-escudo.is-idle #arm-left { animation: pfb-arm-sway 3600ms var(--pf-s) infinite; }
+@keyframes pfb-arm-sway { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-6deg); } }
+/* W: los dos brazos empujan cortito, mismo ritmo que el cuerpo */
+.personaje.pj-escudo.is-working #arm-left { animation: pfb-arm-pump 1000ms var(--pf-s) 5; }
+.personaje.pj-escudo.is-working #arm-right { animation: pfb-arm-pump 1000ms var(--pf-s) -500ms 5; }
+@keyframes pfb-arm-pump { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-8deg); } }
+/* H: el brazo derecho acompaña el empuje hacia el receptor */
+.personaje.pj-escudo.is-handoff #arm-right { animation: pfb-arm-give 480ms var(--pf-m) 1; }
+@keyframes pfb-arm-give { 0%, 100% { transform: rotate(0); } 30% { transform: rotate(-14deg); } }
+/* L: levanta el brazo izquierdo y vuelve */
+.personaje.pj-escudo.is-done #arm-left { animation: pfb-arm-cheer 480ms var(--pf-e) 1; }
+@keyframes pfb-arm-cheer { 0%, 100% { transform: rotate(0); } 40% { transform: rotate(-22deg); } 75% { transform: rotate(4deg); } }
+/* N: un saludo de dos tiempos y luego quieto */
+.personaje.pj-escudo.is-needs-you #arm-left { animation: pfb-arm-wave 700ms var(--pf-s) 1; }
+@keyframes pfb-arm-wave {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(-18deg); }
+  50% { transform: rotate(-4deg); }
+  75% { transform: rotate(-16deg); }
+}
+
+/* ---------- 05 Enjuague · tapa (bisagra abajo/derecha) y burbujas ---------- */
+.personaje.pj-enjuague #cap { transform-box: view-box; transform-origin: 745px 360px; }
+.personaje.pj-enjuague .bubble { transform-box: fill-box; transform-origin: center; }
+/* R: las burbujas suben y bajan muy poco, desfasadas */
+.personaje.pj-enjuague.is-idle .bubble { animation: pfb-bubble 4200ms var(--pf-s) infinite; }
+.personaje.pj-enjuague.is-idle #bubble-2 { animation-delay: -1400ms; }
+.personaje.pj-enjuague.is-idle #bubble-3 { animation-delay: -2800ms; }
+.personaje.pj-enjuague.is-idle #bubble-4 { animation-delay: -700ms; }
+@keyframes pfb-bubble { 0%, 100% { transform: translateY(0); opacity: 1; } 50% { transform: translateY(-14px); opacity: .75; } }
+/* W: la tapa gira un poquito, como si se abriera y cerrara */
+.personaje.pj-enjuague.is-working #cap { animation: pfb-cap-twist 1000ms var(--pf-s) 5; }
+@keyframes pfb-cap-twist { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(4deg); } }
+.personaje.pj-enjuague.is-working .bubble { animation: pfb-bubble-rise 1000ms var(--pf-m) 5; }
+.personaje.pj-enjuague.is-working #bubble-2, .personaje.pj-enjuague.is-working #bubble-4 { animation-delay: -500ms; }
+@keyframes pfb-bubble-rise {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  70% { transform: translateY(-32px) scale(1.06); opacity: .6; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+/* L: la tapa salta y aterriza; las burbujas hacen pop */
+.personaje.pj-enjuague.is-done #cap { animation: pfb-cap-pop 480ms var(--pf-e) 1; }
+@keyframes pfb-cap-pop {
+  0%, 100% { transform: translate(0, 0) rotate(0); }
+  35% { transform: translate(12px, -48px) rotate(8deg); }
+  70% { transform: translate(0, 4px) rotate(-1deg); }
+}
+.personaje.pj-enjuague.is-done .bubble { animation: pf-sparkle-pop 480ms var(--pf-e) 1; }
+/* N: la tapa se levanta una vez para llamar la atención */
+.personaje.pj-enjuague.is-needs-you #cap { animation: pfb-cap-peek 700ms var(--pf-s) 1; }
+@keyframes pfb-cap-peek { 0%, 100% { transform: rotate(0); } 30%, 60% { transform: rotate(-6deg) translateY(-12px); } }
+
+/* ---------- 06 Espejo · reflejo que barre el cristal (recortado por el cristal) ---------- */
+/* El reflejo va en diagonal a −42°; se desplaza sobre su normal (0,669 · 0,743) */
+.personaje.pj-espejo #reflection { transform-box: view-box; transform-origin: 508px 285px; }
+.personaje.pj-espejo.is-idle #reflection { animation: pfb-glint-soft 4200ms var(--pf-s) infinite; }
+@keyframes pfb-glint-soft { 0%, 100% { opacity: 1; } 50% { opacity: .7; } }
+/* P: el reflejo recorre el cristal mientras mira al lienzo */
+.personaje.pj-espejo.is-thinking #reflection { animation: pfb-glint-scan 900ms var(--pf-m) 2; }
+@keyframes pfb-glint-scan {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-80px, -89px); }
+}
+/* L: un destello completo de abajo/derecha hacia arriba/izquierda */
+.personaje.pj-espejo.is-done #reflection { animation: pfb-glint-sweep 480ms var(--pf-e) 1; }
+@keyframes pfb-glint-sweep {
+  0% { transform: translate(120px, 134px); opacity: 0; }
+  30% { opacity: 1; }
+  70% { transform: translate(-60px, -67px); opacity: 1; }
+  100% { transform: translate(0, 0); opacity: 1; }
+}
+
+/* ---------- 07 Escudo · destellos pequeños extra (titilan en contrafase) ---------- */
+.personaje.pj-escudo.is-idle #sparkle-back-small { animation: pf-twinkle 4200ms var(--pf-s) -1000ms infinite; }
+.personaje.pj-escudo.is-idle #sparkle-front-small { animation: pf-twinkle 4200ms var(--pf-s) -3100ms infinite; }

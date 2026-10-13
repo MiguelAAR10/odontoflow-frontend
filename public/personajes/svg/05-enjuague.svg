@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" class="pj-enjuague">
+  <title>Enjuague bucal · Caja</title>
+  <desc>Personaje 05 de la familia OdontoFlow: frasco de enjuague bucal rojo intenso (distinto del rosa de la Pasta), ancho abajo, hombros sinuosos y cuello corto, en leve diagonal; panel rojo profundo de esquinas muy redondeadas con dos ojos cápsula negros; tapa blanca grande ladeada a la derecha con luz lavanda. Cuatro burbujas y dos destellos a los lados. Luz arriba/izquierda. SVG nativo dibujado a mano; la animación vive fuera (personajes.css y personajes-B.css).</desc>
+  <defs>
+    <!-- Luz arriba/izquierda: rojo claro translúcido en el hombro que se satura hacia el centro -->
+    <linearGradient id="en-base" gradientUnits="userSpaceOnUse" x1="230" y1="360" x2="620" y2="760">
+      <stop offset="0" stop-color="#FF8A80"/>
+      <stop offset="0.4" stop-color="#FF4F4C"/>
+      <stop offset="1" stop-color="#FF3B3B"/>
+    </linearGradient>
+    <!-- Sombra del material: borde derecho -->
+    <linearGradient id="en-shade-right" gradientUnits="userSpaceOnUse" x1="640" y1="0" x2="812" y2="0">
+      <stop offset="0" stop-color="#D21F2C" stop-opacity="0"/>
+      <stop offset="0.65" stop-color="#D21F2C" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#C21827" stop-opacity="0.85"/>
+    </linearGradient>
+    <!-- Sombra del material: base -->
+    <linearGradient id="en-shade-bottom" gradientUnits="userSpaceOnUse" x1="0" y1="760" x2="0" y2="936">
+      <stop offset="0" stop-color="#D21F2C" stop-opacity="0"/>
+      <stop offset="1" stop-color="#D21F2C" stop-opacity="0.75"/>
+    </linearGradient>
+    <!-- Pliegue bajo la tapa: el cuello queda en sombra -->
+    <radialGradient id="en-shade-neck" gradientUnits="userSpaceOnUse" cx="640" cy="360" r="120">
+      <stop offset="0" stop-color="#D21F2C" stop-opacity="0.8"/>
+      <stop offset="1" stop-color="#D21F2C" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Panel rojo profundo -->
+    <linearGradient id="en-panel" gradientUnits="userSpaceOnUse" x1="360" y1="450" x2="690" y2="800">
+      <stop offset="0" stop-color="#E41D2E"/>
+      <stop offset="0.6" stop-color="#CC1426"/>
+      <stop offset="1" stop-color="#B80F22"/>
+    </linearGradient>
+    <!-- Tapa blanca con luz lavanda -->
+    <linearGradient id="en-cap" gradientUnits="userSpaceOnUse" x1="520" y1="140" x2="760" y2="350">
+      <stop offset="0" stop-color="#FCFCFF"/>
+      <stop offset="0.55" stop-color="#F1EFFF"/>
+      <stop offset="1" stop-color="#D6D0FA"/>
+    </linearGradient>
+    <linearGradient id="en-cap-shade" gradientUnits="userSpaceOnUse" x1="690" y1="0" x2="792" y2="0">
+      <stop offset="0" stop-color="#C9C1F5" stop-opacity="0"/>
+      <stop offset="1" stop-color="#C9C1F5" stop-opacity="0.9"/>
+    </linearGradient>
+    <linearGradient id="en-bubble" gradientUnits="objectBoundingBox" x1="0.15" y1="0.1" x2="0.85" y2="0.9">
+      <stop offset="0" stop-color="#FF8A80"/>
+      <stop offset="0.55" stop-color="#FF4B4B"/>
+      <stop offset="1" stop-color="#E02A36"/>
+    </linearGradient>
+    <linearGradient id="en-star" gradientUnits="objectBoundingBox" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFE3DF"/>
+      <stop offset="1" stop-color="#FF8A80"/>
+    </linearGradient>
+    <clipPath id="en-clip-body">
+      <path d="M201 705 C207 630 276 566 292 500 C303 455 274 423 306 368 C319 346 338 328 361 317 C383 307 481 294 487 283 C495 268 515 238 540 228 L735 300 C738 330 730 352 723 372 C719 386 787 450 797 469 C806 487 810 509 808 529 C802 589 755 605 740 650 C719 708 718 785 700 846 C694 868 684 888 667 904 C642 927 605 935 572 934 C509 931 421 903 362 879 C319 861 265 835 234 800 C211 775 199 739 201 705 Z"/>
+    </clipPath>
+    <clipPath id="en-clip-cap">
+      <path d="M478 254 C480 242 525 143 534 130 C542 117 551 110 567 108 C607 103 695 136 732 154 C754 165 787 184 790 211 C792 226 758 333 749 350 C745 359 742 364 731 366 C708 369 579 319 552 307 C537 300 500 284 488 274 C480 268 477 265 478 254 Z"/>
+    </clipPath>
+  </defs>
+
+  <g id="decorations-back">
+    <g id="bubbles">
+      <g class="bubble" id="bubble-1">
+        <circle cx="208" cy="410" r="52" fill="url(#en-bubble)"/>
+        <ellipse cx="189" cy="389" rx="15" ry="9" fill="#FFFFFF" fill-opacity="0.75" transform="rotate(-35 189 389)"/>
+      </g>
+      <g class="bubble" id="bubble-2">
+        <circle cx="256" cy="299" r="19" fill="url(#en-bubble)"/>
+        <ellipse cx="250" cy="292" rx="6" ry="4" fill="#FFFFFF" fill-opacity="0.75" transform="rotate(-35 250 292)"/>
+      </g>
+      <g class="bubble" id="bubble-3">
+        <circle cx="785" cy="750" r="34" fill="url(#en-bubble)"/>
+        <ellipse cx="773" cy="737" rx="10" ry="6" fill="#FFFFFF" fill-opacity="0.75" transform="rotate(-35 773 737)"/>
+      </g>
+      <g class="bubble" id="bubble-4">
+        <circle cx="832" cy="793" r="16" fill="url(#en-bubble)"/>
+        <ellipse cx="827" cy="787" rx="5" ry="3" fill="#FFFFFF" fill-opacity="0.75" transform="rotate(-35 827 787)"/>
+      </g>
+    </g>
+    <g id="sparkle-back">
+      <path fill="url(#en-star)" d="M314.5 196.9 C317.1 192.3 322.8 191.9 325.9 196.1 C329.9 214.8 343.0 226.2 362.1 227.5 C366.7 230.1 367.1 235.8 362.9 238.9 C344.2 242.9 332.8 256.0 331.5 275.1 C328.9 279.7 323.2 280.1 320.1 275.9 C316.1 257.2 303.0 245.8 283.9 244.5 C279.3 241.9 278.9 236.2 283.1 233.1 C301.8 229.1 313.2 216.0 314.5 196.9 Z"/>
+    </g>
+  </g>
+
+  <g id="character">
+    <g id="character-body">
+      <path id="body-shape" fill="url(#en-base)" d="M201 705 C207 630 276 566 292 500 C303 455 274 423 306 368 C319 346 338 328 361 317 C383 307 481 294 487 283 C495 268 515 238 540 228 L735 300 C738 330 730 352 723 372 C719 386 787 450 797 469 C806 487 810 509 808 529 C802 589 755 605 740 650 C719 708 718 785 700 846 C694 868 684 888 667 904 C642 927 605 935 572 934 C509 931 421 903 362 879 C319 861 265 835 234 800 C211 775 199 739 201 705 Z"/>
+      <g id="body-shade" clip-path="url(#en-clip-body)">
+        <rect x="620" y="200" width="200" height="740" fill="url(#en-shade-right)"/>
+        <rect x="190" y="740" width="640" height="200" fill="url(#en-shade-bottom)"/>
+        <circle cx="640" cy="360" r="120" fill="url(#en-shade-neck)"/>
+      </g>
+      <path id="panel" fill="url(#en-panel)" d="M300 600 C312 560 335 495 350 462 C355 450 362 444 374 444 C470 455 600 492 684 520 C706 528 724 544 722 568 C712 640 684 720 662 768 C652 790 634 806 610 806 C550 800 450 770 404 745 C376 728 344 700 322 672 C304 650 296 625 300 600 Z"/>
+      <g id="cap">
+        <path id="cap-shape" fill="url(#en-cap)" d="M478 254 C480 242 525 143 534 130 C542 117 551 110 567 108 C607 103 695 136 732 154 C754 165 787 184 790 211 C792 226 758 333 749 350 C745 359 742 364 731 366 C708 369 579 319 552 307 C537 300 500 284 488 274 C480 268 477 265 478 254 Z"/>
+        <g id="cap-shade" clip-path="url(#en-clip-cap)">
+          <rect x="690" y="100" width="110" height="280" fill="url(#en-cap-shade)"/>
+          <rect fill="#FFFFFF" fill-opacity="0.7" x="-200" y="-70" width="400" height="66" transform="translate(650 150) rotate(22)"/>
+        </g>
+        <rect id="cap-highlight" fill="#FFFFFF" x="-44" y="-9" width="88" height="18" rx="9" transform="translate(522 214) rotate(-66)"/>
+      </g>
+    </g>
+
+    <g id="character-details">
+      <rect id="highlight-arc" fill="#FFFFFF" fill-opacity="0.85" x="-46" y="-13" width="92" height="26" rx="13" transform="translate(372 346) rotate(-28)"/>
+      <ellipse id="highlight-dot" fill="#FFFFFF" fill-opacity="0.7" cx="768" cy="508" rx="12" ry="26" transform="rotate(-8 768 508)"/>
+    </g>
+
+    <g id="eyes">
+      <g id="eyes-state">
+        <g id="eye-left" transform="translate(450 582) rotate(19.3)">
+          <rect class="eye" x="-31" y="-57" width="62" height="114" rx="31" fill="#020204"/>
+        </g>
+        <g id="eye-right" transform="translate(550 613) rotate(18.8)">
+          <rect class="eye" x="-31" y="-57" width="62" height="114" rx="31" fill="#020204"/>
+        </g>
+      </g>
+    </g>
+  </g>
+
+  <g id="decorations-front">
+    <g id="sparkle-front">
+      <path fill="url(#en-star)" d="M822.3 621.5 C824.6 617.3 829.8 616.9 832.7 620.7 C836.3 637.7 848.2 648.1 865.5 649.3 C869.7 651.6 870.1 656.8 866.3 659.7 C849.3 663.3 838.9 675.2 837.7 692.5 C835.4 696.7 830.2 697.1 827.3 693.3 C823.7 676.3 811.8 665.9 794.5 664.7 C790.3 662.4 789.9 657.2 793.7 654.3 C810.7 650.7 821.1 638.8 822.3 621.5 Z"/>
+    </g>
+  </g>
+</svg>

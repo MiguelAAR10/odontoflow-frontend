@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96">
+<title>Inicio</title>
+<desc>Icono clay OdontoFlow · marfil. Colores por variables CSS --ic-*.</desc>
+<defs>
+<radialGradient id="clay-light" cx=".3" cy=".24" r=".78" fx=".28" fy=".18">
+  <stop offset="0" stop-color="#fff" stop-opacity=".26"/><stop offset=".4" stop-color="#fff" stop-opacity=".05"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+</radialGradient>
+<filter id="clay-grain" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+  <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="1" seed="7" result="n"/>
+  <feColorMatrix in="n" type="matrix" values="1.6 0 0 0 -0.3 1.6 0 0 0 -0.3 1.6 0 0 0 -0.3 0 0 0 0 1" result="g"/>
+  <feComposite in="g" in2="SourceAlpha" operator="in" result="m"/>
+  <feBlend in="m" in2="SourceGraphic" mode="soft-light"/>
+</filter>
+</defs>
+  <g style="fill:var(--ic-disc,#141417)"><circle cx="48" cy="48" r="40" stroke="none"/></g>
+  <g class="clay" style="filter:var(--ic-grain,url(#clay-grain))"><g transform="translate(1.6 2.4)" style="fill:var(--ic-dk,#C6D3FF);stroke:var(--ic-dk,#C6D3FF)"><path d="M48.0 27.6 L69.8 45.5 L65.9 45.5 L65.9 68.6 L30.1 68.6 L30.1 45.5 L26.2 45.5 Z" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/></g><g transform="translate(48 48) scale(1.045) translate(-48 -48)" style="fill:var(--ic-dk,#C6D3FF);stroke:var(--ic-dk,#C6D3FF)"><path d="M48.0 27.6 L69.8 45.5 L65.9 45.5 L65.9 68.6 L30.1 68.6 L30.1 45.5 L26.2 45.5 Z" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/></g><g style="fill:var(--ic-base,#FCFCFF);stroke:var(--ic-base,#FCFCFF)"><path d="M48.0 27.6 L69.8 45.5 L65.9 45.5 L65.9 68.6 L30.1 68.6 L30.1 45.5 L26.2 45.5 Z" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/></g><g style="fill:url(#clay-light);stroke:url(#clay-light);opacity:var(--ic-light,1)"><path d="M48.0 27.6 L69.8 45.5 L65.9 45.5 L65.9 68.6 L30.1 68.6 L30.1 45.5 L26.2 45.5 Z" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/></g></g>
+  <g style="fill:var(--ic-ink,#020204);stroke:var(--ic-ink,#020204)"><rect x="43" y="55" width="10" height="17" rx="5" stroke="none"/></g>
+  <g class="hl" fill="#fff" style="opacity:var(--ic-hl,.5)"><rect x="-4.5" y="-3" width="9" height="6" rx="3" transform="translate(37 44) rotate(-40)"/></g>
+</svg>

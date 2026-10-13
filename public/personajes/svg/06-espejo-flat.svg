@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" class="pj-espejo">
+  <title>Espejo dental · Fichas (flat)</title>
+  <desc>Variante plana del personaje 06 para 32–48 px: cinco colores sólidos (morado profundo de borde y banda, morado, lavanda, cristal marfil, negro de ojos); construcción tipo pegatina: silueta morado profundo y cara desplazada arriba/izquierda, sin destellos, reflejo ni degradados. Misma silueta y mismos IDs que la premium; ojos un 8 % más anchos.</desc>
+  <defs>
+    <clipPath id="esf-clip-handle">
+      <path transform="translate(23 20) scale(0.93) translate(571 650) rotate(-14.6)" d="M-31 -330 H31 V-116.7 C43.1 -111.8 51 -100 51 -87 V224 C51 252.2 28.2 275 0 275 C-28.2 275 -51 252.2 -51 224 V-87 C-51 -100 -43.1 -111.8 -31 -116.7 Z"/>
+    </clipPath>
+  </defs>
+
+  <g id="decorations-back"/>
+
+  <g id="character">
+    <g id="character-body">
+      <g id="handle">
+        <path id="handle-shape" fill="#5A29E4" transform="translate(571 650) rotate(-14.6)" d="M-31 -330 H31 V-116.7 C43.1 -111.8 51 -100 51 -87 V224 C51 252.2 28.2 275 0 275 C-28.2 275 -51 252.2 -51 224 V-87 C-51 -100 -43.1 -111.8 -31 -116.7 Z"/>
+        <path id="handle-face" fill="#9656F1" transform="translate(23 20) scale(0.93) translate(571 650) rotate(-14.6)" d="M-31 -330 H31 V-116.7 C43.1 -111.8 51 -100 51 -87 V224 C51 252.2 28.2 275 0 275 C-28.2 275 -51 252.2 -51 224 V-87 C-51 -100 -43.1 -111.8 -31 -116.7 Z"/>
+        <g id="handle-bands" clip-path="url(#esf-clip-handle)">
+          <g transform="translate(23 20) scale(0.93) translate(571 650) rotate(-14.6)">
+            <rect fill="#C3A2FF" x="-60" y="-130" width="120" height="48"/>
+            <rect fill="#5A29E4" x="-60" y="-82" width="120" height="34"/>
+            <rect fill="#C3A2FF" x="-60" y="-48" width="120" height="44"/>
+          </g>
+        </g>
+      </g>
+      <circle id="body-shape" cx="505" cy="282" r="181.5" fill="#5A29E4"/>
+      <circle id="body-face" cx="505" cy="282" r="181.5" fill="#9656F1" transform="translate(23 20) scale(0.93)"/>
+      <circle id="glass" cx="508" cy="285" r="140" fill="#FCFCFF" transform="translate(23 20) scale(0.93)"/>
+      <path id="body-shade" fill="#DCE7FF" transform="translate(23 20) scale(0.93)" d="M607 186 A140 140 0 0 1 409 384 C480 400 600 330 607 186 Z"/>
+    </g>
+
+    <g id="character-details"/>
+
+    <g id="eyes">
+      <g id="eyes-state">
+        <g id="eye-left" transform="translate(475 273) rotate(16.2)">
+          <rect class="eye" x="-27" y="-48.5" width="54" height="97" rx="27" fill="#020204"/>
+        </g>
+        <g id="eye-right" transform="translate(555 290) rotate(15.6)">
+          <rect class="eye" x="-27" y="-48.5" width="54" height="97" rx="27" fill="#020204"/>
+        </g>
+      </g>
+    </g>
+  </g>
+
+  <g id="decorations-front"/>
+</svg>

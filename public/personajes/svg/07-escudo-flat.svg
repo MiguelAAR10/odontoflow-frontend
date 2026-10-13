@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" class="pj-escudo">
+  <title>Escudo protector · Identidad (flat)</title>
+  <desc>Variante plana del personaje 07 para 32–48 px: cinco colores sólidos (esmeralda de borde, verde menta, faceta verde, panel menta claro, negro de ojos); construcción tipo pegatina: silueta esmeralda y cara desplazada arriba/izquierda, sin destellos ni degradados. Misma silueta y mismos IDs que la premium; ojos un 8 % más anchos.</desc>
+  <defs>
+    <clipPath id="scf-clip-face">
+      <path transform="translate(23 20) scale(0.93)" d="M217 539 C220 481 223 395 239 341 C249 305 266 257 284 225 C297 203 306 202 330 201 C437 196 495 155 584 141 C601 138 607 142 619 152 C643 173 666 198 690 220 C752 276 809 294 866 337 C882 350 889 370 887 390 C883 437 851 521 831 565 C804 624 762 684 721 734 C673 792 570 841 498 860 C474 867 432 876 409 867 C386 859 351 823 335 804 C302 767 271 720 251 675 C234 636 215 582 217 539 Z"/>
+    </clipPath>
+  </defs>
+
+  <g id="decorations-back"/>
+
+  <g id="character">
+    <g id="character-body">
+      <g id="arm-right">
+        <ellipse fill="#079C77" cx="779" cy="721" rx="99" ry="66" transform="rotate(60 779 721)"/>
+        <ellipse fill="#1FD497" cx="779" cy="721" rx="99" ry="66" transform="translate(23 20) scale(0.93) rotate(60 779 721)"/>
+      </g>
+      <g id="arm-left">
+        <ellipse fill="#079C77" cx="204" cy="448" rx="119" ry="70" transform="rotate(55 204 448)"/>
+        <ellipse fill="#28E8A5" cx="204" cy="448" rx="119" ry="70" transform="translate(23 20) scale(0.93) rotate(55 204 448)"/>
+      </g>
+      <path id="body-shape" fill="#079C77" d="M217 539 C220 481 223 395 239 341 C249 305 266 257 284 225 C297 203 306 202 330 201 C437 196 495 155 584 141 C601 138 607 142 619 152 C643 173 666 198 690 220 C752 276 809 294 866 337 C882 350 889 370 887 390 C883 437 851 521 831 565 C804 624 762 684 721 734 C673 792 570 841 498 860 C474 867 432 876 409 867 C386 859 351 823 335 804 C302 767 271 720 251 675 C234 636 215 582 217 539 Z"/>
+      <path id="body-face" fill="#28E8A5" transform="translate(23 20) scale(0.93)" d="M217 539 C220 481 223 395 239 341 C249 305 266 257 284 225 C297 203 306 202 330 201 C437 196 495 155 584 141 C601 138 607 142 619 152 C643 173 666 198 690 220 C752 276 809 294 866 337 C882 350 889 370 887 390 C883 437 851 521 831 565 C804 624 762 684 721 734 C673 792 570 841 498 860 C474 867 432 876 409 867 C386 859 351 823 335 804 C302 767 271 720 251 675 C234 636 215 582 217 539 Z"/>
+      <path id="body-shade" fill="#12BE89" clip-path="url(#scf-clip-face)" d="M606 110 L574 238 L428 780 L404 900 L940 900 L940 110 Z"/>
+      <path id="panel" fill="#C5FFDB" transform="translate(23 20) scale(0.93)" d="M293 399 C300 360 318 296 343 279 C352 274 368 273 382 272 C440 266 520 248 566 235 C574 233 578 236 583 241 C640 300 690 340 762 372 C778 380 788 390 784 410 C760 490 712 590 670 630 C610 690 530 745 468 768 C448 776 430 780 418 774 C340 700 286 600 283 500 C282 467 286 432 293 399 Z"/>
+    </g>
+
+    <g id="character-details"/>
+
+    <g id="eyes">
+      <g id="eyes-state">
+        <g id="eye-left" transform="translate(437 462) rotate(18.6)">
+          <rect class="eye" x="-38" y="-69" width="76" height="138" rx="38" fill="#020204"/>
+        </g>
+        <g id="eye-right" transform="translate(555 494) rotate(18.5)">
+          <rect class="eye" x="-38" y="-69" width="76" height="138" rx="38" fill="#020204"/>
+        </g>
+      </g>
+    </g>
+  </g>
+
+  <g id="decorations-front"/>
+</svg>

@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" class="pj-espejo">
+  <title>Espejo dental · Fichas</title>
+  <desc>Personaje 06 de la familia OdontoFlow: espejo odontológico morado, cabeza circular grande con aro grueso y cristal perla, mango largo en diagonal suave hacia abajo/derecha con punta redonda y bandas morado/lavanda en el cuello. Dos ojos cápsula negros en el cristal y un reflejo diagonal que no tapa la cara. Dos destellos amarillos. Luz arriba/izquierda. SVG nativo dibujado a mano; la animación vive fuera (personajes.css y personajes-B.css).</desc>
+  <defs>
+    <!-- Aro: morado luminoso arriba/izquierda que se hunde hacia abajo/derecha -->
+    <linearGradient id="es-ring" gradientUnits="userSpaceOnUse" x1="360" y1="130" x2="660" y2="450">
+      <stop offset="0" stop-color="#B385FF"/>
+      <stop offset="0.5" stop-color="#9656F1"/>
+      <stop offset="1" stop-color="#7A45E6"/>
+    </linearGradient>
+    <!-- Sombra del material sobre el aro, abajo/derecha -->
+    <radialGradient id="es-ring-shade" gradientUnits="userSpaceOnUse" cx="640" cy="430" r="200">
+      <stop offset="0" stop-color="#6531D7" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#6531D7" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Cristal perla: blanco arriba/izquierda, azul perla abajo/derecha -->
+    <linearGradient id="es-glass" gradientUnits="userSpaceOnUse" x1="400" y1="170" x2="620" y2="410">
+      <stop offset="0" stop-color="#FCFCFF"/>
+      <stop offset="0.55" stop-color="#EEF1F8"/>
+      <stop offset="1" stop-color="#D3DAEA"/>
+    </linearGradient>
+    <linearGradient id="es-handle" gradientUnits="userSpaceOnUse" x1="-51" y1="0" x2="51" y2="0">
+      <stop offset="0" stop-color="#B07EFF"/>
+      <stop offset="0.45" stop-color="#9A60F6"/>
+      <stop offset="1" stop-color="#7D46E8"/>
+    </linearGradient>
+    <linearGradient id="es-handle-shade" gradientUnits="userSpaceOnUse" x1="0" y1="-120" x2="0" y2="280">
+      <stop offset="0" stop-color="#6531D7" stop-opacity="0"/>
+      <stop offset="1" stop-color="#6531D7" stop-opacity="0.45"/>
+    </linearGradient>
+    <linearGradient id="es-star" gradientUnits="userSpaceOnUse" x1="718" y1="252" x2="810" y2="344">
+      <stop offset="0" stop-color="#FFE88A"/>
+      <stop offset="0.5" stop-color="#FFDA55"/>
+      <stop offset="1" stop-color="#FFB53D"/>
+    </linearGradient>
+    <linearGradient id="es-star-l" gradientUnits="userSpaceOnUse" x1="306" y1="415" x2="370" y2="479">
+      <stop offset="0" stop-color="#FFE88A"/>
+      <stop offset="0.5" stop-color="#FFDA55"/>
+      <stop offset="1" stop-color="#FFB53D"/>
+    </linearGradient>
+    <clipPath id="es-clip-ring">
+      <circle cx="505" cy="282" r="181.5"/>
+    </clipPath>
+    <clipPath id="es-clip-glass">
+      <circle cx="508" cy="285" r="140"/>
+    </clipPath>
+    <clipPath id="es-clip-handle">
+      <path transform="translate(571 650) rotate(-14.6)" d="M-31 -330 H31 V-116.7 C43.1 -111.8 51 -100 51 -87 V224 C51 252.2 28.2 275 0 275 C-28.2 275 -51 252.2 -51 224 V-87 C-51 -100 -43.1 -111.8 -31 -116.7 Z"/>
+    </clipPath>
+  </defs>
+
+  <g id="decorations-back">
+    <g id="sparkle-back">
+      <path fill="url(#es-star-l)" d="M332.0 419.4 C333.8 416.2 337.8 415.9 340.1 418.9 C342.9 432.1 352.1 440.1 365.6 441.0 C368.8 442.8 369.1 446.8 366.1 449.1 C352.9 451.9 344.9 461.1 344.0 474.6 C342.2 477.8 338.2 478.1 335.9 475.1 C333.1 461.9 323.9 453.9 310.4 453.0 C307.2 451.2 306.9 447.2 309.9 444.9 C323.1 442.1 331.1 432.9 332.0 419.4 Z"/>
+    </g>
+  </g>
+
+  <g id="character">
+    <g id="character-body">
+      <!-- Mango: cuello fino y empuñadura en cápsula, un solo objeto con la cabeza -->
+      <g id="handle">
+        <path id="handle-shape" fill="url(#es-handle)" transform="translate(571 650) rotate(-14.6)" d="M-31 -330 H31 V-116.7 C43.1 -111.8 51 -100 51 -87 V224 C51 252.2 28.2 275 0 275 C-28.2 275 -51 252.2 -51 224 V-87 C-51 -100 -43.1 -111.8 -31 -116.7 Z"/>
+        <g id="handle-bands" clip-path="url(#es-clip-handle)">
+          <g transform="translate(571 650) rotate(-14.6)">
+            <rect fill="url(#es-handle-shade)" x="-60" y="-130" width="120" height="420"/>
+            <rect fill="#C7A6FF" x="-60" y="-130" width="120" height="48"/>
+            <rect fill="#5A29E4" x="-60" y="-82" width="120" height="34"/>
+            <rect fill="#B894FF" x="-60" y="-48" width="120" height="44"/>
+            <rect fill="#6531D7" fill-opacity="0.35" x="22" y="-130" width="40" height="420"/>
+            <rect fill="#FFFFFF" fill-opacity="0.35" x="-38" y="-20" width="12" height="220" rx="6"/>
+          </g>
+        </g>
+      </g>
+      <circle id="body-shape" cx="505" cy="282" r="181.5" fill="url(#es-ring)"/>
+      <g id="body-shade" clip-path="url(#es-clip-ring)">
+        <circle cx="640" cy="430" r="200" fill="url(#es-ring-shade)"/>
+      </g>
+      <circle id="glass-rim" cx="508" cy="285" r="147" fill="#F4F0FF"/>
+      <circle id="glass" cx="508" cy="285" r="140" fill="url(#es-glass)"/>
+      <g id="glass-clip" clip-path="url(#es-clip-glass)">
+        <g id="reflection">
+          <rect fill="#FFFFFF" fill-opacity="0.75" x="-220" y="-26" width="440" height="52" transform="translate(588 372) rotate(-42)"/>
+          <rect fill="#FFFFFF" fill-opacity="0.55" x="-220" y="-8" width="440" height="16" transform="translate(633 413) rotate(-42)"/>
+        </g>
+      </g>
+    </g>
+
+    <g id="character-details">
+      <rect id="highlight-arc" fill="#FFFFFF" fill-opacity="0.8" x="-48" y="-11" width="96" height="22" rx="11" transform="translate(392 168) rotate(-45)"/>
+      <ellipse id="highlight-dot" fill="#FFFFFF" fill-opacity="0.8" cx="349" cy="236" rx="9" ry="16" transform="rotate(22 349 236)"/>
+    </g>
+
+    <g id="eyes">
+      <g id="eyes-state">
+        <g id="eye-left" transform="translate(475 273) rotate(16.2)">
+          <rect class="eye" x="-25" y="-47" width="50" height="94" rx="25" fill="#020204"/>
+        </g>
+        <g id="eye-right" transform="translate(555 290) rotate(15.6)">
+          <rect class="eye" x="-25" y="-47" width="50" height="94" rx="25" fill="#020204"/>
+        </g>
+      </g>
+    </g>
+  </g>
+
+  <g id="decorations-front">
+    <g id="sparkle-front">
+      <path fill="url(#es-star)" d="M755.1 257.1 C757.8 252.3 763.8 251.9 767.1 256.3 C771.2 275.8 785.0 287.8 804.9 289.1 C809.7 291.8 810.1 297.8 805.7 301.1 C786.2 305.2 774.2 319.0 772.9 338.9 C770.2 343.7 764.2 344.1 760.9 339.7 C756.8 320.2 743.0 308.2 723.1 306.9 C718.3 304.2 717.9 298.2 722.3 294.9 C741.8 290.8 753.8 277.0 755.1 257.1 Z"/>
+    </g>
+  </g>
+</svg>

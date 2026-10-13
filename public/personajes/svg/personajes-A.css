@@ -1,0 +1,136 @@
+/* Personajes OdontoFlow · piezas propias de Cepillo, Pasta e Hilo (familia A).
+ * Se carga después de personajes.css. Mismo contrato: solo transform y opacity, estados por clase en el <svg>
+ * (is-idle…is-needs-you) y px = unidades del viewBox 1024. Cada regla va acotada con la clase pj-<nombre>
+ * del <svg> raíz para convivir con los demás personajes en la misma página. Keyframes con prefijo pfa-.
+ */
+
+/* ---------- 02 · Cepillo (Agenda): cerdas articuladas ---------- */
+.personaje.pj-cepillo #bristles { transform-box: view-box; transform-origin: 578px 290px; }
+.personaje.pj-cepillo [id^="bristle-"] { transform-box: fill-box; transform-origin: 0% 50%; }
+.personaje.pj-cepillo.is-idle #sparkle-back-2 { animation: pf-twinkle 4200ms var(--pf-s) -1000ms infinite; }
+
+/* P · las cerdas se echan atrás un poco mientras piensa */
+.personaje.pj-cepillo.is-thinking #bristles { animation: pfa-cp-lean 240ms var(--pf-e) forwards; }
+@keyframes pfa-cp-lean { from { transform: rotate(0); } to { transform: rotate(-4deg); } }
+
+/* W · cepilla: las cerdas frotan a lo largo del mechón; el cuerpo rota ±2° (contrato Astra: Agenda) */
+.personaje.pj-cepillo.is-working #character { animation: pfa-cp-work 1000ms var(--pf-s) 5; }
+.personaje.pj-cepillo.is-working #bristles { animation: pfa-cp-scrub 250ms var(--pf-s) 20; }
+@keyframes pfa-cp-work {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  25% { transform: translateY(-21px) rotate(-2deg); }
+  75% { transform: translateY(-11px) rotate(2deg); }
+}
+@keyframes pfa-cp-scrub {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(10px, 3px); }
+}
+
+/* H · las cerdas dan un golpe hacia el receptor */
+.personaje.pj-cepillo.is-handoff #bristles { animation: pfa-cp-flick 480ms var(--pf-m) 1; }
+@keyframes pfa-cp-flick {
+  0%, 100% { transform: rotate(0); }
+  30% { transform: rotate(6deg); }
+}
+
+/* L · los tres mechones se inflan en cascada */
+.personaje.pj-cepillo.is-done #bristle-1 { animation: pfa-cp-pop 360ms var(--pf-e) 1; }
+.personaje.pj-cepillo.is-done #bristle-2 { animation: pfa-cp-pop 360ms var(--pf-e) 60ms 1 backwards; }
+.personaje.pj-cepillo.is-done #bristle-3 { animation: pfa-cp-pop 360ms var(--pf-e) 120ms 1 backwards; }
+@keyframes pfa-cp-pop {
+  0%, 100% { transform: scale(1); }
+  45% { transform: scale(1.08); }
+}
+
+/* N · un meneo de cerdas, luego quieto */
+.personaje.pj-cepillo.is-needs-you #bristles { animation: pfa-cp-wiggle 700ms var(--pf-s) 1; }
+@keyframes pfa-cp-wiggle {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(-5deg); }
+  50% { transform: rotate(4deg); }
+  75% { transform: rotate(-2deg); }
+}
+
+/* ---------- 03 · Pasta (Cobranza): brazos y tapa ---------- */
+.personaje.pj-pasta #arm-left { transform-box: view-box; transform-origin: 318px 470px; }
+.personaje.pj-pasta #arm-right { transform-box: view-box; transform-origin: 700px 600px; }
+.personaje.pj-pasta #cap { transform-box: view-box; transform-origin: 600px 240px; }
+
+/* R · los brazos se mecen suave, desfasados (+ = el izquierdo sube; − = el derecho sube) */
+.personaje.pj-pasta.is-idle #arm-left { animation: pfa-ps-sway-l 3600ms var(--pf-s) infinite; }
+.personaje.pj-pasta.is-idle #arm-right { animation: pfa-ps-sway-r 3600ms var(--pf-s) -1800ms infinite; }
+@keyframes pfa-ps-sway-l { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(5deg); } }
+@keyframes pfa-ps-sway-r { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-5deg); } }
+
+/* P · se lleva la mano derecha arriba y la deja ahí */
+.personaje.pj-pasta.is-thinking #arm-right { animation: pfa-ps-ponder 240ms var(--pf-e) forwards; }
+@keyframes pfa-ps-ponder { from { transform: rotate(0); } to { transform: rotate(-14deg); } }
+
+/* W · bombea los brazos alternados, se detiene a los 5 s */
+.personaje.pj-pasta.is-working #arm-left { animation: pfa-ps-pump-l 500ms var(--pf-s) 10; }
+.personaje.pj-pasta.is-working #arm-right { animation: pfa-ps-pump-r 500ms var(--pf-s) -250ms 10; }
+@keyframes pfa-ps-pump-l { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(9deg); } }
+@keyframes pfa-ps-pump-r { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-9deg); } }
+
+/* H · alarga el brazo derecho hacia el receptor */
+.personaje.pj-pasta.is-handoff #arm-right { animation: pfa-ps-give 480ms var(--pf-m) 1; }
+@keyframes pfa-ps-give { 0%, 100% { transform: rotate(0); } 30%, 55% { transform: rotate(-16deg); } }
+
+/* L · brazos arriba y la tapa salta */
+.personaje.pj-pasta.is-done #arm-left { animation: pfa-ps-cheer-l 480ms var(--pf-e) 1; }
+.personaje.pj-pasta.is-done #arm-right { animation: pfa-ps-cheer-r 480ms var(--pf-e) 1; }
+.personaje.pj-pasta.is-done #cap { animation: pfa-ps-cap-pop 480ms var(--pf-e) 1; }
+@keyframes pfa-ps-cheer-l { 0%, 100% { transform: rotate(0); } 40% { transform: rotate(18deg); } }
+@keyframes pfa-ps-cheer-r { 0%, 100% { transform: rotate(0); } 40% { transform: rotate(-18deg); } }
+@keyframes pfa-ps-cap-pop {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  35% { transform: translateY(-32px) rotate(-6deg); }
+  70% { transform: translateY(4px) rotate(1deg); }
+}
+
+/* N · saluda con el brazo izquierdo, una vez */
+.personaje.pj-pasta.is-needs-you #arm-left { animation: pfa-ps-wave 700ms var(--pf-s) 1; }
+@keyframes pfa-ps-wave {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(20deg); }
+  50% { transform: rotate(6deg); }
+  75% { transform: rotate(20deg); }
+}
+
+/* ---------- 04 · Hilo (Confirmaciones): tapa y hebra ---------- */
+.personaje.pj-hilo #lid { transform-box: view-box; transform-origin: 772px 384px; }
+.personaje.pj-hilo #thread { transform-box: view-box; transform-origin: 540px 462px; }
+
+/* R · la hebra se mece muy poco */
+.personaje.pj-hilo.is-idle #thread { animation: pfa-hl-sway 3600ms var(--pf-s) infinite; }
+@keyframes pfa-hl-sway { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(2deg); } }
+
+/* P · abre un poco más la tapa y la mantiene (− = abrir) */
+.personaje.pj-hilo.is-thinking #lid { animation: pfa-hl-open 240ms var(--pf-e) forwards; }
+@keyframes pfa-hl-open { from { transform: rotate(0); } to { transform: rotate(-5deg); } }
+
+/* W · pasa el hilo: la hebra oscila y la tapa acompaña, 5 s */
+.personaje.pj-hilo.is-working #thread { animation: pfa-hl-floss 500ms var(--pf-s) 10; }
+.personaje.pj-hilo.is-working #lid { animation: pfa-hl-flap 1000ms var(--pf-s) 5; }
+@keyframes pfa-hl-floss { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(5deg); } }
+@keyframes pfa-hl-flap { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-4deg); } }
+
+/* H · la hebra da un latigazo hacia el receptor */
+.personaje.pj-hilo.is-handoff #thread { animation: pfa-hl-flick 480ms var(--pf-m) 1; }
+@keyframes pfa-hl-flick { 0%, 100% { transform: rotate(0); } 30% { transform: rotate(-9deg); } }
+
+/* L · la tapa casi se cierra y vuelve a abrirse (+ = cerrar) */
+.personaje.pj-hilo.is-done #lid { animation: pfa-hl-snap 480ms var(--pf-e) 1; }
+@keyframes pfa-hl-snap {
+  0%, 100% { transform: rotate(0); }
+  35% { transform: rotate(7deg); }
+  70% { transform: rotate(-3deg); }
+}
+
+/* N · aletea la tapa dos veces, luego quieta */
+.personaje.pj-hilo.is-needs-you #lid { animation: pfa-hl-knock 700ms var(--pf-s) 1; }
+@keyframes pfa-hl-knock {
+  0%, 100% { transform: rotate(0); }
+  25%, 75% { transform: rotate(-6deg); }
+  50% { transform: rotate(0); }
+}
