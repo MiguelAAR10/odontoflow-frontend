@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
+"use client";
+
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
   bookReal,
   createAppointment,
@@ -18,7 +20,11 @@ import { AppSidebar } from "./AppSidebar";
 import { Button } from "./Button";
 import { Modal } from "./Modal";
 import { usePersona } from "./PersonaContext";
-import { Surface } from "./Surface";
+import { usePathname } from "next/navigation";
+import { navigationTitle } from "../nav";
+import { useShellContext } from "./shell/ShellContext";
+import { AgentPanel } from "./shell/AgentPanel";
+import { InteractionBar } from "./shell/InteractionBar";
 import { Topbar } from "./Topbar";
 import { createLatestRequest } from "../session";
 import type { ChatAppointmentContext } from "../types";
@@ -65,6 +71,39 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [error, setError] = useState("");
   const [key, setKey] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const pathname = usePathname();
+  const { role } = useShellContext();
+  const canvas = pathname === "/lienzo" || pathname.startsWith("/lienzo/");
+  const viewing = navigationTitle(pathname, role);
+  useEffect(() => {
+    try { setCollapsed(localStorage.getItem("airi.shell.collapsed.v1") === "1"); } catch { /* Session state is enough. */ }
+  }, []);
+  const toggleCollapsed = useCallback(() => {
+    setCollapsed(value => {
+      try { localStorage.setItem("airi.shell.collapsed.v1", value ? "0" : "1"); } catch { /* Preserve session state. */ }
+      return !value;
+    });
+  }, []);
+  useEffect(() => {
+    const shortcuts = (event: KeyboardEvent) => {
+      if ((!event.metaKey && !event.ctrlKey) || event.altKey || event.shiftKey || document.querySelector('[aria-modal="true"]')) return;
+      if (event.key.toLowerCase() === "b") {
+        event.preventDefault();
+        if (window.matchMedia("(max-width: 760px)").matches) setSidebarOpen(value => !value);
+        else toggleCollapsed();
+      }
+      if (event.key.toLowerCase() === "k" && !canvas) {
+        event.preventDefault();
+        setPanelOpen(value => !value);
+      }
+    };
+    window.addEventListener("keydown", shortcuts);
+    return () => window.removeEventListener("keydown", shortcuts);
+  }, [canvas, toggleCollapsed]);
+  useEffect(() => { setSidebarOpen(false); }, [pathname]);
+  useEffect(() => { if (canvas) setPanelOpen(false); }, [canvas]);
   // A persona switch remounts the page so it refetches with the new credential.
   const { version: personaVersion } = usePersona();
   const selectorRequests = useRef(createLatestRequest());
@@ -200,15 +239,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     return () => window.clearTimeout(timer);
   }, [toast]);
 
-  useEffect(() => {
-    if (!sidebarOpen) return;
-    const closeWithEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setSidebarOpen(false);
-    };
-    window.addEventListener("keydown", closeWithEscape);
-    return () => window.removeEventListener("keydown", closeWithEscape);
-  }, [sidebarOpen]);
-
   const submitAppointment = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (saving) return;
@@ -255,12 +285,16 @@ export function AppShell({ children }: { children: ReactNode }) {
   };
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell airi-shell ${collapsed ? "airi-shell--collapsed" : ""} ${panelOpen && !canvas ? "airi-shell--panel-open" : ""} ${canvas ? "airi-shell--canvas" : ""}`}>
       <a className="skip-link" href="#main-content">Saltar al contenido</a>
-      <AppSidebar mobileOpen={sidebarOpen} onNavigate={() => setSidebarOpen(false)} />
+      <AppSidebar mobileOpen={sidebarOpen} collapsed={collapsed} onToggleCollapse={toggleCollapsed} onNavigate={() => setSidebarOpen(false)} />
       <div className="app-workspace">
-        <Topbar onNewAppointment={() => { setAppointmentPatient(""); setAppointmentContext(null); setLeadId(""); setAppointmentOpen(true); }} mobileOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen((value) => !value)} />
-        <Surface key={personaVersion} as="main" id="main-content" className="app-main">{children}</Surface>
+        <Topbar onNewAppointment={() => { setAppointmentPatient(""); setAppointmentContext(null); setLeadId(""); setAppointmentOpen(true); }} mobileOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen((value) => !value)} panelOpen={panelOpen} onTogglePanel={() => setPanelOpen(value => !value)} canvas={canvas} />
+        <div className="shell-content">
+          <main tabIndex={-1} id="main-content" className="app-main"><Fragment key={personaVersion}>{children}</Fragment></main>
+          {!canvas && <AgentPanel open={panelOpen} viewing={viewing} onClose={() => setPanelOpen(false)} />}
+          {!canvas && <InteractionBar onOpenPanel={() => setPanelOpen(true)} onSubmit={() => setPanelOpen(true)} />}
+        </div>
       </div>
       {sidebarOpen && <button className="sidebar-backdrop" type="button" aria-label="Cerrar navegación" onClick={() => setSidebarOpen(false)} />}
       <Modal title="Nueva cita" open={appointmentOpen} onClose={closeAppointment}>
