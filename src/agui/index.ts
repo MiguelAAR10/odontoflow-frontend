@@ -14,6 +14,7 @@ export async function getAgentSource(options: SimulatedSourceOptions = {}): Prom
     const { SimulatedSource } = await import("./sim/source.js");
     return new SimulatedSource(options);
   }
-  const { HttpSource } = await import("./http.js");
+  // A scoped specifier avoids aliasing Axios's own ./http.js in Turbopack.
+  const { HttpSource } = await import("../agui/http.js");
   return new HttpSource();
 }

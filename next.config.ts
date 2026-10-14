@@ -21,6 +21,8 @@ const nextConfig: NextConfig = {
       "./match.js": "./src/agui/sim/match.ts",
       "./schema.js": "./src/agui/sim/schema.ts",
       "./sim/source.js": "./src/agui/sim/source.ts",
+      "../agui/http.js": "./src/agui/http.ts",
+      "../contracts/client.js": "./src/contracts/client.ts",
     },
   },
 };
