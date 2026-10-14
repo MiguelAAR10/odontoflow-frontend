@@ -102,7 +102,7 @@ export function MiTurnoPage() {
           <div className="turn-figures" aria-label="Resumen del turno">
             <div><span className="operations-count">{arrivalsAvailable ? now.filter(row => row.state === "llegó").length : "No consta"}</span><span>{arrivalsAvailable ? "en espera" : "llegadas"}</span></div>
             <div><span className="operations-count">{next.length}</span><span>próximas 2 h</span></div>
-            <Link href="/aprobaciones"><span className="operations-count">{queueSummary?.pending ?? "…"}</span><span>me requieren</span></Link>
+            <Link href="/aprobaciones"><span className="operations-count" aria-label={queueSummary?.pendingPartial ? `${queueSummary.pending} o más propuestas pendientes` : undefined}>{queueSummary?.pending ?? "…"}{queueSummary?.pendingPartial ? "+" : ""}</span><span>me requieren</span></Link>
             <Link href="/caja"><span className="operations-count">{queueSummary?.verification ?? "No consta"}</span><span>pagos por verificar</span></Link>
           </div>
           <div className="turn-groups">

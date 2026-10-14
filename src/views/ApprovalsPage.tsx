@@ -50,7 +50,7 @@ export function ApprovalsPage() {
   </section>;
 }
 
-export interface InboxSummary { pending: number; verification: number | null }
+export interface InboxSummary { pending: number; pendingPartial: boolean; verification: number | null }
 /** Same clinic queue in Bandeja and Mi turno, independent of an agent thread. */
 export function ClinicInbox({ reloadToken = 0, onSummary }: { reloadToken?: number; onSummary?: (summary: InboxSummary) => void }) {
   const { identity, version } = usePersona();
@@ -279,7 +279,7 @@ function InboxSection({ reloadToken, onSummary }: { reloadToken: number; onSumma
   const filteredIds = new Set(filterInboxCards(presentation, view, true).map(card => card.id));
   const visible = items.filter(item => filteredIds.has(item.key) && (view !== "mine" || (item.status === "pending" && item.actions.length > 0)) && (view !== "verify" || item.status === "pending"));
   const pendingCount = items.filter(item => item.status === "pending").length;
-  useEffect(() => { if (!loading && !error && status === "pending") onSummary?.({ pending: pendingCount, verification: null }); }, [loading, error, status, pendingCount, onSummary]);
+  useEffect(() => { if (!loading && !error && status === "pending") onSummary?.({ pending: pendingCount, pendingPartial: nextCursor !== null, verification: null }); }, [loading, error, status, pendingCount, nextCursor, onSummary]);
   const active = visible.find(item => item.key === selected) ?? visible[0];
   const tabLabel = STATUS_TABS.find((tab) => tab.id === status)?.label ?? "";
 
@@ -437,7 +437,7 @@ function FixtureInbox({ identity, onSummary }: { identity: StaffIdentity | null;
   const visible = rows.filter(row => filteredIds.has(row.card.id));
   const pendingCount = cards.filter(pendingCard).length;
   const verificationCount = cards.filter(needsVerification).length;
-  useEffect(() => { if (loaded && !error) onSummary?.({ pending: pendingCount, verification: verificationCount }); }, [loaded, error, pendingCount, verificationCount, onSummary]);
+  useEffect(() => { if (loaded && !error) onSummary?.({ pending: pendingCount, pendingPartial: false, verification: verificationCount }); }, [loaded, error, pendingCount, verificationCount, onSummary]);
   const active = visible.find(row => row.card.id === selected) ?? visible[0];
   const select = (id: string) => { setSelected(id); setEditing(false); setError(""); };
   const decide = (decision: ProposalDecision) => {
