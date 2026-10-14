@@ -25,10 +25,16 @@ import {
   registerPayment,
   rescheduleFollowUpRecord,
   sumOutstanding,
-  sumPaid,
+  useMocks,
   toApiError,
   verifyPaymentRecord,
 } from "../api";
+import { CardSchema, type Card as CardDto } from "../agui/card";
+import { Card } from "../catalog/Card";
+import { ApiError } from "../contracts/client";
+import { createAgentStore, useAgentStore } from "../agui/store";
+import { EventType } from "../agui/events";
+import type { AgentSource } from "../agui/source";
 import { Badge, statusTone } from "../components/Badge";
 import { Button } from "../components/Button";
 import { type Column, DataTable } from "../components/DataTable";
@@ -51,6 +57,118 @@ const tabItems = [
 ];
 
 const money = (value: number) => `S/ ${value.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+/** Display subtotals only. Paid/outstanding remain authoritative charge fields. */
+export function cashPaymentTotals(charges: Pick<Charge, "payments">[]) {
+  let verified = 0, pending = 0;
+  for (const charge of charges) for (const payment of charge.payments) {
+    if (payment.reversed) continue;
+    const cents = Math.round(payment.amount * 100);
+    if (payment.verificationStatus === "verified") verified += cents;
+    else pending += cents;
+  }
+  return { verified: verified / 100, pending: pending / 100 };
+}
+
+type CashCut = { cut_at: string; sedes: { name: string; complete: boolean; exception: string;
+  collected: { amount_cents: number }; pending_verification: { amount_cents: number } }[] };
+
+/** Simulation-only projection over the immutable backend cut, once per card. */
+export function projectCashCut(snapshot: CashCut, cards: CardDto[]) {
+  let verified = snapshot.sedes.reduce((sum, sede) => sum + sede.collected.amount_cents, 0);
+  let pending = snapshot.sedes.reduce((sum, sede) => sum + sede.pending_verification.amount_cents, 0);
+  const applied = new Set<string>();
+  for (const card of cards) {
+    if (card.state !== "approved" || !card.delta || applied.has(card.id)) continue;
+    if (!snapshot.sedes.some(sede => sede.name === card.delta?.sede)) continue;
+    applied.add(card.id);
+    verified += card.delta.amount_cents;
+    pending -= card.delta.amount_cents;
+  }
+  return { verified: verified / 100, pending: pending / 100 };
+}
+
+/** Cash fixture source composed with the common approval store/envelope. It is
+ * loaded only by the mock seam; its lifetime is the client session, not a view. */
+export async function createCashPreviewSession() {
+  const [states, proposals, { envelopeFor }] = await Promise.all([
+    import("../agui/sim/fixtures/state.json"), import("../agui/sim/fixtures/proposals.json"),
+    import("../agui/sim/schema"),
+  ]);
+  const cards = proposals.default.filter(card => card.id === "p-yape" || card.id === "p-caja")
+    .map(card => CardSchema.parse(card)).sort((a, b) => Number(b.id === "p-yape") - Number(a.id === "p-yape"));
+  const confirmed = new Set<string>();
+  const receipts = new Map<string, { fingerprint: string; card: CardDto }>();
+  const approveCard = async (card: CardDto, key: string): Promise<CardDto> => {
+    const fingerprint = JSON.stringify(envelopeFor(card));
+    const receipt = receipts.get(key);
+    if (key.trim() && receipt?.fingerprint === fingerprint) return structuredClone(receipt.card);
+    const proposal = cards.find(item => item.id === card.id);
+    if (!key.trim() || receipt || !proposal || confirmed.has(card.id)
+      || JSON.stringify(envelopeFor(proposal)) !== fingerprint) {
+      throw new ApiError(409, "PROPOSAL_CONFLICT", "La propuesta cambió o la clave pertenece a otro intento. Revisa la tarjeta antes de aprobar.");
+    }
+    const response: CardDto = { ...proposal, state: "approved" };
+    confirmed.add(card.id);
+    receipts.set(key, { fingerprint, card: structuredClone(response) });
+    return structuredClone(response);
+  };
+  const source: AgentSource = {
+    async run(input, emit) {
+      emit({ type: EventType.RUN_STARTED, threadId: input.threadId, runId: input.runId });
+      emit({ type: EventType.RUN_FINISHED, threadId: input.threadId, runId: input.runId,
+        outcome: { type: "interrupt", interrupts: cards.map(card => ({ id: card.id,
+          reason: "Decisión humana pendiente", metadata: { card, approval: envelopeFor(card) } })) } });
+    },
+    stop() {},
+  };
+  const store = createAgentStore({ source, approveCard, toApiError, newIdempotencyKey });
+  await store.send("Corte de caja");
+  return { snapshot: states.default[0]!, store, source, approveCard };
+}
+type CashPreviewSession = Awaited<ReturnType<typeof createCashPreviewSession>>;
+let cashPreviewSession: Promise<CashPreviewSession> | undefined;
+function getCashPreviewSession() {
+  cashPreviewSession ??= createCashPreviewSession().catch(error => { cashPreviewSession = undefined; throw error; });
+  return cashPreviewSession;
+}
+
+function SimulatedCashCut() {
+  const [session, setSession] = useState<CashPreviewSession | null>(null);
+  const [failure, setFailure] = useState("");
+  useEffect(() => {
+    let active = true;
+    void getCashPreviewSession().then(value => { if (active) setSession(value); })
+      .catch(caught => { if (active) setFailure(toApiError(caught).message); });
+    return () => { active = false; };
+  }, []);
+  if (failure) return <p role="alert">{failure}</p>;
+  if (!session) return <p role="status">Cargando corte de caja…</p>;
+  return <CashCutProjection session={session} />;
+}
+
+function CashCutProjection({ session }: { session: CashPreviewSession }) {
+  const entries = useAgentStore(state => state.cards, session.store);
+  const preview = { snapshot: session.snapshot, cards: Object.values(entries).map(entry => entry.card) };
+  const totals = projectCashCut(preview.snapshot, preview.cards);
+  const cashAmounts = preview.cards.find(card => card.id === "p-caja")?.amounts?.filter(amount => amount.label !== "Contado por Caja (13:30)") ?? [];
+  return <section className="cash-cut" aria-label="Corte simulado de caja">
+    <p className="cash-cut-caption">Corte simulado · {formatInstant(preview.snapshot.cut_at)} · {preview.snapshot.sedes.length} sedes{preview.snapshot.sedes.some(sede => !sede.complete) ? " · parcial" : ""}</p>
+    <p>El cobrado verificado se separa de lo registrado y pendiente. Yape y Plin se cotejan contra la cuenta receptora; la captura sola no basta.</p>
+    <div className="cash-cut-figures" aria-live="polite">
+      <div><strong data-cash-verified>{money(totals.verified)}</strong><span>Cobrado (verificado)</span></div>
+      <div><strong data-cash-pending>{money(totals.pending)}</strong><span>Por verificar</span></div>
+      {cashAmounts.map(amount => <div key={amount.label}><strong>{money(amount.amount_cents / 100)}</strong><span>{amount.label} · Lince</span></div>)}
+    </div>
+    <p className="cash-cut-caption">{preview.snapshot.sedes.filter(sede => !sede.complete).map(sede => `${sede.name}: ${sede.exception}. `).join("")}Este corte no incluye los registros operativos de abajo.</p>
+    <div className="cash-cut-decisions airi-catalog">{preview.cards.map(card => <section key={card.id}>
+      <h2>{card.id === "p-yape" ? "Por verificar" : "Diferencia por explicar"}</h2>
+      <Card card={card.id === "p-caja" && card.state === "approved" ? { ...card, state: "delegated" } : card}
+        status={entries[card.id]?.status} error={entries[card.id]?.error}
+        loadingReason={entries[card.id]?.loadingReason} onApprove={() => session.store.approve(card.id)} />
+    </section>)}</div>
+  </section>;
+}
 
 function formatInstant(iso: string, timeZone = "America/Lima"): string {
   const date = new Date(iso);
@@ -291,6 +409,9 @@ export function CashPage() {
     try {
       const saved = await verifyPaymentRecord(verifyTarget.id, payload, intentKey(verificationIntent, JSON.stringify([verifyTarget.id, payload])));
       setReconciliation((current) => current.filter((payment) => payment.id !== saved.id));
+      setCharges(current => current.map(charge => ({ ...charge,
+        payments: charge.payments.map(payment => payment.id === saved.id ? saved : payment),
+      })));
       verificationIntent.current = null;
       setVerifyTarget(null);
       setVerifyNote("");
@@ -347,13 +468,16 @@ export function CashPage() {
     { key: "actions", header: "", render: (payment) => payment.reference ? <Button compact variant="primary" icon={ShieldCheck} onClick={() => { verificationIntent.current = null; setVerifyTarget(payment); setVerifyNote(""); }}>Verificar</Button> : <span className="text-muted">Histórico · no verificable</span> },
   ];
 
-  const heading = tab === "charges" ? ["Cobros", "Cargos por servicios y pagos registrados"] : tab === "uncharged" ? ["Por facturar", "Atenciones ejecutadas sin cargo asociado"] : tab === "collections" ? ["Cobranza", "Seguimientos activos ordenados por el servidor"] : ["Conciliación", "Pagos digitales pendientes de verificación"];
+  const paymentTotals = cashPaymentTotals(charges);
+
+  const heading = tab === "charges" ? ["Caja", "Cargos por servicios y pagos registrados"] : tab === "uncharged" ? ["Por facturar", "Atenciones ejecutadas sin cargo asociado"] : tab === "collections" ? ["Cobranza", "Seguimientos activos ordenados por el servidor"] : ["Conciliación", "Pagos digitales pendientes de verificación"];
 
   return <section className="page cash-page">
     <div className="page-heading page-heading--with-actions"><div><h1>{heading[0]}</h1><p>{heading[1]}</p></div><span className="cash-authority-note"><WalletCards size={17} aria-hidden="true" /> Saldos y estados vienen del backend</span></div>
+    {useMocks && <SimulatedCashCut />}
     <Tabs items={tabItems} value={tab} onChange={(value) => { setTab(value as CashTab); setError(""); setSuccess(""); }} ariaLabel="Espacios de caja" panelId="cash-panel" />
 
-    {tab === "charges" && <div className="kpi-grid cash-kpis"><KpiCard icon={ArrowUpRight} value={money(sumPaid(charges))} label="Pagado en filas cargadas" tone="green" /><KpiCard icon={Clock3} value={money(sumOutstanding(charges))} label="Saldo en filas cargadas" tone="amber" /><KpiCard icon={Receipt} value={charges.length} label="Cargos cargados" tone="cyan" /></div>}
+    {tab === "charges" && <div className="kpi-grid cash-kpis"><KpiCard icon={ArrowUpRight} value={loading ? "—" : money(paymentTotals.verified)} label="Cobrado (verificado) · cargos cargados" tone="green" /><KpiCard icon={ShieldCheck} value={loading ? "—" : money(paymentTotals.pending)} label="Por verificar · cargos cargados" tone="amber" /><KpiCard icon={Clock3} value={money(sumOutstanding(charges))} label="Saldo en filas cargadas" tone="amber" /><KpiCard icon={Receipt} value={charges.length} label="Cargos cargados" tone="cyan" /></div>}
     {success && <div className="success-banner" role="status"><Check size={18} aria-hidden="true" />{success}</div>}
     {error && <div className="form-error" role="alert">{error}<Button compact onClick={() => void refreshTab(tab)}>Reintentar</Button></div>}
 
@@ -377,6 +501,34 @@ export function CashPage() {
       <div className="pagination"><span>{tab === "charges" ? `${visibleCharges.length} cargos registrados` : tab === "uncharged" ? `${uncharged.length} atenciones` : tab === "collections" ? `${collectionsRows.length} seguimientos activos` : `${reconciliation.length} pagos pendientes`}</span><div /><span className="text-muted">Vista completa</span></div>
     </section>
 
+    <style>{`
+      .cash-page { font-variant-numeric: tabular-nums; }
+      .cash-page .kpi-card__copy strong, .cash-page td, .cash-page .payment-list strong,
+      .cash-page .numeric-emphasis, .cash-page .detail-list strong, .cash-page .charge-context strong {
+        font-variant-numeric: tabular-nums;
+      }
+      .cash-page td:nth-child(4), .cash-page td:nth-child(5), .cash-page td:nth-child(6),
+      .cash-page .payment-list strong, .cash-page .detail-list strong { font-family: var(--font-display); }
+      .cash-page .cash-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .cash-cut { margin-bottom: 32px; }
+      .cash-cut > p { max-width: 78ch; line-height: 1.6; }
+      .cash-cut-caption { color: var(--text-muted); font-size: 13px; }
+      .cash-cut-figures { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 28px 24px; margin: 24px 0 16px; }
+      .cash-cut-figures > div { display: grid; gap: 6px; }
+      .cash-cut-figures strong { font: 600 36px/1.15 var(--font-display); font-variant-numeric: tabular-nums; }
+      .cash-cut-figures [data-cash-verified] { color: var(--green-ink); }
+      .cash-cut-figures span { color: var(--text-muted); font-size: 14px; }
+      .cash-cut-decisions { display: grid; gap: 24px; max-width: 720px; margin-top: 28px; }
+      .cash-cut-decisions h2 { margin: 0 0 12px; font-size: 18px; }
+      @media (max-width: 900px) { .cash-page .cash-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+      @media (max-width: 520px) {
+        .cash-page .cash-kpis { grid-template-columns: 1fr; }
+        .cash-cut-figures { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 12px; }
+        .cash-cut-figures strong { font-size: 26px; }
+        .cash-page .cash-toolbar .search-control { min-width: 0; }
+        .cash-cut-decisions .catalog-actions { flex-wrap: wrap; }
+      }
+    `}</style>
     <Modal title={selected ? `Cobrar cargo #${selected.id}` : "Cobro"} open={Boolean(selected) && !followUpAction} onClose={() => !busy && setSelected(null)} size="large">
       {selected && <div className="cash-modal">
         <div className="charge-context"><div><span>Paciente</span><strong>{selected.patientName}</strong><small>{selected.serviceName}</small></div><div><span>Sede · odontólogo</span><strong>{selected.locationName}</strong><small>{selected.practitionerName}</small></div><div><span>Saldo autoritativo</span><strong className="numeric-emphasis">{money(selected.outstanding)}</strong><small>{selected.status}</small></div></div>

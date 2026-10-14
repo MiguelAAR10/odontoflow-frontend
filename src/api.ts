@@ -523,6 +523,7 @@ export function toUiPayment(row: PaymentRead): Payment {
     receiver: row.receiver,
     reconciliationNote: row.reconciliation_note,
     verificationStatus: row.verification_status,
+    reversed: row.reversed,
     verifiedAt: row.verified_at,
   };
 }
