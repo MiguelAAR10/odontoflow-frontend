@@ -45,6 +45,7 @@
     "test/patients-page.test.tsx",
     "test/patients-integration.test.ts",
     "test/cash-adapter.test.ts",
+    "test/cash-cards*.test.tsx",
     "test/cash-transport.test.ts",
     "test/inventory-adapter.test.ts",
     "test/inventory-view.test.tsx",
