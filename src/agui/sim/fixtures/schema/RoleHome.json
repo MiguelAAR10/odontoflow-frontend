@@ -1,0 +1,83 @@
+{
+  "$defs": {
+    "NavigationSection": {
+      "additionalProperties": false,
+      "properties": {
+        "icon": {
+          "minLength": 1,
+          "title": "Icon",
+          "type": "string"
+        },
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "label": {
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "label",
+        "icon"
+      ],
+      "title": "NavigationSection",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "initials": {
+      "minLength": 1,
+      "title": "Initials",
+      "type": "string"
+    },
+    "name": {
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "role": {
+      "enum": [
+        "dueno",
+        "admin",
+        "doctor"
+      ],
+      "title": "Role",
+      "type": "string"
+    },
+    "sections": {
+      "items": {
+        "$ref": "#/$defs/NavigationSection"
+      },
+      "title": "Sections",
+      "type": "array"
+    },
+    "subtitle": {
+      "minLength": 1,
+      "title": "Subtitle",
+      "type": "string"
+    },
+    "suggestions": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Suggestions",
+      "type": "array"
+    }
+  },
+  "required": [
+    "role",
+    "name",
+    "subtitle",
+    "initials",
+    "sections",
+    "suggestions"
+  ],
+  "title": "RoleHome",
+  "type": "object"
+}

@@ -1,0 +1,122 @@
+{
+  "$defs": {
+    "Money": {
+      "additionalProperties": false,
+      "properties": {
+        "amount_cents": {
+          "minimum": 0,
+          "title": "Amount Cents",
+          "type": "integer"
+        },
+        "currency": {
+          "const": "PEN",
+          "title": "Currency",
+          "type": "string"
+        }
+      },
+      "required": [
+        "amount_cents",
+        "currency"
+      ],
+      "title": "Money",
+      "type": "object"
+    },
+    "SedeSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "capacity_minutes": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Capacity Minutes"
+        },
+        "collected": {
+          "$ref": "#/$defs/Money"
+        },
+        "complete": {
+          "title": "Complete",
+          "type": "boolean"
+        },
+        "exception": {
+          "minLength": 1,
+          "title": "Exception",
+          "type": "string"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "occupied_minutes": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Occupied Minutes"
+        },
+        "pending_verification": {
+          "$ref": "#/$defs/Money"
+        }
+      },
+      "required": [
+        "name",
+        "occupied_minutes",
+        "capacity_minutes",
+        "collected",
+        "pending_verification",
+        "exception",
+        "complete"
+      ],
+      "title": "SedeSummary",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "cut_at": {
+      "format": "date-time",
+      "title": "Cut At",
+      "type": "string"
+    },
+    "free_next_7_days_minutes": {
+      "minimum": 0,
+      "title": "Free Next 7 Days Minutes",
+      "type": "integer"
+    },
+    "overdue": {
+      "$ref": "#/$defs/Money"
+    },
+    "overdue_patients": {
+      "minimum": 0,
+      "title": "Overdue Patients",
+      "type": "integer"
+    },
+    "sedes": {
+      "items": {
+        "$ref": "#/$defs/SedeSummary"
+      },
+      "title": "Sedes",
+      "type": "array"
+    }
+  },
+  "required": [
+    "cut_at",
+    "sedes",
+    "free_next_7_days_minutes",
+    "overdue",
+    "overdue_patients"
+  ],
+  "title": "StateSnapshot",
+  "type": "object"
+}

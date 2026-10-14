@@ -1,0 +1,42 @@
+[
+  {
+    "at": "2026-10-13T07:02:00-05:00",
+    "agent": "enjuague",
+    "action": "3 abonos conciliados",
+    "object": "Lince · BCP",
+    "result": "automático",
+    "approver": "—",
+    "reversible": "reversible",
+    "reversibility_label": "↶ reversible"
+  },
+  {
+    "at": "2026-10-13T07:15:00-05:00",
+    "agent": "hilo",
+    "action": "12 recordatorios enviados",
+    "object": "citas de hoy",
+    "result": "12 entregados · 9 confirmaron",
+    "approver": "LM (ayer 18:40)",
+    "reversible": "none",
+    "reversibility_label": "no reversible"
+  },
+  {
+    "at": "2026-10-13T08:40:00-05:00",
+    "agent": "escudo",
+    "action": "Identidad revisada",
+    "object": "Ana Torres (homónimo)",
+    "result": "vinculada a HC-2231",
+    "approver": "LM",
+    "reversible": "reversible",
+    "reversibility_label": "↶ reversible"
+  },
+  {
+    "at": "2026-10-13T11:52:00-05:00",
+    "agent": "cepillo",
+    "action": "Propuesta preparada",
+    "object": "cobertura Dr. Paredes",
+    "result": "espera a Dirección",
+    "approver": "—",
+    "reversible": "unspecified",
+    "reversibility_label": "—"
+  }
+]

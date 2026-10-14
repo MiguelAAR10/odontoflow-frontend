@@ -1,0 +1,361 @@
+[
+  {
+    "id": "dueno-compara",
+    "ask": "¿Por qué Miraflores cobra menos hoy?",
+    "agent": "airi",
+    "plan": [
+      "Leyendo caja de las 3 sedes",
+      "Comparando con el martes pasado a la misma hora",
+      "Buscando pagos sin verificar",
+      "Preparando una delegación"
+    ],
+    "steps": [
+      {
+        "i": 0,
+        "label": "Leyendo caja de las 3 sedes",
+        "agent": "enjuague"
+      },
+      {
+        "i": 1,
+        "label": "Comparando con el martes pasado a la misma hora",
+        "agent": "enjuague"
+      },
+      {
+        "i": 2,
+        "label": "Buscando pagos sin verificar",
+        "agent": "enjuague"
+      },
+      {
+        "i": 3,
+        "label": "Preparando una delegación",
+        "agent": "airi"
+      }
+    ],
+    "card_ids": [
+      "r-compara",
+      "r-delega"
+    ],
+    "after": null,
+    "panel": true,
+    "outcome": "interrupt",
+    "msg": "delegar la verificación",
+    "messages": [
+      "Miraflores no cobra menos: tiene <b>S/ 640.00</b> en 4 pagos Yape aún sin verificar. San Borja no envía caja desde las 12:40, así que el total es parcial."
+    ],
+    "points": [],
+    "arrows": [],
+    "evolution": null
+  },
+  {
+    "id": "admin-confirma",
+    "ask": "Confirma las citas de mañana",
+    "agent": "hilo",
+    "plan": [
+      "Leyendo la agenda de mañana",
+      "Excluyendo quien ya confirmó o no dio permiso",
+      "Redactando el mensaje",
+      "Revisando la ventana de WhatsApp"
+    ],
+    "steps": [
+      {
+        "i": 0,
+        "label": "Leyendo la agenda de mañana",
+        "agent": "cepillo"
+      },
+      {
+        "i": 1,
+        "label": "Excluyendo quien ya confirmó o no dio permiso",
+        "agent": "hilo"
+      },
+      {
+        "i": 2,
+        "label": "Redactando el mensaje",
+        "agent": "hilo"
+      },
+      {
+        "i": 3,
+        "label": "Revisando la ventana de WhatsApp",
+        "agent": "hilo"
+      }
+    ],
+    "card_ids": [
+      "r-lote"
+    ],
+    "after": null,
+    "panel": true,
+    "outcome": "interrupt",
+    "msg": "aprobar 9 confirmaciones",
+    "messages": [
+      "Listo para enviar. Nada sale hasta que apruebes en la tarjeta."
+    ],
+    "points": [
+      {
+        "selector": "[data-card=\"r-lote\"] [data-act=\"approve\"]",
+        "label": null
+      }
+    ],
+    "arrows": [],
+    "evolution": null
+  },
+  {
+    "id": "admin-hueco",
+    "ask": "¿Quién puede tomar el hueco de la tarde?",
+    "agent": "cepillo",
+    "plan": [
+      "Buscando huecos compatibles",
+      "Cruzando con la lista de espera",
+      "Redactando la oferta"
+    ],
+    "steps": [
+      {
+        "i": 0,
+        "label": "Buscando huecos compatibles",
+        "agent": "cepillo"
+      },
+      {
+        "i": 1,
+        "label": "Cruzando con la lista de espera",
+        "agent": "cepillo"
+      },
+      {
+        "i": 2,
+        "label": "Redactando la oferta",
+        "agent": "hilo"
+      }
+    ],
+    "card_ids": [
+      "r-oferta"
+    ],
+    "after": null,
+    "panel": true,
+    "outcome": "interrupt",
+    "msg": "aprobar la oferta",
+    "messages": [],
+    "points": [
+      {
+        "selector": "[data-card=\"r-oferta\"] [data-act=\"approve\"]",
+        "label": null
+      }
+    ],
+    "arrows": [],
+    "evolution": null
+  },
+  {
+    "id": "doctor-brief",
+    "ask": "Prepara el brief de Ana Torres",
+    "agent": "espejo",
+    "plan": [
+      "Leyendo la historia clínica",
+      "Leyendo la última evolución",
+      "Revisando consentimiento y laboratorio"
+    ],
+    "steps": [
+      {
+        "i": 0,
+        "label": "Leyendo la historia clínica",
+        "agent": "espejo"
+      },
+      {
+        "i": 1,
+        "label": "Leyendo la última evolución",
+        "agent": "espejo"
+      },
+      {
+        "i": 2,
+        "label": "Revisando consentimiento y laboratorio",
+        "agent": "espejo"
+      }
+    ],
+    "card_ids": [],
+    "after": "brief",
+    "panel": false,
+    "outcome": "success",
+    "msg": "brief listo para leer",
+    "messages": [],
+    "points": [],
+    "arrows": [],
+    "evolution": null
+  },
+  {
+    "id": "doctor-evo",
+    "ask": "Ayúdame con la evolución",
+    "agent": "espejo",
+    "plan": [
+      "Leyendo tus notas y el dictado",
+      "Estructurando con la plantilla de endodoncia",
+      "Marcando lo que falta confirmar"
+    ],
+    "steps": [
+      {
+        "i": 0,
+        "label": "Leyendo tus notas y el dictado",
+        "agent": "espejo"
+      },
+      {
+        "i": 1,
+        "label": "Estructurando con la plantilla de endodoncia",
+        "agent": "espejo"
+      },
+      {
+        "i": 2,
+        "label": "Marcando lo que falta confirmar",
+        "agent": "espejo"
+      }
+    ],
+    "card_ids": [],
+    "after": null,
+    "panel": false,
+    "outcome": "success",
+    "msg": "borrador para revisar",
+    "messages": [],
+    "points": [],
+    "arrows": [],
+    "evolution": "Endodoncia 3.6 · sesión 2.\nConductometría: [confirmar longitudes].\nIrrigación con hipoclorito.\nObturación: [pendiente · indicar técnica].\nIndicaciones: [pendiente · las define la doctora].\nPróxima cita: corona 3.6 (solicitar a recepción)."
+  },
+  {
+    "id": "cv-huecos",
+    "ask": "Relaciona los huecos de la tarde con pacientes en espera",
+    "agent": "cepillo",
+    "plan": [
+      "Leyendo la agenda de la tarde",
+      "Buscando pacientes en espera compatibles",
+      "Dibujando el caso en el lienzo",
+      "Redactando la oferta"
+    ],
+    "steps": [
+      {
+        "i": 0,
+        "label": "Leyendo la agenda de la tarde",
+        "agent": "cepillo"
+      },
+      {
+        "i": 1,
+        "label": "Buscando pacientes en espera compatibles",
+        "agent": "cepillo"
+      },
+      {
+        "i": 2,
+        "label": "Dibujando el caso en el lienzo",
+        "agent": "airi"
+      },
+      {
+        "i": 3,
+        "label": "Redactando la oferta",
+        "agent": "hilo"
+      }
+    ],
+    "card_ids": [
+      "cv-agenda",
+      "cv-espera",
+      "cv-oferta"
+    ],
+    "after": null,
+    "panel": false,
+    "outcome": "interrupt",
+    "msg": "aprobar la oferta en la tarjeta",
+    "messages": [],
+    "points": [
+      {
+        "selector": ".tl-airi [data-card=\"cv-oferta\"] [data-act=\"approve\"]",
+        "label": null
+      }
+    ],
+    "arrows": [
+      {
+        "from": "cv-agenda",
+        "to": "cv-espera",
+        "label": "hueco de 16:00"
+      },
+      {
+        "from": "cv-espera",
+        "to": "cv-oferta",
+        "label": "propuesta para"
+      }
+    ],
+    "evolution": null
+  },
+  {
+    "id": "cv-cobranza",
+    "ask": "Trae la cobranza al lienzo",
+    "agent": "pasta",
+    "plan": [
+      "Leyendo saldos al corte",
+      "Agrupando por antigüedad",
+      "Preparando recordatorios elegibles"
+    ],
+    "steps": [
+      {
+        "i": 0,
+        "label": "Leyendo saldos al corte",
+        "agent": "pasta"
+      },
+      {
+        "i": 1,
+        "label": "Agrupando por antigüedad",
+        "agent": "pasta"
+      },
+      {
+        "i": 2,
+        "label": "Preparando recordatorios elegibles",
+        "agent": "pasta"
+      }
+    ],
+    "card_ids": [
+      "cv-saldos",
+      "cv-recordar"
+    ],
+    "after": null,
+    "panel": false,
+    "outcome": "interrupt",
+    "msg": "aprobar el envío en la tarjeta",
+    "messages": [],
+    "points": [],
+    "arrows": [
+      {
+        "from": "cv-saldos",
+        "to": "cv-recordar",
+        "label": "deuda de"
+      }
+    ],
+    "evolution": null
+  },
+  {
+    "id": "cv-sedes",
+    "ask": "Compara las sedes",
+    "agent": "enjuague",
+    "plan": [
+      "Leyendo caja y agenda de 3 sedes",
+      "Calculando ocupación sobre capacidad publicada"
+    ],
+    "steps": [
+      {
+        "i": 0,
+        "label": "Leyendo caja y agenda de 3 sedes",
+        "agent": "enjuague"
+      },
+      {
+        "i": 1,
+        "label": "Calculando ocupación sobre capacidad publicada",
+        "agent": "cepillo"
+      }
+    ],
+    "card_ids": [
+      "cv-cob",
+      "cv-ocup"
+    ],
+    "after": null,
+    "panel": false,
+    "outcome": "success",
+    "msg": "comparación lista",
+    "messages": [],
+    "points": [],
+    "arrows": [
+      {
+        "from": "cv-cob",
+        "to": "cv-ocup",
+        "label": "misma fecha de corte"
+      }
+    ],
+    "evolution": null
+  }
+]

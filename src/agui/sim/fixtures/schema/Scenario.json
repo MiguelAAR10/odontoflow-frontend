@@ -1,0 +1,224 @@
+{
+  "$defs": {
+    "ScenarioArrow": {
+      "additionalProperties": false,
+      "properties": {
+        "from": {
+          "minLength": 1,
+          "title": "From",
+          "type": "string"
+        },
+        "label": {
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "to": {
+          "minLength": 1,
+          "title": "To",
+          "type": "string"
+        }
+      },
+      "required": [
+        "from",
+        "to",
+        "label"
+      ],
+      "title": "ScenarioArrow",
+      "type": "object"
+    },
+    "ScenarioPoint": {
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Label"
+        },
+        "selector": {
+          "minLength": 1,
+          "title": "Selector",
+          "type": "string"
+        }
+      },
+      "required": [
+        "selector",
+        "label"
+      ],
+      "title": "ScenarioPoint",
+      "type": "object"
+    },
+    "ScenarioStep": {
+      "additionalProperties": false,
+      "properties": {
+        "agent": {
+          "enum": [
+            "airi",
+            "cepillo",
+            "pasta",
+            "hilo",
+            "enjuague",
+            "espejo",
+            "escudo"
+          ],
+          "title": "Agent",
+          "type": "string"
+        },
+        "i": {
+          "minimum": 0,
+          "title": "I",
+          "type": "integer"
+        },
+        "label": {
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        }
+      },
+      "required": [
+        "i",
+        "label",
+        "agent"
+      ],
+      "title": "ScenarioStep",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "after": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "After"
+    },
+    "agent": {
+      "enum": [
+        "airi",
+        "cepillo",
+        "pasta",
+        "hilo",
+        "enjuague",
+        "espejo",
+        "escudo"
+      ],
+      "title": "Agent",
+      "type": "string"
+    },
+    "arrows": {
+      "items": {
+        "$ref": "#/$defs/ScenarioArrow"
+      },
+      "title": "Arrows",
+      "type": "array"
+    },
+    "ask": {
+      "minLength": 1,
+      "title": "Ask",
+      "type": "string"
+    },
+    "card_ids": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Card Ids",
+      "type": "array"
+    },
+    "evolution": {
+      "anyOf": [
+        {
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Evolution"
+    },
+    "id": {
+      "minLength": 1,
+      "title": "Id",
+      "type": "string"
+    },
+    "messages": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Messages",
+      "type": "array"
+    },
+    "msg": {
+      "minLength": 1,
+      "title": "Msg",
+      "type": "string"
+    },
+    "outcome": {
+      "enum": [
+        "success",
+        "interrupt"
+      ],
+      "title": "Outcome",
+      "type": "string"
+    },
+    "panel": {
+      "title": "Panel",
+      "type": "boolean"
+    },
+    "plan": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Plan",
+      "type": "array"
+    },
+    "points": {
+      "items": {
+        "$ref": "#/$defs/ScenarioPoint"
+      },
+      "title": "Points",
+      "type": "array"
+    },
+    "steps": {
+      "items": {
+        "$ref": "#/$defs/ScenarioStep"
+      },
+      "title": "Steps",
+      "type": "array"
+    }
+  },
+  "required": [
+    "id",
+    "ask",
+    "agent",
+    "plan",
+    "steps",
+    "card_ids",
+    "after",
+    "panel",
+    "outcome",
+    "msg",
+    "messages",
+    "points",
+    "arrows",
+    "evolution"
+  ],
+  "title": "Scenario",
+  "type": "object"
+}

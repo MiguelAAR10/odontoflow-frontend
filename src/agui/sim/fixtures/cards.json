@@ -1,0 +1,764 @@
+[
+  {
+    "id": "p-cobertura",
+    "agent": "cepillo",
+    "level": "aprobar",
+    "state": "pending",
+    "title": "Reasignar 6 citas de mañana del Dr. Paredes a la Dra. León",
+    "body": "<ul class=\"ac-list\"><li><span>09:00 Rosa Quispe · control</span><span class=\"muted\">León 09:00</span></li><li><span>10:00 Hugo Ríos · resina</span><span class=\"muted\">León 10:30</span></li><li><span>4 citas más</span><span class=\"muted\">mismo día</span></li></ul>",
+    "why": "Dr. Paredes avisó ausencia (Telegram, hoy 11:52) · la Dra. León tiene 6 h libres mañana en Miraflores",
+    "srcs": [
+      "Agenda Miraflores · 14:00",
+      "Mensaje Telegram · 11:52"
+    ],
+    "scope": [
+      {
+        "label": "Afecta",
+        "value": "6 pacientes",
+        "reversible": null,
+        "expires_at": null,
+        "amount": null
+      },
+      {
+        "label": "Después",
+        "value": "6 WhatsApp de aviso",
+        "reversible": null,
+        "expires_at": null,
+        "amount": null
+      },
+      {
+        "label": "rev",
+        "value": "No se puede deshacer el envío",
+        "reversible": "none",
+        "expires_at": null,
+        "amount": null
+      },
+      {
+        "label": "Vence",
+        "value": "hoy 18:00",
+        "reversible": null,
+        "expires_at": "2026-10-13T18:00:00-05:00",
+        "amount": null
+      }
+    ],
+    "reversible": "none",
+    "approve": "Aprobar reasignación",
+    "alt": null,
+    "result": "6 citas movidas · 6 avisos encolados · confirmación pendiente de cada paciente",
+    "undo": false,
+    "undo_window_seconds": null,
+    "delta": null,
+    "revision": 0,
+    "edit": false,
+    "ev": "RUN_FINISHED · interrupt",
+    "amounts": []
+  },
+  {
+    "id": "p-caja",
+    "agent": "enjuague",
+    "level": "borrador",
+    "state": "pending",
+    "title": "Lince: diferencia de caja de S/ 180.00",
+    "body": "<ul class=\"ac-list\"><li><span>Esperado en efectivo</span><span class=\"money\">S/ 1,460.00</span></li><li><span>Contado por Caja (13:30)</span><span class=\"money\">S/ 1,280.00</span></li><li><span>Posible causa</span><span>vuelto de Yape registrado como efectivo</span></li></ul>",
+    "why": "Cierre parcial 13:30 · 2 movimientos Yape sin referencia",
+    "srcs": [
+      "Caja Lince · 13:30",
+      "Movimientos BCP *4821"
+    ],
+    "scope": [
+      {
+        "label": "Responsable",
+        "value": "Caja · Rosa",
+        "reversible": null,
+        "expires_at": null,
+        "amount": null
+      },
+      {
+        "label": "rev",
+        "value": "Reversible: puedes reasignar",
+        "reversible": "reassign",
+        "expires_at": null,
+        "amount": null
+      },
+      {
+        "label": "Plazo",
+        "value": "hoy",
+        "reversible": null,
+        "expires_at": null,
+        "amount": null
+      }
+    ],
+    "reversible": "reassign",
+    "approve": "Delegar a Caja",
+    "alt": "Lo veo yo",
+    "result": "Delegado a Rosa (Caja) · vuelve a ti si no se resuelve hoy",
+    "undo": false,
+    "undo_window_seconds": null,
+    "delta": null,
+    "revision": 0,
+    "edit": false,
+    "ev": "RUN_FINISHED · interrupt",
+    "amounts": [
+      {
+        "label": "Esperado en efectivo",
+        "amount_cents": 146000,
+        "currency": "PEN"
+      },
+      {
+        "label": "Contado por Caja (13:30)",
+        "amount_cents": 128000,
+        "currency": "PEN"
+      },
+      {
+        "label": "Diferencia de caja",
+        "amount_cents": 18000,
+        "currency": "PEN"
+      }
+    ]
+  },
+  {
+    "id": "p-desc",
+    "agent": "pasta",
+    "level": "aprobar",
+    "state": "pending",
+    "title": "3 descuentos fuera de política",
+    "body": "<ul class=\"ac-list\"><li><span>Miraflores · ortodoncia familiar</span><span class=\"money\">S/ 240.00</span></li><li><span>Lince · blanqueamiento</span><span class=\"money\">S/ 120.00</span></li><li><span>San Borja · profilaxis</span><span class=\"money\">S/ 60.00</span></li></ul>",
+    "why": "Política: máximo 10 % sin aprobación de Dirección",
+    "srcs": [
+      "Presupuestos v2 · hoy"
+    ],
+    "scope": [
+      {
+        "label": "Afecta",
+        "value": "3 presupuestos",
+        "reversible": null,
+        "expires_at": null,
+        "amount": null
+      },
+      {
+        "label": "Total",
+        "value": "S/ 420.00",
+        "reversible": null,
+        "expires_at": null,
+        "amount": {
+          "amount_cents": 42000,
+          "currency": "PEN"
+        }
+      },
+      {
+        "label": "rev",
+        "value": "Reversible hasta que el paciente acepte",
+        "reversible": "until_patient_accepts",
+        "expires_at": null,
+        "amount": null
+      },
+      {
+        "label": "Vence",
+        "value": "viernes",
+        "reversible": null,
+        "expires_at": null,
+        "amount": null
+      }
+    ],
+    "reversible": "until_patient_accepts",
+    "approve": "Aprobar 3 descuentos",
+    "alt": null,
+    "result": "3 descuentos aprobados · presupuestos actualizados a v3",
+    "undo": false,
+    "undo_window_seconds": null,
+    "delta": null,
+    "revision": 0,
+    "edit": false,
+    "ev": "RUN_FINISHED · interrupt",
+    "amounts": [
+      {
+        "label": "Miraflores · ortodoncia familiar",
+        "amount_cents": 24000,
+        "currency": "PEN"
+      },
+      {
+        "label": "Lince · blanqueamiento",
+        "amount_cents": 12000,
+        "currency": "PEN"
+      },
+      {
+        "label": "San Borja · profilaxis",
+        "amount_cents": 6000,
+        "currency": "PEN"
+      }
+    ]
+  },
+  {
+    "id": "p-yape",
+    "agent": "enjuague",
+    "level": "aprobar",
+    "state": "pending",
+    "title": "Confirmar ingreso Yape de S/ 120.00 · Ana Torres",
+    "body": "<ul class=\"ac-list\"><li><span>Captura enviada por WhatsApp</span><span>13:58</span></li><li><span>Cuenta receptora</span><span>Yape BCP *4821 (Lince)</span></li><li><span>Movimiento cotejado</span><span>14:02 · ref 88213</span></li></ul>",
+    "why": "El ingreso aparece en la cuenta receptora; la captura sola no basta",
+    "srcs": [
+      "Movimientos BCP *4821 · 14:02",
+      "WhatsApp · 13:58"
+    ],
+    "scope": [
+      {
+        "label": "Efecto",
+        "value": "sube cobrado verificado",
+        "reversible": null,
+        "expires_at": null,
+        "amount": null
+      },
+      {
+        "label": "rev",
+        "value": "Reversible con reversa autorizada",
+        "reversible": "authorized_reversal",
+        "expires_at": null,
+        "amount": null
+      },
+      {
+        "label": "Cargo",
+        "value": "Endodoncia 3.6",
+        "reversible": null,
+        "expires_at": null,
+        "amount": null
+      }
+    ],
+    "reversible": "authorized_reversal",
+    "approve": "Confirmar ingreso",
+    "alt": null,
+    "result": "Abono verificado · recibo R-1042 · saldo de Ana: S/ 330.00",
+    "undo": false,
+    "undo_window_seconds": null,
+    "delta": {
+      "sede": "Lince",
+      "amount_cents": 12000,
+      "currency": "PEN"
+    },
+    "revision": 0,
+    "edit": false,
+    "ev": "RUN_FINISHED · interrupt",
+    "amounts": [
+      {
+        "label": "Ingreso Yape",
+        "amount_cents": 12000,
+        "currency": "PEN"
+      },
+      {
+        "label": "Saldo de Ana",
+        "amount_cents": 33000,
+        "currency": "PEN"
+      }
+    ]
+  },
+  {
+    "id": "p-reprog",
+    "agent": "hilo",
+    "level": "aprobar",
+    "state": "pending",
+    "title": "Responder a Daniela Soto: mover su cita a las 17:00",
+    "body": "<textarea aria-label=\"Mensaje\" readonly>Hola Daniela, sí podemos pasar tu cita de endodoncia a hoy 17:00 con la Dra. Ruiz. ¿Te la confirmo?</textarea>",
+    "why": "Daniela pidió «más tarde» (WhatsApp 13:41) · hueco compatible 17:00 Dra. Ruiz",
+    "srcs": [
+      "WhatsApp · 13:41",
+      "Agenda Lince · 14:00"
+    ],
+    "scope": [
+      {
+        "label": "Para",
+        "value": "Daniela Soto · +51 9•• ••• 214",
+        "reversible": null,
+        "expires_at": null,
+        "amount": null
+      },
+      {
+        "label": "Canal",
+        "value": "WhatsApp · ventana 24 h abierta",
+        "reversible": null,
+        "expires_at": null,
+        "amount": null
+      },
+      {
+        "label": "rev",
+        "value": "No se puede deshacer el envío",
+        "reversible": "none",
+        "expires_at": null,
+        "amount": null
+      },
+      {
+        "label": "Cita",
+        "value": "se mueve solo si ella confirma",
+        "reversible": null,
+        "expires_at": null,
+        "amount": null
+      }
+    ],
+    "reversible": "none",
+    "approve": "Aprobar y enviar",
+    "alt": null,
+    "result": "Enviado 14:06 · entregado · la cita sigue a la hora original hasta que confirme",
+    "undo": false,
+    "undo_window_seconds": null,
+    "delta": null,
+    "revision": 0,
+    "edit": false,
+    "ev": "RUN_FINISHED · interrupt",
+    "amounts": []
+  },
+  {
+    "id": "r-compara",
+    "agent": "enjuague",
+    "level": "auto",
+    "state": "ready",
+    "title": "Cobrado hoy por sede · corte 14:00",
+    "body": "<div class=\"bars\"><div class=\"bar\"><span>Lince</span><span class=\"track\"><span class=\"fill\" style=\"width:88.13559322033898%;background:var(--green)\"></span><span class=\"fill\" style=\"width:11.864406779661017%;background:var(--yellow)\"></span></span><span class=\"n\">S/ 3,120.00</span></div><div class=\"bar\"><span>Miraflores</span><span class=\"track\"><span class=\"fill\" style=\"width:68.07909604519774%;background:var(--green)\"></span><span class=\"fill\" style=\"width:18.07909604519774%;background:var(--yellow)\"></span></span><span class=\"n\">S/ 2,410.00</span></div><div class=\"bar\"><span>San Borja *</span><span class=\"track\"><span class=\"fill\" style=\"width:20.056497175141246%;background:var(--green)\"></span><span class=\"fill\" style=\"width:3.389830508474576%;background:var(--yellow)\"></span></span><span class=\"n\">S/ 710.00</span></div></div><div class=\"legend\"><span><i class=\"dot d-green\"></i>verificado</span><span><i class=\"dot d-yellow\"></i>por verificar</span><span>* parcial: sin caja desde 12:40</span></div>",
+    "why": "Miraflores tiene más pagos registrados sin verificar que las otras sedes",
+    "srcs": [
+      "Caja · 3 sedes · 14:00",
+      "Martes pasado · misma hora"
+    ],
+    "scope": [],
+    "reversible": "unspecified",
+    "approve": null,
+    "alt": null,
+    "result": null,
+    "undo": false,
+    "undo_window_seconds": null,
+    "delta": null,
+    "revision": 0,
+    "edit": false,
+    "ev": null,
+    "amounts": [
+      {
+        "label": "Lince · cobrado",
+        "amount_cents": 312000,
+        "currency": "PEN"
+      },
+      {
+        "label": "Miraflores · cobrado",
+        "amount_cents": 241000,
+        "currency": "PEN"
+      },
+      {
+        "label": "San Borja · cobrado",
+        "amount_cents": 71000,
+        "currency": "PEN"
+      }
+    ]
+  },
+  {
+    "id": "r-delega",
+    "agent": "airi",
+    "level": "borrador",
+    "state": "pending",
+    "title": "Delegar a Administración Miraflores: verificar 4 pagos Yape",
+    "body": "<ul class=\"ac-list\"><li><span>4 pagos · BBVA *1190</span><span class=\"money\">S/ 640.00</span></li><li><span>Responsable sugerido</span><span>Jimena (Caja Miraflores)</span></li></ul>",
+    "why": "Sin verificar no suben el cobrado; la captura del paciente no prueba el ingreso",
+    "srcs": [
+      "Caja Miraflores · 14:00"
+    ],
+    "scope": [
+      {
+        "label": "Para",
+        "value": "Jimena · Caja",
+        "reversible": null,
+        "expires_at": null,
+        "amount": null
+      },
+      {
+        "label": "Plazo",
+        "value": "hoy 18:00",
+        "reversible": null,
+        "expires_at": "2026-10-13T18:00:00-05:00",
+        "amount": null
+      },
+      {
+        "label": "rev",
+        "value": "Reversible: 30 s para deshacer",
+        "reversible": "window",
+        "expires_at": null,
+        "amount": null
+      }
+    ],
+    "reversible": "window",
+    "approve": "Delegar",
+    "alt": null,
+    "result": "Delegado a Jimena · vuelve a ti si vence sin evidencia",
+    "undo": true,
+    "undo_window_seconds": 30,
+    "delta": null,
+    "revision": 0,
+    "edit": false,
+    "ev": null,
+    "amounts": [
+      {
+        "label": "4 pagos · BBVA *1190",
+        "amount_cents": 64000,
+        "currency": "PEN"
+      }
+    ]
+  },
+  {
+    "id": "r-lote",
+    "agent": "hilo",
+    "level": "aprobar",
+    "state": "pending",
+    "title": "Confirmar 9 citas de mañana por WhatsApp",
+    "body": "<ul class=\"ac-list\"><li><span>08:30 Rosa Quispe · Dra. Ruiz</span><span class=\"muted\">ventana abierta</span></li><li><span>09:00 Hugo Ríos · Dr. Salinas</span><span class=\"muted\">plantilla aprobada</span></li><li><span>7 pacientes más</span><span class=\"muted\">ver lista</span></li></ul><textarea aria-label=\"Mensaje\" readonly>Hola {nombre}, te esperamos mañana a las {hora} en Clínica Lince con {doctor}. ¿Confirmas? Responde SÍ o escríbenos para cambiarla.</textarea><p class=\"muted\" style=\"font-size:13.5px\">Excluidos: 2 sin permiso de contacto · 1 ya confirmó por teléfono.</p>",
+    "why": "Citas de mañana sin confirmar · el recordatorio de ayer no tuvo respuesta en 4 casos",
+    "srcs": [
+      "Agenda Lince · mañana",
+      "Permisos de contacto"
+    ],
+    "scope": [
+      {
+        "label": "Afecta",
+        "value": "9 pacientes",
+        "reversible": null,
+        "expires_at": null,
+        "amount": null
+      },
+      {
+        "label": "Envío",
+        "value": "9 WhatsApp",
+        "reversible": null,
+        "expires_at": null,
+        "amount": null
+      },
+      {
+        "label": "rev",
+        "value": "No se puede deshacer el envío",
+        "reversible": "none",
+        "expires_at": null,
+        "amount": null
+      },
+      {
+        "label": "Vence",
+        "value": "hoy 19:00",
+        "reversible": null,
+        "expires_at": "2026-10-13T19:00:00-05:00",
+        "amount": null
+      }
+    ],
+    "reversible": "none",
+    "approve": "Aprobar y enviar 9",
+    "alt": null,
+    "result": "9 enviados · 9 entregados · 0 confirmaron aún (enviado ≠ confirmado)",
+    "undo": false,
+    "undo_window_seconds": null,
+    "delta": null,
+    "revision": 0,
+    "edit": false,
+    "ev": null,
+    "amounts": []
+  },
+  {
+    "id": "r-oferta",
+    "agent": "hilo",
+    "level": "aprobar",
+    "state": "pending",
+    "title": "Ofrecer el hueco de 16:00 (30 min, Dra. Ruiz) a Inés Gómez",
+    "body": "<textarea aria-label=\"Mensaje\" readonly>Hola Inés, se liberó un espacio hoy a las 16:00 con la Dra. Ruiz. ¿Te lo reservamos?</textarea>",
+    "why": "Inés espera 9 días · prefiere tardes · su control cabe en 30 min",
+    "srcs": [
+      "Lista de espera · Lince",
+      "Agenda Dra. Ruiz"
+    ],
+    "scope": [
+      {
+        "label": "Para",
+        "value": "Inés Gómez",
+        "reversible": null,
+        "expires_at": null,
+        "amount": null
+      },
+      {
+        "label": "rev",
+        "value": "No se puede deshacer el envío",
+        "reversible": "none",
+        "expires_at": null,
+        "amount": null
+      },
+      {
+        "label": "Reserva",
+        "value": "solo si ella acepta y sigue libre",
+        "reversible": null,
+        "expires_at": null,
+        "amount": null
+      }
+    ],
+    "reversible": "none",
+    "approve": "Aprobar y ofrecer",
+    "alt": null,
+    "result": "Oferta enviada · el hueco sigue libre hasta que Inés responda",
+    "undo": false,
+    "undo_window_seconds": null,
+    "delta": null,
+    "revision": 0,
+    "edit": false,
+    "ev": null,
+    "amounts": []
+  },
+  {
+    "id": "cv-agenda",
+    "agent": "cepillo",
+    "level": "auto",
+    "state": "ready",
+    "title": "Dra. Ruiz · tarde de hoy",
+    "body": "<div class=\"mag-agenda\"><span class=\"t\">15:00</span><span class=\"b blue c-blue\">Daniela Soto · endodoncia</span><span class=\"t\">16:00</span><span class=\"b gap gap\">Hueco · 30 min</span><span class=\"t\">16:30</span><span class=\"b blue c-blue\">Carmen Díaz · resina</span><span class=\"t\">17:30</span><span class=\"b green c-green\">Luis Chávez · control</span></div>",
+    "why": null,
+    "srcs": [],
+    "scope": [],
+    "reversible": "unspecified",
+    "approve": null,
+    "alt": null,
+    "result": null,
+    "undo": false,
+    "undo_window_seconds": null,
+    "delta": null,
+    "revision": 0,
+    "edit": false,
+    "ev": null,
+    "amounts": []
+  },
+  {
+    "id": "cv-espera",
+    "agent": "cepillo",
+    "level": "auto",
+    "state": "ready",
+    "title": "En espera, compatibles con 30 min",
+    "body": "<ul class=\"ac-list\"><li><span><b>Inés Gómez</b> · ortodoncia</span><span class=\"muted\">9 días · tardes</span></li><li><span><b>Raúl Vera</b> · control</span><span class=\"muted\">6 días</span></li><li><span><b>Paula Ñique</b> · evaluación</span><span class=\"muted\">4 días · 60 min ✕</span></li></ul>",
+    "why": "Ordenado por días de espera y preferencia horaria",
+    "srcs": [
+      "Lista de espera · Lince"
+    ],
+    "scope": [],
+    "reversible": "unspecified",
+    "approve": null,
+    "alt": null,
+    "result": null,
+    "undo": false,
+    "undo_window_seconds": null,
+    "delta": null,
+    "revision": 0,
+    "edit": false,
+    "ev": null,
+    "amounts": []
+  },
+  {
+    "id": "cv-oferta",
+    "agent": "hilo",
+    "level": "aprobar",
+    "state": "pending",
+    "title": "Ofrecer 16:00 a Inés Gómez",
+    "body": "<textarea aria-label=\"Mensaje\" readonly>Hola Inés, se liberó un espacio hoy a las 16:00 con la Dra. Ruiz. ¿Te lo reservamos?</textarea>",
+    "why": "Espera 9 días · prefiere tardes",
+    "srcs": [
+      "WhatsApp · ventana abierta"
+    ],
+    "scope": [
+      {
+        "label": "Para",
+        "value": "Inés Gómez",
+        "reversible": null,
+        "expires_at": null,
+        "amount": null
+      },
+      {
+        "label": "rev",
+        "value": "No se puede deshacer el envío",
+        "reversible": "none",
+        "expires_at": null,
+        "amount": null
+      },
+      {
+        "label": "Reserva",
+        "value": "solo si acepta",
+        "reversible": null,
+        "expires_at": null,
+        "amount": null
+      }
+    ],
+    "reversible": "none",
+    "approve": "Aprobar y ofrecer",
+    "alt": null,
+    "result": "Oferta enviada · el hueco sigue libre hasta que responda",
+    "undo": false,
+    "undo_window_seconds": null,
+    "delta": null,
+    "revision": 0,
+    "edit": false,
+    "ev": null,
+    "amounts": []
+  },
+  {
+    "id": "cv-saldos",
+    "agent": "pasta",
+    "level": "auto",
+    "state": "ready",
+    "title": "Saldo por antigüedad · corte 14:00",
+    "body": "<div class=\"bars\"><div class=\"bar\"><span>0–30 d</span><span class=\"track\"><span class=\"fill\" style=\"width:100%;background:var(--green)\"></span></span><span class=\"n\">S/ 4,120.00</span></div><div class=\"bar\"><span>31–60 d</span><span class=\"track\"><span class=\"fill\" style=\"width:81.06796116504854%;background:var(--yellow)\"></span></span><span class=\"n\">S/ 3,340.00</span></div><div class=\"bar\"><span>61–90 d</span><span class=\"track\"><span class=\"fill\" style=\"width:38.349514563106794%;background:var(--red)\"></span></span><span class=\"n\">S/ 1,580.00</span></div><div class=\"bar\"><span>> 90 d</span><span class=\"track\"><span class=\"fill\" style=\"width:19.90291262135922%;background:var(--purple)\"></span></span><span class=\"n\">S/ 820.00</span></div></div><p class=\"muted\" style=\"font-size:13.5px;margin:0\">Vencido = fecha pactada superada. 2 casos en disputa excluidos.</p>",
+    "why": null,
+    "srcs": [
+      "Caja · cargos y abonos verificados"
+    ],
+    "scope": [],
+    "reversible": "unspecified",
+    "approve": null,
+    "alt": null,
+    "result": null,
+    "undo": false,
+    "undo_window_seconds": null,
+    "delta": null,
+    "revision": 0,
+    "edit": false,
+    "ev": null,
+    "amounts": [
+      {
+        "label": "0–30 d",
+        "amount_cents": 412000,
+        "currency": "PEN"
+      },
+      {
+        "label": "31–60 d",
+        "amount_cents": 334000,
+        "currency": "PEN"
+      },
+      {
+        "label": "61–90 d",
+        "amount_cents": 158000,
+        "currency": "PEN"
+      },
+      {
+        "label": "> 90 d",
+        "amount_cents": 82000,
+        "currency": "PEN"
+      }
+    ]
+  },
+  {
+    "id": "cv-recordar",
+    "agent": "pasta",
+    "level": "aprobar",
+    "state": "pending",
+    "title": "Recordatorio amable a 3 pacientes",
+    "body": "<ul class=\"ac-list\"><li><span>Jorge Huamán</span><span class=\"money\">S/ 95.50</span></li><li><span>Rosa Quispe</span><span class=\"money\">S/ 180.00</span></li><li><span>Juan Pérez</span><span class=\"money\">S/ 240.00</span></li></ul>",
+    "why": "Saldo > 30 días · sin gestión en 15 días · sin pago en revisión",
+    "srcs": [
+      "Caja · 14:00"
+    ],
+    "scope": [
+      {
+        "label": "Afecta",
+        "value": "3 WhatsApp",
+        "reversible": null,
+        "expires_at": null,
+        "amount": null
+      },
+      {
+        "label": "rev",
+        "value": "No se puede deshacer el envío",
+        "reversible": "none",
+        "expires_at": null,
+        "amount": null
+      },
+      {
+        "label": "Vence",
+        "value": "hoy 18:00",
+        "reversible": null,
+        "expires_at": "2026-10-13T18:00:00-05:00",
+        "amount": null
+      }
+    ],
+    "reversible": "none",
+    "approve": "Aprobar envío",
+    "alt": null,
+    "result": "3 enviados · entregados · el cobrado no cambia (enviado ≠ pagado)",
+    "undo": false,
+    "undo_window_seconds": null,
+    "delta": null,
+    "revision": 0,
+    "edit": false,
+    "ev": null,
+    "amounts": [
+      {
+        "label": "Jorge Huamán",
+        "amount_cents": 9550,
+        "currency": "PEN"
+      },
+      {
+        "label": "Rosa Quispe",
+        "amount_cents": 18000,
+        "currency": "PEN"
+      },
+      {
+        "label": "Juan Pérez",
+        "amount_cents": 24000,
+        "currency": "PEN"
+      }
+    ]
+  },
+  {
+    "id": "cv-cob",
+    "agent": "enjuague",
+    "level": "auto",
+    "state": "ready",
+    "title": "Cobrado verificado vs por verificar",
+    "body": "<div class=\"bars\"><div class=\"bar\"><span>Lince</span><span class=\"track\"><span class=\"fill\" style=\"width:88.13559322033898%;background:var(--green)\"></span><span class=\"fill\" style=\"width:11.864406779661017%;background:var(--yellow)\"></span></span><span class=\"n\">S/ 3,120.00</span></div><div class=\"bar\"><span>Miraflores</span><span class=\"track\"><span class=\"fill\" style=\"width:68.07909604519774%;background:var(--green)\"></span><span class=\"fill\" style=\"width:18.07909604519774%;background:var(--yellow)\"></span></span><span class=\"n\">S/ 2,410.00</span></div><div class=\"bar\"><span>San Borja *</span><span class=\"track\"><span class=\"fill\" style=\"width:20.056497175141246%;background:var(--green)\"></span><span class=\"fill\" style=\"width:3.389830508474576%;background:var(--yellow)\"></span></span><span class=\"n\">S/ 710.00</span></div></div><div class=\"legend\"><span><i class=\"dot d-green\"></i>verificado</span><span><i class=\"dot d-yellow\"></i>por verificar</span><span>* parcial: sin caja desde 12:40</span></div>",
+    "why": null,
+    "srcs": [
+      "Caja · 3 sedes"
+    ],
+    "scope": [],
+    "reversible": "unspecified",
+    "approve": null,
+    "alt": null,
+    "result": null,
+    "undo": false,
+    "undo_window_seconds": null,
+    "delta": null,
+    "revision": 0,
+    "edit": false,
+    "ev": null,
+    "amounts": [
+      {
+        "label": "Lince · cobrado",
+        "amount_cents": 312000,
+        "currency": "PEN"
+      },
+      {
+        "label": "Miraflores · cobrado",
+        "amount_cents": 241000,
+        "currency": "PEN"
+      },
+      {
+        "label": "San Borja · cobrado",
+        "amount_cents": 71000,
+        "currency": "PEN"
+      }
+    ]
+  },
+  {
+    "id": "cv-ocup",
+    "agent": "cepillo",
+    "level": "auto",
+    "state": "ready",
+    "title": "Ocupación reservada hoy",
+    "body": "<ul class=\"ac-list\"><li><span>Lince</span><span class=\"num\">78 % · 360 min libres</span></li><li><span>Miraflores</span><span class=\"num\">68 % · 460 min libres</span></li><li><span>San Borja</span><span class=\"num\">sin capacidad publicada</span></li></ul>",
+    "why": null,
+    "srcs": [
+      "Agenda · capacidad doctor+sillón"
+    ],
+    "scope": [],
+    "reversible": "unspecified",
+    "approve": null,
+    "alt": null,
+    "result": null,
+    "undo": false,
+    "undo_window_seconds": null,
+    "delta": null,
+    "revision": 0,
+    "edit": false,
+    "ev": null,
+    "amounts": []
+  }
+]

@@ -1,0 +1,73 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "action": {
+      "minLength": 1,
+      "title": "Action",
+      "type": "string"
+    },
+    "agent": {
+      "enum": [
+        "airi",
+        "cepillo",
+        "pasta",
+        "hilo",
+        "enjuague",
+        "espejo",
+        "escudo"
+      ],
+      "title": "Agent",
+      "type": "string"
+    },
+    "approver": {
+      "minLength": 1,
+      "title": "Approver",
+      "type": "string"
+    },
+    "at": {
+      "format": "date-time",
+      "title": "At",
+      "type": "string"
+    },
+    "object": {
+      "minLength": 1,
+      "title": "Object",
+      "type": "string"
+    },
+    "result": {
+      "minLength": 1,
+      "title": "Result",
+      "type": "string"
+    },
+    "reversibility_label": {
+      "minLength": 1,
+      "title": "Reversibility Label",
+      "type": "string"
+    },
+    "reversible": {
+      "enum": [
+        "none",
+        "reversible",
+        "reassign",
+        "until_patient_accepts",
+        "authorized_reversal",
+        "window",
+        "unspecified"
+      ],
+      "title": "Reversible",
+      "type": "string"
+    }
+  },
+  "required": [
+    "at",
+    "agent",
+    "action",
+    "object",
+    "result",
+    "approver",
+    "reversible",
+    "reversibility_label"
+  ],
+  "title": "TrailEntry",
+  "type": "object"
+}
