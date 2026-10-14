@@ -78,6 +78,26 @@ def reset_spies(page):
     page.evaluate('window.soundCalls=[];window.audioSpy.frequencies=[]')
 
 
+def wait_for_shell(page):
+    # Network idle also occurs while SSR markup has no event handlers yet.
+    # This existing UI state changes only after the shell hydrates and loads
+    # the persona; it is available even when the mobile sidebar is offscreen.
+    expect(page.locator('#app-sidebar .sidebar-profile')).to_have_attribute('aria-busy', 'false')
+
+
+def open_mobile_navigation(page):
+    wait_for_shell(page)
+    trigger = page.get_by_role('button', name='Abrir navegación', exact=True)
+    expect(trigger).to_be_enabled()
+    expect(trigger).to_have_attribute('aria-expanded', 'false')
+    trigger.click()
+    expect(page.locator('.mobile-menu')).to_have_attribute('aria-expanded', 'true')
+    navigation = page.get_by_role('dialog', name='Navegación principal', exact=True)
+    expect(navigation).to_be_visible()
+    expect(navigation).to_have_attribute('aria-modal', 'true')
+    return navigation
+
+
 def shell(page, width, theme):
     page.clock.install()
     page.clock.pause_at(page.evaluate('new Date(Date.now() + 1000).toISOString()'))
@@ -98,11 +118,13 @@ def shell(page, width, theme):
     expect(home).to_be_focused()
     page.evaluate("history.replaceState(null, '', '/home')")
     page.reload()
-    page.wait_for_load_state('networkidle')
+    wait_for_shell(page)
     expect(intro).to_have_count(0)
     if width == 390:
-        page.get_by_role('button', name='Abrir navegación', exact=True).click()
-    toggle = page.get_by_role('button', name='Sonido', exact=True)
+        navigation = open_mobile_navigation(page)
+    else:
+        navigation = page.locator('#app-sidebar')
+    toggle = navigation.get_by_role('button', name='Sonido', exact=True)
     expect(toggle).to_have_attribute('aria-pressed', 'true')
     toggle.click()
     expect(toggle).to_have_attribute('aria-pressed', 'false')
@@ -111,7 +133,10 @@ def shell(page, width, theme):
     expect(toggle).to_have_attribute('aria-pressed', 'true')
     page.screenshot(path=str(AUDIT / f'shell-{width}-{theme}.png'), full_page=True)
     if width == 390:
-        page.get_by_role('button', name='Cerrar navegación', exact=True).first.click()
+        navigation.get_by_role('button', name='Cerrar navegación', exact=True).click()
+        expect(page.locator('.mobile-menu')).to_have_attribute('aria-expanded', 'false')
+        expect(navigation).to_have_count(0)
+        expect(page.locator('#app-sidebar')).not_to_be_visible()
     reset_spies(page)
     home.press_sequentially('Resume esta vista', delay=45)
     assert page.evaluate('window.audioSpy.frequencies.length') > 0, 'Inicio no suena al teclear'
@@ -120,7 +145,7 @@ def shell(page, width, theme):
     page.wait_for_timeout(1000)
     assert 293.66 in page.evaluate('window.audioSpy.frequencies'), 'Inicio no suena al enviar'
     page.goto(f'{BASE}/agenda')
-    page.wait_for_load_state('networkidle')
+    wait_for_shell(page)
     reset_spies(page)
     bar = page.locator('.interaction-bar input[data-airi-input]')
     bar.press_sequentially('Resume esta vista', delay=45)
