@@ -28,6 +28,8 @@ import { InteractionBar } from "./shell/InteractionBar";
 import { Topbar } from "./Topbar";
 import { createLatestRequest } from "../session";
 import type { ChatAppointmentContext } from "../types";
+import { Intro } from "../crew/Intro";
+import { useAgentSounds } from "../lib/useAgentSounds";
 
 function localDateKey(instant: string, timeZone: string): string {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -62,6 +64,7 @@ function formatSlotTime(instant: string, timeZone: string): string {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
+  useAgentSounds();
   const [appointmentOpen, setAppointmentOpen] = useState(false);
   const [appointmentPatient, setAppointmentPatient] = useState("");
   const [appointmentContext, setAppointmentContext] = useState<ChatAppointmentContext | null>(null);
@@ -286,6 +289,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className={`app-shell airi-shell ${collapsed ? "airi-shell--collapsed" : ""} ${panelOpen && !canvas ? "airi-shell--panel-open" : ""} ${canvas ? "airi-shell--canvas" : ""}`}>
+      <Intro />
       <a className="skip-link" href="#main-content">Saltar al contenido</a>
       <AppSidebar mobileOpen={sidebarOpen} collapsed={collapsed} onToggleCollapse={toggleCollapsed} onNavigate={() => setSidebarOpen(false)} />
       <div className="app-workspace">
