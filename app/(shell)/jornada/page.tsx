@@ -1,5 +1,5 @@
-import { EmptyShellPage } from "../../../src/components/shell/EmptyShellPage";
+import { JornadaPage } from "../../../src/views/JornadaPage";
 
 export default function JornadaRoute() {
-  return <EmptyShellPage title="Mi jornada" />;
+  return <JornadaPage />;
 }

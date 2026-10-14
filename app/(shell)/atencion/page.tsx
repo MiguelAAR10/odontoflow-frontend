@@ -1,5 +1,6 @@
-import { EmptyShellPage } from "../../../src/components/shell/EmptyShellPage";
+import { AtencionPage } from "../../../src/views/AtencionPage";
 
-export default function AtencionRoute() {
-  return <EmptyShellPage title="Atención" />;
+export default async function AtencionRoute({ searchParams }: { searchParams: Promise<{ cita?: string | string[] }> }) {
+  const { cita } = await searchParams;
+  return <AtencionPage appointmentId={typeof cita === "string" ? cita : undefined} />;
 }
