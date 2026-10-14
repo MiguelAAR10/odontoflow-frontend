@@ -5,6 +5,8 @@ import { EventType, type RunAgentInput, type Event } from "../src/agui/events.js
 import { createInitialState, reducer } from "../src/agui/reducer.js";
 import { SimulatedSource } from "../src/agui/sim/source.js";
 import { HttpSource } from "../src/agui/http.js";
+import { createAgentStore } from "../src/agui/store.js";
+import { toApiError } from "../src/contracts/client.js";
 
 const input = (): RunAgentInput => ({
   threadId: "thread-http", runId: "run-http", messages: [{ id: "user-1", role: "user", content: "Busca un hueco" }],
@@ -47,6 +49,135 @@ afterEach(async () => {
 });
 
 describe("HttpSource contra SSE real", () => {
+  it.each([
+    ["http", "No se confirmó la detención remota."],
+    ["network", "Error de conexión con el servidor."],
+    ["internal", "Error de conexión con el servidor."],
+  ])("el store muestra el fallo remoto %s después del abort inmediato y del cierre de send", async (failure, message) => {
+    let rejectStop: (() => void) | undefined;
+    const { source, transport } = await serve((request, response) => {
+      if (request.url?.endsWith("/stop")) {
+        rejectStop = () => {
+          if (failure === "network") { response.destroy(); return; }
+          if (failure === "internal") {
+            response.writeHead(500, { "content-type": "text/plain" });
+            response.end("SQL private_patient_data traceback");
+            return;
+          }
+          response.writeHead(503, { "content-type": "application/json" });
+          response.end(JSON.stringify({ error: { code: "STOP_UNAVAILABLE", message } }));
+        };
+        return;
+      }
+      startSse(response);
+      response.write(frame({ type: EventType.RUN_STARTED, threadId: "thread-http", runId: "run-http" }));
+    });
+    const store = createAgentStore({ source, toApiError });
+    const running = store.send(input());
+    await vi.waitFor(() => expect(store.getSnapshot().trace.some((entry) => entry.type === EventType.RUN_STARTED)).toBe(true));
+    store.stop(); store.stop();
+    expect(transport.mock.calls[0]![1].signal?.aborted).toBe(true);
+    expect(store.getSnapshot().run.status).toBe("stopped");
+    await running;
+    await vi.waitFor(() => expect(rejectStop).toBeTypeOf("function"));
+    rejectStop!();
+    await vi.waitFor(() => expect(store.getSnapshot().trace.at(-1)).toMatchObject({
+      type: "STOP_ERROR", runId: "run-http", message,
+    }));
+    expect(store.getSnapshot().thread.at(-1)?.parts).toEqual([{ type: "notice", text: message }]);
+    expect(store.getSnapshot().run.what).toBe(message);
+    expect(store.getSnapshot().trace.filter((entry) => entry.type === "STOP_ERROR")).toHaveLength(1);
+    expect(store.getSnapshot().run.status).toBe("stopped");
+    expect(transport).toHaveBeenCalledTimes(2);
+  });
+
+  it("el store conserva el estado detenido cuando el backend confirma stop", async () => {
+    const { source, transport } = await serve((request, response) => {
+      if (request.url?.endsWith("/stop")) { response.writeHead(204); response.end(); return; }
+      startSse(response);
+      response.write(frame({ type: EventType.RUN_STARTED, threadId: "thread-http", runId: "run-http" }));
+    });
+    const stop = vi.spyOn(source, "stop");
+    const store = createAgentStore({ source, toApiError });
+    const running = store.send(input());
+    await vi.waitFor(() => expect(store.getSnapshot().trace.some((entry) => entry.type === EventType.RUN_STARTED)).toBe(true));
+    store.stop();
+    const stopped = store.getSnapshot();
+    await running;
+    await stop.mock.results[0]!.value;
+    expect(store.getSnapshot()).toBe(stopped);
+    expect(stopped.run.status).toBe("stopped");
+    expect(stopped.trace.at(-1)).toMatchObject({ type: "RUN_STOPPED", message: "Tarea detenida por ti" });
+    expect(transport).toHaveBeenCalledTimes(2);
+  });
+
+  it.each(["clear", "configure", "new-run", "new-run-stopped"])("descarta el fallo de stop tardío tras %s", async (action) => {
+    let rejectStop: (() => void) | undefined;
+    const { source } = await serve((request, response) => {
+      if (request.url === "/api/backend/agent/runs/next-run/stop") { response.writeHead(204); response.end(); return; }
+      if (request.url?.endsWith("/stop")) {
+        rejectStop = () => {
+          response.writeHead(503, { "content-type": "application/json" });
+          response.end(JSON.stringify({ error: { code: "STOP_UNAVAILABLE", message: "Fallo de una tarea anterior" } }));
+        };
+        return;
+      }
+      void body(request).then((payload) => {
+        const run = payload as RunAgentInput;
+        startSse(response);
+        response.write(frame({ type: EventType.RUN_STARTED, threadId: run.threadId, runId: run.runId }));
+        if (run.runId === "next-run" && action !== "new-run-stopped") {
+          response.end(frame({ type: EventType.RUN_FINISHED, threadId: run.threadId, runId: run.runId }));
+        }
+      });
+    });
+    const stop = vi.spyOn(source, "stop");
+    const store = createAgentStore({ source, toApiError });
+    const running = store.send(input());
+    await vi.waitFor(() => expect(store.getSnapshot().trace.some((entry) => entry.type === EventType.RUN_STARTED)).toBe(true));
+    store.stop();
+    await running;
+    await vi.waitFor(() => expect(rejectStop).toBeTypeOf("function"));
+    if (action === "clear") store.clear();
+    else if (action === "configure") store.configure({ source: new HttpSource(), toApiError });
+    else if (action === "new-run-stopped") {
+      const next = store.send({ ...input(), runId: "next-run" });
+      await vi.waitFor(() => expect(store.getSnapshot().trace.at(-1)).toMatchObject({ type: EventType.RUN_STARTED, runId: "next-run" }));
+      store.stop();
+      await next;
+      await stop.mock.results[1]!.value;
+    } else await store.send({ ...input(), runId: "next-run" });
+    const snapshot = store.getSnapshot();
+    rejectStop!();
+    await expect(stop.mock.results[0]!.value).rejects.toMatchObject({ code: "STOP_UNAVAILABLE", httpStatus: 503 });
+    expect(store.getSnapshot()).toBe(snapshot);
+    expect(snapshot.trace.some((entry) => entry.type === "STOP_ERROR")).toBe(false);
+    expect(snapshot.thread.flatMap((turn) => turn.parts)).not.toContainEqual({ type: "notice", text: "Fallo de una tarea anterior" });
+  });
+
+  it.each(["clear", "configure"])("consume un rechazo remoto cuando %s cancela directamente una tarea", async (action) => {
+    const { source } = await serve((request, response) => {
+      if (request.url?.endsWith("/stop")) {
+        response.writeHead(503, { "content-type": "application/json" });
+        response.end(JSON.stringify({ error: { code: "STOP_UNAVAILABLE", message: "Fallo tras limpiar" } }));
+        return;
+      }
+      startSse(response);
+      response.write(frame({ type: EventType.RUN_STARTED, threadId: "thread-http", runId: "run-http" }));
+    });
+    const stop = vi.spyOn(source, "stop");
+    const store = createAgentStore({ source, toApiError });
+    const running = store.send(input());
+    await vi.waitFor(() => expect(store.getSnapshot().trace.some((entry) => entry.type === EventType.RUN_STARTED)).toBe(true));
+    if (action === "clear") store.clear();
+    else store.configure({ source: new HttpSource(), toApiError });
+    const snapshot = store.getSnapshot();
+    await running;
+    await expect(stop.mock.results[0]!.value).rejects.toMatchObject({ code: "STOP_UNAVAILABLE" });
+    expect(store.getSnapshot()).toBe(snapshot);
+    expect(snapshot).toEqual(createInitialState());
+  });
+
   it("reproduce el fixture de oferta con el mismo estado que el simulador, sin aprobar", async () => {
     const expected: Event[] = [];
     vi.useFakeTimers();

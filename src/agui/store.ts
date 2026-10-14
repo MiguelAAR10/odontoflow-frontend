@@ -50,6 +50,7 @@ export function createAgentStore(initialDependencies?: AgentStoreDependencies): 
   let state = serverSnapshot;
   let dependencies = initialDependencies;
   let epoch = 0;
+  let runSequence = 0;
   let active: { source: AgentSource; cancel: () => void } | null = null;
   const listeners = new Set<() => void>();
   const intents = new Map<string, { fingerprint: string; key: string; promise?: Promise<void> }>();
@@ -60,12 +61,22 @@ export function createAgentStore(initialDependencies?: AgentStoreDependencies): 
   };
   const dispatch = (event: Event | AgentAction) => publish(reducer(state, event));
   const key = () => dependencies?.newIdempotencyKey?.() ?? crypto.randomUUID();
-  const cancelActive = (): ApiErrorEnvelope | null => {
+  const cancelActive = (onError?: (error: ApiErrorEnvelope) => void): ApiErrorEnvelope | null => {
     const token = active;
     if (!token) return null;
+    const services = dependencies!;
     active = null; token.cancel();
-    try { token.source.stop(); return null; }
-    catch (caught) { return dependencies!.toApiError(caught); }
+    try {
+      const result = token.source.stop();
+      if (result) void result.catch((caught: unknown) => { onError?.(services.toApiError(caught)); });
+      return null;
+    } catch (caught) { return services.toApiError(caught); }
+  };
+  const withStopError = (stopped: RunState, error: ApiErrorEnvelope): RunState => {
+    const noticed = reducer(stopped, { type: EventType.CUSTOM, name: "airi.notice", value: { text: error.message } });
+    return { ...noticed, run: { ...noticed.run, what: error.message },
+      trace: [...noticed.trace, { type: "STOP_ERROR", runId: stopped.run.id,
+        agent: stopped.run.agent, timestamp: null, message: error.message }] };
   };
 
   const store: AgentStore = {
@@ -95,6 +106,7 @@ export function createAgentStore(initialDependencies?: AgentStoreDependencies): 
       const token = { source: services.source, cancel };
       const runEpoch = epoch;
       let accepting = true;
+      runSequence += 1;
       active = token;
       publish(reducer(prepared, { type: "RUN_REQUESTED", threadId: input.threadId, runId: input.runId }));
       const onEvent = (event: Event) => {
@@ -126,12 +138,15 @@ export function createAgentStore(initialDependencies?: AgentStoreDependencies): 
     stop() {
       if (!active) return;
       let stopped = reducer(state, { type: "RUN_STOPPED" });
-      const error = cancelActive();
-      if (error) {
-        // The local fence still stopped projection, even if cancellation I/O failed.
-        stopped = { ...stopped, trace: [...stopped.trace, { type: "STOP_ERROR", runId: stopped.run.id,
-          agent: stopped.run.agent, timestamp: null, message: error.message }] };
-      }
+      const stopEpoch = epoch;
+      const stopSequence = runSequence;
+      const error = cancelActive((failure) => {
+        // A late acknowledgement belongs only to this stopped run/session.
+        if (epoch === stopEpoch && runSequence === stopSequence && state.run.status === "stopped") {
+          publish(withStopError(state, failure));
+        }
+      });
+      if (error) stopped = withStopError(stopped, error);
       publish(stopped);
     },
     approve(cardId) {

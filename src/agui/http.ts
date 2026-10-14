@@ -103,10 +103,11 @@ export class HttpSource implements AgentSource {
     await token.remoteStop;
   }
 
-  /** Local cancellation is immediate. run() also awaits the stop acknowledgement
-   * and rejects with ApiError if the backend cannot confirm it.
+  /** Local cancellation is immediate. Return the remote acknowledgement so
+   * consumers can report failure after closing run callbacks. run() also awaits
+   * it for callers that consume the source directly.
    */
-  stop(): void {
+  stop(): void | Promise<void> {
     const token = this.active;
     if (!token) return;
     token.intent.terminal = true;
@@ -115,6 +116,7 @@ export class HttpSource implements AgentSource {
       method: "POST", headers: { "Idempotency-Key": newIdempotencyKey() },
     }).then(() => {});
     token.finish({ type: EventType.RUN_FINISHED, threadId: token.input.threadId, runId: token.input.runId, outcome: { type: "cancelled" } });
+    return token.remoteStop;
   }
 
   private errorEvent(caught: unknown): Event {
