@@ -18,9 +18,13 @@ const nextConfig: NextConfig = {
       "./events.js": "./src/agui/events.ts",
       "../events.js": "./src/agui/events.ts",
       "./reducer.js": "./src/agui/reducer.ts",
+      "./store.js": "./src/agui/store.ts",
+      "./sim/gaps.js": "./src/agui/sim/gaps.ts",
       "./match.js": "./src/agui/sim/match.ts",
       "./schema.js": "./src/agui/sim/schema.ts",
       "./sim/source.js": "./src/agui/sim/source.ts",
+      "../agui/http.js": "./src/agui/http.ts",
+      "../contracts/client.js": "./src/contracts/client.ts",
     },
   },
 };

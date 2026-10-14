@@ -1,6 +1,10 @@
 import type { Card } from "./card.js";
 import type { AgentSource } from "./source.js";
 import type { SimulatedSourceOptions } from "./sim/source.js";
+import { agentStore } from "./store.js";
+import { observeApprovalReceipts } from "./sim/gaps.js";
+
+export const approvalReceipts = observeApprovalReceipts(agentStore);
 
 export interface AgentSourceWithApproval extends AgentSource {
   approveCard?: (card: Card, idempotencyKey: string) => Promise<Card>;
@@ -14,6 +18,7 @@ export async function getAgentSource(options: SimulatedSourceOptions = {}): Prom
     const { SimulatedSource } = await import("./sim/source.js");
     return new SimulatedSource(options);
   }
-  const { HttpSource } = await import("./http.js");
+  // A scoped specifier avoids aliasing Axios's own ./http.js in Turbopack.
+  const { HttpSource } = await import("../agui/http.js");
   return new HttpSource();
 }
