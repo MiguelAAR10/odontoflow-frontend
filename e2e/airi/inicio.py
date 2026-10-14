@@ -44,6 +44,9 @@ with sync_playwright() as p:
                 screenshots = []
 
                 def capture(state):
+                    # Capture completed reveals, including the no-preference
+                    # path used to exercise View Transition below.
+                    page.wait_for_function("""() => [...document.querySelectorAll('.airi-catalog, .airi-catalog [data-layer]')].filter(el=>el.checkVisibility()).every(el=>Number(getComputedStyle(el).opacity)>=.99)""")
                     expect(page.locator("[data-airi-input]:visible")).to_have_count(1)
                     assert page.evaluate("document.documentElement.scrollWidth <= innerWidth"), f"Overflow {width}/{theme}/{state}"
                     assert page.evaluate("""() => [...document.querySelectorAll('.airi-home, #agent-panel, .airi-interaction, .airi-thread')].filter(e=>e.checkVisibility()).every(e=>e.scrollWidth<=e.clientWidth+1)"""), f"Internal overflow {width}/{theme}/{state}"
@@ -204,8 +207,88 @@ with sync_playwright() as p:
                 expect(panel.locator("[data-card]")).to_have_count(0)
                 expect(panel.get_by_role("button", name="Detener", exact=True)).to_have_count(0)
                 capture("identidad-limpia")
+
+                # Every offered task must reach its view or its real simulator
+                # result. Checking only the submitted text hid review-r2's bug.
+                task_results = {
+                    "admin": ["/mi-turno", "/aprobaciones", "/agenda", "r-lote", "r-oferta"],
+                    "dueno": ["/aprobaciones", "/direccion", "r-compara", "/caja", "/lienzo"],
+                    "doctor": ["/jornada", "brief", "evolution", "/agenda", "/lienzo"],
+                }
+                actions = []
+
+                def fresh_home(role):
+                    page.goto(args.base_url + "/home", wait_until="networkidle")
+                    page.add_style_tag(content="nextjs-portal{display:none!important}")
+                    if width == 390:
+                        page.get_by_role("combobox", name="Ver como", exact=True).select_option(role)
+                    else:
+                        label = {"admin": "Administrativo", "dueno": "Dueño", "doctor": "Doctor"}[role]
+                        page.get_by_role("button", name=label, exact=True).click()
+                    expect(page.locator(".airi-home-summary")).to_contain_text("3 sedes")
+                    expect(page.locator(".airi-home-task")).to_have_count(5)
+
+                for role, outcomes in task_results.items():
+                    for index, outcome in enumerate(outcomes):
+                        fresh_home(role)
+                        task = page.locator(".airi-home-task").nth(index)
+                        label = task.inner_text()
+                        task.click()
+                        if outcome.startswith("/"):
+                            expect(page).to_have_url(args.base_url + outcome)
+                            if outcome == "/lienzo":
+                                expect(panel).to_have_count(0)
+                                expect(page.locator("[data-airi-input]:visible")).to_have_count(0)
+                            else:
+                                expect(panel).to_be_visible()
+                                capture(f"tarea-{role}-{index}")
+                        else:
+                            expect(panel).to_be_visible()
+                            expect(panel.locator(".airi-turn--user")).to_have_count(1)
+                            if outcome.startswith("r-"):
+                                expect(panel.locator(f'[data-card="{outcome}"]')).to_be_visible()
+                            elif outcome == "brief":
+                                expect(panel.get_by_role("button", name="Abrir Atención →", exact=True)).to_be_visible()
+                            else:
+                                expect(panel).to_contain_text("Borrador de evolución · requiere revisión humana")
+                            expect(panel.get_by_role("button", name="Detener", exact=True)).to_have_count(0)
+                            expect(panel).not_to_contain_text("No entendí")
+                            expect(panel).not_to_contain_text("No puedo mostrar este contenido")
+                            capture(f"tarea-{role}-{index}")
+                        actions.append({"role": role, "task": label, "outcome": outcome})
+
+                # Fresh views exercise fixture fallback without a prior run.
+                # Unit tests also exercise the snapshot emitted by the source.
+                for target, title, expected in [
+                    ("/agenda", "Agenda", ["1260 de 1620 minutos ocupados", "2460 minutos libres", "Sin datos de ocupación"]),
+                    ("/caja", "Caja", ["Cobrado: S/ 3,120.00", "Por verificar: S/ 420.00", "datos incompletos"]),
+                ]:
+                    fresh_home("admin")
+                    # Same native navigation handler shared by tasks/suggestions.
+                    if target == "/agenda":
+                        page.locator(".airi-home-suggestions").get_by_role("button", name="Agenda de hoy", exact=True).click()
+                    else:
+                        page.locator(".airi-home-task").nth(1).click()
+                        expect(panel).to_be_visible()
+                        if width == 390:
+                            panel.get_by_role("button", name="Cerrar asistente", exact=True).click()
+                            page.get_by_role("button", name="Abrir navegación", exact=True).click()
+                        page.locator('.sidebar-item[href="/caja"]').click()
+                    expect(page).to_have_url(args.base_url + target)
+                    if not panel.is_visible():
+                        topbar_toggle.click()
+                    before = panel.locator("[data-card]").count()
+                    panel.get_by_role("button", name="Resume esta vista", exact=True).click()
+                    answer = panel.locator(".airi-turn--assistant").last
+                    expect(answer).to_contain_text("Viendo: " + title)
+                    for text in expected:
+                        expect(answer).to_contain_text(text)
+                    expect(answer).not_to_contain_text("No entendí")
+                    expect(answer).not_to_contain_text("No puedo mostrar este contenido")
+                    expect(panel.locator("[data-card]")).to_have_count(before)
+                    capture("resumen-" + title.lower())
                 assert not errors, f"Console errors {width}/{theme}: {errors}"
-                result = {"width": width, "theme": theme, "ack_ms": round(ack, 2), "console_errors": len(errors), "contrast_samples": len(samples), "min_contrast": round(min(samples), 2), "screenshots": len(screenshots), "regressions": ["topbar_close", "ctrl_k_close", "internal_close", "home_closed_stop", "role_after_canvas"]}
+                result = {"width": width, "theme": theme, "ack_ms": round(ack, 2), "console_errors": len(errors), "contrast_samples": len(samples), "min_contrast": round(min(samples), 2), "screenshots": len(screenshots), "task_results": actions, "regressions": ["topbar_close", "ctrl_k_close", "internal_close", "home_closed_stop", "role_after_canvas", "all_role_tasks", "contextual_summaries"]}
                 results.append(result)
                 print(json.dumps(result), flush=True)
                 context.close()

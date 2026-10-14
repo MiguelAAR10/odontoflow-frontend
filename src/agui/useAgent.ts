@@ -1,17 +1,67 @@
 "use client";
 
 import { useEffect } from "react";
+import { z } from "zod";
 import { usePersona } from "../components/PersonaContext";
 import { useShellContext } from "../components/shell/ShellContext";
 import { toApiError, newIdempotencyKey } from "../contracts/client";
 import { agentStore, useAgentStore, type AgentStore } from "./store";
 import { getAgentSource, type AgentSourceWithApproval } from "./index";
-import type { RunAgentInput } from "./events.js";
+import { EventType, type RunAgentInput } from "./events.js";
+import { MoneySchema } from "./card";
+import { formatMoney } from "../catalog/format";
+import type { CatalogItem } from "../catalog/schema";
 import type { SimulatedSourceOptions } from "./sim/source.js";
-import type { ShellRole } from "../nav.js";
+import { getNavigation, type ShellRole } from "../nav";
 
 export interface AgentContext { role: ShellRole; view: string; viewing: string }
 type SourceFactory = (options: SimulatedSourceOptions) => Promise<AgentSourceWithApproval>;
+
+// View model over StateSnapshot: no new domain fields or totals. Keep the
+// simulation import behind the same explicit opt-in as getAgentSource.
+const viewSnapshotSchema = z.object({
+  cut_at: z.iso.datetime({ offset: true }),
+  sedes: z.array(z.object({
+    name: z.string().min(1), collected: MoneySchema, pending_verification: MoneySchema,
+    occupied_minutes: z.number().int().nonnegative().nullable(),
+    capacity_minutes: z.number().int().positive().nullable(), complete: z.boolean(),
+  })),
+  free_next_7_days_minutes: z.number().int().nonnegative(),
+});
+async function summarizeView(context: AgentContext, worldState: unknown, cards: ReturnType<AgentStore["getSnapshot"]>["cards"]) {
+  const parts: CatalogItem[] = [];
+  const entry = getNavigation(context.role).find(item => item.to === `/${context.view}`);
+  if (!entry) return { parts: [{ type: "Notice", props: { text: "Esta vista no está disponible para tu rol." } }] satisfies CatalogItem[] };
+  const prefix = `Viendo: ${entry.label}.`;
+  if (context.view === "aprobaciones") {
+    const pending = Object.values(cards).filter(card => card.status === "pending" || card.status === "error");
+    parts.push({ type: "Say", props: { text: `${prefix} En este hilo hay ${pending.length} propuestas pendientes de decisión.` } });
+  } else if (["home", "agenda", "caja", "direccion"].includes(context.view)) {
+    let parsed = viewSnapshotSchema.safeParse(worldState);
+    if (!parsed.success && process.env.NEXT_PUBLIC_USE_MOCKS === "true") {
+      const { default: fixtures } = await import("./sim/fixtures/state.json");
+      parsed = viewSnapshotSchema.safeParse(fixtures[0]);
+    }
+    if (parsed.success) {
+      const snapshot = parsed.data;
+      const cut = new Intl.DateTimeFormat("es-PE", { timeZone: "America/Lima", dateStyle: "short", timeStyle: "short" }).format(new Date(snapshot.cut_at));
+      parts.push({ type: "Say", props: { text: `${prefix} Corte disponible: ${cut} (hora Lima).` } });
+      if (context.view === "agenda") {
+        parts.push({ type: "Part", props: { kind: "list", title: "Ocupación en el corte", items: snapshot.sedes.map(sede => ({
+          label: sede.name, value: sede.occupied_minutes === null || sede.capacity_minutes === null
+            ? "Sin datos de ocupación" : `${sede.occupied_minutes} de ${sede.capacity_minutes} minutos ocupados`,
+        })) } });
+        parts.push({ type: "Say", props: { text: `${snapshot.free_next_7_days_minutes} minutos libres en los próximos 7 días.` } });
+      } else {
+        parts.push({ type: "Part", props: { kind: "list", title: "Cobrado y pendiente de verificación", items: snapshot.sedes.map(sede => ({
+          label: sede.name, value: `Cobrado: ${formatMoney(sede.collected.amount_cents)} · Por verificar: ${formatMoney(sede.pending_verification.amount_cents)}${sede.complete ? "" : " · datos incompletos"}`,
+        })) } });
+      }
+    } else parts.push({ type: "Notice", props: { text: `${prefix} No hay un corte disponible para resumir los datos de esta vista.` } });
+  } else parts.push({ type: "Notice", props: { text: `${prefix} El hilo aún no contiene un resumen de los datos de esta vista. Revísalos en la vista abierta.` } });
+  parts.push({ type: "Act", props: { label: entry.label, target: context.view } });
+  return { parts };
+}
 
 /** Lazy transport keeps the store's synchronous acknowledgement ahead of I/O.
  * Sources survive navigation so pending approvals retain their original owner. */
@@ -26,6 +76,17 @@ export function createAgentController(store: AgentStore, factory: SourceFactory 
     async run(input, emit) {
       const token = ++epoch;
       const context = input.forwardedProps as AgentContext;
+      const text = input.messages.filter(message => message.role === "user").at(-1)?.content;
+      // This explicit UI command projects existing data; it never asks the
+      // source to prepare a mutation, create a proposal or approve one.
+      if (text === "Resume esta vista") {
+        emit({ type: EventType.RUN_STARTED, threadId: input.threadId, runId: input.runId, agent: "airi", what: "Leyendo el corte de la vista" });
+        const { parts } = await summarizeView(context, input.state, store.getSnapshot().cards);
+        if (token !== epoch) return;
+        for (const part of parts) emit({ type: EventType.CUSTOM, name: "airi.part", value: { key: part.type, props: part.props } });
+        emit({ type: EventType.RUN_FINISHED, threadId: input.threadId, runId: input.runId, outcome: { type: "success" } });
+        return;
+      }
       const cacheKey = `${context.role}:${context.view}`;
       let pending = sources.get(cacheKey);
       if (!pending) {

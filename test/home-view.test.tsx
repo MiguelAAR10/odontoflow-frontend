@@ -48,11 +48,11 @@ describe("Inicio: presentación honesta y entrada única", () => {
     expect(model.stop).toHaveBeenCalledOnce();
     view.unmount();
   });
-  it.each(["admin", "dueno", "doctor"])("las tareas de %s envían la intención con contexto de Inicio", async role => {
+  it.each([["admin", 3], ["dueno", 2], ["doctor", 1]] as const)("las consultas de %s envían la intención con contexto de Inicio", async (role, index) => {
     model.role = role;
     let view!: ReactTestRenderer;
     await act(async () => { view = create(<HomePage />); });
-    await act(async () => { view.root.findAllByProps({ className: "airi-home-task" })[0]!.props.onClick(); });
+    await act(async () => { view.root.findAllByProps({ className: "airi-home-task" })[index]!.props.onClick(); });
     expect(model.send).toHaveBeenCalledWith(expect.any(String), { role, view: "home", viewing: "Inicio" });
     view.unmount();
   });

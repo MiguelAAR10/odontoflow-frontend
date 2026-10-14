@@ -8,14 +8,24 @@ import { toApiError, useMocks } from "../api";
 import { useAgent } from "../agui/useAgent";
 import { useShellContext } from "../components/shell/ShellContext";
 import { usePersona } from "../components/PersonaContext";
-import { Thread, moveThread } from "../components/shell/Thread";
+import { Thread, moveThread, threadDestination } from "../components/shell/Thread";
 import { formatMoney } from "../catalog/format";
 import type { ShellRole } from "../nav";
 
-const roleCopy: Record<ShellRole, { name: string; question: string; suggestions: string[] }> = {
-  admin: { name: "Recepción", question: "¿Qué resolvemos primero?", suggestions: ["¿Quién está esperando?", "Abre la bandeja", "Agenda de hoy", "Confirma las citas de mañana", "¿Quién toma el hueco de la tarde?"] },
-  dueno: { name: "Dirección", question: "¿Qué quieres saber de tu clínica?", suggestions: ["¿Qué requiere mi decisión hoy?", "¿Cómo van las sedes?", "¿Por qué Miraflores cobra menos?", "Revisión semanal", "Abrir el lienzo"] },
-  doctor: { name: "Doctor", question: "¿Cómo te ayudo con tu jornada?", suggestions: ["¿Quién es mi siguiente paciente?", "Prepara el brief de Ana", "Mis pendientes", "Mi agenda de hoy", "Abrir el lienzo"] },
+type HomeTask = { label: string; target?: string };
+const roleCopy: Record<ShellRole, { name: string; question: string; suggestions: HomeTask[] }> = {
+  admin: { name: "Recepción", question: "¿Qué resolvemos primero?", suggestions: [
+    { label: "Revisa mi turno", target: "turno" }, { label: "Abre la bandeja", target: "bandeja" },
+    { label: "Agenda de hoy", target: "agenda" }, { label: "Confirma las citas de mañana" }, { label: "¿Quién toma el hueco de la tarde?" },
+  ] },
+  dueno: { name: "Dirección", question: "¿Qué quieres saber de tu clínica?", suggestions: [
+    { label: "Revisa las decisiones pendientes", target: "bandeja" }, { label: "Revisa las sedes en Dirección", target: "direccion" },
+    { label: "¿Por qué Miraflores cobra menos?" }, { label: "Revisa la caja", target: "caja" }, { label: "Abrir el lienzo", target: "lienzo" },
+  ] },
+  doctor: { name: "Doctor", question: "¿Cómo te ayudo con tu jornada?", suggestions: [
+    { label: "Abre mi jornada", target: "jornada" }, { label: "Prepara el brief de Ana" },
+    { label: "Ayúdame con la evolución" }, { label: "Mi agenda de hoy", target: "agenda" }, { label: "Abrir el lienzo", target: "lienzo" },
+  ] },
 };
 export function limaGreeting(now: Date) {
   const hour = Number(new Intl.DateTimeFormat("en-US", { timeZone: "America/Lima", hour: "numeric", hourCycle: "h23" }).format(now));
@@ -62,6 +72,16 @@ export function HomePage() {
     setError("");
     void agent.send(intent, { role, view: "home", viewing: "Inicio" }).catch(caught => setError(toApiError(caught).message));
   };
+  const startTask = (task: HomeTask) => {
+    if (agent.working) return;
+    if (!task.target) { ask(task.label); return; }
+    const path = threadDestination(task.target, role);
+    if (!path) return;
+    moveThread(() => {
+      if (path === "/lienzo") agent.closePanel(); else agent.openPanel();
+      router.push(path);
+    });
+  };
   const submit = (event: FormEvent) => { event.preventDefault(); if (!value.trim() || agent.working) return; ask(value); setValue(""); };
   const pending = Object.values(agent.cards).filter(entry => entry.status === "pending" || entry.status === "error").length;
   return <div className="airi-home" data-docked={agent.docked}>
@@ -86,16 +106,14 @@ export function HomePage() {
           <p role="status" aria-live="polite">{agent.run.what || "Entendiendo tu consulta…"}</p>
           {agent.working ? <button type="button" onClick={agent.stop}>Detener</button> : null}
         </div> : null}
-        <div className="airi-home-suggestions" aria-label="Sugerencias">{roleCopy[role].suggestions.slice(0, 3).map(suggestion => <button key={suggestion} type="button" disabled={agent.working} onClick={() => ask(suggestion)}>{suggestion}</button>)}</div>
+        <div className="airi-home-suggestions" aria-label="Sugerencias">{roleCopy[role].suggestions.slice(0, 3).map(task => <button key={task.label} type="button" disabled={agent.working} onClick={() => startTask(task)}>{task.label}</button>)}</div>
         {agent.docked && agent.queries ? <div className="airi-home-docked"><span>Tu conversación sigue en el panel · {agent.queries} {agent.queries === 1 ? "consulta" : "consultas"}</span>{!agent.panelOpen ? <button type="button" onClick={agent.openPanel}>Ver hilo</button> : null}<button type="button" onClick={() => moveThread(agent.toCenter)}>Traer al centro</button></div> : null}
         {error ? <p role="alert" className="airi-home-error">{error}</p> : null}
       </div>
     </section>
     {!agent.docked && agent.queries ? <section className="airi-home-thread" aria-label="Conversación en el centro"><Thread /></section> : null}
     <section className="airi-home-tasks" aria-labelledby="airi-tasks-title"><h2 id="airi-tasks-title">Podemos empezar por aquí</h2><p>Elige una tarea para prepararla con el equipo.</p>
-      <div>{roleCopy[role].suggestions.map((suggestion, index) => <button className="airi-home-task" key={suggestion} type="button" disabled={agent.working} onClick={() => {
-        if (suggestion === "Abrir el lienzo") { agent.closePanel(); router.push("/lienzo"); } else ask(suggestion);
-      }}><img src={`/personajes/svg/${agents[index]}-flat.svg`} width={38} height={38} alt="" /><span>{suggestion}</span><ArrowUpRight size={18} aria-hidden="true" /></button>)}</div>
+      <div>{roleCopy[role].suggestions.map((task, index) => <button className="airi-home-task" key={task.label} type="button" disabled={agent.working} onClick={() => startTask(task)}><img src={`/personajes/svg/${agents[index]}-flat.svg`} width={38} height={38} alt="" /><span>{task.label}</span><ArrowUpRight size={18} aria-hidden="true" /></button>)}</div>
     </section>
     <style>{`
       .airi-home{min-width:0;padding:0 32px 30px;color:var(--ink)}

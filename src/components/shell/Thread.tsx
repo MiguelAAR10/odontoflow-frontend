@@ -9,7 +9,7 @@ import { useAgent } from "../../agui/useAgent";
 import { getNavigation, navigationTitle, type ShellRole } from "../../nav";
 import { useShellContext } from "./ShellContext";
 
-const targets: Record<string, string> = { home: "/home", agenda: "/agenda", caja: "/caja", bandeja: "/aprobaciones", decisiones: "/aprobaciones", direccion: "/direccion", turno: "/mi-turno", jornada: "/jornada", ficha: "/atencion", "doctor-brief": "/atencion", canvas: "/lienzo", lienzo: "/lienzo", actividad: "/agente" };
+const targets: Record<string, string> = { home: "/home", agenda: "/agenda", caja: "/caja", bandeja: "/aprobaciones", aprobaciones: "/aprobaciones", decisiones: "/aprobaciones", direccion: "/direccion", turno: "/mi-turno", "mi-turno": "/mi-turno", jornada: "/jornada", ficha: "/atencion", atencion: "/atencion", "doctor-brief": "/atencion", canvas: "/lienzo", lienzo: "/lienzo", actividad: "/agente", agente: "/agente" };
 export function threadDestination(target: string, role: ShellRole) {
   const path = targets[target];
   return path && getNavigation(role).some(item => item.to === path) ? path : null;
@@ -39,6 +39,10 @@ export function threadItem(part: ThreadPart, agent: string | null, cards: Return
         return { type: "Notice", props: { text: "Revisa el alcance y confirma con el botón de la tarjeta." } };
       if (part.key === "doctor-brief" && z.object({ briefReady: z.literal(true) }).safeParse(part.props).success)
         return { type: "Act", props: { label: "Atención", target: "ficha" } };
+      if (part.key === "doctor-evolution") {
+        const draft = z.object({ state: z.literal("borrador"), text: z.string().min(1) }).safeParse(part.props);
+        if (draft.success) return { type: "Say", props: { text: `Borrador de evolución · requiere revisión humana.\n${draft.data.text}`, agent: "espejo" } };
+      }
       return { type: part.key, props: part.props };
     }
   }
