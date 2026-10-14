@@ -5,6 +5,7 @@ import Link from "next/link";
 import { z } from "zod";
 import { loadAgenda, toApiError, useMocks } from "../api";
 import { useAgent } from "../agui/useAgent";
+import { usePersona } from "../components/PersonaContext";
 import { useShellContext } from "../components/shell/ShellContext";
 import { Card } from "../catalog/Card";
 import { OperationsStyles } from "./ActivityPage";
@@ -17,19 +18,25 @@ const appointmentSchema = z.object({
   sede: z.string().min(1), state: z.enum(["cerrada","sin cerrar","ausente","en consulta","llegó","confirmada","sin confirmar"]),
 });
 type TurnAppointment = z.infer<typeof appointmentSchema>;
-const agendaProjection = z.object({ agenda: z.array(appointmentSchema), cut_at: z.iso.datetime({offset:true}) });
+const agendaProjection = z.object({ agenda: z.array(appointmentSchema.extend({ arrived_at: z.iso.datetime({offset:true}).nullable() })), cut_at: z.iso.datetime({offset:true}) });
 const time = (iso: string) => new Intl.DateTimeFormat("es-PE", {timeZone:"America/Lima",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).format(new Date(iso));
 
 export function MiTurnoPage() {
   const agent = useAgent();
   const { role, locationId } = useShellContext();
-  const [data, setData] = useState<{agenda: TurnAppointment[]; cut_at: string} | null>(null);
+  const { version: identityVersion } = usePersona();
+  const scope = JSON.stringify([role, locationId, identityVersion]);
+  const [read, setRead] = useState<{
+    scope: string; data: {agenda: TurnAppointment[]; cut_at: string} | null;
+    loading: boolean; error: string;
+  }>({scope, data:null, loading:false, error:""});
   const [error, setError] = useState("");
   const [request, setRequest] = useState(0);
   useEffect(() => {
     if (role !== "admin") return;
     let active = true;
-    setData(null); setError("");
+    setRead(previous => ({scope, data:previous.scope === scope ? previous.data : null, loading:true, error:""}));
+    setError("");
     const load = async () => {
       if (useMocks) {
         const [agenda, snapshots] = await Promise.all([import("../agui/sim/fixtures/agenda.json"), import("../agui/sim/fixtures/state.json")]);
@@ -49,15 +56,24 @@ export function MiTurnoPage() {
       }])};
     };
     let timer: ReturnType<typeof setTimeout> | null = null;
-    void load().then(next => {if(active) setData(next);}).catch(caught => {if(active) setError(toApiError(caught).message);}).finally(() => {
+    void load().then(next => {
+      if (active) setRead({scope, data:next, loading:false, error:""});
+    }).catch(caught => {
+      if (active) setRead(previous => ({...previous, loading:false, error:toApiError(caught).message}));
+    }).finally(() => {
       if (active && !useMocks) timer = setTimeout(() => setRequest(value => value+1),30_000);
     });
     // Backend reads refresh without overlapping a slow request. Streamed cards
     // update immediately through useAgent; this timer only schedules a new read.
     return () => {active=false;if(timer) clearTimeout(timer);};
-  }, [role,locationId,request]);
+  }, [role,locationId,identityVersion,scope,request]);
   const live = agendaProjection.safeParse(agent.worldState);
-  const snapshot = live.success ? live.data : data;
+  const currentRead = read.scope === scope ? read : null;
+  const snapshot = live.success ? live.data : currentRead?.data;
+  // The REST agenda has no arrival/consultation projection. Only a complete
+  // world-state snapshot or the official mock fixture can report these counts.
+  const arrivalsAvailable = live.success || useMocks;
+  const displayError = error || currentRead?.error || "";
   const rows = snapshot?.agenda ?? [];
   const cut = snapshot ? new Date(snapshot.cut_at).getTime() : 0;
   const now = rows.filter(row => row.state === "en consulta" || row.state === "llegó");
@@ -74,11 +90,13 @@ export function MiTurnoPage() {
       {role === "admin" && <button className="catalog-button" disabled={agent.working} onClick={ask}>Confirma las citas de mañana</button>}</header>
     {role !== "admin" ? <p role="note">Mi turno es la cola de recepción. Elige Administrativo en «Ver como» para consultarla.</p> : <>
       <p className="operations-note">Primero quién está en la clínica y qué te necesita. Revisa el alcance y decide en la tarjeta.</p>
-      {error && <p role="alert">{error} <button className="catalog-button" onClick={() => setRequest(value => value+1)}>Reintentar</button></p>}
+      {displayError && <p role="alert">{displayError} <button className="catalog-button" onClick={() => setRequest(value => value+1)}>Reintentar</button></p>}
       <div className="operations-layout"><div>
-        {!snapshot && !error ? <p role="status">Cargando turno…</p> : snapshot && <>
-          <p><span className="operations-count">{now.filter(row => row.state === "llegó").length}</span> en espera · <span className="operations-count">{next.length}</span> próximas 2 h</p>
-          {([{title:"Ahora",rows:now},{title:"Próximas 2 h",rows:next},{title:"Requiere atención",rows:attention}]).map(group => <section className="operations-panel" key={group.title} aria-label={group.title}>
+        {!snapshot && !displayError ? <p role="status">Cargando turno…</p> : snapshot && <>
+          {currentRead?.loading && <p role="status">Actualizando agenda… Se conserva el último corte.</p>}
+          {!arrivalsAvailable && <p className="operations-meta">Llegadas y pacientes en consulta no disponibles en esta fuente.</p>}
+          <p>{arrivalsAvailable && <><span className="operations-count">{now.filter(row => row.state === "llegó").length}</span> en espera · </>}<span className="operations-count">{next.length}</span> próximas 2 h</p>
+          {([...(arrivalsAvailable ? [{title:"Ahora",rows:now}] : []),{title:"Próximas 2 h",rows:next},{title:"Requiere atención",rows:attention}]).map(group => <section className="operations-panel" key={group.title} aria-label={group.title}>
             <h2>{group.title} <span className="operations-meta">{group.rows.length}</span></h2>
             {group.rows.length ? group.rows.map(row => <div className="operations-appointment" key={row.id}><time dateTime={row.start_at}>{time(row.start_at)}</time><div><strong>{row.patient}</strong><small style={{display:"block"}}>{row.procedure} · {row.practitioner_name} · {row.sede}</small></div><span className="operations-meta">{row.state}</span></div>) : <p className="operations-meta">No hay citas en este grupo.</p>}
           </section>)}

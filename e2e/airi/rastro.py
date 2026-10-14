@@ -75,6 +75,8 @@ with sync_playwright() as p:
                 # Preparing the run never approves the proposal.
                 expect(page.locator('[data-turn-case]')).to_contain_text('Requiere tu aprobación')
                 expect(page.locator('[data-turn-case]')).not_to_contain_text('Aprobado por ti')
+                # The streamed card appears before RUN_FINISHED registers its approval source.
+                expect(page.get_by_role('button', name='Confirma las citas de mañana', exact=True)).to_be_enabled()
                 page.locator('#agent-panel').get_by_role('button', name='Cerrar asistente', exact=True).click()
                 turno_contrast = check_view(page)
                 page.screenshot(path=str(out / f'{width}-{theme}-turno.png'), full_page=True)
