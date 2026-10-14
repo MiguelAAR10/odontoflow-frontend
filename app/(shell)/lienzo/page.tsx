@@ -1,5 +1,5 @@
-import { EmptyShellPage } from "../../../src/components/shell/EmptyShellPage";
+import { CanvasPage } from "../../../src/views/CanvasPage";
 
 export default function LienzoRoute() {
-  return <EmptyShellPage title="Lienzo" />;
+  return <CanvasPage />;
 }
