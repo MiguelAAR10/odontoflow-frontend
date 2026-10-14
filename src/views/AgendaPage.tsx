@@ -41,6 +41,7 @@ import { Modal } from "../components/Modal";
 import type { Appointment } from "../types";
 import { createLatestRequest } from "../session";
 import { useAgent } from "../agui/useAgent";
+import { approvalReceipts } from "../agui";
 import { useShellContext } from "../components/shell/ShellContext";
 import { Card as CatalogCard } from "../catalog/Card";
 import type { DemoAgendaData } from "../agui/sim/gaps";
@@ -129,12 +130,6 @@ function DemoAgenda() {
   const [data, setData] = useState<DemoAgendaData | null>(null);
   const [error, setError] = useState("");
   const [selected, setSelected] = useState<DayEntry | null>(null);
-  const [receipt, setReceipt] = useState<Record<string, string>>({});
-  const approved = Object.values(agent.cards).filter(entry => ["r-oferta", "cv-oferta"].includes(entry.card.id) && entry.status === "approved").map(entry => entry.card.id).join(",");
-  useEffect(() => {
-    if (!approved) { setReceipt({}); return; }
-    setReceipt(previous => Object.fromEntries(approved.split(",").map(id => [id, previous[id] ?? new Date().toISOString()])));
-  }, [approved]);
   useEffect(() => {
     let active = true;
     import("../agui/sim/gaps").then(module => module.readDemoAgenda()).then(result => { if (active) setData(result); })
@@ -158,10 +153,12 @@ function DemoAgenda() {
     <p className="airi-agenda-note">Demostración · corte del {formatSlotDate(date)} a las {formatSlotTime(data.cutAt, LIMA)}. Los colores indican el tipo de atención; el pasado conserva su estado.</p>
     {error ? <p role="alert">{error}</p> : null}
     <DoctorDayCalendar entries={rows} gaps={gaps} date={date} now={data.cutAt} onSelect={id => setSelected(rows.find(row => row.id === id) ?? null)} onOffer={offer} busy={agent.working} />
-    {offers.length ? <section className="airi-agenda-decisions" aria-label="Oferta para el hueco"><h2>La oferta, para tu revisión</h2>{offers.map(entry => <div key={entry.card.id}>
+    {offers.length ? <section className="airi-agenda-decisions" aria-label="Oferta para el hueco"><h2>La oferta, para tu revisión</h2>{offers.map(entry => {
+      const receivedAt = approvalReceipts.get(entry.card);
+      return <div key={entry.card.id}>
       <CatalogCard card={entry.card} status={entry.status} error={entry.error} loadingReason={entry.loadingReason ?? null} onApprove={() => agent.approve(entry.card.id)} />
-      {entry.status === "approved" && receipt[entry.card.id] ? <p className="airi-agenda-receipt" role="status">Confirmación recibida a las <time dateTime={receipt[entry.card.id]}>{formatSlotTime(receipt[entry.card.id], LIMA)}</time> (Lima). El hueco sigue libre hasta la aceptación de la paciente.</p> : null}
-    </div>)}</section> : null}
+      {entry.status === "approved" && receivedAt ? <p className="airi-agenda-receipt" role="status">Confirmación recibida en esta sesión a las <time dateTime={receivedAt}>{formatSlotTime(receivedAt, LIMA)}</time> (Lima). El hueco sigue libre hasta la aceptación de la paciente.</p> : null}
+    </div>; })}</section> : null}
     <Drawer title="Detalle de la cita" open={!!selected} onClose={() => setSelected(null)}>{selected ? <dl className="airi-agenda-detail">
       <dt>Paciente</dt><dd>{selected.patient}</dd><dt>Atención</dt><dd>{selected.procedure}</dd><dt>Odontólogo</dt><dd>{selected.doctor}</dd><dt>Horario · Lima</dt><dd>{formatAppointmentDateTime(selected.start, selected.end, LIMA)}</dd><dt>Estado registrado</dt><dd>{selected.state}</dd>
     </dl> : null}</Drawer>

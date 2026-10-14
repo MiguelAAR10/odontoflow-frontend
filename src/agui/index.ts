@@ -1,6 +1,10 @@
 import type { Card } from "./card.js";
 import type { AgentSource } from "./source.js";
 import type { SimulatedSourceOptions } from "./sim/source.js";
+import { agentStore } from "./store.js";
+import { observeApprovalReceipts } from "./sim/gaps.js";
+
+export const approvalReceipts = observeApprovalReceipts(agentStore);
 
 export interface AgentSourceWithApproval extends AgentSource {
   approveCard?: (card: Card, idempotencyKey: string) => Promise<Card>;

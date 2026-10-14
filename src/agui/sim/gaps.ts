@@ -1,4 +1,29 @@
 import { z } from "zod";
+import type { Card } from "../card.js";
+import type { AgentStore } from "../store.js";
+
+/** Session-only UI metadata, never a backend audit timestamp. Observe the
+ * approval transition before any view mounts; pre-approved cards have no receipt.
+ * Weak keys follow the immutable decision and cannot leak across sessions.
+ */
+export function observeApprovalReceipts(store: AgentStore) {
+  let previous = store.getSnapshot();
+  let receipts = new WeakMap<Card, string>();
+  const dispose = store.subscribe(() => {
+    const next = store.getSnapshot();
+    if (next.threadId !== previous.threadId) receipts = new WeakMap();
+    if (next.cards !== previous.cards) {
+      for (const [id, entry] of Object.entries(next.cards)) {
+        const before = previous.cards[id];
+        if (entry.status === "approved" && before?.status === "loading" && before.loadingReason === "approval") {
+          receipts.set(entry.card, new Date().toISOString());
+        }
+      }
+    }
+    previous = next;
+  });
+  return { get: (card: Card) => receipts.get(card), dispose };
+}
 
 /** Exact Gap.json DTO; availability is supplied, never inferred from blank cells. */
 export const GapSchema = z.strictObject({

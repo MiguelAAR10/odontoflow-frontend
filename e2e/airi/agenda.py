@@ -77,6 +77,25 @@ def capture(page, prefix, state):
     page.screenshot(path=str(out / f"{prefix}-{state}.png"), full_page=True)
 
 
+
+def send_intent(page, text):
+    """Wait for the controlled form to acknowledge the value after hydration."""
+    field = page.locator('[data-airi-input]:visible')
+    field.fill(text)
+    expect(field.locator('..').get_by_role('button', name='Enviar', exact=True)).to_be_enabled()
+    field.press('Enter')
+    expect(page.locator('#agent-panel .airi-turn--user').last).to_contain_text(text)
+
+
+def navigate(page, path):
+    """Use client navigation so the same agent session survives the route."""
+    menu = page.get_by_role('button', name='Abrir navegación', exact=True)
+    if menu.is_visible():
+        menu.click()
+    page.locator(f'#app-sidebar a[href="{path}"]').click()
+    expect(page).to_have_url(args.base_url + path)
+
+
 def real_read(page, prefix):
     """Stub only the HTTP transport using existing generated read DTO fields."""
     requests = []
@@ -167,8 +186,7 @@ with sync_playwright() as p:
                     expect(approve).to_be_enabled()
                     expect(offer.locator('.catalog-stamp')).to_have_count(0)
                     capture(page, prefix, "pending")
-                    page.locator('[data-airi-input]:visible').fill('sí')
-                    page.locator('[data-airi-input]:visible').press('Enter')
+                    send_intent(page, 'sí')
                     expect(panel).to_contain_text('Escribir un asentimiento no aprueba nada')
                     expect(approve).to_be_enabled()
                     statuses, injected = stale_hash_once(session, scripts)
@@ -185,21 +203,42 @@ with sync_playwright() as p:
                     expect(page.locator('[data-gap="ruiz"]')).to_be_visible()
                     expect(page.locator('.airi-agenda-receipt')).to_contain_text('hueco sigue libre')
                     capture(page, prefix, "aprobado")
+                    # Remounting Agenda must preserve the confirmation instant.
+                    receipt = page.locator('.airi-agenda-receipt time').get_attribute('datetime')
+                    navigate(page, '/home')
+                    page.clock.set_fixed_time(datetime(2026, 10, 14, 23, 34, tzinfo=ZoneInfo('UTC')))
+                    navigate(page, '/agenda')
+                    expect(page.locator('.airi-agenda-receipt time')).to_have_attribute('datetime', receipt)
                     # The same gap reopens its existing card without a second intent.
                     page.locator('[data-gap="ruiz"]').click()
                     expect(panel.locator('.airi-turn--user')).to_have_count(2)
                     expect(offer.locator('.catalog-stamp')).to_have_text('Aprobado')
                     # A fresh conversation can also prepare and approve entirely from the thread.
                     page.goto(args.base_url + '/agenda', wait_until='networkidle')
-                    page.locator('[data-airi-input]:visible').fill('¿Quién toma el hueco de la tarde?')
-                    page.locator('[data-airi-input]:visible').press('Enter')
+                    send_intent(page, '¿Quién toma el hueco de la tarde?')
+                    expect(panel.locator('.airi-turn--user')).to_have_count(1)
                     expect(approve).to_be_enabled()
                     approve.click()
                     expect(offer.locator('.catalog-stamp')).to_have_text('Aprobado')
                     panel.get_by_role('button', name='Cerrar asistente', exact=True).click()
                     expect(page.locator('.airi-agenda-receipt time')).to_be_visible()
                     capture(page, prefix, "hilo-aprobado")
-                    result = {"hash_status": statuses[0], "min_contrast": round(min(ratios), 2), "screenshots": 5, "entry_points": ["gap", "thread"], "approval_points": ["view", "thread"]}
+                    # Approve in Inicio before Agenda has ever mounted in this session.
+                    page.goto(args.base_url + '/home', wait_until='networkidle')
+                    outside_time = datetime(2026, 10, 15, 1, 12, 34, tzinfo=ZoneInfo('UTC'))
+                    page.clock.set_fixed_time(outside_time)
+                    send_intent(page, '¿Quién toma el hueco de la tarde?')
+                    expect(panel.locator('.airi-turn--user')).to_have_count(1)
+                    expect(approve).to_be_enabled()
+                    approve.click()
+                    expect(offer.locator('.catalog-stamp')).to_have_text('Aprobado')
+                    panel.get_by_role('button', name='Cerrar asistente', exact=True).click()
+                    page.clock.set_fixed_time(datetime(2026, 10, 15, 3, 0, tzinfo=ZoneInfo('UTC')))
+                    navigate(page, '/agenda')
+                    expect(page.locator('.airi-agenda-receipt time')).to_have_attribute('datetime', '2026-10-15T01:12:34.000Z')
+                    expect(page.locator('.airi-agenda-receipt time')).to_have_text('20:12')
+                    capture(page, prefix, 'inicio-aprobado')
+                    result = {"receipt_navigation": True, "receipt_from_home": True, "hash_status": statuses[0], "min_contrast": round(min(ratios), 2), "screenshots": 6, "entry_points": ["gap", "thread"], "approval_points": ["view", "thread"]}
                     if args.mockup_url:
                         reference = context.new_page()
                         reference.goto(args.mockup_url + f'?rol=admin&p=agenda&tema={theme}', wait_until='networkidle')
