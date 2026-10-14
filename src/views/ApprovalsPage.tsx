@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Boxes, CalendarCheck2, Check, ClipboardCheck, Hourglass, Play, RotateCcw, ShieldCheck, WalletCards, type LucideIcon } from "lucide-react";
+import { Check, ClipboardCheck, Play, RotateCcw, ShieldCheck } from "lucide-react";
 import {
   beginDecision,
   canRunAgent,
@@ -12,14 +12,19 @@ import {
   newIdempotencyKey,
   RUNNABLE_AGENTS,
   runAgentNow,
+  useMocks,
   type ActionableError,
   type DecisionIntent,
 } from "../api";
+import { Card as CatalogCard } from "../catalog/Card";
+import { AgentLabel } from "../catalog/AgentLabel";
+import type { Card } from "../agui/card";
+import { createDraftInbox, toCard, type DraftInboxRow } from "../approvals";
 import { Badge } from "../components/Badge";
 import { Button } from "../components/Button";
 import { usePersona } from "../components/PersonaContext";
 import { Tabs } from "../components/Tabs";
-import type { AgentRunResult, ApprovalCategory, ApprovalItem, ApprovalStatus, ProposalDecision, RunnableAgent, StaffIdentity, Tone } from "../types";
+import type { AgentRunResult, ApprovalItem, ApprovalStatus, ProposalDecision, RunnableAgent, StaffIdentity, Tone } from "../types";
 import { createLatestRequest } from "../session";
 import { getSessionVersion } from "../contracts/client";
 
@@ -29,17 +34,20 @@ import { getSessionVersion } from "../contracts/client";
  * (`actions` per item) and re-checks every decision.
  */
 export function ApprovalsPage() {
-  const { identity, loading } = usePersona();
+  const { identity, loading, version } = usePersona();
   const [reloadToken, setReloadToken] = useState(0);
   const human = identity?.principalType === "human";
   return <section className="page approvals-page">
     <div className="page-heading page-heading--with-actions">
-      <div><h1>Bandeja</h1><p>Lo que proponen los agentes, con su evidencia. Nada se ejecuta sin una aprobación.</p></div>
-      <span className="cash-authority-note"><ShieldCheck size={17} aria-hidden="true" /> El backend valida cada decisión</span>
+      <div><h1>Bandeja</h1><p>Lo que proponen los agentes, con su evidencia. Tú decides qué se ejecuta.</p></div>
+      <span className="cash-authority-note"><ShieldCheck size={17} aria-hidden="true" /> {useMocks ? "Simulación con datos de referencia" : "Cada decisión queda registrada"}</span>
     </div>
     {!loading && !human && <p className="approvals-notice" role="note">Para aprobar o declinar, elige quién eres en el menú de perfil, abajo a la izquierda.</p>}
-    <AgentRunsPanel identity={identity} onRan={() => setReloadToken((value) => value + 1)} />
-    <InboxSection reloadToken={reloadToken} />
+    <BandejaStyles />
+    {useMocks ? <FixtureInbox key={version} identity={identity} /> : <>
+      <InboxSection reloadToken={reloadToken} />
+      <AgentRunsPanel identity={identity} onRan={() => setReloadToken((value) => value + 1)} />
+    </>}
   </section>;
 }
 
@@ -133,13 +141,6 @@ const STATUS_BADGE: Record<ApprovalStatus, { label: string; tone: Tone }> = {
   superseded: { label: "Reemplazada", tone: "slate" },
 };
 
-const CATEGORY_ICON: Record<ApprovalCategory, LucideIcon> = {
-  cobranza: WalletCards,
-  inventario: Boxes,
-  lista_espera: Hourglass,
-  cita: CalendarCheck2,
-};
-
 const EMPTY_COPY: Record<ApprovalStatus, string> = {
   pending: "No hay propuestas esperando revisión. Usa «Ejecutar ahora» para que un agente revise la clínica.",
   approved: "No hay propuestas aprobadas en curso.",
@@ -162,8 +163,8 @@ function formatDuration(ms: number): string {
 function useNow(intervalMs = 30_000): number {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), intervalMs);
-    return () => window.clearInterval(timer);
+    const timer = setInterval(() => setNow(Date.now()), intervalMs);
+    return () => clearInterval(timer);
   }, [intervalMs]);
   return now;
 }
@@ -175,6 +176,8 @@ interface DecisionState {
 }
 
 function InboxSection({ reloadToken }: { reloadToken: number }) {
+  const [view, setView] = useState("all");
+  const [selected, setSelected] = useState<string | null>(null);
   const [status, setStatus] = useState<ApprovalStatus>("pending");
   const [items, setItems] = useState<ApprovalItem[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -260,9 +263,12 @@ function InboxSection({ reloadToken }: { reloadToken: number }) {
       if (!isCurrent()) return;
       const error = describeApprovalError(caught, item.source);
       setDecisions((state) => ({ ...state, [item.key]: { intent, busy: false, error } }));
+      throw new Error(error.message);
     }
   };
 
+  const visible = items.filter(item => view === "all" || (item.status === "pending" && item.actions.length > 0));
+  const active = visible.find(item => item.key === selected) ?? visible[0];
   const tabLabel = STATUS_TABS.find((tab) => tab.id === status)?.label ?? "";
 
   return <>
@@ -277,14 +283,14 @@ function InboxSection({ reloadToken }: { reloadToken: number }) {
         <Tabs ariaLabel="Filtrar por estado" panelId="inbox-list" value={status} onChange={(value) => { reads.current.invalidate(); currentStatus.current = value as ApprovalStatus; setAnnouncement(""); setStatus(value as ApprovalStatus); }} items={STATUS_TABS} />
       </header>
       {error && <div className="form-error approvals-error" role="alert">{error}<Button compact icon={RotateCcw} onClick={() => void refresh()}>Reintentar</Button></div>}
+      <InboxViews value={view} onChange={setView} mine={items.filter(item => item.status === "pending" && item.actions.length > 0).length} all={items.length} />
       <div id="inbox-list">
         {loading ? <p className="table-loading" role="status">Cargando propuestas…</p>
-          : !error && items.length === 0 ? <p className="empty-state approvals-empty">{EMPTY_COPY[status]}</p>
-          : <ul className="approvals-grid">
-            {items.map((item) => <li key={item.key}>
-              <ApprovalCard item={item} now={now} decision={decisions[item.key]} onDecide={decide} onReload={() => void refresh()} />
-            </li>)}
-          </ul>}
+          : !error && visible.length === 0 ? <p className="empty-state approvals-empty">{EMPTY_COPY[status]}</p>
+          : <div className="bandeja-layout">
+            <CaseList cards={visible.map(toCard)} selected={active?.key ?? null} onSelect={setSelected} states={Object.fromEntries(visible.map(item => [item.key, STATUS_BADGE[item.status].label]))} />
+            {active && <div id="bandeja-selected" className="bandeja-detail"><ApprovalCard key={active.key} item={active} now={now} decision={decisions[active.key]} onDecide={decide} onReload={() => void refresh()} /></div>}
+          </div>}
         {nextCursor && !loading && <div className="approvals-more"><Button compact onClick={() => void loadMore()} disabled={loadingMore}>{loadingMore ? "Cargando…" : "Cargar más"}</Button></div>}
       </div>
     </section>
@@ -303,59 +309,166 @@ function ApprovalCard({ item, now, decision, onDecide, onReload }: {
   item: ApprovalItem;
   now: number;
   decision: DecisionState | undefined;
-  onDecide: (item: ApprovalItem, decision: ProposalDecision) => void;
+  onDecide: (item: ApprovalItem, decision: ProposalDecision) => Promise<void>;
   onReload: () => void;
 }) {
-  const titleId = `approval-${item.key.replace(/[^a-z0-9]/gi, "-")}-title`;
-  const Icon = CATEGORY_ICON[item.category];
-  const remaining = new Date(item.expiresAt).getTime() - now;
-  const lapsed = item.status === "pending" && remaining <= 0;
+  const lapsed = item.status === "pending" && new Date(item.expiresAt).getTime() <= now;
   const badge = lapsed ? STATUS_BADGE.expired : STATUS_BADGE[item.status];
-  const canApprove = item.actions.includes("approve") && !lapsed;
-  const canDecline = item.actions.includes("decline");
-  const busy = decision?.busy ?? false;
-
-  return <article className={`approval-card approval-card--${lapsed ? "lapsed" : item.status}`} aria-labelledby={titleId}>
-    <header className="approval-card__header">
-      <span className="approval-card__category"><Icon size={15} aria-hidden="true" />{item.categoryLabel}</span>
-      <Badge tone={badge.tone}>{badge.label}</Badge>
-    </header>
-    <div className="approval-card__lead">
-      <h3 id={titleId}>{item.headline}</h3>
-      {item.detail && <p className="approval-card__detail">{item.detail}</p>}
+  const pending = item.status === "pending";
+  const canApprove = pending && item.actions.includes("approve") && !lapsed;
+  const canDecline = pending && item.actions.includes("decline");
+  return <>
+    <div className="bandeja-detail-meta"><Badge tone={badge.tone}>{badge.label}</Badge>
+      {pending && <span>{lapsed ? "Pasó el plazo para aprobar" : `Vence en ${formatDuration(new Date(item.expiresAt).getTime() - now)}`}</span>}
     </div>
-    {item.facts.length > 0 && <dl className="approval-card__facts">
-      {item.facts.map((fact) => <div key={fact.label}><dt>{fact.label}</dt><dd>{fact.value}</dd></div>)}
-    </dl>}
-    {item.message && <figure className="approval-card__message">
-      <figcaption>{item.status === "pending" ? "Mensaje que se enviará" : "Mensaje"}</figcaption>
-      <blockquote>{item.message}</blockquote>
-    </figure>}
-    <p className="approval-card__meta">
-      {item.agentLabel ? `Propuesto por el agente de ${item.agentLabel}` : "Propuesto desde una conversación"}
-      {item.locationName && ` · ${item.locationName}`}
-      {item.status === "pending" && (lapsed ? ` · Venció hace ${formatDuration(-remaining)}` : ` · Vence en ${formatDuration(remaining)}`)}
-    </p>
-    {(item.decidedBy || item.outcome || item.errorCode) && <p className="approval-card__outcome">
-      {item.outcome}{item.outcome && item.decidedBy ? " · " : ""}{item.decidedBy && `Decidió ${item.decidedBy}`}
-      {item.errorCode && ` · Código ${item.errorCode}`}
-    </p>}
-    {item.status === "pending" && <footer className="approval-card__actions">
-      {lapsed && <p className="field-note">Pasó el plazo; ya no se puede aprobar.</p>}
-      {!lapsed && canDecline && !item.actions.includes("approve") && <p className="field-note">Tu rol solo puede declinar esta propuesta.</p>}
-      {item.actions.length === 0 && <p className="field-note">Tu rol no puede decidir esta propuesta.</p>}
-      {decision?.error && <div className="form-error approval-card__error" role="alert">
-        <span>{decision.error.message}</span>
-        {decision.error.reload
-          ? <Button compact icon={RotateCcw} onClick={onReload}>Volver a cargar</Button>
-          : <Button compact onClick={() => onDecide(item, decision.intent.decision)}>Reintentar</Button>}
+    <CatalogCard card={toCard(item)} status={decision?.busy ? "loading" : pending ? "pending" : item.status === "declined" ? "rejected" : item.status === "failed" ? "error" : "done"}
+      loadingReason={decision?.busy ? "approval" : null}
+      {...(canApprove ? { onApprove: () => onDecide(item, "approve") } : {})}
+      {...(canDecline ? { onAlternative: () => onDecide(item, "decline") } : {})}
+      error={decision?.error?.message ?? null} />
+    {pending && !item.actions.length && <p className="field-note">Tu rol no puede decidir esta propuesta.</p>}
+    {item.decidedBy && <p className="field-note">Decidió {item.decidedBy}</p>}
+    {item.errorCode && <p className="form-error">Código {item.errorCode}</p>}
+    {decision?.error && <Button compact icon={RotateCcw} onClick={decision.error.reload ? onReload : () => void onDecide(item, decision.intent.decision).catch(() => {})}>{decision.error.reload ? "Volver a cargar" : "Reintentar"}</Button>}
+  </>;
+}
+
+function InboxViews({ value, onChange, mine, all }: { value: string; onChange: (value: string) => void; mine: number; all: number }) {
+  return <div className="bandeja-views" role="group" aria-label="Vistas de bandeja">
+    <button type="button" aria-pressed={value === "mine"} onClick={() => onChange("mine")}>Mías <span>{mine}</span></button>
+    <button type="button" aria-pressed={value === "all"} onClick={() => onChange("all")}>Todas <span>{all}</span></button>
+    <p>Mías: pendientes que puedes decidir.</p>
+  </div>;
+}
+
+function CaseList({ cards, selected, onSelect, states }: { cards: Card[]; selected: string | null; onSelect: (id: string) => void; states?: Record<string, string> }) {
+  return <ul className="bandeja-cases" aria-label="Propuestas">
+    {cards.map(card => <li key={card.id}><button type="button" aria-current={card.id === selected ? "true" : undefined} aria-controls="bandeja-selected" onClick={() => onSelect(card.id)}>
+      <AgentLabel agent={card.agent} />
+      <b>{card.title}</b>
+      <span className="bandeja-case-state">{states?.[card.id] ?? (card.state === "approved" ? "Aprobada" : card.state === "declined" ? "Descartada" : card.level === "borrador" ? "Borrador" : "Requiere decisión")}</span>
+    </button></li>)}
+  </ul>;
+}
+
+function FixtureInbox({ identity }: { identity: StaffIdentity | null }) {
+  const inbox = useRef<ReturnType<typeof createDraftInbox> | null>(null);
+  const [rows, setRows] = useState<DraftInboxRow[]>([]);
+  const [error, setError] = useState("");
+  const [loaded, setLoaded] = useState(false);
+  const [selected, setSelected] = useState("p-reprog");
+  const [view, setView] = useState("all");
+  const [editing, setEditing] = useState(false);
+  const [text, setText] = useState("");
+  const [announcement, setAnnouncement] = useState("");
+  const editButton = useRef<HTMLButtonElement>(null);
+  const detailHeading = useRef<HTMLHeadingElement>(null);
+  const intents = useRef(new Map<string, { decision: ProposalDecision; key: string }>());
+  useEffect(() => {
+    let live = true;
+    // Explicit seam: real mode never imports these business fixtures.
+    if (useMocks) void import("../agui/sim/fixtures/proposals.json").then(({ default: proposals }) => {
+      if (!live) return;
+      inbox.current = createDraftInbox(proposals as Card[]);
+      setRows(inbox.current.list());
+      setLoaded(true);
+    }).catch(caught => { if (live) { setError(describeApprovalError(caught).message); setLoaded(true); } });
+    return () => { live = false; };
+  }, []);
+  const canDecide = identity?.principalType === "human" && identity.permissions.includes("proposals.decide");
+  const mine = rows.filter(row => canDecide && row.card.state === "pending");
+  const visible = view === "mine" ? mine : rows;
+  const active = visible.find(row => row.card.id === selected) ?? visible[0];
+  const select = (id: string) => { setSelected(id); setEditing(false); setError(""); };
+  const decide = (decision: ProposalDecision) => {
+    if (!active || !inbox.current || !canDecide) return;
+    const intentId = `${active.card.id}:${active.envelope.version}`;
+    let intent = intents.current.get(intentId);
+    if (!intent || intent.decision !== decision) {
+      intent = { decision, key: newIdempotencyKey() };
+      intents.current.set(intentId, intent);
+    }
+    try {
+      inbox.current.decide(active.envelope, decision, intent.key);
+      setRows(inbox.current.list());
+      setError("");
+      setAnnouncement(`${decision === "approve" ? "Aprobada" : "Descartada"}: ${active.card.title}`);
+      detailHeading.current?.focus();
+    } catch (caught) {
+      const message = describeApprovalError(caught).message;
+      setError(message);
+      throw caught; // Catalog releases its intent latch on failure.
+    }
+  };
+  const save = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!active || !inbox.current) return;
+    try {
+      const next = inbox.current.edit(active.envelope, text);
+      setRows(inbox.current.list());
+      setEditing(false);
+      setError("");
+      setAnnouncement(`Borrador guardado. Versión ${next.envelope.version}; vuelve a revisarlo antes de aprobar.`);
+      requestAnimationFrame(() => editButton.current?.focus());
+    } catch (caught) { setError(describeApprovalError(caught).message); }
+  };
+  return <section aria-labelledby="bandeja-title" className="bandeja-inbox" aria-busy={!loaded}>
+    <header className="bandeja-section-head"><h2 id="bandeja-title">Necesita acción</h2><span>{mine.length} pendientes</span></header>
+    <InboxViews value={view} onChange={value => { setView(value); setEditing(false); setError(""); }} mine={mine.length} all={rows.length} />
+    <p className="bandeja-announcement" role="status">{announcement}</p>
+    {error && <p className="form-error" role="alert">{error}</p>}
+    {!loaded ? <p role="status">Cargando propuestas…</p> : !visible.length ? <p className="empty-state">No hay propuestas pendientes que puedas decidir. Revisa Todas para consultar la evidencia.</p> : <div className="bandeja-layout">
+      <CaseList cards={visible.map(row => row.card)} selected={active?.card.id ?? null} onSelect={select} />
+      {active && <div id="bandeja-selected" className="bandeja-detail">
+        <h2 ref={detailHeading} tabIndex={-1} className="bandeja-detail-heading">Detalle de propuesta <span>Versión {active.envelope.version}</span></h2>
+        {editing ? <form className="bandeja-editor" onSubmit={save}>
+          <label htmlFor="bandeja-draft">Texto del borrador</label>
+          <textarea id="bandeja-draft" value={text} onChange={event => setText(event.target.value)} autoFocus required maxLength={4000} />
+          <p>Guardar crea una nueva versión. Los montos, las fuentes y el alcance se conservan.</p>
+          <div><Button compact onClick={() => { setEditing(false); requestAnimationFrame(() => editButton.current?.focus()); }}>Cancelar</Button><Button compact type="submit" variant="primary" disabled={!text.trim()}>Guardar nueva versión</Button></div>
+        </form> : <>
+          <CatalogCard card={active.card}
+            {...(canDecide ? { onApprove: () => decide("approve"), onAlternative: () => decide("decline") } : {})} />
+          {canDecide && active.card.level === "borrador" && active.card.state === "pending" && <button ref={editButton} className="catalog-button bandeja-edit" type="button" onClick={() => { setText(active.card.body.replace(/<[^>]*>/g, " ").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").trim()); setEditing(true); }}>Editar borrador</button>}
+        </>}
+        {!canDecide && <p className="field-note">Elige una persona con permiso para decidir.</p>}
       </div>}
-      {canDecline && <Button compact variant="danger" disabled={busy} aria-describedby={titleId} onClick={() => onDecide(item, "decline")}>
-        {busy && decision?.intent.decision === "decline" ? "Declinando…" : "Declinar"}
-      </Button>}
-      {canApprove && <Button compact variant="primary" disabled={busy} aria-describedby={titleId} onClick={() => onDecide(item, "approve")}>
-        {busy && decision?.intent.decision === "approve" ? "Aprobando…" : "Aprobar"}
-      </Button>}
-    </footer>}
-  </article>;
+    </div>}
+  </section>;
+}
+
+function BandejaStyles() {
+  return <style>{`
+    .approvals-page{max-width:1200px;margin:0 auto;color:var(--ink)}
+    .bandeja-section-head,.bandeja-detail-meta{display:flex;align-items:center;gap:12px;margin:12px 0}
+    .bandeja-section-head h2{font:600 20px var(--font-display);margin:0}
+    .bandeja-section-head>span,.bandeja-detail-meta>span{font-size:13px;color:var(--muted)}
+    .bandeja-section-head h2:before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--yellow);margin-right:9px}
+    .bandeja-views{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:18px 0}
+    .bandeja-views button{display:flex;gap:8px;align-items:center;min-height:44px;padding:8px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font:inherit;cursor:pointer}
+    .bandeja-views button[aria-pressed=true]{background:var(--btn);color:var(--btn-ink);border-color:var(--btn)}
+    .bandeja-views p{font-size:12px;color:var(--muted);margin:0}
+    .bandeja-views span{font-variant-numeric:tabular-nums}
+    .bandeja-layout{display:grid;grid-template-columns:minmax(240px,.85fr) minmax(0,1.4fr);gap:20px;align-items:start}
+    .bandeja-cases{margin:0;padding:0;list-style:none;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+    .bandeja-cases li+li{border-top:1px solid var(--line)}
+    .bandeja-cases button{display:grid;gap:8px;text-align:left;padding:16px;width:100%;min-height:100px;border:0;border-left:3px solid transparent;background:transparent;color:var(--ink);font:inherit;cursor:pointer;overflow-wrap:anywhere}
+    .bandeja-cases button:hover{background:var(--hover)}
+    .bandeja-cases button[aria-current=true]{border-left-color:var(--blue);background:var(--blue-soft)}
+    .bandeja-cases b{font-weight:500;font-size:14px;line-height:1.5}
+    .bandeja-case-state{font-size:12px;color:var(--muted)}
+    .bandeja-detail{min-width:0;scroll-margin-top:80px}
+    .bandeja-detail-heading{font:500 14px var(--font-text);display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;margin:0 0 12px;color:var(--muted)}
+    .bandeja-detail-heading span{font-variant-numeric:tabular-nums}
+    .bandeja-editor{padding:20px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
+    .bandeja-editor label{display:block;font-weight:500;margin-bottom:12px}
+    .bandeja-editor textarea{width:100%;min-height:180px;resize:vertical;padding:12px;background:var(--surface-2);color:var(--ink);border:1px solid var(--line-2);border-radius:8px;font:inherit}
+    .bandeja-editor p{font-size:13px;color:var(--muted);line-height:1.6}
+    .bandeja-editor>div{display:flex;flex-wrap:wrap;gap:8px}
+    .bandeja-edit{margin-top:12px;min-height:44px}
+    .bandeja-announcement:empty{display:none}
+    .bandeja-announcement{color:var(--green-ink);font-size:14px;line-height:1.6}
+    .approvals-page button:focus-visible,.approvals-page textarea:focus-visible,.bandeja-detail-heading:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+    @media(max-width:850px){.bandeja-layout{grid-template-columns:minmax(0,1fr)}.bandeja-cases button{min-height:88px;padding:12px}.bandeja-views p{flex-basis:100%}.bandeja-detail{margin-top:8px}}
+  `}</style>;
 }
