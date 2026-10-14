@@ -40,13 +40,15 @@ function PersonaSwitcher() {
     const closeOutside = (event: MouseEvent) => { if (!rootRef.current?.contains(event.target as Node)) setOpen(false); };
     const closeWithEscape = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
-      event.stopPropagation();
+      event.preventDefault();
+      event.stopImmediatePropagation();
       setOpen(false);
       triggerRef.current?.focus();
     };
     document.addEventListener("mousedown", closeOutside);
-    document.addEventListener("keydown", closeWithEscape);
-    return () => { document.removeEventListener("mousedown", closeOutside); document.removeEventListener("keydown", closeWithEscape); };
+    // Capture before the navigation's document-level focus trap handles Escape.
+    document.addEventListener("keydown", closeWithEscape, true);
+    return () => { document.removeEventListener("mousedown", closeOutside); document.removeEventListener("keydown", closeWithEscape, true); };
   }, [open]);
 
   const human = identity?.principalType === "human";

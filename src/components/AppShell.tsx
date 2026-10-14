@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
   bookReal,
   createAppointment,
@@ -291,7 +291,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="app-workspace">
         <Topbar onNewAppointment={() => { setAppointmentPatient(""); setAppointmentContext(null); setLeadId(""); setAppointmentOpen(true); }} mobileOpen={sidebarOpen} onToggleSidebar={() => setSidebarOpen((value) => !value)} panelOpen={panelOpen} onTogglePanel={() => setPanelOpen(value => !value)} canvas={canvas} />
         <div className="shell-content">
-          <main key={personaVersion} tabIndex={-1} id="main-content" className="app-main">{children}</main>
+          <main tabIndex={-1} id="main-content" className="app-main"><Fragment key={personaVersion}>{children}</Fragment></main>
           {!canvas && <AgentPanel open={panelOpen} viewing={viewing} onClose={() => setPanelOpen(false)} />}
           {!canvas && <InteractionBar onOpenPanel={() => setPanelOpen(true)} onSubmit={() => setPanelOpen(true)} />}
         </div>

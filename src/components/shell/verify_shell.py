@@ -9,6 +9,9 @@ from pathlib import Path
 
 from playwright.sync_api import expect, sync_playwright
 
+# A cold dev route may compile before the client navigation can complete.
+expect.set_options(timeout=30000)
+
 
 def contrast(foreground, background):
     def luminance(color):
@@ -21,7 +24,7 @@ def contrast(foreground, background):
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--base-url", default="http://127.0.0.1:5211")
-parser.add_argument("--output", default=".audit/B1-SHELL-fix-r1")
+parser.add_argument("--output", default=".audit/B1-SHELL-fix-r2")
 parser.add_argument("--only", choices=["persona", "routes", "all"], default="all")
 args = parser.parse_args()
 out = Path(args.output)
@@ -37,7 +40,7 @@ with sync_playwright() as playwright:
             errors = []
             page.on("pageerror", lambda error: errors.append(str(error)))
             page.goto(args.base_url + "/agenda", wait_until="networkidle")
-            expect(page.locator(".sidebar-profile strong")).to_contain_text("Lucía")
+            expect(page.locator(".sidebar-profile strong")).to_contain_text("Lucía", timeout=30000)
             page.add_style_tag(content="nextjs-portal {display:none !important}")
 
             def open_navigation():
