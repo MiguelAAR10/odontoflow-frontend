@@ -11,6 +11,7 @@ import { SHELL_ROLES, type ShellRole } from "../nav";
 import { useShellContext } from "./shell/ShellContext";
 import { usePersona } from "./PersonaContext";
 import type { LocationRead } from "../contracts/client";
+import { AgentCrew } from "../crew/AgentCrew";
 
 export function Topbar({ onNewAppointment, mobileOpen, onToggleSidebar, panelOpen, onTogglePanel, canvas }: { onNewAppointment: () => void; mobileOpen: boolean; onToggleSidebar: () => void; panelOpen: boolean; onTogglePanel: () => void; canvas: boolean }) {
   const router = useRouter();
@@ -91,7 +92,7 @@ export function Topbar({ onNewAppointment, mobileOpen, onToggleSidebar, panelOpe
       <Search size={19} aria-hidden="true" /><input ref={searchInput} name="patient-search" autoComplete="off" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar paciente por DNI, nombre o teléfono" aria-label="Buscar paciente por DNI, nombre o teléfono" />
       {results.length > 0 && <div className="global-search__results">{results.map((patient) => <button key={patient.id} type="button" onClick={() => openPatient(patient)}><span className={`avatar avatar--${patient.tone}`}>{patient.initials}</span><span><strong>{patient.name}</strong><small>{patient.dni} · {patient.phone}</small></span></button>)}</div>}
     </div>
-    <div id="crew" className="shell-crew" role="region" aria-label="Equipo de agentes" />
+    <div id="crew" className="shell-crew" role="region" aria-label="Equipo de agentes"><AgentCrew onOpenCard={() => { if (!panelOpen) onTogglePanel(); }} /></div>
     <div className="shell-roles" role="group" aria-label="Ver como">{SHELL_ROLES.map(item => <button key={item.value} type="button" aria-pressed={role === item.value} onClick={() => setRole(item.value)}>{item.label}</button>)}</div>
     <select className="shell-role-select" aria-label="Ver como" value={role} onChange={event => setRole(event.target.value as ShellRole)}>{SHELL_ROLES.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select>
     <select className="shell-location-select" aria-label="Sede" title={locationError || "Sede"} value={locationId} onChange={event => setLocationId(event.target.value)}><option value="">Todas las sedes</option>{locations.map(location => <option key={location.id} value={location.id}>{location.name}</option>)}</select>
