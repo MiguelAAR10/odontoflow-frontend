@@ -1,18 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" class="pj-escudo">
   <title>Escudo protector · Identidad</title>
-  <desc>Personaje 07 de la familia OdontoFlow: escudo verde, ancho arriba y de punta redonda, inclinado a la derecha, con marco biselado (faceta de sombra verde profundo a la derecha), panel blanco con dos ojos cápsula negros y dos bracitos cápsula por detrás. Cuatro destellos amarillos. Luz arriba/izquierda. SVG nativo dibujado a mano; la animación vive fuera (personajes.css y personajes-B.css). v2 (2026-10-13, RECOLOR-FAMILIA): paleta única de 5 colores intensos + neutros, reflejos satinados y grano fino (.pj-grain, se apaga a ≤ 24 px); geometría e IDs de v1 intactos.</desc>
+  <desc>Personaje 07 de la familia OdontoFlow: escudo verde, ancho arriba y de punta redonda, inclinado a la derecha, con marco biselado (faceta de sombra verde profundo a la derecha), panel blanco con dos ojos cápsula negros y dos bracitos cápsula por detrás. Cuatro destellos amarillos. Luz arriba/izquierda. SVG nativo dibujado a mano; la animación vive fuera (personajes.css y personajes-B.css). v2 (2026-10-13, RECOLOR-FAMILIA): paleta única de 5 colores intensos + neutros, reflejos satinados y grano fino (.pj-grain, se apaga a ≤ 24 px); geometría e IDs de v1 intactos. V10: recoloreado a grafito (distinto de Hilo y de Enjuague).</desc>
   <defs>
     <!-- Luz arriba/izquierda: marco verde claro que se satura hacia abajo/derecha -->
     <linearGradient id="sc-base" gradientUnits="userSpaceOnUse" x1="250" y1="200" x2="700" y2="760">
-      <stop offset="0" stop-color="#2FD068"/>
-      <stop offset="0.45" stop-color="#0EA344"/>
-      <stop offset="1" stop-color="#098336"/>
+      <stop offset="0" stop-color="#9AA3B2"/>
+      <stop offset="0.45" stop-color="#6B7584"/>
+      <stop offset="1" stop-color="#525B69"/>
     </linearGradient>
     <!-- Faceta de sombra del bisel: lado derecho e inferior del marco -->
     <linearGradient id="sc-facet" gradientUnits="userSpaceOnUse" x1="620" y1="200" x2="720" y2="800">
-      <stop offset="0" stop-color="#077831"/>
-      <stop offset="0.55" stop-color="#045A25"/>
-      <stop offset="1" stop-color="#03481E"/>
+      <stop offset="0" stop-color="#3D4552"/>
+      <stop offset="0.55" stop-color="#2A2F37"/>
+      <stop offset="1" stop-color="#22262D"/>
     </linearGradient>
     <!-- Panel interior: blanco arriba/izquierda, gris claro abajo/derecha -->
     <linearGradient id="sc-panel" gradientUnits="userSpaceOnUse" x1="320" y1="290" x2="690" y2="720">
@@ -26,12 +26,12 @@
       <stop offset="1" stop-color="#BDBDBD" stop-opacity="0"/>
     </radialGradient>
     <linearGradient id="sc-arm" gradientUnits="userSpaceOnUse" x1="130" y1="340" x2="290" y2="560">
-      <stop offset="0" stop-color="#1EC25A"/>
-      <stop offset="1" stop-color="#077C33"/>
+      <stop offset="0" stop-color="#8A94A3"/>
+      <stop offset="1" stop-color="#4B5563"/>
     </linearGradient>
     <linearGradient id="sc-arm-back" gradientUnits="userSpaceOnUse" x1="720" y1="640" x2="850" y2="810">
-      <stop offset="0" stop-color="#0EA143"/>
-      <stop offset="1" stop-color="#05662A"/>
+      <stop offset="0" stop-color="#5F6877"/>
+      <stop offset="1" stop-color="#363D49"/>
     </linearGradient>
     <linearGradient id="sc-star" gradientUnits="userSpaceOnUse" x1="140" y1="150" x2="270" y2="290">
       <stop offset="0" stop-color="#FFD72B"/>

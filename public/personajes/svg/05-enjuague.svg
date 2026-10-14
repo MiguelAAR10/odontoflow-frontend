@@ -1,34 +1,34 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" class="pj-enjuague">
   <title>Enjuague bucal · Caja</title>
-  <desc>Personaje 05 de la familia OdontoFlow: frasco de enjuague bucal azul intenso (contraste máximo con el azul de la Pasta, su pareja en cobro), ancho abajo, hombros sinuosos y cuello corto, en leve diagonal; panel azul profundo de esquinas muy redondeadas con dos ojos cápsula negros; tapa blanca grande ladeada a la derecha con luz gris claro. Cuatro burbujas y dos destellos a los lados. Luz arriba/izquierda. SVG nativo dibujado a mano; la animación vive fuera (personajes.css y personajes-B.css). v2 (2026-10-13, RECOLOR-FAMILIA): paleta única de 5 colores intensos + neutros, reflejos satinados y grano fino (.pj-grain, se apaga a ≤ 24 px); geometría e IDs de v1 intactos.</desc>
+  <desc>Personaje 05 de la familia OdontoFlow: frasco de enjuague bucal azul intenso (contraste máximo con el azul de la Pasta, su pareja en cobro), ancho abajo, hombros sinuosos y cuello corto, en leve diagonal; panel azul profundo de esquinas muy redondeadas con dos ojos cápsula negros; tapa blanca grande ladeada a la derecha con luz gris claro. Cuatro burbujas y dos destellos a los lados. Luz arriba/izquierda. SVG nativo dibujado a mano; la animación vive fuera (personajes.css y personajes-B.css). v2 (2026-10-13, RECOLOR-FAMILIA): paleta única de 5 colores intensos + neutros, reflejos satinados y grano fino (.pj-grain, se apaga a ≤ 24 px); geometría e IDs de v1 intactos. V10: recoloreado a verde (Enjuague = verde, punto y personaje coherentes).</desc>
   <defs>
     <!-- Luz arriba/izquierda: rojo claro translúcido en el hombro que se satura hacia el centro -->
     <linearGradient id="en-base" gradientUnits="userSpaceOnUse" x1="230" y1="360" x2="620" y2="760">
-      <stop offset="0" stop-color="#4F80FF"/>
-      <stop offset="0.4" stop-color="#2058F5"/>
-      <stop offset="1" stop-color="#194FEA"/>
+      <stop offset="0" stop-color="#4ADE80"/>
+      <stop offset="0.4" stop-color="#0EA344"/>
+      <stop offset="1" stop-color="#0A8B39"/>
     </linearGradient>
     <!-- Sombra del material: borde derecho -->
     <linearGradient id="en-shade-right" gradientUnits="userSpaceOnUse" x1="640" y1="0" x2="812" y2="0">
-      <stop offset="0" stop-color="#0D2F9E" stop-opacity="0"/>
-      <stop offset="0.65" stop-color="#0D2F9E" stop-opacity="0.55"/>
-      <stop offset="1" stop-color="#092582" stop-opacity="0.85"/>
+      <stop offset="0" stop-color="#077831" stop-opacity="0"/>
+      <stop offset="0.65" stop-color="#077831" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#045A25" stop-opacity="0.85"/>
     </linearGradient>
     <!-- Sombra del material: base -->
     <linearGradient id="en-shade-bottom" gradientUnits="userSpaceOnUse" x1="0" y1="760" x2="0" y2="936">
-      <stop offset="0" stop-color="#0D2F9E" stop-opacity="0"/>
-      <stop offset="1" stop-color="#0D2F9E" stop-opacity="0.75"/>
+      <stop offset="0" stop-color="#077831" stop-opacity="0"/>
+      <stop offset="1" stop-color="#077831" stop-opacity="0.75"/>
     </linearGradient>
     <!-- Pliegue bajo la tapa: el cuello queda en sombra -->
     <radialGradient id="en-shade-neck" gradientUnits="userSpaceOnUse" cx="640" cy="360" r="120">
-      <stop offset="0" stop-color="#0D2F9E" stop-opacity="0.8"/>
-      <stop offset="1" stop-color="#0D2F9E" stop-opacity="0"/>
+      <stop offset="0" stop-color="#077831" stop-opacity="0.8"/>
+      <stop offset="1" stop-color="#077831" stop-opacity="0"/>
     </radialGradient>
     <!-- Panel rojo profundo -->
     <linearGradient id="en-panel" gradientUnits="userSpaceOnUse" x1="360" y1="450" x2="690" y2="800">
-      <stop offset="0" stop-color="#0F36B1"/>
-      <stop offset="0.6" stop-color="#0A2889"/>
-      <stop offset="1" stop-color="#071E6C"/>
+      <stop offset="0" stop-color="#077C33"/>
+      <stop offset="0.6" stop-color="#066E2D"/>
+      <stop offset="1" stop-color="#03481E"/>
     </linearGradient>
     <!-- Tapa blanca con luz gris claro -->
     <linearGradient id="en-cap" gradientUnits="userSpaceOnUse" x1="520" y1="140" x2="760" y2="350">
@@ -41,9 +41,9 @@
       <stop offset="1" stop-color="#CCCCCC" stop-opacity="0.9"/>
     </linearGradient>
     <linearGradient id="en-bubble" gradientUnits="objectBoundingBox" x1="0.15" y1="0.1" x2="0.85" y2="0.9">
-      <stop offset="0" stop-color="#366BFF"/>
-      <stop offset="0.55" stop-color="#265EF9"/>
-      <stop offset="1" stop-color="#1950EC"/>
+      <stop offset="0" stop-color="#2FD068"/>
+      <stop offset="0.55" stop-color="#1EC25A"/>
+      <stop offset="1" stop-color="#0EA143"/>
     </linearGradient>
     <linearGradient id="en-star" gradientUnits="objectBoundingBox" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#FFD72B"/>

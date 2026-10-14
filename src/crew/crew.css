@@ -1,0 +1,350 @@
+/* Personajes OdontoFlow · capa de animación (manual §13, contrato Astra §3).
+ * Uso: SVG inline con class="personaje is-idle" (o is-thinking, is-working, is-handoff, is-done, is-needs-you).
+ * Solo transform y opacity. Las unidades px dentro del SVG son unidades del viewBox 1024:
+ * 1 px CSS a 96 px de tamaño de referencia = 10,67 u. Por eso -2 px del contrato = -21 u aquí,
+ * y la mirada ±6 u del viewBox 512 de Astra = ±12 u aquí.
+ */
+.personaje {
+  display: inline-block;
+  flex-shrink: 0;
+  vertical-align: middle;
+  --pf-e: cubic-bezier(.22, 1, .36, 1);   /* E · entrada */
+  --pf-m: cubic-bezier(.25, 1, .5, 1);    /* M · desplazamiento */
+  --pf-s: ease-in-out;                    /* S · ida y vuelta */
+  --pf-blink-every: 6.5s;                 /* 5–8 s; desfasar por agente con --pf-blink-delay */
+  --pf-blink-delay: 0s;
+  overflow: visible;
+}
+
+/* Puntos naturales de giro */
+.personaje [data-part="character"] { transform-box: fill-box; transform-origin: 50% 55%; }
+.personaje [data-part="eyes"] {
+  transform: translate(var(--look-x, 0px), var(--look-y, 0px));
+  transition: transform 180ms var(--pf-m);
+}
+.personaje [data-part="eyes-state"] { transform-box: fill-box; transform-origin: center; }
+.personaje .eye { transform-box: fill-box; transform-origin: center; }
+.personaje [data-part^="sparkle-"] { transform-box: fill-box; transform-origin: center; }
+
+/* Grano v2: en <img> lo apaga el @media interno del SVG a ≤ 24 px; inline, añade .no-grain */
+.personaje.no-grain .pj-grain { display: none; }
+
+/* B · parpadeo, en todos los estados */
+.personaje .eye { animation: pf-blink var(--pf-blink-every) var(--pf-s) var(--pf-blink-delay) infinite; }
+@keyframes pf-blink {
+  0%, 96%, 98.5%, 100% { transform: scaleY(1); }
+  97.1%, 97.6% { transform: scaleY(.1); }
+}
+
+/* R · reposo: respira y los destellos titilan suave */
+.personaje.is-idle [data-part="character"] { animation: pf-breathe 3600ms var(--pf-s) infinite; }
+.personaje.is-idle [data-part="sparkle-back"] { animation: pf-twinkle 4200ms var(--pf-s) infinite; }
+.personaje.is-idle [data-part="sparkle-front"] { animation: pf-twinkle 4200ms var(--pf-s) -2100ms infinite; }
+@keyframes pf-breathe {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-21px) scale(1.01); }
+}
+@keyframes pf-twinkle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .7; transform: scale(.88); }
+}
+
+/* P · pensando: mira al lienzo dos veces y se queda ladeado */
+.personaje.is-thinking [data-part="character"] { animation: pf-tilt 240ms var(--pf-e) forwards; }
+.personaje.is-thinking [data-part="eyes-state"] { animation: pf-look-canvas 900ms var(--pf-m) 2; }
+@keyframes pf-tilt { from { transform: rotate(0); } to { transform: rotate(-2deg); } }
+@keyframes pf-look-canvas {
+  0%, 100% { transform: translate(0, 0); }
+  35%, 70% { transform: translate(12px, -8px); }
+}
+
+/* W · trabajando: ritmo corto, se detiene a los 5 s */
+.personaje.is-working [data-part="character"] { animation: pf-work 1000ms var(--pf-s) 5; }
+@keyframes pf-work {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  25% { transform: translateY(-21px) rotate(-1deg); }
+  75% { transform: translateY(-11px) rotate(1deg); }
+}
+
+/* H · pasa el caso: empuja hacia el receptor y lo mira */
+.personaje.is-handoff [data-part="character"] { animation: pf-handoff 480ms var(--pf-m) 1; }
+.personaje.is-handoff [data-part="eyes-state"] { animation: pf-look-receiver 480ms var(--pf-m) 1; }
+@keyframes pf-handoff {
+  0%, 100% { transform: translateX(0); }
+  30% { transform: translateX(32px); }
+}
+@keyframes pf-look-receiver {
+  0%, 100% { transform: translate(0, 0); }
+  20%, 50% { transform: translate(12px, 0); }
+}
+
+/* L · listo: asiente y los destellos brillan una vez */
+.personaje.is-done [data-part="character"] { animation: pf-nod 480ms var(--pf-e) 1; }
+.personaje.is-done [data-part^="sparkle-"] { animation: pf-sparkle-pop 480ms var(--pf-e) 1; }
+@keyframes pf-nod {
+  0%, 100% { transform: translateY(0) scale(1); }
+  35% { transform: translateY(-43px) scale(1.03); }
+  70% { transform: translateY(11px) scale(.99); }
+}
+@keyframes pf-sparkle-pop {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  40% { transform: scale(1.3); opacity: 1; }
+  70% { transform: scale(.95); opacity: .85; }
+}
+
+/* N · te necesito: un solo meneo y luego quieto */
+.personaje.is-needs-you [data-part="character"] { animation: pf-wiggle 700ms var(--pf-s) 1; }
+@keyframes pf-wiggle {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+  75% { transform: rotate(-2deg); }
+}
+
+/* The hook owns this attribute, so React state/class updates cannot unpause it. */
+.personaje[data-offscreen="true"], .personaje[data-offscreen="true"] * { animation-play-state: paused !important; }
+
+/* Personajes OdontoFlow · piezas propias de Cepillo, Pasta e Hilo (familia A).
+ * Se carga después de personajes.css. Mismo contrato: solo transform y opacity, estados por clase en el <svg>
+ * (is-idle…is-needs-you) y px = unidades del viewBox 1024. Cada regla va acotada con la clase pj-<nombre>
+ * del <svg> raíz para convivir con los demás personajes en la misma página. Keyframes con prefijo pfa-.
+ */
+
+/* ---------- 02 · Cepillo (Agenda): cerdas articuladas ---------- */
+.personaje.pj-cepillo [data-part="bristles"] { transform-box: view-box; transform-origin: 578px 290px; }
+.personaje.pj-cepillo [data-part^="bristle-"] { transform-box: fill-box; transform-origin: 0% 50%; }
+.personaje.pj-cepillo.is-idle [data-part="sparkle-back-2"] { animation: pf-twinkle 4200ms var(--pf-s) -1000ms infinite; }
+
+/* P · las cerdas se echan atrás un poco mientras piensa */
+.personaje.pj-cepillo.is-thinking [data-part="bristles"] { animation: pfa-cp-lean 240ms var(--pf-e) forwards; }
+@keyframes pfa-cp-lean { from { transform: rotate(0); } to { transform: rotate(-4deg); } }
+
+/* W · cepilla: las cerdas frotan a lo largo del mechón; el cuerpo rota ±2° (contrato Astra: Agenda) */
+.personaje.pj-cepillo.is-working [data-part="character"] { animation: pfa-cp-work 1000ms var(--pf-s) 5; }
+.personaje.pj-cepillo.is-working [data-part="bristles"] { animation: pfa-cp-scrub 250ms var(--pf-s) 20; }
+@keyframes pfa-cp-work {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  25% { transform: translateY(-21px) rotate(-2deg); }
+  75% { transform: translateY(-11px) rotate(2deg); }
+}
+@keyframes pfa-cp-scrub {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(10px, 3px); }
+}
+
+/* H · las cerdas dan un golpe hacia el receptor */
+.personaje.pj-cepillo.is-handoff [data-part="bristles"] { animation: pfa-cp-flick 480ms var(--pf-m) 1; }
+@keyframes pfa-cp-flick {
+  0%, 100% { transform: rotate(0); }
+  30% { transform: rotate(6deg); }
+}
+
+/* L · los tres mechones se inflan en cascada */
+.personaje.pj-cepillo.is-done [data-part="bristle-1"] { animation: pfa-cp-pop 360ms var(--pf-e) 1; }
+.personaje.pj-cepillo.is-done [data-part="bristle-2"] { animation: pfa-cp-pop 360ms var(--pf-e) 60ms 1 backwards; }
+.personaje.pj-cepillo.is-done [data-part="bristle-3"] { animation: pfa-cp-pop 360ms var(--pf-e) 120ms 1 backwards; }
+@keyframes pfa-cp-pop {
+  0%, 100% { transform: scale(1); }
+  45% { transform: scale(1.08); }
+}
+
+/* N · un meneo de cerdas, luego quieto */
+.personaje.pj-cepillo.is-needs-you [data-part="bristles"] { animation: pfa-cp-wiggle 700ms var(--pf-s) 1; }
+@keyframes pfa-cp-wiggle {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(-5deg); }
+  50% { transform: rotate(4deg); }
+  75% { transform: rotate(-2deg); }
+}
+
+/* ---------- 03 · Pasta (Cobranza): brazos y tapa ---------- */
+.personaje.pj-pasta [data-part="arm-left"] { transform-box: view-box; transform-origin: 318px 470px; }
+.personaje.pj-pasta [data-part="arm-right"] { transform-box: view-box; transform-origin: 700px 600px; }
+.personaje.pj-pasta [data-part="cap"] { transform-box: view-box; transform-origin: 600px 240px; }
+
+/* R · los brazos se mecen suave, desfasados (+ = el izquierdo sube; − = el derecho sube) */
+.personaje.pj-pasta.is-idle [data-part="arm-left"] { animation: pfa-ps-sway-l 3600ms var(--pf-s) infinite; }
+.personaje.pj-pasta.is-idle [data-part="arm-right"] { animation: pfa-ps-sway-r 3600ms var(--pf-s) -1800ms infinite; }
+@keyframes pfa-ps-sway-l { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(5deg); } }
+@keyframes pfa-ps-sway-r { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-5deg); } }
+
+/* P · se lleva la mano derecha arriba y la deja ahí */
+.personaje.pj-pasta.is-thinking [data-part="arm-right"] { animation: pfa-ps-ponder 240ms var(--pf-e) forwards; }
+@keyframes pfa-ps-ponder { from { transform: rotate(0); } to { transform: rotate(-14deg); } }
+
+/* W · bombea los brazos alternados, se detiene a los 5 s */
+.personaje.pj-pasta.is-working [data-part="arm-left"] { animation: pfa-ps-pump-l 500ms var(--pf-s) 10; }
+.personaje.pj-pasta.is-working [data-part="arm-right"] { animation: pfa-ps-pump-r 500ms var(--pf-s) -250ms 10; }
+@keyframes pfa-ps-pump-l { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(9deg); } }
+@keyframes pfa-ps-pump-r { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-9deg); } }
+
+/* H · alarga el brazo derecho hacia el receptor */
+.personaje.pj-pasta.is-handoff [data-part="arm-right"] { animation: pfa-ps-give 480ms var(--pf-m) 1; }
+@keyframes pfa-ps-give { 0%, 100% { transform: rotate(0); } 30%, 55% { transform: rotate(-16deg); } }
+
+/* L · brazos arriba y la tapa salta */
+.personaje.pj-pasta.is-done [data-part="arm-left"] { animation: pfa-ps-cheer-l 480ms var(--pf-e) 1; }
+.personaje.pj-pasta.is-done [data-part="arm-right"] { animation: pfa-ps-cheer-r 480ms var(--pf-e) 1; }
+.personaje.pj-pasta.is-done [data-part="cap"] { animation: pfa-ps-cap-pop 480ms var(--pf-e) 1; }
+@keyframes pfa-ps-cheer-l { 0%, 100% { transform: rotate(0); } 40% { transform: rotate(18deg); } }
+@keyframes pfa-ps-cheer-r { 0%, 100% { transform: rotate(0); } 40% { transform: rotate(-18deg); } }
+@keyframes pfa-ps-cap-pop {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  35% { transform: translateY(-32px) rotate(-6deg); }
+  70% { transform: translateY(4px) rotate(1deg); }
+}
+
+/* N · saluda con el brazo izquierdo, una vez */
+.personaje.pj-pasta.is-needs-you [data-part="arm-left"] { animation: pfa-ps-wave 700ms var(--pf-s) 1; }
+@keyframes pfa-ps-wave {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(20deg); }
+  50% { transform: rotate(6deg); }
+  75% { transform: rotate(20deg); }
+}
+
+/* ---------- 04 · Hilo (Confirmaciones): tapa y hebra ---------- */
+.personaje.pj-hilo [data-part="lid"] { transform-box: view-box; transform-origin: 772px 384px; }
+.personaje.pj-hilo [data-part="thread"] { transform-box: view-box; transform-origin: 540px 462px; }
+
+/* R · la hebra se mece muy poco */
+.personaje.pj-hilo.is-idle [data-part="thread"] { animation: pfa-hl-sway 3600ms var(--pf-s) infinite; }
+@keyframes pfa-hl-sway { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(2deg); } }
+
+/* P · abre un poco más la tapa y la mantiene (− = abrir) */
+.personaje.pj-hilo.is-thinking [data-part="lid"] { animation: pfa-hl-open 240ms var(--pf-e) forwards; }
+@keyframes pfa-hl-open { from { transform: rotate(0); } to { transform: rotate(-5deg); } }
+
+/* W · pasa el hilo: la hebra oscila y la tapa acompaña, 5 s */
+.personaje.pj-hilo.is-working [data-part="thread"] { animation: pfa-hl-floss 500ms var(--pf-s) 10; }
+.personaje.pj-hilo.is-working [data-part="lid"] { animation: pfa-hl-flap 1000ms var(--pf-s) 5; }
+@keyframes pfa-hl-floss { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(5deg); } }
+@keyframes pfa-hl-flap { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-4deg); } }
+
+/* H · la hebra da un latigazo hacia el receptor */
+.personaje.pj-hilo.is-handoff [data-part="thread"] { animation: pfa-hl-flick 480ms var(--pf-m) 1; }
+@keyframes pfa-hl-flick { 0%, 100% { transform: rotate(0); } 30% { transform: rotate(-9deg); } }
+
+/* L · la tapa casi se cierra y vuelve a abrirse (+ = cerrar) */
+.personaje.pj-hilo.is-done [data-part="lid"] { animation: pfa-hl-snap 480ms var(--pf-e) 1; }
+@keyframes pfa-hl-snap {
+  0%, 100% { transform: rotate(0); }
+  35% { transform: rotate(7deg); }
+  70% { transform: rotate(-3deg); }
+}
+
+/* N · aletea la tapa dos veces, luego quieta */
+.personaje.pj-hilo.is-needs-you [data-part="lid"] { animation: pfa-hl-knock 700ms var(--pf-s) 1; }
+@keyframes pfa-hl-knock {
+  0%, 100% { transform: rotate(0); }
+  25%, 75% { transform: rotate(-6deg); }
+  50% { transform: rotate(0); }
+}
+
+
+/* Personajes OdontoFlow · piezas propias de la familia B (05 Enjuague, 06 Espejo, 07 Escudo).
+ * Se carga DESPUÉS de personajes.css y reutiliza sus estados (is-idle … is-needs-you).
+ * Cada maestro trae una clase raíz (pj-enjuague, pj-espejo, pj-escudo) para no tocar a otros
+ * personajes que comparten IDs del manual (arm-left, cap…).
+ * Solo transform y opacity. Unidades px = unidades del viewBox 1024. Los pivotes van en
+ * coordenadas absolutas del viewBox (transform-box: view-box).
+ */
+
+/* ---------- Diferenciación corporal del contrato Astra §3 ---------- */
+/* Fichas (Espejo) se ladea −4° al pensar; Identidad (Escudo) trabaja sin rotar */
+.personaje.pj-espejo.is-thinking [data-part="character"] { animation-name: pfb-tilt-4; }
+@keyframes pfb-tilt-4 { from { transform: rotate(0); } to { transform: rotate(-4deg); } }
+.personaje.pj-escudo.is-working [data-part="character"] { animation-name: pfb-work-lift; }
+@keyframes pfb-work-lift {
+  0%, 100% { transform: translateY(0); }
+  25% { transform: translateY(-21px); }
+  75% { transform: translateY(-11px); }
+}
+
+/* ---------- 07 Escudo · brazos (pivote en el hombro, detrás del cuerpo) ---------- */
+.personaje.pj-escudo [data-part="arm-left"] { transform-box: view-box; transform-origin: 244px 505px; }
+.personaje.pj-escudo [data-part="arm-right"] { transform-box: view-box; transform-origin: 749px 669px; }
+/* R: el brazo izquierdo saluda muy suave al ritmo de la respiración */
+.personaje.pj-escudo.is-idle [data-part="arm-left"] { animation: pfb-arm-sway 3600ms var(--pf-s) infinite; }
+@keyframes pfb-arm-sway { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-6deg); } }
+/* W: los dos brazos empujan cortito, mismo ritmo que el cuerpo */
+.personaje.pj-escudo.is-working [data-part="arm-left"] { animation: pfb-arm-pump 1000ms var(--pf-s) 5; }
+.personaje.pj-escudo.is-working [data-part="arm-right"] { animation: pfb-arm-pump 1000ms var(--pf-s) -500ms 5; }
+@keyframes pfb-arm-pump { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-8deg); } }
+/* H: el brazo derecho acompaña el empuje hacia el receptor */
+.personaje.pj-escudo.is-handoff [data-part="arm-right"] { animation: pfb-arm-give 480ms var(--pf-m) 1; }
+@keyframes pfb-arm-give { 0%, 100% { transform: rotate(0); } 30% { transform: rotate(-14deg); } }
+/* L: levanta el brazo izquierdo y vuelve */
+.personaje.pj-escudo.is-done [data-part="arm-left"] { animation: pfb-arm-cheer 480ms var(--pf-e) 1; }
+@keyframes pfb-arm-cheer { 0%, 100% { transform: rotate(0); } 40% { transform: rotate(-22deg); } 75% { transform: rotate(4deg); } }
+/* N: un saludo de dos tiempos y luego quieto */
+.personaje.pj-escudo.is-needs-you [data-part="arm-left"] { animation: pfb-arm-wave 700ms var(--pf-s) 1; }
+@keyframes pfb-arm-wave {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(-18deg); }
+  50% { transform: rotate(-4deg); }
+  75% { transform: rotate(-16deg); }
+}
+
+/* ---------- 05 Enjuague · tapa (bisagra abajo/derecha) y burbujas ---------- */
+.personaje.pj-enjuague [data-part="cap"] { transform-box: view-box; transform-origin: 745px 360px; }
+.personaje.pj-enjuague .bubble { transform-box: fill-box; transform-origin: center; }
+/* R: las burbujas suben y bajan muy poco, desfasadas */
+.personaje.pj-enjuague.is-idle .bubble { animation: pfb-bubble 4200ms var(--pf-s) infinite; }
+.personaje.pj-enjuague.is-idle [data-part="bubble-2"] { animation-delay: -1400ms; }
+.personaje.pj-enjuague.is-idle [data-part="bubble-3"] { animation-delay: -2800ms; }
+.personaje.pj-enjuague.is-idle [data-part="bubble-4"] { animation-delay: -700ms; }
+@keyframes pfb-bubble { 0%, 100% { transform: translateY(0); opacity: 1; } 50% { transform: translateY(-14px); opacity: .75; } }
+/* W: la tapa gira un poquito, como si se abriera y cerrara */
+.personaje.pj-enjuague.is-working [data-part="cap"] { animation: pfb-cap-twist 1000ms var(--pf-s) 5; }
+@keyframes pfb-cap-twist { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(4deg); } }
+.personaje.pj-enjuague.is-working .bubble { animation: pfb-bubble-rise 1000ms var(--pf-m) 5; }
+.personaje.pj-enjuague.is-working [data-part="bubble-2"], .personaje.pj-enjuague.is-working [data-part="bubble-4"] { animation-delay: -500ms; }
+@keyframes pfb-bubble-rise {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  70% { transform: translateY(-32px) scale(1.06); opacity: .6; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+/* L: la tapa salta y aterriza; las burbujas hacen pop */
+.personaje.pj-enjuague.is-done [data-part="cap"] { animation: pfb-cap-pop 480ms var(--pf-e) 1; }
+@keyframes pfb-cap-pop {
+  0%, 100% { transform: translate(0, 0) rotate(0); }
+  35% { transform: translate(12px, -48px) rotate(8deg); }
+  70% { transform: translate(0, 4px) rotate(-1deg); }
+}
+.personaje.pj-enjuague.is-done .bubble { animation: pf-sparkle-pop 480ms var(--pf-e) 1; }
+/* N: la tapa se levanta una vez para llamar la atención */
+.personaje.pj-enjuague.is-needs-you [data-part="cap"] { animation: pfb-cap-peek 700ms var(--pf-s) 1; }
+@keyframes pfb-cap-peek { 0%, 100% { transform: rotate(0); } 30%, 60% { transform: rotate(-6deg) translateY(-12px); } }
+
+/* ---------- 06 Espejo · reflejo que barre el cristal (recortado por el cristal) ---------- */
+/* El reflejo va en diagonal a −42°; se desplaza sobre su normal (0,669 · 0,743) */
+.personaje.pj-espejo [data-part="reflection"] { transform-box: view-box; transform-origin: 508px 285px; }
+.personaje.pj-espejo.is-idle [data-part="reflection"] { animation: pfb-glint-soft 4200ms var(--pf-s) infinite; }
+@keyframes pfb-glint-soft { 0%, 100% { opacity: 1; } 50% { opacity: .7; } }
+/* P: el reflejo recorre el cristal mientras mira al lienzo */
+.personaje.pj-espejo.is-thinking [data-part="reflection"] { animation: pfb-glint-scan 900ms var(--pf-m) 2; }
+@keyframes pfb-glint-scan {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-80px, -89px); }
+}
+/* L: un destello completo de abajo/derecha hacia arriba/izquierda */
+.personaje.pj-espejo.is-done [data-part="reflection"] { animation: pfb-glint-sweep 480ms var(--pf-e) 1; }
+@keyframes pfb-glint-sweep {
+  0% { transform: translate(120px, 134px); opacity: 0; }
+  30% { opacity: 1; }
+  70% { transform: translate(-60px, -67px); opacity: 1; }
+  100% { transform: translate(0, 0); opacity: 1; }
+}
+
+/* ---------- 07 Escudo · destellos pequeños extra (titilan en contrafase) ---------- */
+.personaje.pj-escudo.is-idle [data-part="sparkle-back-small"] { animation: pf-twinkle 4200ms var(--pf-s) -1000ms infinite; }
+.personaje.pj-escudo.is-idle [data-part="sparkle-front-small"] { animation: pf-twinkle 4200ms var(--pf-s) -3100ms infinite; }
+
+
+/* Movimiento reducido: quieto, solo un parpadeo ocasional (manual §13) */
+@media (prefers-reduced-motion: reduce) {
+  .personaje *, .personaje.is-idle * { animation: none !important; transition: none !important; }
+  .personaje .eye { animation: pf-blink 9s var(--pf-s) var(--pf-blink-delay) infinite !important; }
+  .personaje [data-part="eyes"] { transform: none !important; }
+}
