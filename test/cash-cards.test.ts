@@ -54,7 +54,7 @@ describe("Caja: fuente/store compartidos", () => {
   it("rechaza versión/hash distintos y repite la respuesta para la misma clave", async () => {
     const { createCashPreviewSession } = await import("../src/views/CashPage");
     const session = await createCashPreviewSession();
-    await expect(session.approveCard({ ...yape, revision: 1 }, 'intent')).rejects.toThrow();
+    await expect(session.approveCard({ ...yape, version: 2 }, 'intent')).rejects.toThrow();
     await expect(session.approveCard({ ...yape, body: 'modificado' }, 'intent')).rejects.toThrow();
     const response = await session.approveCard(yape, 'intent');
     expect(await session.approveCard(yape, 'intent')).toEqual(response);

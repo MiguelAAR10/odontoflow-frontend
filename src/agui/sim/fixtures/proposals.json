@@ -48,10 +48,12 @@
     "undo": false,
     "undo_window_seconds": null,
     "delta": null,
-    "revision": 0,
     "edit": false,
     "ev": "RUN_FINISHED · interrupt",
-    "amounts": []
+    "amounts": [],
+    "version": 1,
+    "payload_hash": "d26e82a33b8209a8cdf8f8aac61429ea8d4e4a960cd3af9a727a60f3aa39fd82",
+    "proposal_id": null
   },
   {
     "id": "p-caja",
@@ -95,7 +97,6 @@
     "undo": false,
     "undo_window_seconds": null,
     "delta": null,
-    "revision": 0,
     "edit": false,
     "ev": "RUN_FINISHED · interrupt",
     "amounts": [
@@ -114,7 +115,10 @@
         "amount_cents": 18000,
         "currency": "PEN"
       }
-    ]
+    ],
+    "version": 1,
+    "payload_hash": "d93f88ac5f54006c36c822253f6a9f7727c957dbc0cc8d9965c80c2483eb7c74",
+    "proposal_id": null
   },
   {
     "id": "p-desc",
@@ -167,7 +171,6 @@
     "undo": false,
     "undo_window_seconds": null,
     "delta": null,
-    "revision": 0,
     "edit": false,
     "ev": "RUN_FINISHED · interrupt",
     "amounts": [
@@ -186,7 +189,10 @@
         "amount_cents": 6000,
         "currency": "PEN"
       }
-    ]
+    ],
+    "version": 1,
+    "payload_hash": "3634cc8262ed3059796c2111c7cab3448027c8c52fabe3173008580c69bed36a",
+    "proposal_id": null
   },
   {
     "id": "p-yape",
@@ -234,7 +240,6 @@
       "amount_cents": 12000,
       "currency": "PEN"
     },
-    "revision": 0,
     "edit": false,
     "ev": "RUN_FINISHED · interrupt",
     "amounts": [
@@ -248,7 +253,10 @@
         "amount_cents": 33000,
         "currency": "PEN"
       }
-    ]
+    ],
+    "version": 1,
+    "payload_hash": "27606ec9c9e9cfbd2c378849174b924bc483638ae25539b368a266adc3eb2a67",
+    "proposal_id": null
   },
   {
     "id": "p-reprog",
@@ -299,9 +307,11 @@
     "undo": false,
     "undo_window_seconds": null,
     "delta": null,
-    "revision": 0,
     "edit": false,
     "ev": "RUN_FINISHED · interrupt",
-    "amounts": []
+    "amounts": [],
+    "version": 1,
+    "payload_hash": "8a7737422a630962ceb3196786509abe006e878dbf59abf9e1ada0634b3145fd",
+    "proposal_id": null
   }
 ]

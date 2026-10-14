@@ -8,15 +8,17 @@ import { useAction } from "./useAction";
 import { Body } from "./Body";
 import { formatMoney } from "./format";
 
-export interface CardActions {
-  onApprove?: (card: CardDto) => void | Promise<void>;
-  onAlternative?: (card: CardDto) => void | Promise<void>;
-  onEdit?: (card: CardDto) => void | Promise<void>;
-  onUndo?: (card: CardDto) => void | Promise<void>;
-  onSource?: (source: string, card: CardDto) => void | Promise<void>;
+/** Legacy inbox presentation has no backend AIRI version. Keep it out of Card DTOs. */
+export type CardPresentation = Omit<CardDto, "version"> & { version?: number };
+export interface CardActions<T extends CardPresentation = CardDto> {
+  onApprove?: (card: T) => void | Promise<void>;
+  onAlternative?: (card: T) => void | Promise<void>;
+  onEdit?: (card: T) => void | Promise<void>;
+  onUndo?: (card: T) => void | Promise<void>;
+  onSource?: (source: string, card: T) => void | Promise<void>;
 }
-export interface CardProps extends CardActions {
-  card: CardDto;
+export interface CardProps<T extends CardPresentation = CardDto> extends CardActions<T> {
+  card: T;
   status?: CardStatus;
   error?: string | null;
   loadingReason?: "tool" | "approval" | null;
@@ -25,17 +27,22 @@ export interface CardProps extends CardActions {
 }
 
 export function Card(props: CardProps) {
-  return <CardView key={`${props.card.id}:${props.card.revision ?? 0}:${props.card.state}`} {...props} />;
+  return <CardView key={`${props.card.id}:${props.card.version}:${props.card.state}`} {...props} />;
 }
 
-function CardView({ card, status, error, loadingReason, undoRemainingSeconds, ...actions }: CardProps) {
+/** Adapter for legacy REST inbox rows; never passed to the AIRI store/source. */
+export function LegacyInboxCard(props: CardProps<CardPresentation>) {
+  return <CardView key={`${props.card.id}:legacy:${props.card.state}`} {...props} />;
+}
+
+function CardView<T extends CardPresentation>({ card, status, error, loadingReason, undoRemainingSeconds, ...actions }: CardProps<T>) {
   const titleId = useId();
   const action = useAction();
   const submitted = useRef(false);
   const [awaitingUpdate, setAwaitingUpdate] = useState(false);
   const runtimeStatus = status ?? (card.state === "declined" ? "rejected" : card.level !== "auto" && (card.state === "ready" || card.state === "pending") ? "pending" : "done");
   const processing = action.busy || runtimeStatus === "loading";
-  const pending = canApproveCard({ card, status: runtimeStatus, runId: null, error: error ?? null, loadingReason });
+  const pending = canApproveCard({ card, status: runtimeStatus, loadingReason });
   const showActions = pending || (runtimeStatus === "loading" && loadingReason === "approval" && card.level !== "auto" && (card.state === "ready" || card.state === "pending"));
   // Finishing an agent run does not confirm a human decision.
   const done = (runtimeStatus === "approved" || runtimeStatus === "done")
@@ -45,7 +52,7 @@ function CardView({ card, status, error, loadingReason, undoRemainingSeconds, ..
   const disabled = processing || awaitingUpdate;
   const amounts = card.amounts?.filter(amount => !(card.body.includes(amount.label) && card.body.includes(formatMoney(amount.amount_cents))));
 
-  async function decide(callback: CardActions["onApprove"], allowed: boolean) {
+  async function decide(callback: CardActions<T>["onApprove"], allowed: boolean) {
     if (!allowed || submitted.current || disabled || !callback) return;
     submitted.current = true;
     const success = await action.run(() => callback(card));

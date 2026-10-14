@@ -48,10 +48,12 @@
     "undo": false,
     "undo_window_seconds": null,
     "delta": null,
-    "revision": 0,
     "edit": false,
     "ev": "RUN_FINISHED · interrupt",
-    "amounts": []
+    "amounts": [],
+    "version": 1,
+    "payload_hash": "d26e82a33b8209a8cdf8f8aac61429ea8d4e4a960cd3af9a727a60f3aa39fd82",
+    "proposal_id": null
   },
   {
     "id": "p-caja",
@@ -95,7 +97,6 @@
     "undo": false,
     "undo_window_seconds": null,
     "delta": null,
-    "revision": 0,
     "edit": false,
     "ev": "RUN_FINISHED · interrupt",
     "amounts": [
@@ -114,7 +115,10 @@
         "amount_cents": 18000,
         "currency": "PEN"
       }
-    ]
+    ],
+    "version": 1,
+    "payload_hash": "d93f88ac5f54006c36c822253f6a9f7727c957dbc0cc8d9965c80c2483eb7c74",
+    "proposal_id": null
   },
   {
     "id": "p-desc",
@@ -167,7 +171,6 @@
     "undo": false,
     "undo_window_seconds": null,
     "delta": null,
-    "revision": 0,
     "edit": false,
     "ev": "RUN_FINISHED · interrupt",
     "amounts": [
@@ -186,7 +189,10 @@
         "amount_cents": 6000,
         "currency": "PEN"
       }
-    ]
+    ],
+    "version": 1,
+    "payload_hash": "3634cc8262ed3059796c2111c7cab3448027c8c52fabe3173008580c69bed36a",
+    "proposal_id": null
   },
   {
     "id": "p-yape",
@@ -234,7 +240,6 @@
       "amount_cents": 12000,
       "currency": "PEN"
     },
-    "revision": 0,
     "edit": false,
     "ev": "RUN_FINISHED · interrupt",
     "amounts": [
@@ -248,7 +253,10 @@
         "amount_cents": 33000,
         "currency": "PEN"
       }
-    ]
+    ],
+    "version": 1,
+    "payload_hash": "27606ec9c9e9cfbd2c378849174b924bc483638ae25539b368a266adc3eb2a67",
+    "proposal_id": null
   },
   {
     "id": "p-reprog",
@@ -299,10 +307,12 @@
     "undo": false,
     "undo_window_seconds": null,
     "delta": null,
-    "revision": 0,
     "edit": false,
     "ev": "RUN_FINISHED · interrupt",
-    "amounts": []
+    "amounts": [],
+    "version": 1,
+    "payload_hash": "8a7737422a630962ceb3196786509abe006e878dbf59abf9e1ada0634b3145fd",
+    "proposal_id": null
   },
   {
     "id": "r-compara",
@@ -324,7 +334,6 @@
     "undo": false,
     "undo_window_seconds": null,
     "delta": null,
-    "revision": 0,
     "edit": false,
     "ev": null,
     "amounts": [
@@ -343,7 +352,10 @@
         "amount_cents": 71000,
         "currency": "PEN"
       }
-    ]
+    ],
+    "version": 1,
+    "payload_hash": "719667f9072e99fd8a03a5aac3139d48bba9b9bacd92c26d6d396a8c3b5f2de4",
+    "proposal_id": null
   },
   {
     "id": "r-delega",
@@ -386,7 +398,6 @@
     "undo": true,
     "undo_window_seconds": 30,
     "delta": null,
-    "revision": 0,
     "edit": false,
     "ev": null,
     "amounts": [
@@ -395,7 +406,10 @@
         "amount_cents": 64000,
         "currency": "PEN"
       }
-    ]
+    ],
+    "version": 1,
+    "payload_hash": "5757f294bb3a429a0f355ae20c767052d263a4dd2ae4786f1569897476f83041",
+    "proposal_id": null
   },
   {
     "id": "r-lote",
@@ -446,10 +460,12 @@
     "undo": false,
     "undo_window_seconds": null,
     "delta": null,
-    "revision": 0,
     "edit": false,
     "ev": null,
-    "amounts": []
+    "amounts": [],
+    "version": 1,
+    "payload_hash": "3039937d9059533de72f1acd940899b7f509b1593bc297bfd3ada02c74527aac",
+    "proposal_id": null
   },
   {
     "id": "r-oferta",
@@ -493,10 +509,12 @@
     "undo": false,
     "undo_window_seconds": null,
     "delta": null,
-    "revision": 0,
     "edit": false,
     "ev": null,
-    "amounts": []
+    "amounts": [],
+    "version": 1,
+    "payload_hash": "a4ecaa42efa57000cf517f4a67dc61b6e986c05bd7f11145d7c4ce47df1edd6a",
+    "proposal_id": null
   },
   {
     "id": "cv-agenda",
@@ -515,10 +533,12 @@
     "undo": false,
     "undo_window_seconds": null,
     "delta": null,
-    "revision": 0,
     "edit": false,
     "ev": null,
-    "amounts": []
+    "amounts": [],
+    "version": 1,
+    "payload_hash": "324389be8b54cbe2c2a589cd9e3ab13778d84c6a9cf3db5a89e57bb103184c27",
+    "proposal_id": null
   },
   {
     "id": "cv-espera",
@@ -539,10 +559,12 @@
     "undo": false,
     "undo_window_seconds": null,
     "delta": null,
-    "revision": 0,
     "edit": false,
     "ev": null,
-    "amounts": []
+    "amounts": [],
+    "version": 1,
+    "payload_hash": "a13476bfbc67d0831102f21240a439bc8c91b64878e89f1b475851df11abf0f3",
+    "proposal_id": null
   },
   {
     "id": "cv-oferta",
@@ -585,10 +607,12 @@
     "undo": false,
     "undo_window_seconds": null,
     "delta": null,
-    "revision": 0,
     "edit": false,
     "ev": null,
-    "amounts": []
+    "amounts": [],
+    "version": 1,
+    "payload_hash": "a4ecaa42efa57000cf517f4a67dc61b6e986c05bd7f11145d7c4ce47df1edd6a",
+    "proposal_id": null
   },
   {
     "id": "cv-saldos",
@@ -609,7 +633,6 @@
     "undo": false,
     "undo_window_seconds": null,
     "delta": null,
-    "revision": 0,
     "edit": false,
     "ev": null,
     "amounts": [
@@ -633,7 +656,10 @@
         "amount_cents": 82000,
         "currency": "PEN"
       }
-    ]
+    ],
+    "version": 1,
+    "payload_hash": "07233cee2a78a5f4a32ed000d081784ad43abfc3d80e02388d12a4631075e560",
+    "proposal_id": null
   },
   {
     "id": "cv-recordar",
@@ -676,7 +702,6 @@
     "undo": false,
     "undo_window_seconds": null,
     "delta": null,
-    "revision": 0,
     "edit": false,
     "ev": null,
     "amounts": [
@@ -695,7 +720,10 @@
         "amount_cents": 24000,
         "currency": "PEN"
       }
-    ]
+    ],
+    "version": 1,
+    "payload_hash": "b7bd02946054dd87664b52a9053e5aabb34ee41ef96c6b001c832f4e42fe403a",
+    "proposal_id": null
   },
   {
     "id": "cv-cob",
@@ -716,7 +744,6 @@
     "undo": false,
     "undo_window_seconds": null,
     "delta": null,
-    "revision": 0,
     "edit": false,
     "ev": null,
     "amounts": [
@@ -735,7 +762,10 @@
         "amount_cents": 71000,
         "currency": "PEN"
       }
-    ]
+    ],
+    "version": 1,
+    "payload_hash": "719667f9072e99fd8a03a5aac3139d48bba9b9bacd92c26d6d396a8c3b5f2de4",
+    "proposal_id": null
   },
   {
     "id": "cv-ocup",
@@ -756,9 +786,11 @@
     "undo": false,
     "undo_window_seconds": null,
     "delta": null,
-    "revision": 0,
     "edit": false,
     "ev": null,
-    "amounts": []
+    "amounts": [],
+    "version": 1,
+    "payload_hash": "fda516338969f93d1c841e7b12160da0510cd16f56751597cf6f3cb036ff0437",
+    "proposal_id": null
   }
 ]

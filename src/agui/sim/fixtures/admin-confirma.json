@@ -195,10 +195,12 @@
           "undo": false,
           "undo_window_seconds": null,
           "delta": null,
-          "revision": 0,
           "edit": false,
           "ev": null,
-          "amounts": []
+          "amounts": [],
+          "version": 1,
+          "payload_hash": "3039937d9059533de72f1acd940899b7f509b1593bc297bfd3ada02c74527aac",
+          "proposal_id": null
         }
       }
     }
@@ -216,7 +218,7 @@
       "type": "TOOL_CALL_RESULT",
       "messageId": "sim:admin-confirma:r-lote:result",
       "toolCallId": "sim:admin-confirma:r-lote",
-      "content": "{\"card\": {\"id\": \"r-lote\", \"agent\": \"hilo\", \"level\": \"aprobar\", \"state\": \"pending\", \"title\": \"Confirmar 9 citas de mañana por WhatsApp\", \"body\": \"<ul class=\\\"ac-list\\\"><li><span>08:30 Rosa Quispe · Dra. Ruiz</span><span class=\\\"muted\\\">ventana abierta</span></li><li><span>09:00 Hugo Ríos · Dr. Salinas</span><span class=\\\"muted\\\">plantilla aprobada</span></li><li><span>7 pacientes más</span><span class=\\\"muted\\\">ver lista</span></li></ul><textarea aria-label=\\\"Mensaje\\\" readonly>Hola {nombre}, te esperamos mañana a las {hora} en Clínica Lince con {doctor}. ¿Confirmas? Responde SÍ o escríbenos para cambiarla.</textarea><p class=\\\"muted\\\" style=\\\"font-size:13.5px\\\">Excluidos: 2 sin permiso de contacto · 1 ya confirmó por teléfono.</p>\", \"why\": \"Citas de mañana sin confirmar · el recordatorio de ayer no tuvo respuesta en 4 casos\", \"srcs\": [\"Agenda Lince · mañana\", \"Permisos de contacto\"], \"scope\": [{\"label\": \"Afecta\", \"value\": \"9 pacientes\", \"reversible\": null, \"expires_at\": null, \"amount\": null}, {\"label\": \"Envío\", \"value\": \"9 WhatsApp\", \"reversible\": null, \"expires_at\": null, \"amount\": null}, {\"label\": \"rev\", \"value\": \"No se puede deshacer el envío\", \"reversible\": \"none\", \"expires_at\": null, \"amount\": null}, {\"label\": \"Vence\", \"value\": \"hoy 19:00\", \"reversible\": null, \"expires_at\": \"2026-10-13T19:00:00-05:00\", \"amount\": null}], \"reversible\": \"none\", \"approve\": \"Aprobar y enviar 9\", \"alt\": null, \"result\": \"9 enviados · 9 entregados · 0 confirmaron aún (enviado ≠ confirmado)\", \"undo\": false, \"undo_window_seconds\": null, \"delta\": null, \"revision\": 0, \"edit\": false, \"ev\": null, \"amounts\": []}}",
+      "content": "{\"card\": {\"id\": \"r-lote\", \"agent\": \"hilo\", \"level\": \"aprobar\", \"state\": \"pending\", \"title\": \"Confirmar 9 citas de mañana por WhatsApp\", \"body\": \"<ul class=\\\"ac-list\\\"><li><span>08:30 Rosa Quispe · Dra. Ruiz</span><span class=\\\"muted\\\">ventana abierta</span></li><li><span>09:00 Hugo Ríos · Dr. Salinas</span><span class=\\\"muted\\\">plantilla aprobada</span></li><li><span>7 pacientes más</span><span class=\\\"muted\\\">ver lista</span></li></ul><textarea aria-label=\\\"Mensaje\\\" readonly>Hola {nombre}, te esperamos mañana a las {hora} en Clínica Lince con {doctor}. ¿Confirmas? Responde SÍ o escríbenos para cambiarla.</textarea><p class=\\\"muted\\\" style=\\\"font-size:13.5px\\\">Excluidos: 2 sin permiso de contacto · 1 ya confirmó por teléfono.</p>\", \"why\": \"Citas de mañana sin confirmar · el recordatorio de ayer no tuvo respuesta en 4 casos\", \"srcs\": [\"Agenda Lince · mañana\", \"Permisos de contacto\"], \"scope\": [{\"label\": \"Afecta\", \"value\": \"9 pacientes\", \"reversible\": null, \"expires_at\": null, \"amount\": null}, {\"label\": \"Envío\", \"value\": \"9 WhatsApp\", \"reversible\": null, \"expires_at\": null, \"amount\": null}, {\"label\": \"rev\", \"value\": \"No se puede deshacer el envío\", \"reversible\": \"none\", \"expires_at\": null, \"amount\": null}, {\"label\": \"Vence\", \"value\": \"hoy 19:00\", \"reversible\": null, \"expires_at\": \"2026-10-13T19:00:00-05:00\", \"amount\": null}], \"reversible\": \"none\", \"approve\": \"Aprobar y enviar 9\", \"alt\": null, \"result\": \"9 enviados · 9 entregados · 0 confirmaron aún (enviado ≠ confirmado)\", \"undo\": false, \"undo_window_seconds\": null, \"delta\": null, \"edit\": false, \"ev\": null, \"amounts\": [], \"version\": 1, \"payload_hash\": \"3039937d9059533de72f1acd940899b7f509b1593bc297bfd3ada02c74527aac\", \"proposal_id\": null}}",
       "agent": "hilo",
       "metadata": {
         "card": {
@@ -268,10 +270,12 @@
           "undo": false,
           "undo_window_seconds": null,
           "delta": null,
-          "revision": 0,
           "edit": false,
           "ev": null,
-          "amounts": []
+          "amounts": [],
+          "version": 1,
+          "payload_hash": "3039937d9059533de72f1acd940899b7f509b1593bc297bfd3ada02c74527aac",
+          "proposal_id": null
         }
       }
     }
@@ -407,10 +411,12 @@
                 "undo": false,
                 "undo_window_seconds": null,
                 "delta": null,
-                "revision": 0,
                 "edit": false,
                 "ev": null,
-                "amounts": []
+                "amounts": [],
+                "version": 1,
+                "payload_hash": "3039937d9059533de72f1acd940899b7f509b1593bc297bfd3ada02c74527aac",
+                "proposal_id": null
               }
             }
           }

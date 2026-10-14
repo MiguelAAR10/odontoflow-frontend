@@ -46,7 +46,8 @@ describe("Bandeja Card", () => {
     const next = inbox.edit(draft.envelope, "Revisar los dos movimientos con Caja");
     expect(next.envelope.version).toBe(2);
     expect(next.envelope.payload_hash).not.toBe(draft.envelope.payload_hash);
-    expect(next.card.revision).toBe(1);
+    expect(next.card.version).toBe(2);
+    expect(next.card.payload_hash).toBe(next.envelope.payload_hash);
     expect(next.card.amounts).toEqual(draft.card.amounts);
     expect(next.card.scope).toEqual(draft.card.scope);
     expect(() => inbox.decide(draft.envelope, "approve", "old-key")).toThrow("cambió");

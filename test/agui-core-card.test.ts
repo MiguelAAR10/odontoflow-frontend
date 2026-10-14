@@ -36,8 +36,23 @@ describe("Card: contrato del backend", () => {
   it("acepta todas las tarjetas reales sin inventar campos del DTO", () => {
     expect(cards.length).toBeGreaterThan(0);
     for (const card of cards) expect(CardSchema.parse(card)).toEqual(card);
-    expect(CardSchema.parse({ id: "c", agent: "airi", level: "auto", state: "ready", title: "Resumen", body: "" }))
-      .toEqual({ id: "c", agent: "airi", level: "auto", state: "ready", title: "Resumen", body: "" });
+    expect(CardSchema.parse({ id: "c", agent: "airi", level: "auto", state: "ready", title: "Resumen", body: "", version: 1 }))
+      .toEqual({ id: "c", agent: "airi", level: "auto", state: "ready", title: "Resumen", body: "", version: 1 });
+  });
+
+  it("exige version positiva y hash sha256 para aprobar o editar borradores", () => {
+    const base = { id: "c", agent: "airi", level: "auto", state: "ready", title: "Resumen", body: "", version: 3 };
+    expect(CardSchema.safeParse(base).success).toBe(true);
+    expect(CardSchema.safeParse({ ...base, version: undefined }).success).toBe(false);
+    for (const version of [0, -1, 1.5, null]) expect(CardSchema.safeParse({ ...base, version }).success).toBe(false);
+    for (const level of ["aprobar", "borrador"]) {
+      for (const payload_hash of [undefined, null, "abc", "g".repeat(64)]) {
+        expect(CardSchema.safeParse({ ...base, level, payload_hash }).success).toBe(false);
+      }
+      expect(CardSchema.safeParse({ ...base, level, payload_hash: "A1".repeat(32), proposal_id: 7 }).success).toBe(true);
+    }
+    expect(CardSchema.safeParse({ ...base, payload_hash: null, proposal_id: null }).success).toBe(true);
+    expect(CardSchema.safeParse({ ...base, revision: 0 }).success).toBe(false);
   });
 
   it("mantiene las claves y campos requeridos de Money y CardScope", () => {
@@ -50,9 +65,9 @@ describe("Card: contrato del backend", () => {
   });
 
   it("rechaza campos extra, importes inválidos, enums y fechas fuera del contrato", () => {
-    const base = { id: "c", agent: "airi", level: "auto", state: "ready", title: "Resumen", body: "" };
+    const base = { id: "c", agent: "airi", level: "auto", state: "ready", title: "Resumen", body: "", version: 1 };
     for (const fields of [
-      { version: 1 }, { payload_hash: "inventado" }, { agent: "otro" }, { state: "loading" },
+      { version: 0 }, { payload_hash: "inventado" }, { agent: "otro" }, { state: "loading" },
       { revision: -1 }, { undo_window_seconds: 0 }, { approve: "" },
       { amounts: [{ label: "Total", currency: "USD", amount_cents: 1 }] },
       { amounts: [{ label: "Total", currency: "PEN", amount_cents: -1 }] },

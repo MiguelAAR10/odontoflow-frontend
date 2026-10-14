@@ -100,12 +100,12 @@ export async function createCashPreviewSession() {
   const confirmed = new Set<string>();
   const receipts = new Map<string, { fingerprint: string; card: CardDto }>();
   const approveCard = async (card: CardDto, key: string): Promise<CardDto> => {
-    const fingerprint = JSON.stringify(envelopeFor(card));
+    const fingerprint = JSON.stringify(CardSchema.parse(card));
     const receipt = receipts.get(key);
     if (key.trim() && receipt?.fingerprint === fingerprint) return structuredClone(receipt.card);
     const proposal = cards.find(item => item.id === card.id);
     if (!key.trim() || receipt || !proposal || confirmed.has(card.id)
-      || JSON.stringify(envelopeFor(proposal)) !== fingerprint) {
+      || JSON.stringify(proposal) !== fingerprint) {
       throw new ApiError(409, "PROPOSAL_CONFLICT", "La propuesta cambió o la clave pertenece a otro intento. Revisa la tarjeta antes de aprobar.");
     }
     const response: CardDto = { ...proposal, state: "approved" };
