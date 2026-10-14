@@ -62,6 +62,7 @@ export interface Payment {
   receiver?: string | null;
   reconciliationNote?: string | null;
   verificationStatus?: PaymentVerificationStatus;
+  reversed?: boolean; // Backend reversal flag; omitted by legacy mock fixtures.
   verifiedAt?: string | null;
 }
 

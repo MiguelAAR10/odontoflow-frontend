@@ -62,6 +62,7 @@ const money = (value: number) => `S/ ${value.toLocaleString("es-PE", { minimumFr
 export function cashPaymentTotals(charges: Pick<Charge, "payments">[]) {
   let verified = 0, pending = 0;
   for (const charge of charges) for (const payment of charge.payments) {
+    if (payment.reversed) continue;
     const cents = Math.round(payment.amount * 100);
     if (payment.verificationStatus === "verified") verified += cents;
     else pending += cents;
