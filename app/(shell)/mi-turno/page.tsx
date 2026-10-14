@@ -1,5 +1,5 @@
-import { EmptyShellPage } from "../../../src/components/shell/EmptyShellPage";
+import { MiTurnoPage } from "../../../src/views/MiTurnoPage";
 
 export default function MiTurnoRoute() {
-  return <EmptyShellPage title="Mi turno" />;
+  return <MiTurnoPage />;
 }
