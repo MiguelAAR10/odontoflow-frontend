@@ -524,7 +524,7 @@ h1, h2, h3 { text-wrap: balance; }
 .notification-button { position: relative; width: 40px; height: 40px; display: grid; place-items: center; padding: 0; border: 1px solid transparent; border-radius: var(--radius-md); color: var(--text-muted); background: transparent; }
 .notification-button:hover { border-color: var(--line); color: var(--text); background: var(--surface-muted); }
 .new-appointment-button { min-height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); padding: 0 var(--space-4); margin: 0; border: 1px solid var(--accent); border-radius: var(--radius-md); color: var(--brand-deep); background: var(--brand-cyan); box-shadow: none; font-size: 13px; font-weight: 800; white-space: nowrap; transition: background var(--duration-fast) var(--ease-standard), transform var(--duration-fast) var(--ease-standard); }
-.new-appointment-button:hover { color: var(--brand-deep); background: var(--brand-cyan-strong); }
+.new-appointment-button:hover { color: var(--text-on-shell); background: var(--brand-cyan-strong); }
 .new-appointment-button:active { transform: translateY(1px); }
 .sidebar-backdrop { display: none; }
 
@@ -544,7 +544,7 @@ h1, h2, h3 { text-wrap: balance; }
 .button { min-height: 42px; padding: 0 var(--space-4); border-color: var(--line-strong); border-radius: var(--radius-md); color: var(--text); background: var(--surface); box-shadow: none; font-size: 13px; transition: background var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard), transform var(--duration-fast) var(--ease-standard); }
 .button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent-ink); background: var(--surface-soft); }
 .button--primary { color: var(--brand-deep); border-color: var(--accent); background: var(--brand-cyan); }
-.button--primary:hover:not(:disabled) { color: var(--brand-deep); border-color: var(--accent-hover); background: var(--brand-cyan-strong); }
+.button--primary:hover:not(:disabled) { color: var(--text-on-shell); border-color: var(--accent-hover); background: var(--brand-cyan-strong); }
 .button--danger { color: var(--status-danger); border-color: var(--status-danger-line); background: var(--surface); }
 .button--danger:hover:not(:disabled) { color: var(--status-danger); border-color: var(--status-danger); background: var(--status-danger-surface); }
 .button--ghost { color: var(--accent-ink); }
@@ -611,7 +611,7 @@ h1, h2, h3 { text-wrap: balance; }
 .amount--income { color: var(--status-ok); }.amount--expense { color: var(--status-danger); }.amount--pending { color: var(--status-warning); }
 
 .modal-backdrop { z-index: 130; overscroll-behavior: contain; background: rgba(10, 15, 26, .68); backdrop-filter: blur(3px); }
-.modal { border-color: var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); }
+.modal { color: var(--text); background: var(--surface); border-color: var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); }
 .modal__header, .modal__footer { border-color: var(--line); }
 .modal__header h2 { color: var(--text); }
 .field { color: var(--text-muted); }
@@ -1700,7 +1700,13 @@ h1, h2, h3 { text-wrap: balance; }
 
 /* AIRI typography and legacy global surfaces; view structures stay unchanged. */
 h1, h2, h3 { font-family: var(--font-display); }
-.amount, .money, .num, .numeric, .kpi-card__copy strong {
+/* Charge table: Monto, Pagado and Saldo; :has scopes positional columns to
+   the existing charge projection without changing shared table markup. */
+.amount, .money, .num, .numeric, .numeric-emphasis, .kpi-card__copy strong,
+.payment-list li > strong,
+.cash-page .data-table:has(.numeric-emphasis) td:nth-child(4),
+.cash-page .data-table:has(.numeric-emphasis) td:nth-child(5),
+.cash-page .data-table:has(.numeric-emphasis) td:nth-child(6) {
   font-family: var(--font-display);
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
