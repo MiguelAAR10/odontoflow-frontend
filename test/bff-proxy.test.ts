@@ -19,6 +19,56 @@ function sentHeaders(fetchMock: ReturnType<typeof upstream>): Headers {
 }
 
 describe("proxyToBackend", () => {
+  it("propagates client abort after headers to the upstream stream", async () => {
+    const client = new AbortController();
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      const stream = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode("data: started\n\n"));
+          init?.signal?.addEventListener("abort", () => controller.error(init.signal!.reason), { once: true });
+        },
+      });
+      return new Response(stream, { headers: { "content-type": "text/event-stream" } });
+    });
+    const response = await proxyToBackend(new Request("http://app.test/api/backend/agent/runs", { method: "POST", body: "{}", signal: client.signal }), ["agent", "runs"], { backendUrl: BACKEND, token: TOKEN, fetch: fetchMock });
+    const reader = response.body!.getReader();
+    expect(new TextDecoder().decode((await reader.read()).value)).toBe("data: started\n\n");
+    client.abort();
+    expect(fetchMock.mock.calls[0]![1]?.signal?.aborted).toBe(true);
+    await expect(reader.read()).rejects.toMatchObject({ name: "AbortError" });
+  });
+
+  it.each(["text/event-stream", "text/event-stream; charset=utf-8"])("delivers the first %s event before upstream closes", async (contentType) => {
+    let controller!: ReadableStreamDefaultController<Uint8Array>;
+    const stream = new ReadableStream<Uint8Array>({ start(value) { controller = value; } });
+    const first = 'data: {"type":"RUN_STARTED"}\n\n';
+    controller.enqueue(new TextEncoder().encode(first));
+    const fetchMock = vi.fn(async () => new Response(stream, {
+      status: 200,
+      headers: { "content-type": contentType, "cache-control": "public", "x-request-id": "run-1", "set-cookie": "leak=1" },
+    }));
+    let response: Response | undefined;
+    const pending = proxyToBackend(new Request("http://app.test/api/backend/agent/runs", { method: "POST", body: "{}" }), ["agent", "runs"], { backendUrl: BACKEND, token: TOKEN, fetch: fetchMock })
+      .then((value) => { response = value; });
+    try {
+      await vi.waitFor(() => expect(response).toBeDefined(), { timeout: 1000 });
+      const reader = response!.body!.getReader();
+      expect(new TextDecoder().decode((await reader.read()).value)).toBe(first);
+      controller.enqueue(new TextEncoder().encode("data: second\n\n"));
+      expect(new TextDecoder().decode((await reader.read()).value)).toBe("data: second\n\n");
+      expect(response!.status).toBe(200);
+      expect(response!.headers.get("content-type")).toBe(contentType);
+      expect(response!.headers.get("cache-control")).toBe("no-cache");
+      expect(response!.headers.get("connection")).toBe("keep-alive");
+      expect(response!.headers.get("x-accel-buffering")).toBe("no");
+      expect(response!.headers.get("x-request-id")).toBe("run-1");
+      expect(response!.headers.get("set-cookie")).toBeNull();
+    } finally {
+      controller.close();
+      await pending;
+    }
+  });
+
   it("injects the server bearer and drops browser authorization/cookie", async () => {
     const fetchMock = upstream(200, []);
     const request = new Request("http://app.test/api/backend/patients", {

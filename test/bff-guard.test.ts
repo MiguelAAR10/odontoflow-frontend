@@ -123,6 +123,33 @@ describe("C · no persona, no token", () => {
 });
 
 describe("D · route allowlist", () => {
+  it.each(["agent/runs", "agent/runs/run-123/stop"])("allows POST /%s with a signed persona and preserves the intent", async (path) => {
+    const fetchMock = upstream();
+    const response = await handleBackendRequest(
+      request(path, { method: "POST", cookie: personaCookie("secretaria"), headers: { "idempotency-key": "run-intent-1" } }),
+      segments(path), options(fetchMock),
+    );
+    expect(response.status).toBe(200);
+    expect(fetchMock.mock.calls[0]![0]).toBe(`http://backend.test/${path}`);
+    expect(bearer(fetchMock)).toBe("Bearer ofk_lucia");
+    expect(new Headers(fetchMock.mock.calls[0]![1]!.headers).get("idempotency-key")).toBe("run-intent-1");
+  });
+
+  it.each(["agent/runs", "agent/runs/run-123/stop"])("requires a valid signed persona and same origin for POST /%s", async (path) => {
+    for (const [init, status, code] of [
+      [{}, 401, "PERSONA_REQUIRED"],
+      [{ cookie: personaCookie("secretaria", "forged-secret-0123456789abcdef") }, 401, "PERSONA_REQUIRED"],
+      [{ cookie: personaCookie("secretaria"), origin: null }, 403, "BFF_FORBIDDEN_ORIGIN"],
+      [{ cookie: personaCookie("secretaria"), origin: "http://evil.test" }, 403, "BFF_FORBIDDEN_ORIGIN"],
+    ] as const) {
+      const fetchMock = upstream();
+      const response = await handleBackendRequest(request(path, { method: "POST", ...init }), segments(path), options(fetchMock));
+      expect(response.status).toBe(status);
+      expect(await errorCode(response)).toBe(code);
+      expect(fetchMock).not.toHaveBeenCalled();
+    }
+  });
+
   it.each([
     ["GET", "internal/x"],
     ["POST", "internal/x"],
@@ -138,6 +165,12 @@ describe("D · route allowlist", () => {
     ["GET", "agent/proposals/3/approve"],
     ["POST", "agent/proposals/3/approve/extra"],
     ["GET", "nothing-here"],
+    ["GET", "agent/runs"],
+    ["GET", "agent/runs/run-123/stop"],
+    ["DELETE", "agent/runs/run-123/stop"],
+    ["POST", "agent/runs/run-123"],
+    ["POST", "agent/runs/run-123/stop/extra"],
+    ["POST", "agent/runs/run.123/stop"],
   ])("%s /%s is 403 ROUTE_NOT_ALLOWED and the backend is never called", async (method, path) => {
     const fetchMock = upstream();
     const response = await handleBackendRequest(request(path, { method, cookie: personaCookie("administrador") }), segments(path), options(fetchMock));

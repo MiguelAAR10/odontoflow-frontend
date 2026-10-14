@@ -78,7 +78,7 @@ export async function proxyToBackend(
 
   let upstream: Response;
   try {
-    upstream = await options.fetch(target, { method, headers, body, cache: "no-store", redirect: "manual" });
+    upstream = await options.fetch(target, { method, headers, body, cache: "no-store", redirect: "manual", signal: request.signal });
   } catch {
     return proxyError(502, "BACKEND_UNREACHABLE", "No se pudo contactar al servidor.");
   }
@@ -89,7 +89,13 @@ export async function proxyToBackend(
     if (value !== null) responseHeaders.set(name, value);
   }
   const nullBody = method === "HEAD" || upstream.status === 204 || upstream.status === 304;
-  return new Response(nullBody ? null : await upstream.arrayBuffer(), {
+  const isEventStream = upstream.headers.get("content-type")?.split(";")[0]?.trim().toLowerCase() === "text/event-stream";
+  if (isEventStream) {
+    responseHeaders.set("cache-control", "no-cache");
+    responseHeaders.set("connection", "keep-alive");
+    responseHeaders.set("x-accel-buffering", "no");
+  }
+  return new Response(nullBody ? null : isEventStream ? upstream.body : await upstream.arrayBuffer(), {
     status: upstream.status,
     headers: responseHeaders,
   });
@@ -104,8 +110,8 @@ export interface BrowserRoute {
 }
 
 /**
- * Every backend call the typed client (`src/contracts/client.ts`) makes, and
- * nothing else. `test/bff-guard.test.ts` fails when the client calls a path
+ * Every backend call the typed client (`src/contracts/client.ts`) makes, plus
+ * the AIRI streaming run lifecycle. `test/bff-guard.test.ts` fails when the client calls a path
  * this list does not cover. Server-to-server routes (`/internal`,
  * `/agent-tools`, creating proposals) are deliberately absent.
  */
@@ -154,6 +160,8 @@ export const BROWSER_ROUTES: readonly BrowserRoute[] = [
   { method: "POST", path: "products/:id/adjustments" },
   { method: "POST", path: "products/:id/transfers" },
   { method: "GET", path: "agent/inbox" },
+  { method: "POST", path: "agent/runs" },
+  { method: "POST", path: "agent/runs/:id/stop" },
   { method: "POST", path: "agent/proposals/:id/approve" },
   { method: "POST", path: "agent/proposals/:id/decline" },
   { method: "GET", path: "agent-runs" },
