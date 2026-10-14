@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { AgentIdSchema, CardSchema, type AgentId, type Card, type CardEntry, type CardStatus } from "./card.js";
+import { AgentIdSchema, CardSchema, canApproveCard, type AgentId, type Card, type CardEntry, type CardStatus } from "./card.js";
 import { EventType, type Event, type JsonPatch } from "./events.js";
 
 export type AgentStatus = "idle" | "thinking" | "working" | "handoff" | "done" | "needs-you";
@@ -73,7 +73,8 @@ function updateTool(state: RunState, toolCallId: string, update: (part: Extract<
 }
 
 function needsHuman(state: RunState, agent: AgentId): boolean {
-  return Object.values(state.cards).some((entry) => entry.card.agent === agent && (entry.status === "pending" || entry.status === "error"));
+  return Object.values(state.cards).some((entry) => entry.card.agent === agent && (entry.status === "pending" || entry.status === "error"
+    || (entry.status === "loading" && entry.loadingReason === "approval")));
 }
 
 function restingAgents(state: RunState): RunState["agents"] {
@@ -89,14 +90,23 @@ function placeCard(state: RunState, value: unknown, status: CardStatus): RunStat
   const previous = state.cards[card.id];
   // An agent can prepare a card, but cannot approve or overwrite a confirmed one.
   if (previous?.status === "approved") return state;
-  const next = { ...state, cards: { ...state.cards, [card.id]: { card, status, runId: state.run.id, error: null } } };
+  // Repeated stream/interrupt metadata must not reset the same human intent.
+  if (previous?.loadingReason === "approval" && JSON.stringify(previous.card) === JSON.stringify(card)) return state;
+  const next = { ...state, cards: { ...state.cards, [card.id]: { card, status, runId: state.run.id, error: null,
+    ...(status === "loading" ? { loadingReason: "tool" as const } : {}),
+  } } };
   if (state.thread.some((turn) => turn.parts.some((part) => part.type === "card" && part.cardId === card.id))) return next;
   return updateTurn(next, `card:${state.run.id}:${card.id}`, card.agent, (parts) => [...parts, { type: "card", cardId: card.id }]);
 }
 
 function resultCard(state: RunState, value: unknown): RunState {
   const parsed = CardSchema.safeParse(value);
-  return parsed.success ? placeCard(state, parsed.data, parsed.data.level === "auto" ? "done" : "pending") : state;
+  if (!parsed.success) return state;
+  const card = parsed.data;
+  // Agent events cannot confirm a human approval or reopen terminal proposals.
+  const status = card.state === "declined" ? "rejected"
+    : card.level !== "auto" && (card.state === "ready" || card.state === "pending") ? "pending" : "done";
+  return placeCard(state, card, status);
 }
 
 const partSchema = z.strictObject({ key: z.string().min(1), props: z.unknown().optional() });
@@ -105,7 +115,7 @@ const noticeSchema = z.strictObject({ text: z.string().min(1) });
 function closeWork(state: RunState, status: "stopped" | "error" | "done"): RunState {
   return { ...state,
     cards: Object.fromEntries(Object.entries(state.cards).map(([id, entry]) => [id,
-      entry.runId === state.run.id && entry.status === "loading" ? { ...entry, status } : entry,
+      entry.runId === state.run.id && entry.status === "loading" && entry.loadingReason !== "approval" ? { ...entry, status } : entry,
     ])),
     thread: state.thread.map((turn) => ({ ...turn, parts: turn.parts.map((part) =>
       part.type === "text" ? { ...part, streaming: false }
@@ -207,16 +217,20 @@ export function reducer(state: RunState, incoming: { type: string }): RunState {
       return appendTrace(next, event, "Tarea detenida por ti");
     case "CARD_APPROVAL_STARTED": {
       const entry = state.cards[event.cardId];
-      if (!entry || (entry.status !== "pending" && entry.status !== "error")) return state;
-      return { ...state, cards: { ...state.cards, [event.cardId]: { ...entry, status: "loading", error: null } } };
+      if (!entry || !canApproveCard(entry)) return state;
+      return { ...state, cards: { ...state.cards, [event.cardId]: { ...entry, status: "loading", loadingReason: "approval", error: null } } };
     }
     case "CARD_APPROVED": {
       const entry = state.cards[event.card.id];
       if (!entry || event.card.state !== "approved") return state;
-      next = { ...state, cards: { ...state.cards, [event.card.id]: { ...entry, card: event.card, status: "approved", error: null } } };
-      const needsAgent = Object.values(next.cards).some((item) => item.card.agent === event.card.agent && (item.status === "pending" || item.status === "error"));
+      next = { ...state, cards: { ...state.cards, [event.card.id]: { ...entry, card: event.card, status: "approved", loadingReason: null, error: null } } };
       const needsRun = Object.values(next.cards).some((item) => item.runId === state.run.id && (item.status === "pending" || item.status === "error" || item.status === "loading"));
-      next = { ...next, agents: { ...next.agents, [event.card.agent]: needsAgent ? "needs-you" : "done" },
+      const agents = { ...next.agents };
+      for (const id of AgentIdSchema.options) {
+        if (agents[id] !== "needs-you" && id !== event.card.agent) continue;
+        agents[id] = needsHuman(next, id) || (id === state.run.agent && state.run.status === "waiting" && needsRun) ? "needs-you" : "done";
+      }
+      next = { ...next, agents,
         run: state.run.status === "waiting" && !needsRun ? { ...state.run, status: "done", what: "Aprobado" } : state.run,
       };
       return appendTrace(next, event, event.card.result ?? "Aprobado por ti");
@@ -309,7 +323,7 @@ export function reducer(state: RunState, incoming: { type: string }): RunState {
           agents: { ...restingAgents(state), [state.run.agent]: "needs-you" },
         }, "done");
         for (const interrupt of event.outcome.interrupts) {
-          next = placeCard(next, interrupt.metadata?.card, "pending");
+          next = resultCard(next, interrupt.metadata?.card);
         }
         for (const entry of Object.values(next.cards)) {
           if (entry.status === "pending") next = { ...next, agents: { ...next.agents, [entry.card.agent]: "needs-you" } };

@@ -26,6 +26,64 @@ function controlledSource() {
 }
 
 describe("store AG-UI", () => {
+  it.each(["finished", "interrupt", "cancelled", "stop", "error"])("conserva la aprobación en curso cuando el run termina por %s", async (ending) => {
+    const control = controlledSource();
+    let confirm: (card: Card) => void = () => {};
+    const approveCard = vi.fn<ApprovalHandler>(() => new Promise<Card>((resolve) => { confirm = resolve; }));
+    const store = createAgentStore({ source: control.source, approveCard, toApiError });
+    const run = store.send("Propuesta");
+    control.emit({ type: EventType.CUSTOM, name: "airi.card", value: card });
+    const approval = store.approve(card.id);
+    await Promise.resolve();
+    if (ending === "stop") store.stop();
+    else if (ending === "error") control.emit({ type: EventType.RUN_ERROR, message: "Falló el run" });
+    else control.emit({ type: EventType.RUN_FINISHED, ...control.input(),
+      ...(ending === "cancelled" ? { outcome: { type: "cancelled" as const } }
+        : ending === "interrupt" ? { outcome: { type: "interrupt" as const, interrupts: [{ id: "i", reason: "approval", metadata: { card } }] } } : {}),
+    });
+    await run;
+    expect(store.getSnapshot().cards.p1?.status).toBe("loading");
+    expect(store.getSnapshot().cards.p1?.card.state).toBe("pending");
+    expect(store.approve(card.id)).toBe(approval);
+    expect(approveCard).toHaveBeenCalledOnce();
+    confirm({ ...card, state: "approved" });
+    await approval;
+    expect(store.getSnapshot().cards.p1?.status).toBe("approved");
+  });
+
+  it("un fallo de aprobación después de finalizar el run conserva error y permite reintentar", async () => {
+    const control = controlledSource();
+    let fail: (error: Error) => void = () => {};
+    const approveCard = vi.fn<ApprovalHandler>()
+      .mockImplementationOnce(() => new Promise<Card>((_, reject) => { fail = reject; }))
+      .mockResolvedValueOnce({ ...card, state: "approved" });
+    const store = createAgentStore({ source: control.source, approveCard, toApiError });
+    const run = store.send("Propuesta");
+    control.emit({ type: EventType.CUSTOM, name: "airi.card", value: card });
+    const approval = store.approve(card.id);
+    await Promise.resolve();
+    control.emit({ type: EventType.RUN_FINISHED, threadId: control.input().threadId, runId: control.input().runId });
+    await run;
+    expect(store.getSnapshot().cards.p1?.status).toBe("loading");
+    fail(new Error("Sin conexión"));
+    await expect(approval).rejects.toMatchObject({ message: "Sin conexión" });
+    expect(store.getSnapshot().cards.p1).toMatchObject({ status: "error", error: "Sin conexión" });
+    await store.approve(card.id);
+    expect(approveCard.mock.calls[0]?.[1]).toBe(approveCard.mock.calls[1]?.[1]);
+    expect(store.getSnapshot().cards.p1?.status).toBe("approved");
+  });
+
+  it.each(["declined", "delegated", "undone", "approved"] as const)("no llama al handler para una tarjeta contractual %s", async (state) => {
+    const control = controlledSource();
+    const approveCard = vi.fn<ApprovalHandler>();
+    const store = createAgentStore({ source: control.source, approveCard, toApiError });
+    const run = store.send("Propuesta");
+    control.emit({ type: EventType.CUSTOM, name: "airi.card", value: { ...card, state } });
+    await expect(store.approve(card.id)).rejects.toMatchObject({ code: "CARD_NOT_PENDING" });
+    expect(approveCard).not.toHaveBeenCalled();
+    store.stop(); await run;
+  });
+
   it("send conserva el hilo y stop corta callbacks tardíos conservando el rastro", async () => {
     const control = controlledSource();
     const store = createAgentStore({ source: control.source, toApiError });

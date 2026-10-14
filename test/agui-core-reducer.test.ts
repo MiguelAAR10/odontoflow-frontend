@@ -47,6 +47,50 @@ if (process.env.AIRI_COVERAGE === "1") {
 }
 
 describe("reductor AG-UI", () => {
+  it.each(["custom", "tool", "interrupt"])("proyecta declined como rejected desde %s", (source) => {
+    const state = reducer(createInitialState(), start);
+    const declined: Card = { ...card, state: "declined" };
+    const event = source === "custom" ? { type: EventType.CUSTOM, name: "airi.card", value: declined }
+      : source === "tool" ? { type: EventType.TOOL_CALL_RESULT, toolCallId: "t", messageId: "result", content: JSON.stringify({ card: declined }) }
+        : { type: EventType.RUN_FINISHED, runId: "r1", threadId: "t1", outcome: { type: "interrupt", interrupts: [{ id: "i", reason: "approval", metadata: { card: declined } }] } };
+    const next = reducer(state, event);
+    expect(next.cards.proposal).toMatchObject({ card: declined, status: "rejected" });
+    expect(reducer(next, { type: "CARD_APPROVAL_STARTED", cardId: card.id })).toBe(next);
+  });
+
+  it("resolver la última aprobación libera al coordinador y al agente de la tarjeta", () => {
+    const waiting = reducer(reducer(createInitialState(), start), {
+      type: EventType.RUN_FINISHED, runId: "r1", threadId: "t1",
+      outcome: { type: "interrupt", interrupts: [{ id: "i", reason: "approval", metadata: { card } }] },
+    });
+    expect(waiting.agents.airi).toBe("needs-you");
+    const loading = reducer(waiting, { type: "CARD_APPROVAL_STARTED", cardId: card.id });
+    const approved = reducer(loading, { type: "CARD_APPROVED", card: { ...card, state: "approved" } });
+    expect(approved.run.status).toBe("done");
+    expect(approved.agents.airi).toBe("done");
+    expect(approved.agents.cepillo).toBe("done");
+    expect(waiting.agents.airi).toBe("needs-you");
+  });
+
+  it("aprobar una tarjeta conserva needs-you mientras otro agente espera aprobación", () => {
+    const other: Card = { ...card, id: "other", agent: "hilo" };
+    const waiting = reducer(reducer(createInitialState(), start), {
+      type: EventType.RUN_FINISHED, runId: "r1", threadId: "t1",
+      outcome: { type: "interrupt", interrupts: [card, other].map((card) => ({ id: card.id, reason: "approval", metadata: { card } })) },
+    });
+    let next = reducer(waiting, { type: "CARD_APPROVAL_STARTED", cardId: other.id });
+    next = reducer(next, { type: "CARD_APPROVAL_STARTED", cardId: card.id });
+    next = reducer(next, { type: "CARD_APPROVED", card: { ...card, state: "approved" } });
+    expect(next.run.status).toBe("waiting");
+    expect(next.agents.airi).toBe("needs-you");
+    expect(next.agents.hilo).toBe("needs-you");
+    expect(next.agents.cepillo).toBe("done");
+    next = reducer(next, { type: "CARD_APPROVED", card: { ...other, state: "approved" } });
+    expect(next.run.status).toBe("done");
+    expect(next.agents.airi).toBe("done");
+    expect(next.agents.hilo).toBe("done");
+  });
+
   it("reconstruye un run con texto, plan, delegación, herramienta y conclusión", () => {
     const initial = createInitialState();
     const state = [start,

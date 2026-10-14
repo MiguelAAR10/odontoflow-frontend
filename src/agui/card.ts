@@ -49,4 +49,12 @@ export interface CardEntry {
   status: CardStatus;
   runId: string | null;
   error: string | null;
+  /** UI operation only; approval I/O is independent of the agent run. */
+  loadingReason?: "tool" | "approval" | null;
+}
+
+export function canApproveCard(entry: CardEntry | undefined): boolean {
+  return !!entry && entry.card.level !== "auto"
+    && (entry.card.state === "ready" || entry.card.state === "pending")
+    && (entry.status === "pending" || (entry.status === "error" && entry.loadingReason === "approval"));
 }

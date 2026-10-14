@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useSyncExternalStore } from "react";
-import { CardSchema, type Card } from "./card.js";
+import { CardSchema, canApproveCard, type Card } from "./card.js";
 import { EventType, type Event, type Message, type RunAgentInput } from "./events.js";
 import { createInitialState, reducer, type AgentAction, type RunState } from "./reducer.js";
 import type { AgentSource } from "./source.js";
@@ -139,7 +139,7 @@ export function createAgentStore(initialDependencies?: AgentStoreDependencies): 
       const entry = state.cards[cardId];
       const previous = intents.get(cardId);
       if (previous?.promise) return previous.promise;
-      if (!entry || (entry.status !== "pending" && entry.status !== "error")) {
+      if (!entry || !canApproveCard(entry)) {
         return Promise.reject(localError("CARD_NOT_PENDING", "La tarjeta no está pendiente de aprobación."));
       }
       if (!services?.approveCard) return Promise.reject(localError("APPROVAL_UNAVAILABLE", "La aprobación no está configurada."));
