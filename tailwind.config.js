@@ -3,11 +3,15 @@ export default {
   content: ["./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
-      fontFamily: { sans: ["Inter", "ui-sans-serif", "system-ui"] },
+      fontFamily: {
+        sans: ["var(--font-readex)", "Readex Pro", "ui-sans-serif", "system-ui"],
+        display: ["var(--font-outfit)", "Outfit", "sans-serif"],
+        pixel: ["var(--font-pixelify)", "Pixelify Sans", "sans-serif"],
+      },
       colors: {
-        navy: "#071e3a",
-        cyan: "#08afd0",
-        ink: "#10213f",
+        navy: "var(--navy-950)",
+        cyan: "var(--accent)",
+        ink: "var(--text)",
       },
     },
   },
