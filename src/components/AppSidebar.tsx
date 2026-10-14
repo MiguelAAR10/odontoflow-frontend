@@ -1,9 +1,10 @@
 "use client";
 
-import { Boxes, ChartColumn, ChevronsUpDown, MessageCircleMore, Mic, PanelLeftClose, PanelLeftOpen, Settings, Users, X } from "lucide-react";
+import { Boxes, ChartColumn, ChevronsUpDown, MessageCircleMore, Mic, PanelLeftClose, PanelLeftOpen, Settings, Users, Volume2, VolumeX, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { sound } from "../lib/sound";
 import { voiceEnabled } from "../voice";
 import { canOpen, useMocks } from "../api";
 import { PersonaPicker, usePersona } from "./PersonaContext";
@@ -82,6 +83,9 @@ export function AppSidebar({ mobileOpen, collapsed, onNavigate, onToggleCollapse
   const { role } = useShellContext();
   const sidebar = useRef<HTMLElement>(null);
   useFocusTrap(sidebar, mobileOpen, onNavigate);
+  const soundEnabled = useSyncExternalStore(sound.subscribe, () => sound.enabled, () => true);
+  const [soundMuted, setSoundMuted] = useState(false);
+  useEffect(() => { setSoundMuted(new URLSearchParams(window.location.search).get("sound") === "0"); }, []);
   const items = getNavigation(role).filter(item => canOpen(identity, item.to));
   return <aside ref={sidebar} tabIndex={-1} id="app-sidebar" className={`app-sidebar ${mobileOpen ? "app-sidebar--open" : ""}`} aria-label="Navegación principal" role={mobileOpen ? "dialog" : undefined} aria-modal={mobileOpen || undefined}>
     <div className="sidebar-heading"><span>{({ dueno: "Dirección", doctor: "Consulta", admin: "Operación" })[role]}</span>
@@ -96,6 +100,12 @@ export function AppSidebar({ mobileOpen, collapsed, onNavigate, onToggleCollapse
         ...(voiceEnabled ? [{ to: "/asistente", label: "Asistente de voz", icon: Mic }] : []),
       ].filter(item => canOpen(identity, item.to)).map(item => <Link key={item.to} href={item.to} title={item.label} onClick={onNavigate} className="sidebar-item"><span className="shell-clay" aria-hidden="true"><item.icon size={19} /></span><span>{item.label}</span></Link>)}</nav></details>
       <Link className="sidebar-item" href="/configuracion" title="Configuración" onClick={onNavigate}><span className="shell-clay" aria-hidden="true"><Settings size={19} /></span><span>Configuración</span></Link>
+      <button className="sidebar-item airi-sound-toggle" type="button" aria-label="Sonido" aria-pressed={soundEnabled} disabled={soundMuted}
+        title={soundMuted ? "Silenciado por ?sound=0" : "Sonido"} onClick={() => sound.setEnabled(!soundEnabled)}>
+        <span className="shell-clay" aria-hidden="true">{soundEnabled ? <Volume2 size={19} /> : <VolumeX size={19} />}</span>
+        <span>Sonido <small>{soundMuted ? "silenciado" : soundEnabled ? "activado" : "apagado"}</small></span>
+      </button>
+      <style>{`.airi-shell .airi-sound-toggle{width:100%;border:0;text-align:left;cursor:pointer}.airi-sound-toggle>span:last-child{display:flex;flex:1;gap:12px}.airi-sound-toggle small{margin-left:auto;font-size:12px;color:var(--muted)}.airi-sound-toggle:disabled{opacity:.7;cursor:not-allowed}`}</style>
       <PersonaSwitcher />
     </div>
   </aside>;
