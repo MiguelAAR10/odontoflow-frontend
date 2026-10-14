@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 afterEach(() => { vi.unstubAllEnvs(); vi.doUnmock("../src/agui/sim/source.js"); vi.resetModules(); });
 
 describe("selección de fuente", () => {
-  it("con mocks=false no importa ni evalúa el simulador y falla sin inventar conexión", async () => {
+  it("con mocks=false no importa ni evalúa el simulador y selecciona HTTP", async () => {
     vi.stubEnv("NEXT_PUBLIC_USE_MOCKS", "false");
     vi.resetModules();
     const imported = vi.fn(() => { throw new Error("El módulo sim no debe importarse"); });
@@ -11,8 +11,8 @@ describe("selección de fuente", () => {
     const { getAgentSource } = await import("../src/agui/index.js");
     const source = await getAgentSource();
     expect(imported).not.toHaveBeenCalled();
-    await expect(source.run({ threadId: "t", runId: "r", messages: [], context: [], tools: [] }, () => {}))
-      .rejects.toThrow("no conectado");
+    const { HttpSource } = await import("../src/agui/http.js");
+    expect(source).toBeInstanceOf(HttpSource);
   });
   it("solo activa el simulador cuando el flag es true explícito", async () => {
     vi.stubEnv("NEXT_PUBLIC_USE_MOCKS", "true");

@@ -20,6 +20,8 @@
     "test/**/*.ts"
   ],
   "exclude": [
+    "test/agui-http*.test.ts",
+    "test/agui-sim-import.test.ts",
     "test/agenda-adapter.test.ts",
     "test/agenda-edit.test.ts",
     "test/agenda-integration.test.ts",

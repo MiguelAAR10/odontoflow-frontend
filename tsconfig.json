@@ -65,6 +65,8 @@
     "test/practitioners-adapter.test.ts",
     "test/practitioners-panel.test.tsx",
     "test/focus-trap-stack.test.tsx",
+    "test/agui-http*.test.ts",
+    "test/agui-sim-import.test.ts",
     "vitest.config.ts",
     "next.config.ts",
     ".next/dev/types/**/*.ts"
