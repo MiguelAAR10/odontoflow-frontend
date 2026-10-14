@@ -342,9 +342,13 @@
 .personaje.pj-escudo.is-idle [data-part="sparkle-front-small"] { animation: pf-twinkle 4200ms var(--pf-s) -3100ms infinite; }
 
 
-/* Movimiento reducido: quieto, solo un parpadeo ocasional (manual §13) */
+/* AIRI motion policy: zero CSS motion in reduce, including legacy styles.
+ * A 0.01ms duration still creates WAAPI transitions for borders/colors/layout.
+ * Motion's explicit opacity-only reveals remain bounded at 150ms. */
 @media (prefers-reduced-motion: reduce) {
+  html:has(.airi-shell), body:has(.airi-shell),
+  body:has(.airi-shell) *, body:has(.airi-shell) *::before,
+  body:has(.airi-shell) *::after { animation: none !important; transition: none !important; }
   .personaje *, .personaje.is-idle * { animation: none !important; transition: none !important; }
-  .personaje .eye { animation: pf-blink 9s var(--pf-s) var(--pf-blink-delay) infinite !important; }
   .personaje [data-part="eyes"] { transform: none !important; }
 }
