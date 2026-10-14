@@ -1,863 +1,154 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { ArrowUpRight, CheckCircle2, CircleAlert, Lock, Search, X } from "lucide-react";
-import Link from "next/link";
-import { loadAgenda, searchPatients, toApiError } from "../api";
-import { Badge, statusTone } from "../components/Badge";
-import { Button } from "../components/Button";
-import { Drawer } from "../components/Drawer";
-import type { Appointment } from "../types";
-import {
-  safeHomeStage,
-  type AgentFallbackStage,
-  type AgentOutcomeStage,
-  type HomeStage,
-} from "../home/registry";
-import { nowMinutes, splitWorklist } from "../home/schedule";
-import type { HomePatient } from "../home/types";
-import { PendingDecisions } from "../home/PendingDecisions";
+import { useEffect, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { ArrowUp, ArrowUpRight } from "lucide-react";
+import { z } from "zod";
+import { toApiError, useMocks } from "../api";
+import { useAgent } from "../agui/useAgent";
+import { useShellContext } from "../components/shell/ShellContext";
+import { usePersona } from "../components/PersonaContext";
+import { Thread, moveThread, threadDestination } from "../components/shell/Thread";
+import { formatMoney } from "../catalog/format";
+import type { ShellRole } from "../nav";
 
-/** Width at which the persistent AIRI rail still leaves the worklist legible.
- *  Below it the same rail content is served by the contextual drawer. */
-const RAIL_MEDIA_QUERY = "(min-width: 1400px)";
-
-function railIsPersistent(): boolean {
-  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false;
-  return window.matchMedia(RAIL_MEDIA_QUERY).matches;
+type HomeTask = { label: string; target?: string };
+const roleCopy: Record<ShellRole, { name: string; question: string; suggestions: HomeTask[] }> = {
+  admin: { name: "Recepción", question: "¿Qué resolvemos primero?", suggestions: [
+    { label: "Revisa mi turno", target: "turno" }, { label: "Abre la bandeja", target: "bandeja" },
+    { label: "Agenda de hoy", target: "agenda" }, { label: "Confirma las citas de mañana" }, { label: "¿Quién toma el hueco de la tarde?" },
+  ] },
+  dueno: { name: "Dirección", question: "¿Qué quieres saber de tu clínica?", suggestions: [
+    { label: "Revisa las decisiones pendientes", target: "bandeja" }, { label: "Revisa las sedes en Dirección", target: "direccion" },
+    { label: "¿Por qué Miraflores cobra menos?" }, { label: "Revisa la caja", target: "caja" }, { label: "Abrir el lienzo", target: "lienzo" },
+  ] },
+  doctor: { name: "Doctor", question: "¿Cómo te ayudo con tu jornada?", suggestions: [
+    { label: "Abre mi jornada", target: "jornada" }, { label: "Prepara el brief de Ana" },
+    { label: "Ayúdame con la evolución" }, { label: "Mi agenda de hoy", target: "agenda" }, { label: "Abrir el lienzo", target: "lienzo" },
+  ] },
+};
+export function limaGreeting(now: Date) {
+  const hour = Number(new Intl.DateTimeFormat("en-US", { timeZone: "America/Lima", hour: "numeric", hourCycle: "h23" }).format(now));
+  return hour >= 6 && hour < 12 ? "Buenos días" : hour >= 12 && hour < 19 ? "Buenas tardes" : "Buenas noches";
 }
-
-function localDayIndex(): number {
-  const weekday = new Intl.DateTimeFormat("en-US", { timeZone: "America/Lima", weekday: "short" }).format(new Date());
-  const index = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].indexOf(weekday);
-  return index >= 0 ? index : 0;
-}
-
-function formatToday(): string {
-  const label = new Intl.DateTimeFormat("es-PE", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  }).format(new Date());
-  return label.charAt(0).toUpperCase() + label.slice(1);
-}
-
-function greeting(): string {
-  const hour = new Date().getHours();
-  if (hour < 12) return "Buenos días";
-  if (hour < 19) return "Buenas tardes";
-  return "Buenas noches";
-}
-
-function initials(name: string): string {
-  return name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0] ?? "")
-    .join("")
-    .toUpperCase();
-}
-
-function countCopy(count: number): string {
-  return `${count} ${count === 1 ? "cita" : "citas"}`;
-}
-
-/** Accessible name for a worklist row: the row is the deterministic entry point
- *  into the real patient search, so the label states both the data and the act. */
-function rowLabel(appointment: Appointment): string {
-  const where = appointment.branch ? `, ${appointment.branch}` : "";
-  return `${appointment.time} · ${appointment.patient} · ${appointment.treatment}${where} · ${appointment.status}. Buscar a este paciente con AIRI.`;
-}
-
-/** Brand-dark `A` monogram. The presence dot is static except for the
- *  request-bound pulse while a real `searchPatients` call is in flight. */
-function AiriMark({ searching }: { searching: boolean }) {
-  return (
-    <span className="airi-mark" aria-hidden="true">
-      <span className="airi-mark__letter">A</span>
-      <span className={`airi-mark__dot${searching ? " airi-mark__dot--active" : ""}`} />
-    </span>
-  );
-}
-
-/* ---------------------------------------------------------------- masthead */
-
-/**
- * The shape of the real day. One tick per loaded appointment, muted once its
- * wall time has passed and emphasised on the next one. It counts rows, never
- * attendance: a passed tick only means the hour is behind us.
- */
-function ShiftTicks({ past, upcoming }: { past: Appointment[]; upcoming: Appointment[] }) {
-  const total = past.length + upcoming.length;
-  if (total === 0) return null;
-
-  const caption =
-    past.length === 0
-      ? `${countCopy(total)} por delante`
-      : upcoming.length === 0
-        ? `${countCopy(total)} · el horario de todas ya pasó`
-        : `${past.length} con hora pasada · ${upcoming.length} por venir`;
-
-  return (
-    <div className="home-shift">
-      {total <= 24 ? (
-        <div className="home-shift__ticks" aria-hidden="true">
-          {past.map((appointment) => (
-            <span className="home-shift__tick home-shift__tick--past" key={appointment.id} />
-          ))}
-          {upcoming.map((appointment, index) => (
-            <span
-              className={`home-shift__tick${index === 0 ? " home-shift__tick--next" : ""}`}
-              key={appointment.id}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="home-shift__bar" aria-hidden="true">
-          <span className="home-shift__bar-past" style={{ flexGrow: past.length }} />
-          <span className="home-shift__bar-rest" style={{ flexGrow: upcoming.length }} />
-        </div>
-      )}
-      <p className="home-shift__caption">{caption}</p>
-    </div>
-  );
-}
-
-function Masthead({
-  today,
-  loading,
-  error,
-  past,
-  upcoming,
-  onRetry,
-}: {
-  today: string;
-  loading: boolean;
-  error: string;
-  past: Appointment[];
-  upcoming: Appointment[];
-  onRetry: () => void;
-}) {
-  const total = past.length + upcoming.length;
-
-  return (
-    <header className="home-masthead">
-      <div className="home-masthead__lede">
-        <p className="home-masthead__eyebrow">
-          <span>{today}</span>
-          <span className="home-masthead__dot" aria-hidden="true" />
-          <span>Todas las sedes</span>
-        </p>
-        <h1 className="home-masthead__title">
-          {greeting()}
-          <span className="home-masthead__accent">.</span>
-        </h1>
-
-        {loading && <p className="home-figure home-figure--quiet" role="status">Cargando el turno de hoy</p>}
-
-        {!loading && error && (
-          <div className="home-figure home-figure--error" role="alert">
-            <span>No pudimos cargar tu turno</span>
-            <Button compact variant="secondary" onClick={onRetry}>Reintentar</Button>
-          </div>
-        )}
-
-        {!loading && !error && total === 0 && (
-          <p className="home-figure home-figure--quiet">Sin citas registradas para hoy</p>
-        )}
-
-        {!loading && !error && total > 0 && (
-          <p className="home-figure">
-            <strong className="home-figure__value">{total}</strong>
-            <span className="home-figure__label">{total === 1 ? "cita hoy" : "citas hoy"}</span>
-            {upcoming[0] && (
-              <>
-                <span className="home-figure__rule" aria-hidden="true" />
-                <strong className="home-figure__value home-figure__value--time">{upcoming[0].time}</strong>
-                <span className="home-figure__label">la próxima</span>
-              </>
-            )}
-          </p>
-        )}
-      </div>
-
-      {!loading && !error && <ShiftTicks past={past} upcoming={upcoming} />}
-    </header>
-  );
-}
-
-/* ---------------------------------------------------------------- worklist */
-
-function Spotlight({
-  appointment,
-  selected,
-  onLocate,
-}: {
-  appointment: Appointment;
-  selected: boolean;
-  onLocate: (appointment: Appointment) => void;
-}) {
-  return (
-    <article className={`home-spotlight${selected ? " home-spotlight--selected" : ""}`}>
-      <p className="home-spotlight__kicker">Siguiente atención</p>
-      <div className="home-spotlight__body">
-        <p className="home-spotlight__time">{appointment.time}</p>
-        <div className="home-spotlight__who">
-          <h3>{appointment.patient}</h3>
-          <p className="home-spotlight__treatment">{appointment.treatment}</p>
-          <p className="home-spotlight__meta">
-            {appointment.doctor}
-            {appointment.branch ? ` · ${appointment.branch}` : ""}
-          </p>
-        </div>
-        <div className="home-spotlight__state">
-          <Badge tone={statusTone(appointment.status)}>{appointment.status}</Badge>
-        </div>
-      </div>
-      <div className="home-spotlight__actions">
-        <Button
-          variant="secondary"
-          compact
-          icon={Search}
-          onClick={() => onLocate(appointment)}
-          aria-label={`Buscar a ${appointment.patient} con AIRI`}
-        >
-          Ubicar paciente
-        </Button>
-      </div>
-    </article>
-  );
-}
-
-function WorkRow({
-  appointment,
-  selected,
-  onLocate,
-}: {
-  appointment: Appointment;
-  selected: boolean;
-  onLocate: (appointment: Appointment) => void;
-}) {
-  return (
-    <li className="home-row-item">
-      <button
-        className="home-row"
-        type="button"
-        aria-label={rowLabel(appointment)}
-        aria-current={selected ? "true" : undefined}
-        onClick={() => onLocate(appointment)}
-      >
-        <span className="home-row__time">{appointment.time}</span>
-        <span className="home-row__who">
-          <strong>{appointment.patient}</strong>
-          <span>{appointment.treatment}{appointment.doctor ? ` · ${appointment.doctor}` : ""}</span>
-        </span>
-        <span className="home-row__branch" aria-hidden="true">{appointment.branch}</span>
-        <span className="home-row__state" aria-hidden="true">
-          <Badge tone={statusTone(appointment.status)}>{appointment.status}</Badge>
-        </span>
-        <span className="home-row__cue" aria-hidden="true">
-          <Search size={16} />
-          <span>Ubicar</span>
-        </span>
-      </button>
-    </li>
-  );
-}
-
-function Worklist({
-  appointments,
-  loading,
-  error,
-  selectedId,
-  onLocate,
-  onRetry,
-}: {
-  appointments: Appointment[];
-  loading: boolean;
-  error: string;
-  selectedId: string | null;
-  onLocate: (appointment: Appointment) => void;
-  onRetry: () => void;
-}) {
-  const { past, upcoming } = useMemo(() => splitWorklist(appointments, nowMinutes()), [appointments]);
-  const [showPast, setShowPast] = useState(false);
-  const pastExpanded = past.length > 0 && (showPast || upcoming.length === 0);
-  const spotlight = upcoming[0] ?? null;
-  const rest = upcoming.slice(1);
-  const ready = !loading && !error;
-
-  return (
-    <section className="home-worklist" aria-labelledby="home-turno-title">
-      <header className="home-worklist__header">
-        <h2 id="home-turno-title">Atenciones de hoy</h2>
-        {ready && appointments.length > 0 && (
-          <span className="home-worklist__count">{countCopy(appointments.length)}</span>
-        )}
-      </header>
-
-      {loading && (
-        <div className="home-worklist__state">
-          <p role="status">Cargando el turno de hoy</p>
-        </div>
-      )}
-
-      {!loading && error && (
-        <div className="home-worklist__state home-worklist__state--error" role="alert">
-          <strong>{error}</strong>
-          <p>La agenda no respondió. Tu turno no está vacío: todavía no lo conocemos.</p>
-          <div><Button compact variant="secondary" onClick={onRetry}>Reintentar</Button></div>
-        </div>
-      )}
-
-      {ready && appointments.length === 0 && (
-        <div className="home-worklist__state">
-          <strong>Tu agenda está despejada</strong>
-          <p>Hoy no hay citas registradas para este contexto. Abre la agenda para revisar otros días.</p>
-          <div><Link className="home-text-link" href="/agenda">Ver agenda</Link></div>
-        </div>
-      )}
-
-      {ready && spotlight && (
-        <Spotlight appointment={spotlight} selected={spotlight.id === selectedId} onLocate={onLocate} />
-      )}
-
-      {ready && !spotlight && appointments.length > 0 && (
-        <div className="home-worklist__state">
-          <strong>El horario de todas las citas de hoy ya pasó</strong>
-          <p>Revisa las atenciones anteriores o abre la agenda para el resto de la semana.</p>
-        </div>
-      )}
-
-      {ready && rest.length > 0 && (
-        <div className="home-worklist__group">
-          <p className="home-worklist__group-label">Después</p>
-          <ul className="home-timeline">
-            {rest.map((appointment) => (
-              <WorkRow
-                key={appointment.id}
-                appointment={appointment}
-                selected={appointment.id === selectedId}
-                onLocate={onLocate}
-              />
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {ready && past.length > 0 && (
-        <div className="home-worklist__group home-worklist__group--past">
-          <button
-            className="home-past-toggle"
-            type="button"
-            aria-expanded={pastExpanded}
-            aria-controls="home-past-list"
-            onClick={() => setShowPast((value) => !value)}
-          >
-            {pastExpanded ? "Ocultar anteriores" : `Ver ${past.length} anterior${past.length === 1 ? "" : "es"}`}
-          </button>
-          {pastExpanded && (
-            <ul className="home-timeline home-timeline--past" id="home-past-list">
-              {past.map((appointment) => (
-                <WorkRow
-                  key={appointment.id}
-                  appointment={appointment}
-                  selected={appointment.id === selectedId}
-                  onLocate={onLocate}
-                />
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
-    </section>
-  );
-}
-
-/* -------------------------------------------------------- patient context */
-
-function ContextBand({
-  patient,
-  onSearch,
-  onClear,
-}: {
-  patient: HomePatient;
-  onSearch: () => void;
-  onClear: () => void;
-}) {
-  return (
-    <section className="home-context-band" aria-label="Paciente activo">
-      <span className="avatar avatar--cyan">{initials(patient.name)}</span>
-      <div className="home-context-band__copy">
-        <span className="home-context-band__label">Paciente anclado a este turno</span>
-        <strong>{patient.name}</strong>
-        <span>DNI {patient.dni ?? "no registrado"} · {patient.phone ?? "teléfono no registrado"}</span>
-      </div>
-      <div className="home-context-band__actions">
-        <Link className="button button--secondary button--compact home-link-button" href={`/pacientes?patient=${encodeURIComponent(patient.id)}`}>
-          Ver ficha
-        </Link>
-        <Button compact variant="secondary" onClick={onSearch}>Cambiar</Button>
-        <button className="icon-button home-clear-button" type="button" onClick={onClear} aria-label="Quitar paciente activo">
-          <X size={18} aria-hidden="true" />
-        </button>
-      </div>
-    </section>
-  );
-}
-
-/* ------------------------------------------------------------- AIRI stages */
-
-interface SearchView {
-  query: string;
-  state: "idle" | "loading" | "success" | "error";
-  results: HomePatient[];
-  error: string;
-}
-
-function PatientSearchPanel({
-  view,
-  seedLabel,
-  onQueryChange,
-  onSubmit,
-  onSelect,
-}: {
-  view: SearchView;
-  seedLabel: string | null;
-  onQueryChange: (value: string) => void;
-  onSubmit: () => void;
-  onSelect: (patient: HomePatient) => void;
-}) {
-  const submit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    onSubmit();
-  };
-
-  return (
-    <div className="home-search-stage">
-      <h3>Buscar paciente</h3>
-      <p>
-        {seedLabel
-          ? `Contexto tomado de la cita de las ${seedLabel}. Consulta el directorio autorizado.`
-          : "Escribe el dato que tengas a mano. Consulta el directorio autorizado."}
-      </p>
-      <form className="home-search-form" onSubmit={submit}>
-        <label className="home-search-field">
-          <span>Paciente</span>
-          <span className="home-search-input">
-            <Search size={18} aria-hidden="true" />
-            <input
-              value={view.query}
-              onChange={(event) => onQueryChange(event.target.value)}
-              placeholder="Nombre del paciente"
-              autoComplete="off"
-              autoFocus
-            />
-          </span>
-        </label>
-        <Button type="submit" variant="secondary" disabled={view.state === "loading"}>
-          {view.state === "loading" ? "Buscando" : "Buscar"}
-        </Button>
-      </form>
-      <div className="home-search-results">
-        {view.state === "error" && (
-          <div className="home-inline-error" role="alert">
-            <p>{view.error}</p>
-            <Button compact variant="secondary" onClick={onSubmit}>Reintentar</Button>
-          </div>
-        )}
-        {view.state === "loading" && <p className="home-search-status" role="status">Consultando el directorio</p>}
-        {view.state === "success" && view.results.length === 0 && (
-          <div className="home-empty-inline">
-            <strong>Sin coincidencias para “{view.query.trim()}”.</strong>
-            <span>Prueba con otra forma del nombre, el DNI o el teléfono.</span>
-          </div>
-        )}
-        {view.state === "success" && view.results.length > 0 && (
-          <div className="home-search-result-list">
-            <div className="home-search-result-count">
-              {view.results.length} resultado{view.results.length === 1 ? "" : "s"}
-            </div>
-            {view.results.map((patient) => (
-              <button className="home-patient-result" type="button" key={patient.id} onClick={() => onSelect(patient)}>
-                <span className="avatar avatar--cyan">{initials(patient.name)}</span>
-                <span className="home-patient-result__copy">
-                  <strong>{patient.name}</strong>
-                  <span>{patient.dni ? `DNI ${patient.dni}` : "DNI no registrado"}</span>
-                  <span>{patient.phone ?? "Teléfono no registrado"}</span>
-                </span>
-                <ArrowUpRight size={18} aria-hidden="true" />
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function AgentOutcomePanel({ stage, onSearch }: { stage: AgentOutcomeStage; onSearch: () => void }) {
-  const { outcome, patient, message } = stage.payload;
-  const isConfirmed = outcome === "confirmado" && patient !== null;
-  const actionRef = useRef<HTMLAnchorElement>(null);
-
-  useEffect(() => {
-    if (isConfirmed) actionRef.current?.focus();
-  }, [isConfirmed]);
-
-  const title = isConfirmed
-    ? "Paciente identificado"
-    : outcome === "sin_resultados"
-      ? "Sin resultados"
-      : outcome === "error"
-        ? "No se pudo completar la consulta"
-        : "Capacidad no disponible";
-
-  return (
-    <div className={`home-outcome${isConfirmed ? " home-outcome--confirmed" : " home-outcome--quiet"}`}>
-      <div className="home-outcome__heading">
-        {isConfirmed ? <CheckCircle2 size={20} aria-hidden="true" /> : <CircleAlert size={20} aria-hidden="true" />}
-        <h3>{title}</h3>
-      </div>
-      <p>{message}</p>
-      {isConfirmed && patient && (
-        <dl className="home-outcome__facts">
-          <div><dt>Nombre</dt><dd>{patient.name}</dd></div>
-          <div><dt>DNI</dt><dd>{patient.dni ?? "No registrado"}</dd></div>
-          <div><dt>Teléfono</dt><dd>{patient.phone ?? "No registrado"}</dd></div>
-        </dl>
-      )}
-      <div className="home-stage-actions">
-        {isConfirmed && patient && (
-          <Link
-            ref={actionRef}
-            className="button button--secondary home-link-button"
-            href={`/pacientes?patient=${encodeURIComponent(patient.id)}`}
-          >
-            Abrir ficha
-            <ArrowUpRight size={16} aria-hidden="true" />
-          </Link>
-        )}
-        <Button variant="secondary" onClick={onSearch} icon={Search}>
-          {isConfirmed ? "Buscar otro paciente" : "Buscar paciente"}
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-function AgentFallbackPanel({ stage, onSearch }: { stage: AgentFallbackStage; onSearch: () => void }) {
-  return (
-    <div className="home-fallback" role="status">
-      <div className="home-fallback__icon"><CircleAlert size={20} aria-hidden="true" /></div>
-      <div>
-        <h3>Vista no disponible</h3>
-        <p>{stage.payload.message}</p>
-      </div>
-      <Button variant="secondary" onClick={onSearch} icon={Search}>Buscar paciente</Button>
-    </div>
-  );
-}
-
-/* ---------------------------------------------------------------- AIRI rail */
-
-function AiriRail({
-  stage,
-  searching,
-  activePatient,
-  searchView,
-  seedLabel,
-  composerId,
-  onOpenSearch,
-  onQueryChange,
-  onSubmitSearch,
-  onSelectPatient,
-}: {
-  stage: HomeStage | null;
-  searching: boolean;
-  activePatient: HomePatient | null;
-  searchView: SearchView;
-  seedLabel: string | null;
-  composerId: string;
-  onOpenSearch: () => void;
-  onQueryChange: (value: string) => void;
-  onSubmitSearch: () => void;
-  onSelectPatient: (patient: HomePatient) => void;
-}) {
-  return (
-    <div className="home-airi">
-      <div className="home-airi__identity">
-        <AiriMark searching={searching} />
-        <div className="home-airi__identity-copy">
-          <strong>AIRI</strong>
-          <span>Asistente de Odonto Smart</span>
-        </div>
-        <span className="home-airi__mode">Modo manual</span>
-      </div>
-
-      {activePatient && (
-        <p className="home-airi__context">
-          <span>Contexto</span>
-          <strong>{activePatient.name}</strong>
-        </p>
-      )}
-
-      <ul className="home-capability">
-        <li className="home-capability__item home-capability__item--on">
-          <CheckCircle2 size={15} aria-hidden="true" />
-          <span>Ubica pacientes en el directorio autorizado</span>
-        </li>
-        <li className="home-capability__item home-capability__item--on">
-          <CheckCircle2 size={15} aria-hidden="true" />
-          <span>Abre la ficha del paciente identificado</span>
-        </li>
-        <li className="home-capability__item home-capability__item--off">
-          <Lock size={15} aria-hidden="true" />
-          <span>Ejecutar solicitudes — todavía no disponible</span>
-        </li>
-      </ul>
-
-      <div className="home-airi__stage" aria-live="polite">
-        {stage?.component === "PatientSearch" && (
-          <PatientSearchPanel
-            view={searchView}
-            seedLabel={seedLabel}
-            onQueryChange={onQueryChange}
-            onSubmit={onSubmitSearch}
-            onSelect={onSelectPatient}
-          />
-        )}
-        {stage?.component === "AgentOutcome" && <AgentOutcomePanel stage={stage} onSearch={onOpenSearch} />}
-        {stage?.component === "AgentFallback" && <AgentFallbackPanel stage={stage} onSearch={onOpenSearch} />}
-        {!stage && (
-          <p className="home-airi__idle">
-            Ancla un paciente para conservar su contexto durante el turno.
-          </p>
-        )}
-      </div>
-
-      <div className="home-airi__footer">
-        <Button
-          variant="primary"
-          className="home-airi-primary"
-          onClick={onOpenSearch}
-          disabled={searching}
-          icon={Search}
-        >
-          Buscar paciente
-        </Button>
-        <div className="home-composer">
-          <label htmlFor={composerId}>Entrada de AIRI (no disponible)</label>
-          <input id={composerId} disabled aria-describedby={`${composerId}-ayuda`} />
-          <p id={`${composerId}-ayuda`}>Las solicitudes a AIRI llegan en una versión futura; por ahora puedes buscar pacientes y revisar decisiones.</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ---------------------------------------------------------------- the page */
+const summarySchema = z.object({ cut_at: z.string(), sedes: z.array(z.object({ name: z.string(), collected: z.object({ amount_cents: z.number(), currency: z.literal("PEN") }), complete: z.boolean() })) });
+type Summary = z.infer<typeof summarySchema>;
+const agents = ["02-cepillo", "03-pasta", "04-hilo", "05-enjuague", "06-espejo", "07-escudo"];
 
 export function HomePage() {
-  const [stage, setStage] = useState<HomeStage | null>(null);
-  const [activePatient, setActivePatient] = useState<HomePatient | null>(null);
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [worklistLoading, setWorklistLoading] = useState(true);
-  const [worklistError, setWorklistError] = useState("");
-  const [airiOpen, setAiriOpen] = useState(false);
-  const [seeded, setSeeded] = useState<{ id: string; time: string } | null>(null);
-
-  // Single source of truth for the real `searchPatients` seam, so the rail and
-  // the drawer always show the same request, results and error.
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchState, setSearchState] = useState<SearchView["state"]>("idle");
-  const [searchResults, setSearchResults] = useState<HomePatient[]>([]);
-  const [searchError, setSearchError] = useState("");
-
-  const refreshWorklist = useCallback(async () => {
-    setWorklistLoading(true);
-    setWorklistError("");
-    try {
-      const rows = await loadAgenda();
-      setAppointments(
-        rows
-          .filter((appointment) => appointment.day === localDayIndex())
-          .sort((left, right) => left.time.localeCompare(right.time)),
-      );
-    } catch (caught) {
-      setAppointments([]);
-      setWorklistError(toApiError(caught).message);
-    } finally {
-      setWorklistLoading(false);
-    }
-  }, []);
-
+  const agent = useAgent();
+  const { role } = useShellContext();
+  const { identity } = usePersona();
+  const [value, setValue] = useState("");
+  const [error, setError] = useState("");
+  const [clock, setClock] = useState<Date | null>(null);
+  const [fixture, setFixture] = useState<{ name: string; summary: Summary } | null>(null);
+  const router = useRouter();
   useEffect(() => {
-    void refreshWorklist();
-  }, [refreshWorklist]);
-
-  const runSearch = useCallback(async (entered: string) => {
-    const value = entered.trim();
-    if (!value) {
-      setSearchResults([]);
-      setSearchState("error");
-      setSearchError("Escribe un nombre, DNI o teléfono para buscar.");
-      return;
-    }
-    setSearchState("loading");
-    setSearchError("");
-    try {
-      const found = await searchPatients(value);
-      setSearchResults(found);
-      setSearchState("success");
-    } catch (caught) {
-      setSearchResults([]);
-      setSearchState("error");
-      setSearchError(toApiError(caught).message);
-    }
+    if (!agent.docked && agent.queries > 0) document.getElementById("airi-home-input")?.focus({ preventScroll: true });
+  }, [agent.docked, agent.queries]);
+  useEffect(() => {
+    setClock(new Date());
+    const timer = setInterval(() => setClock(new Date()), 60_000);
+    return () => clearInterval(timer);
   }, []);
-
-  /** Open the search stage. A seed only ever comes from a real appointment row,
-   *  and runs the same deterministic `searchPatients` request as the form. */
-  const openSearch = useCallback(
-    (seed?: { query: string; id: string; time: string }) => {
-      setSeeded(seed ? { id: seed.id, time: seed.time } : null);
-      setSearchQuery(seed?.query ?? "");
-      setSearchResults([]);
-      setSearchError("");
-      setSearchState("idle");
-      setStage(safeHomeStage({ component: "PatientSearch", payload: { query: seed?.query ?? "" } }));
-      if (!railIsPersistent()) setAiriOpen(true);
-      if (seed) void runSearch(seed.query);
-    },
-    [runSearch],
-  );
-
-  const openPatientSearch = useCallback(() => openSearch(), [openSearch]);
-
-  const locatePatient = useCallback(
-    (appointment: Appointment) => {
-      openSearch({ query: appointment.patient, id: appointment.id, time: appointment.time });
-    },
-    [openSearch],
-  );
-
-  const selectPatient = useCallback((patient: HomePatient) => {
-    setActivePatient(patient);
-    setStage(safeHomeStage({
-      component: "AgentOutcome",
-      payload: {
-        outcome: "confirmado",
-        patient,
-        module: "pacientes",
-        message: "El registro quedó fijado como contexto activo para este turno.",
-      },
-    }));
-  }, []);
-
-  const today = useMemo(() => formatToday(), []);
-  const split = useMemo(() => splitWorklist(appointments, nowMinutes()), [appointments]);
-
-  const searchView: SearchView = {
-    query: searchQuery,
-    state: searchState,
-    results: searchResults,
-    error: searchError,
+  useEffect(() => {
+    let current = true;
+    setFixture(null);
+    if (useMocks) {
+      void Promise.all([import("../agui/sim/fixtures/roles.json"), import("../agui/sim/fixtures/state.json")]).then(([roles, state]) => {
+        const home = roles.default.find(item => item.role === role);
+        const summary = summarySchema.safeParse(state.default[0]);
+        if (current && home && summary.success) setFixture({ name: home.name, summary: summary.data });
+      }).catch(caught => { if (current) setError(toApiError(caught).message); });
+    }
+    return () => { current = false; };
+  }, [role]);
+  const live = summarySchema.safeParse(agent.worldState);
+  const summary = live.success ? live.data : fixture?.summary;
+  const name = (useMocks ? fixture?.name : identity?.displayName) || roleCopy[role].name;
+  const ask = (intent: string) => {
+    if (!intent.trim() || agent.working) return;
+    setError("");
+    void agent.send(intent, { role, view: "home", viewing: "Inicio" }).catch(caught => setError(toApiError(caught).message));
   };
-  const searching = searchState === "loading";
-  const seedLabel = stage?.component === "PatientSearch" && seeded ? seeded.time : null;
-
-  const railProps = {
-    stage,
-    searching,
-    activePatient,
-    searchView,
-    seedLabel,
-    onOpenSearch: openPatientSearch,
-    onQueryChange: setSearchQuery,
-    onSubmitSearch: () => void runSearch(searchQuery),
-    onSelectPatient: selectPatient,
+  const startTask = (task: HomeTask) => {
+    if (agent.working) return;
+    if (!task.target) { ask(task.label); return; }
+    const path = threadDestination(task.target, role);
+    if (!path) return;
+    moveThread(() => {
+      if (path === "/lienzo") agent.closePanel(); else agent.openPanel();
+      router.push(path);
+    });
   };
-
-  return (
-    <div className="page home-page">
-      <Masthead
-        today={today}
-        loading={worklistLoading}
-        error={worklistError}
-        past={split.past}
-        upcoming={split.upcoming}
-        onRetry={() => void refreshWorklist()}
-      />
-
-      <div className="home-layout">
-        <div className="home-main">
-          {/* Below the persistent-rail breakpoint this is the contextual entry
-              point to the same console: it resumes an open AIRI stage, and
-              otherwise starts the one primary Home action. */}
-          <button
-            className="home-airi-trigger"
-            type="button"
-            aria-haspopup="dialog"
-            aria-label={stage ? "Abrir AIRI" : "Buscar paciente con AIRI"}
-            onClick={() => (stage ? setAiriOpen(true) : openPatientSearch())}
-          >
-            <span className="home-airi-trigger__mark" aria-hidden="true">
-              <AiriMark searching={searching} />
-            </span>
-            <span className="home-airi-trigger__copy">
-              <strong>AIRI</strong>
-              <span>
-                {activePatient ? `Contexto: ${activePatient.name}` : "Ubica pacientes y abre su ficha"}
-              </span>
-            </span>
-            <span className="home-airi-trigger__mode">Modo manual</span>
-            <span className="home-airi-trigger__cta" aria-hidden="true">
-              <Search size={16} />
-              {stage ? "Abrir AIRI" : "Buscar paciente"}
-            </span>
-          </button>
-
-          {activePatient && (
-            <ContextBand
-              patient={activePatient}
-              onSearch={openPatientSearch}
-              onClear={() => setActivePatient(null)}
-            />
-          )}
-
-          <Worklist
-            appointments={appointments}
-            loading={worklistLoading}
-            error={worklistError}
-            selectedId={seeded?.id ?? null}
-            onLocate={locatePatient}
-            onRetry={() => void refreshWorklist()}
-          />
-
-          <PendingDecisions />
-
-          <nav className="home-links" aria-label="Accesos de recepción">
-            <Link className="home-link" href="/agenda">
-              Ver agenda
-              <ArrowUpRight size={15} aria-hidden="true" />
-            </Link>
-            <Link className="home-link" href="/pacientes">
-              Ver pacientes
-              <ArrowUpRight size={15} aria-hidden="true" />
-            </Link>
-          </nav>
+  const submit = (event: FormEvent) => { event.preventDefault(); if (!value.trim() || agent.working) return; ask(value); setValue(""); };
+  const pending = Object.values(agent.cards).filter(entry => entry.status === "pending" || entry.status === "error").length;
+  return <div className="airi-home" data-docked={agent.docked}>
+    <section className="airi-home-hero" aria-labelledby="airi-home-title">
+      <div className="airi-home-background" aria-hidden="true">{agents.map((file, index) => <img key={file} src={`/personajes/svg/${file}-flat.svg`} width={68} height={68} alt="" className={`airi-home-agent airi-home-agent--${index}`} />)}</div>
+      <div className="airi-home-welcome">
+        <span className="airi-home-brand" role="img" aria-label="AIRI" />
+        <p className="airi-home-date">{clock ? new Intl.DateTimeFormat("es-PE", { timeZone: "America/Lima", weekday: "long", day: "numeric", month: "long" }).format(clock) : "Tu día en AIRI"} <span>Hora Lima{clock ? ` ${new Intl.DateTimeFormat("es-PE", { timeZone: "America/Lima", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(clock)}` : ""}</span></p>
+        <h1 id="airi-home-title">{clock ? limaGreeting(clock) : "Hola"}, {name.split(" ")[0]}.</h1>
+        <div className="airi-home-summary" aria-label="Resumen en vivo">
+          {summary ? <><p>{summary.sedes.length} sedes en el corte de {new Intl.DateTimeFormat("es-PE", { timeZone: "America/Lima", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(summary.cut_at))}. {pending ? `${pending} ${pending === 1 ? "propuesta espera" : "propuestas esperan"} tu decisión.` : "El equipo prepara; tú decides."}</p>
+            <p>{summary.sedes.map(sede => `${sede.name}: ${formatMoney(sede.collected.amount_cents)} cobrado${sede.complete ? "" : " (datos incompletos)"}`).join(" · ")}</p></>
+            : <p>Consulta al equipo para revisar los datos de tu clínica.</p>}
         </div>
-
-        <aside className="home-rail" aria-label="Asistente AIRI">
-          <AiriRail {...railProps} composerId="home-composer-inline" />
-        </aside>
+        {!agent.panelOpen ? <form className="airi-home-composer" onSubmit={submit}>
+          <img src="/personajes/svg/01-diente-flat.svg" alt="" width={40} height={40} />
+          <label className="sr-only" htmlFor="airi-home-input">Pregúntale a AIRI</label>
+          <input id="airi-home-input" data-airi-input placeholder={roleCopy[role].question} autoComplete="off" value={value} onChange={event => setValue(event.target.value)} />
+          <button aria-label="Enviar" type="submit" disabled={agent.working || !value.trim()}><ArrowUp size={22} aria-hidden="true" /></button>
+        </form> : <p className="airi-home-panel-hint">Sigue la conversación en la barra de abajo.</p>}
+        {!agent.panelOpen && agent.docked && agent.run.status !== "idle" ? <div className="airi-home-progress">
+          <p role="status" aria-live="polite">{agent.run.what || "Entendiendo tu consulta…"}</p>
+          {agent.working ? <button type="button" onClick={agent.stop}>Detener</button> : null}
+        </div> : null}
+        <div className="airi-home-suggestions" aria-label="Sugerencias">{roleCopy[role].suggestions.slice(0, 3).map(task => <button key={task.label} type="button" disabled={agent.working} onClick={() => startTask(task)}>{task.label}</button>)}</div>
+        {agent.docked && agent.queries ? <div className="airi-home-docked"><span>Tu conversación sigue en el panel · {agent.queries} {agent.queries === 1 ? "consulta" : "consultas"}</span>{!agent.panelOpen ? <button type="button" onClick={agent.openPanel}>Ver hilo</button> : null}<button type="button" onClick={() => moveThread(agent.toCenter)}>Traer al centro</button></div> : null}
+        {error ? <p role="alert" className="airi-home-error">{error}</p> : null}
       </div>
-
-      <Drawer title="AIRI" open={airiOpen} onClose={() => setAiriOpen(false)} layerClassName="home-airi-layer">
-        <AiriRail {...railProps} composerId="home-composer-sheet" />
-      </Drawer>
-    </div>
-  );
+    </section>
+    {!agent.docked && agent.queries ? <section className="airi-home-thread" aria-label="Conversación en el centro"><Thread /></section> : null}
+    <section className="airi-home-tasks" aria-labelledby="airi-tasks-title"><h2 id="airi-tasks-title">Podemos empezar por aquí</h2><p>Elige una tarea para prepararla con el equipo.</p>
+      <div>{roleCopy[role].suggestions.map((task, index) => <button className="airi-home-task" key={task.label} type="button" disabled={agent.working} onClick={() => startTask(task)}><img src={`/personajes/svg/${agents[index]}-flat.svg`} width={38} height={38} alt="" /><span>{task.label}</span><ArrowUpRight size={18} aria-hidden="true" /></button>)}</div>
+    </section>
+    <style>{`
+      .airi-home{min-width:0;padding:0 32px 30px;color:var(--ink)}
+      .airi-home-hero{position:relative;max-width:1100px;margin:auto;padding:120px 0 66px;isolation:isolate}
+      .airi-home-welcome{position:relative;max-width:700px;margin:auto;text-align:center;z-index:1}
+      .airi-home-brand{display:block;width:190px;height:48px;margin:0 auto 26px;background:var(--ink);mask:url("/marca/airi-logo.svg") center/contain no-repeat}
+      .airi-home-date{display:flex;justify-content:center;flex-wrap:wrap;gap:8px 18px;color:var(--muted);font-size:13px;margin:0 0 20px}
+      .airi-home-date span{font-variant-numeric:tabular-nums}
+      .airi-home h1{font:500 clamp(30px,3.2vw,46px)/1.15 var(--font-display);letter-spacing:-.035em;margin:0 0 18px}
+      .airi-home-summary{max-width:630px;margin:auto;color:var(--ink-2);font-size:14px;line-height:1.7}
+      .airi-home-summary p{margin:4px 0}.airi-home-summary p+p{font-size:12px;color:var(--muted)}
+      .airi-home-composer{display:flex;align-items:center;gap:12px;padding:14px 16px;margin:26px auto 14px;background:var(--surface);border:1px solid var(--line-2);border-radius:20px;box-shadow:var(--shadow)}
+      .airi-home-composer input{min-width:0;flex:1;background:transparent;color:var(--ink);border:0;font-size:16px;min-height:44px;padding:8px 0}
+      .airi-home-composer input::placeholder{color:var(--muted)}
+      .airi-home-composer button{display:grid;place-items:center;flex:none;width:44px;height:44px;border:0;border-radius:50%;background:var(--btn);color:var(--btn-ink)}
+      .airi-home-composer button:disabled{opacity:.45}.airi-home-composer:focus-within{outline:2px solid var(--focus);outline-offset:3px}
+      .airi-home-suggestions{display:flex;justify-content:center;flex-wrap:wrap;gap:8px}
+      .airi-home-suggestions button,.airi-home-docked button,.airi-home-progress button{min-height:36px;padding:7px 12px;background:var(--surface);color:var(--ink-2);border:1px solid var(--line);border-radius:24px;font-size:12px}
+      .airi-home button:hover:enabled{background:var(--hover);color:var(--ink)}
+      .airi-home-docked{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;margin-top:18px;font-size:13px;color:var(--muted)}
+      .airi-home-progress{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;margin:0 0 14px;color:var(--ink-2);font-size:13px}.airi-home-progress p{margin:0}
+      .airi-home-panel-hint{margin:24px 0 16px;font-size:14px;color:var(--muted)}
+      .airi-home-background{position:absolute;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+      .airi-home-agent{position:absolute;opacity:.65;width:58px;height:58px}
+      .airi-home-agent--0{top:42px;left:3%;transform:rotate(-14deg)}.airi-home-agent--1{top:240px;left:0;transform:rotate(12deg)}.airi-home-agent--2{bottom:16px;left:7%;transform:rotate(-8deg)}
+      .airi-home-agent--3{top:30px;right:3%;transform:rotate(14deg)}.airi-home-agent--4{top:240px;right:0;transform:rotate(-8deg)}.airi-home-agent--5{bottom:12px;right:7%;transform:rotate(12deg)}
+      .airi-home-thread{max-width:700px;margin:0 auto 40px}
+      .airi-home-tasks{max-width:700px;margin:6px auto 0}.airi-home-tasks h2{font:500 21px var(--font-display);margin:0 0 6px}.airi-home-tasks>p{font-size:13px;color:var(--muted);margin:0 0 16px}
+      .airi-home-tasks>div{border-top:1px solid var(--line)}
+      .airi-home-task{display:flex;align-items:center;gap:14px;width:100%;padding:11px 4px;min-height:60px;text-align:left;background:transparent;border:0;border-bottom:1px solid var(--line);color:var(--ink-2);font-size:14px}
+      .airi-home-task span{flex:1}.airi-home-task svg{flex:none;color:var(--muted)}.airi-home-task img{object-fit:contain}
+      .airi-home-error{color:var(--red-ink)}
+      .airi-shell--panel-open .airi-home-background{display:none}
+      @media(max-width:1180px){.airi-home-background{display:none}}
+      @media(max-width:760px){.airi-home-background{display:block;bottom:auto;height:118px}.airi-home-agent{width:30px;height:30px;opacity:.75}.airi-home-agent--0{top:7px;left:0}.airi-home-agent--1{top:64px;left:0}.airi-home-agent--3{top:7px;right:0}.airi-home-agent--4{top:64px;right:0}.airi-home-agent--2,.airi-home-agent--5{display:none}.airi-home{padding:0 18px 20px}.airi-home-hero{padding:38px 0 32px}.airi-home-brand{width:150px;height:38px;margin-bottom:24px}.airi-home-date{font-size:12px;margin-bottom:18px}.airi-home-composer{padding:8px 10px;gap:8px;border-radius:16px;margin-top:22px}.airi-home-composer>img{width:30px;height:30px}.airi-home-composer input{font-size:14px}.airi-home-summary{font-size:13px}.airi-home-suggestions{gap:6px}.airi-home-suggestions button{font-size:12px;padding:7px 10px}.airi-home-task{font-size:13px}}
+    `}</style>
+  </div>;
 }
