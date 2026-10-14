@@ -1,5 +1,5 @@
-import { EmptyShellPage } from "../../../src/components/shell/EmptyShellPage";
+import { DireccionPage } from "../../../src/views/DireccionPage";
 
 export default function DireccionRoute() {
-  return <EmptyShellPage title="Dirección" />;
+  return <DireccionPage />;
 }
