@@ -4,7 +4,8 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Bot, History, Plug, RotateCcw, Settings2, UserRound } from "lucide-react";
 import {
   ACTIVITY_AGENTS,
-  activitySentence,
+  useMocks,
+  toApiError,
   CLINIC_TIME_ZONE,
   describeObservabilityError,
   hasPermissions,
@@ -14,6 +15,10 @@ import {
   RUNS_PAGE_SIZE,
   type ObservabilityError,
 } from "../api";
+import { z } from "zod";
+import { AgentIdSchema, ReversibleSchema } from "../agui/card";
+import { useAgent } from "../agui/useAgent";
+import { AgentLabel } from "../catalog/AgentLabel";
 import { Badge } from "../components/Badge";
 import { Button } from "../components/Button";
 import { usePersona } from "../components/PersonaContext";
@@ -27,6 +32,10 @@ import type { AgentRunKey } from "../contracts/client";
  * beyond naming the agent.
  */
 export function ActivityPage() {
+  return useMocks ? <SimulatedTrail /> : <RealActivityPage />;
+}
+
+function RealActivityPage() {
   const { identity, loading } = usePersona();
   // null until the catalog read settles, so the feed is read once with sede names.
   const [locations, setLocations] = useState<Map<number, ClinicLocation> | null>(null);
@@ -42,7 +51,7 @@ export function ActivityPage() {
 
   return <section className="page activity-page">
     <div className="page-heading">
-      <div><h1>Actividad</h1><p>Quién hizo qué en la clínica: las personas del equipo y los agentes, en orden.</p></div>
+      <div><h1>Rastro de acciones</h1><p>Quién hizo qué en la clínica: las personas del equipo y los agentes, en orden.</p></div>
     </div>
     {loading ? <p className="table-loading" role="status">Cargando…</p>
       : !human ? <p className="approvals-notice" role="note">Para ver la actividad, elige quién eres en el menú de perfil, abajo a la izquierda.</p>
@@ -272,4 +281,74 @@ function RunRow({ entry }: { entry: AgentRunEntry }) {
       : <dl className="run-card__counts">{entry.counts.map((count) => <div key={count.label}><dt>{count.label}</dt><dd>{count.value}</dd></div>)}</dl>}
     {entry.status === "failed" && <p className="run-card__error">No terminó{entry.errorCategory ? ` · motivo: ${entry.errorCategory}` : ""}.</p>}
   </li>;
+}
+
+
+// Exact TrailEntry DTO; streaming world state can project the same rows.
+const trailSchema = z.strictObject({
+  at: z.iso.datetime({ offset: true }), agent: AgentIdSchema,
+  action: z.string().min(1), object: z.string().min(1), result: z.string().min(1),
+  approver: z.string().min(1), reversible: ReversibleSchema,
+  reversibility_label: z.string().min(1),
+});
+type TrailEntry = z.infer<typeof trailSchema>;
+export function OperationsStyles() {
+  return <style jsx global>{`
+    .airi-operations {max-width:1200px;margin:0 auto;padding:28px 24px 110px;color:var(--ink);font:14.5px/1.5 var(--font-text);overflow-wrap:anywhere}
+    .airi-operations h1 {font:600 30px/1.2 var(--font-display);margin:0 0 8px}
+    .airi-operations h2 {font:600 19px/1.3 var(--font-display);margin:0 0 14px}
+    .airi-operations p {margin:0 0 16px}
+    .airi-operations small,.airi-operations time,.operations-meta {color:var(--muted);font-size:13.5px}
+    .operations-head {display:flex;justify-content:space-between;gap:16px;align-items:start;margin-bottom:24px;flex-wrap:wrap}
+    .operations-head label {display:grid;gap:4px}
+    .airi-operations select {font:inherit;padding:8px 12px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;min-height:44px}
+    .operations-note {color:var(--ink-2);max-width:85ch}
+    .operations-rows {padding:0;margin:0;list-style:none;border:1px solid var(--line);border-radius:14px;background:var(--surface);overflow:hidden}
+    .operations-row {display:grid;grid-template-columns:60px 115px minmax(0,1fr) auto auto;gap:16px;align-items:center;padding:16px;border-bottom:1px solid var(--line)}
+    .operations-row:last-child {border-bottom:0}
+    .operations-row small {display:block;margin-top:4px}
+    .operations-row .catalog-agent {white-space:nowrap}
+    .operations-layout {display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px}
+    .operations-panel {border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:18px;min-width:0}
+    .operations-panel + .operations-panel {margin-top:18px}
+    .operations-appointment {display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:10px;padding:12px 0;border-top:1px solid var(--line);align-items:center}
+    .operations-count {font:600 20px var(--font-display);font-variant-numeric:tabular-nums}
+    .operations-case {margin-top:16px}
+    .airi-operations button:focus-visible,.airi-operations select:focus-visible,.airi-operations a:focus-visible {outline:2px solid var(--ink);outline-offset:4px}
+    @media(max-width:760px) {.airi-operations {padding:22px 16px 110px}.operations-layout {grid-template-columns:1fr}.operations-row {grid-template-columns:48px minmax(0,1fr);gap:6px 12px}.operations-row>div,.operations-row>.operations-meta {grid-column:2}.operations-appointment {grid-template-columns:44px minmax(0,1fr)}.operations-appointment>.operations-meta {grid-column:2}}
+  `}</style>;
+}
+
+function SimulatedTrail() {
+  const agent = useAgent();
+  const [filter, setFilter] = useState("");
+  const [fixtures, setFixtures] = useState<TrailEntry[] | null>(null);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    let active = true;
+    void import("../agui/sim/fixtures/trail.json").then(module => {
+      const rows = z.array(trailSchema).parse(module.default);
+      if (active) setFixtures(rows);
+    }).catch(caught => { if (active) setError(toApiError(caught).message); });
+    return () => { active = false; };
+  }, []);
+  const live = z.object({ trail: z.array(trailSchema) }).safeParse(agent.worldState);
+  const rows = [...(live.success ? live.data.trail : fixtures ?? [])].sort((a,b) => b.at.localeCompare(a.at));
+  const visible = rows.filter(row => !filter || row.agent === filter);
+  // Approval evidence comes only from the confirmed card/store, never the chat.
+  const completed = Object.values(agent.cards).filter(entry => entry.status === "approved" && (!filter || entry.card.agent === filter));
+  return <section className="airi-operations" aria-labelledby="trail-title">
+    <OperationsStyles />
+    <header className="operations-head"><div><h1 id="trail-title">Rastro de acciones</h1><p className="operations-meta">Hora Lima · hechos y decisiones del equipo</p></div>
+      <label>Agente<select aria-label="Filtrar por agente" value={filter} onChange={event => setFilter(event.target.value)}><option value="">Todos los agentes</option>{AgentIdSchema.options.map(id => <option key={id} value={id}>{id === "airi" ? "AIRI" : id[0]!.toUpperCase()+id.slice(1)}</option>)}</select></label></header>
+    <p className="operations-note">Una fila por hecho: agente, acción, objeto, resultado, quién aprobó y si se puede deshacer.</p>
+    {error ? <p role="alert">{error}</p> : fixtures === null ? <p role="status">Cargando rastro…</p> : <>
+      <ol className="operations-rows" aria-label="Hechos registrados">{visible.map((row,index) => <li data-trail-row key={`${row.at}:${row.agent}:${index}`} className="operations-row">
+        <time dateTime={row.at} title={shortDateTime(row.at, CLINIC_TIME_ZONE)}>{new Date(row.at).toLocaleTimeString("es-PE", {timeZone:CLINIC_TIME_ZONE,hour:"2-digit",minute:"2-digit",hourCycle:"h23"})}</time>
+        <AgentLabel agent={row.agent} /><div><strong>{row.action}</strong><small>{row.object} · {row.result}</small></div>
+        <span className="operations-meta">{row.approver === "—" ? "Sin aprobador registrado" : `Aprobó ${row.approver}`}</span><span className="operations-meta">{row.reversibility_label === "—" ? "Reversibilidad no informada" : row.reversibility_label}</span>
+      </li>)}</ol>{!visible.length && <p role="status">No hay acciones con este filtro.</p>}
+    </>}
+    {completed.length > 0 && <section style={{marginTop:24}} aria-label="Decisiones confirmadas del hilo"><h2>Decisiones confirmadas en este hilo</h2><ol className="operations-rows">{completed.map(({card}) => <li className="operations-row" key={card.id}><span className="operations-meta">Sin hora</span><AgentLabel agent={card.agent}/><div><strong>{card.title}</strong><small>{card.result}</small></div><span className="operations-meta">Aprobada por ti</span><span className="operations-meta">{card.reversible === "none" ? "No reversible" : "Consulta el alcance de la tarjeta"}</span></li>)}</ol></section>}
+  </section>;
 }
