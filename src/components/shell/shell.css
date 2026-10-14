@@ -137,9 +137,13 @@
 
 .airi-shell .shell-mobile-search { display: none; }
 @media (max-width: 760px) {
-  .airi-shell .app-topbar { grid-template-columns: auto minmax(0, 1fr) auto auto auto auto auto; }
-  .airi-shell .shell-logo { width: 70px; }
-  .airi-shell .shell-role-select { width: 78px; }
+  /* Reserve room for native select labels and arrows, even at 360px. */
+  .airi-shell .app-topbar { grid-template-columns: auto minmax(0, 1fr) auto auto auto auto auto; padding-inline: 6px; column-gap: 3px; }
+  .airi-shell .shell-logo { width: clamp(44px, calc(100vw - 316px), 70px); }
+  .airi-shell .shell-role-select { width: 112px; }
+  /* These outrank the embedded crew styles without changing crew ownership. */
+  .airi-shell .app-topbar .shell-location-select { width: 132px; }
+  .airi-shell .app-topbar .shell-crew { width: calc(100% + 12px); margin-inline: -6px; padding-right: 152px; }
   .airi-shell .shell-mobile-search { display: inline-flex; width: 34px; }
   .airi-shell .global-search--open { display: flex; position: absolute; top: 104px; left: 12px; width: calc(100vw - 24px); height: 44px; z-index: 70; background: var(--surface); box-shadow: var(--shadow); }
 }
