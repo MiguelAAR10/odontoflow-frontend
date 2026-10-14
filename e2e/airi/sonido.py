@@ -25,6 +25,30 @@ window.AudioContext = class extends NativeAudioContext {
  }
 };
 """
+INTRO_TRACE = r"""
+// Install before React mounts: record every presentation at its DOM commit,
+// even if Python is busy while the agent changes or the dialog disappears.
+window.introTrace = {started:null, ended:null, agents:[]};
+const introObserver = new MutationObserver(() => {
+ const trace = window.introTrace;
+ const intro = document.querySelector('dialog[aria-label="AIRI y su equipo"][open]');
+ if (intro) {
+  if (trace.started === null) trace.started = performance.now();
+  // Presence and attribute are read in one browser task; absence is expected.
+  const agent = intro.querySelector('[data-intro-agent][data-presenting="true"]')
+   ?.getAttribute('data-intro-agent') ?? null;
+  if (agent !== null && trace.agents[trace.agents.length - 1]?.id !== agent) {
+   trace.agents.push({id:agent, at:performance.now()});
+  }
+ } else if (trace.started !== null) {
+  trace.ended = performance.now();
+  introObserver.disconnect();
+ }
+});
+introObserver.observe(document, {
+ childList:true, subtree:true, attributes:true, attributeFilter:['open', 'data-presenting']
+});
+"""
 HARNESS = r"""
 import React from 'react';
 import {createRoot} from 'react-dom/client';
@@ -227,19 +251,17 @@ def sound_mapping(page, js):
 
 
 def intro_lifecycle(page, js):
+    page.add_init_script(INTRO_TRACE)
     harness(page, js, '?intro=1')
     intro = page.get_by_role('dialog', name='AIRI y su equipo')
     expect(intro).to_be_visible()
-    start = page.evaluate('performance.now()')
-    seen = set()
-    while intro.count() and page.evaluate('performance.now()') - start < 4200:
-        current = intro.locator('[data-intro-agent][data-presenting="true"]')
-        if current.count(): seen.add(current.get_attribute('data-intro-agent'))
-        page.wait_for_timeout(60)
+    page.wait_for_function('window.introTrace.ended !== null', timeout=4200)
+    trace = page.evaluate('window.introTrace')
     expect(intro).to_have_count(0)
-    assert seen == set(NOTES), seen
-    elapsed = page.evaluate('performance.now()') - start
+    assert [agent['id'] for agent in trace['agents']] == list(NOTES), trace
+    elapsed = trace['ended'] - trace['started']
     assert 2700 <= elapsed <= 3900, elapsed
+    print(f'OK: registro DOM de siete agentes en orden; intro {elapsed:.0f} ms')
     harness(page, js)
     page.wait_for_timeout(100)
     expect(intro).to_have_count(0)
