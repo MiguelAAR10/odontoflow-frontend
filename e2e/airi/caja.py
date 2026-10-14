@@ -75,12 +75,27 @@ with sync_playwright() as p:
                 expect(preview).to_contain_text('Delegado a Rosa')
                 expect(verified).to_have_text('S/ 6,360.00')
                 page.screenshot(path=str(out / f'{width}-{theme}-aprobado.png'), full_page=True)
+                # Client navigation must retain both decisions without a reversal.
+                if width < 768:
+                    page.get_by_role('button', name='Abrir navegación', exact=True).click()
+                page.get_by_role('link', name='Inicio', exact=True).click()
+                expect(page).to_have_url(re.compile(r'/home$'))
+                if width < 768:
+                    page.get_by_role('button', name='Abrir navegación', exact=True).click()
+                page.get_by_role('link', name='Caja', exact=True).click()
+                expect(page).to_have_url(re.compile(r'/caja$'))
+                expect(verified).to_have_text('S/ 6,360.00')
+                expect(pending).to_have_text('S/ 1,060.00')
+                expect(preview.get_by_role('button', name='Confirmar ingreso', exact=True)).to_have_count(0)
+                expect(preview.get_by_role('button', name='Delegar a Caja', exact=True)).to_have_count(0)
+                expect(preview).to_contain_text('Delegado a Rosa')
+                page.screenshot(path=str(out / f'{width}-{theme}-navegacion.png'), full_page=True)
                 # The existing operational view still works.
                 page.get_by_role('button', name='Conciliación', exact=True).click()
                 expect(page.locator('#cash-panel')).to_contain_text('pagos')
                 expect(page.locator('.cash-page').get_by_role('alert')).to_have_count(0)
                 assert not errors, errors
-                results.append({'width': width, 'theme': theme, 'errors': errors, 'font': font, 'contrast_min': min(contrast(c['fg'],c['bg']) for c in colors)})
+                results.append({'width': width, 'theme': theme, 'errors': errors, 'navigation_retained': True, 'font': font, 'contrast_min': min(contrast(c['fg'],c['bg']) for c in colors)})
                 context.close()
                 # Reference uses all-site role so its amounts match the backend cut.
                 reference = browser.new_context(viewport={'width': width, 'height': height}, color_scheme=theme, reduced_motion='reduce')

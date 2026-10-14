@@ -31,6 +31,10 @@ import {
 } from "../api";
 import { CardSchema, type Card as CardDto } from "../agui/card";
 import { Card } from "../catalog/Card";
+import { ApiError } from "../contracts/client";
+import { createAgentStore, useAgentStore } from "../agui/store";
+import { EventType } from "../agui/events";
+import type { AgentSource } from "../agui/source";
 import { Badge, statusTone } from "../components/Badge";
 import { Button } from "../components/Button";
 import { type Column, DataTable } from "../components/DataTable";
@@ -83,31 +87,70 @@ export function projectCashCut(snapshot: CashCut, cards: CardDto[]) {
   return { verified: verified / 100, pending: pending / 100 };
 }
 
-/** Isolated design preview: fixtures are loaded only through the mock seam.
- * Its decisions never mutate the operational charges shown below. */
+/** Cash fixture source composed with the common approval store/envelope. It is
+ * loaded only by the mock seam; its lifetime is the client session, not a view. */
+export async function createCashPreviewSession() {
+  const [states, proposals, { envelopeFor }] = await Promise.all([
+    import("../agui/sim/fixtures/state.json"), import("../agui/sim/fixtures/proposals.json"),
+    import("../agui/sim/schema"),
+  ]);
+  const cards = proposals.default.filter(card => card.id === "p-yape" || card.id === "p-caja")
+    .map(card => CardSchema.parse(card)).sort((a, b) => Number(b.id === "p-yape") - Number(a.id === "p-yape"));
+  const confirmed = new Set<string>();
+  const receipts = new Map<string, { fingerprint: string; card: CardDto }>();
+  const approveCard = async (card: CardDto, key: string): Promise<CardDto> => {
+    const fingerprint = JSON.stringify(envelopeFor(card));
+    const receipt = receipts.get(key);
+    if (key.trim() && receipt?.fingerprint === fingerprint) return structuredClone(receipt.card);
+    const proposal = cards.find(item => item.id === card.id);
+    if (!key.trim() || receipt || !proposal || confirmed.has(card.id)
+      || JSON.stringify(envelopeFor(proposal)) !== fingerprint) {
+      throw new ApiError(409, "PROPOSAL_CONFLICT", "La propuesta cambió o la clave pertenece a otro intento. Revisa la tarjeta antes de aprobar.");
+    }
+    const response: CardDto = { ...proposal, state: "approved" };
+    confirmed.add(card.id);
+    receipts.set(key, { fingerprint, card: structuredClone(response) });
+    return structuredClone(response);
+  };
+  const source: AgentSource = {
+    async run(input, emit) {
+      emit({ type: EventType.RUN_STARTED, threadId: input.threadId, runId: input.runId });
+      emit({ type: EventType.RUN_FINISHED, threadId: input.threadId, runId: input.runId,
+        outcome: { type: "interrupt", interrupts: cards.map(card => ({ id: card.id,
+          reason: "Decisión humana pendiente", metadata: { card, approval: envelopeFor(card) } })) } });
+    },
+    stop() {},
+  };
+  const store = createAgentStore({ source, approveCard, toApiError, newIdempotencyKey });
+  await store.send("Corte de caja");
+  return { snapshot: states.default[0]!, store, source, approveCard };
+}
+type CashPreviewSession = Awaited<ReturnType<typeof createCashPreviewSession>>;
+let cashPreviewSession: Promise<CashPreviewSession> | undefined;
+function getCashPreviewSession() {
+  cashPreviewSession ??= createCashPreviewSession().catch(error => { cashPreviewSession = undefined; throw error; });
+  return cashPreviewSession;
+}
+
 function SimulatedCashCut() {
-  const [preview, setPreview] = useState<{ snapshot: CashCut; cards: CardDto[] } | null>(null);
+  const [session, setSession] = useState<CashPreviewSession | null>(null);
   const [failure, setFailure] = useState("");
   useEffect(() => {
     let active = true;
-    void Promise.all([import("../agui/sim/fixtures/state.json"), import("../agui/sim/fixtures/proposals.json")])
-      .then(([states, proposals]) => {
-        const cards = proposals.default.filter(card => card.id === "p-yape" || card.id === "p-caja").map(card => CardSchema.parse(card)).sort((a, b) => Number(b.id === "p-yape") - Number(a.id === "p-yape"));
-        if (active) setPreview({ snapshot: states.default[0]!, cards });
-      }).catch(caught => { if (active) setFailure(toApiError(caught).message); });
+    void getCashPreviewSession().then(value => { if (active) setSession(value); })
+      .catch(caught => { if (active) setFailure(toApiError(caught).message); });
     return () => { active = false; };
   }, []);
   if (failure) return <p role="alert">{failure}</p>;
-  if (!preview) return <p role="status">Cargando corte de caja…</p>;
+  if (!session) return <p role="status">Cargando corte de caja…</p>;
+  return <CashCutProjection session={session} />;
+}
+
+function CashCutProjection({ session }: { session: CashPreviewSession }) {
+  const entries = useAgentStore(state => state.cards, session.store);
+  const preview = { snapshot: session.snapshot, cards: Object.values(entries).map(entry => entry.card) };
   const totals = projectCashCut(preview.snapshot, preview.cards);
   const cashAmounts = preview.cards.find(card => card.id === "p-caja")?.amounts?.filter(amount => amount.label !== "Contado por Caja (13:30)") ?? [];
-  const decide = (card: CardDto) => {
-    // A functional update makes repeated clicks idempotent. Only the explicit
-    // card button reaches here; chat messages and agent output cannot approve.
-    setPreview(current => current && ({ ...current, cards: current.cards.map(item =>
-      item.id === card.id && item.state === "pending"
-        ? { ...item, state: item.id === "p-caja" ? "delegated" : "approved" } : item) }));
-  };
   return <section className="cash-cut" aria-label="Corte simulado de caja">
     <p className="cash-cut-caption">Corte simulado · {formatInstant(preview.snapshot.cut_at)} · {preview.snapshot.sedes.length} sedes{preview.snapshot.sedes.some(sede => !sede.complete) ? " · parcial" : ""}</p>
     <p>El cobrado verificado se separa de lo registrado y pendiente. Yape y Plin se cotejan contra la cuenta receptora; la captura sola no basta.</p>
@@ -119,7 +162,9 @@ function SimulatedCashCut() {
     <p className="cash-cut-caption">{preview.snapshot.sedes.filter(sede => !sede.complete).map(sede => `${sede.name}: ${sede.exception}. `).join("")}Este corte no incluye los registros operativos de abajo.</p>
     <div className="cash-cut-decisions airi-catalog">{preview.cards.map(card => <section key={card.id}>
       <h2>{card.id === "p-yape" ? "Por verificar" : "Diferencia por explicar"}</h2>
-      <Card card={card} onApprove={decide} />
+      <Card card={card.id === "p-caja" && card.state === "approved" ? { ...card, state: "delegated" } : card}
+        status={entries[card.id]?.status} error={entries[card.id]?.error}
+        loadingReason={entries[card.id]?.loadingReason} onApprove={() => session.store.approve(card.id)} />
     </section>)}</div>
   </section>;
 }
