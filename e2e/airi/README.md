@@ -25,6 +25,7 @@ Luego:
 
 ```bash
 python3 e2e/airi/paridad.py --self-test
+python3 e2e/airi/paridad.py --browser-test
 python3 e2e/airi/paridad.py
 npm run typecheck
 ```
@@ -53,14 +54,18 @@ permite ejecución sin CDN. La versión debe coincidir con la fijada.
 
 - Todos los errores de consola y excepciones JS; respuestas HTTP ≥400 y peticiones
   fallidas. No se excluyen fallos de cancelación ni de recursos externos.
-- Desborde horizontal global e interno visible, incluso contenido cortado por
+- Desborde horizontal global e interno de todo el layout renderizado, incluido
+  contenido bajo el primer viewport, sin depender de la posición de scroll; detecta recortes por
   `overflow:hidden`. Excluye scrollers intencionales, ellipsis, decoración
   `aria-hidden` y etiquetas recortadas de accesibilidad. También excluye el marco del botón de
   personaje, cuyo SVG sobresale intencionalmente. Guarda selector y píxeles.
 - Una entrada AIRI visible por vista. Lienzo exige cero en reposo y una al abrir
   `Control+k` (equivalente funcional de ⌘K). Captura y audita también ese diálogo.
 - Máximo de agentes simultáneamente animados durante reposo y consulta simulada,
-  deduplicados por identidad entre cursor/SVG/equipo. Cuenta WAAPI/CSS y cambios
+  deduplicados por identidad entre cursor/SVG/equipo. WAAPI/CSS y el recorrido
+  de descendientes usan el mismo resolvedor: prioriza el ancestro `data-agent`, luego
+  `data-intro-agent`, luego `.personaje`; normaliza `diente` a `airi`.
+  Cuenta cambios
   de transform/opacity entre frames. Máximo dos; con reduced motion exige cero.
   Informa propiedades animadas ajenas a transform/opacity.
 - axe-core con tags WCAG 2 A/AA, 2.1 A/AA y 2.2 AA: violaciones y reglas incompletas
@@ -73,6 +78,11 @@ El muestreo es finito: no demuestra el límite de animación durante todos los
 posibles eventos. Consultas cubren actividad inicial, sin aprobar ni verificar
 cada flujo de negocio. AA se ejecuta en reposo y diálogo de Lienzo; estados de
 trabajo tienen geometría/movimiento/entrada y captura, no un segundo axe completo.
+
+`--browser-test` ejecuta tres regresiones del medidor real en Chromium sin
+servidores: AIRI y Cepillo cuentan dos, alias/intro cuentan un AIRI, y un recorte
+de 200 px bajo el pliegue se detecta antes y después del scroll manteniendo las
+exclusiones intencionales. `--self-test` cubre cinco pruebas de agregación y captura.
 
 ## Evidencia y códigos de salida
 

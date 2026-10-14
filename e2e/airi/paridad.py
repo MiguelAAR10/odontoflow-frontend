@@ -65,6 +65,65 @@ class SelfTests(unittest.TestCase):
                 self.assertEqual(picture.getpixel((4, 5)), (0, 0, 255))
 
 
+class BrowserTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        from playwright.sync_api import sync_playwright
+        cls.playwright = sync_playwright().start()
+        cls.browser = cls.playwright.chromium.launch(headless=True)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.browser.close()
+        cls.playwright.stop()
+
+    def setUp(self):
+        self.page = self.browser.new_page(viewport={'width': 800, 'height': 600})
+        self.addCleanup(self.page.close)
+
+    def measure(self, markup):
+        self.page.set_content(markup)
+        return self.page.evaluate(MEASURE, {'milliseconds': 500})
+
+    def test_agent_identity_shared_between_waapi_and_descendants(self):
+        metrics = self.measure('''
+          <style>@keyframes move {to {transform:translateX(10px)}}
+          svg {width:40px;height:40px;animation:move 1s linear infinite alternate}</style>
+          <button data-agent="airi"><svg class="personaje pj-diente"><rect width="20" height="20"/></svg></button>
+          <button data-agent="cepillo"><svg class="personaje pj-cepillo"><rect width="20" height="20"/></svg></button>
+        ''')
+        self.assertEqual(metrics['maxAgents'], 2)
+        self.assertEqual(set(metrics['peakAgents']), {'airi', 'cepillo'})
+        self.assertEqual(set(metrics['movedAgents']), {'airi', 'cepillo'})
+
+    def test_standalone_diente_alias_and_nested_intro_identity(self):
+        metrics = self.measure('''
+          <style>@keyframes move {to {transform:translateX(10px)}}
+          .personaje {width:40px;height:40px;animation:move 1s linear infinite alternate}</style>
+          <div class="personaje pj-diente"></div>
+          <div data-intro-agent="airi"><div class="personaje pj-diente"></div></div>
+        ''')
+        self.assertEqual(metrics['maxAgents'], 1)
+        self.assertEqual(metrics['peakAgents'], ['airi'])
+
+    def test_clipping_below_fold_and_intentional_exclusions(self):
+        self.page.set_content('''
+          <style>.box {width:200px;overflow:hidden}.wide {width:400px;height:20px}</style>
+          <div style="height:1000px"></div>
+          <div id="clipped" class="box"><div class="wide"></div></div>
+          <div id="scroller" class="box" style="overflow:auto"><div class="wide"></div></div>
+          <div id="decoration" class="box" aria-hidden="true"><div class="wide"></div></div>
+          <div id="hidden" class="box" style="display:none"><div class="wide"></div></div>
+          <div id="ellipsis" class="box" style="text-overflow:ellipsis"><div class="wide"></div></div>
+        ''')
+        before = self.page.evaluate(MEASURE, {'milliseconds': 500})
+        self.assertEqual(before['documentOverflow'], 0)
+        self.assertEqual(before['overflow'], [{'selector': '#clipped', 'pixels': 200, 'overflow': 'hidden'}])
+        self.page.locator('#clipped').scroll_into_view_if_needed()
+        after = self.page.evaluate(MEASURE, {'milliseconds': 500})
+        self.assertEqual(before['overflow'], after['overflow'])
+
+
 def passes(result):
     return bool(result.get('checks')) and all(result['checks'].values()) and not result.get('failure')
 
@@ -78,17 +137,29 @@ def pair(app, mockup, target):
         combined.save(target)
 
 
-# Motion sampling includes painted elements inside the viewport. Include
+# Overflow covers rendered layout even below the fold; motion sampling includes
+# painted elements inside the viewport. Include
 # nested transforms: a moving SVG arm counts its agent once, not every SVG part.
 MEASURE = r"""async ({milliseconds}) => {
-  const visible = el => {
+  const laidOut = el => {
     if (!(el instanceof Element) || !el.checkVisibility({checkOpacity:true,checkVisibilityCSS:true})) return false;
     const r=el.getBoundingClientRect();
-    return r.width>0 && r.height>0 && r.right>0 && r.bottom>0 && r.left<innerWidth && r.top<innerHeight;
+    return r.width>0 && r.height>0;
+  };
+  const visible = el => {
+    if (!laidOut(el)) return false;
+    const r=el.getBoundingClientRect();
+    return r.right>0 && r.bottom>0 && r.left<innerWidth && r.top<innerHeight;
   };
   const selector = el => el.id ? '#'+el.id : el.tagName.toLowerCase()+'.'+[...el.classList].slice(0,2).join('.');
+  const agentIdentity = el => {
+    const owner=el.closest('[data-agent]') || el.closest('[data-intro-agent]') || el.closest('.personaje');
+    if (!owner) return null;
+    const id=owner.dataset.agent||owner.dataset.introAgent||[...owner.classList].find(c=>c.startsWith('pj-'))?.slice(3)||selector(owner);
+    return id==='diente' ? 'airi' : id;
+  };
   const overflow = [...document.body.querySelectorAll('*')].filter(el => {
-    if (!(el instanceof HTMLElement) || !visible(el) || el.closest('nextjs-portal,[aria-hidden="true"]') || el.matches('button[data-agent]')) return false;
+    if (!(el instanceof HTMLElement) || !laidOut(el) || el.closest('nextjs-portal,[aria-hidden="true"]') || el.matches('button[data-agent]')) return false;
     const style=getComputedStyle(el);
     return el.clientWidth>1 && style.clipPath==='none' && style.clip==='auto' && style.textOverflow!=='ellipsis' && el.scrollWidth>el.clientWidth+1 && !['auto','scroll'].includes(style.overflowX);
   }).map(el=>({selector:selector(el), pixels:el.scrollWidth-el.clientWidth, overflow:getComputedStyle(el).overflowX}));
@@ -102,14 +173,14 @@ MEASURE = r"""async ({milliseconds}) => {
       const animations=document.getAnimations().filter(a=>a.playState==='running' && visible(a.effect?.target));
       maxAnimations=Math.max(maxAnimations, animations.length);
       for(const animation of animations) {
-        const root=animation.effect.target.closest('[data-agent],.personaje,[data-intro-agent]');
-        if(root) agents.add(root.dataset.agent||root.dataset.introAgent||[...root.classList].find(c=>c.startsWith('pj-'))?.slice(3)||selector(root));
+        const id=agentIdentity(animation.effect.target);
+        if(id) agents.add(id);
         for(const keyframe of animation.effect.getKeyframes()) for(const key of Object.keys(keyframe))
           if(!['offset','computedOffset','easing','composite','transform','opacity'].includes(key)) properties.add(key);
       }
       for(const root of document.querySelectorAll('[data-agent],.personaje,[data-intro-agent]')) {
         if(!visible(root)) continue;
-        const id=root.dataset.agent||root.dataset.introAgent||[...root.classList].find(c=>c.startsWith('pj-'))?.slice(3)||selector(root);
+        const id=agentIdentity(root);
         for(const el of [root,...root.querySelectorAll('*')]) {
           if(!visible(el)) continue;
           const css=getComputedStyle(el), value=css.transform+'|'+css.opacity;
@@ -255,9 +326,10 @@ def main():
     parser.add_argument('--views', nargs='+', choices=[view[2] for view in VIEWS], help='Filtro diagnóstico; omitir para aceptación completa')
     parser.add_argument('--sample-ms', type=int, default=1200)
     parser.add_argument('--self-test', action='store_true')
+    parser.add_argument('--browser-test', action='store_true', help='Regresiones del medidor en Chromium; no requiere servidores')
     args = parser.parse_args()
-    if args.self_test:
-        suite = unittest.defaultTestLoader.loadTestsFromTestCase(SelfTests)
+    if args.self_test or args.browser_test:
+        suite = unittest.defaultTestLoader.loadTestsFromTestCase(BrowserTests if args.browser_test else SelfTests)
         return 0 if unittest.TextTestRunner(verbosity=2).run(suite).wasSuccessful() else 1
     if args.sample_ms < 500:
         parser.error('--sample-ms debe ser >=500')
