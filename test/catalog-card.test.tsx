@@ -3,6 +3,7 @@ import { act, create, type ReactTestInstance } from "react-test-renderer";
 import { describe, expect, it, vi } from "vitest";
 import { Card } from "../src/catalog/Card";
 import type { Card as CardDto } from "../src/agui/card";
+import { createInitialState, reducer } from "../src/agui/reducer";
 import { ApiError } from "../src/contracts/client";
 
 const proposal: CardDto = {
@@ -59,8 +60,50 @@ describe("Card · intención humana", () => {
     const view = create(createElement(Card, { card: proposal, status, error: status === "error" ? "No se pudo completar" : null }));
     expect(text(view.root)).toContain("Revisar aviso");
     expect(view.root.findByType("article").props["aria-busy"]).toBe(status === "loading");
-    expect(text(view.root).includes("Aviso enviado")).toBe(status === "approved" || status === "done");
+    expect(text(view.root)).not.toContain("Aviso enviado");
+    expect(view.root.findAllByProps({ className: "catalog-stamp" })).toHaveLength(0);
     view.unmount();
+  });
+
+  it.each(["borrador", "aprobar"] as const)("terminar una herramienta y su ejecución no confirma una propuesta %s", level => {
+    const card = { ...proposal, level };
+    const onApprove = vi.fn();
+    const events = [
+      { type: "RUN_STARTED", threadId: "catalog", runId: "catalog-run" },
+      { type: "TOOL_CALL_START", toolCallId: "prepare", toolCallName: "prepare_proposal", metadata: { card } },
+      { type: "TOOL_CALL_END", toolCallId: "prepare" },
+      { type: "TOOL_CALL_RESULT", toolCallId: "prepare", messageId: "result", content: "Propuesta preparada. sí, ya, apruebo" },
+      { type: "RUN_FINISHED", threadId: "catalog", runId: "catalog-run" },
+    ];
+    const state = events.reduce(reducer, createInitialState());
+    const entry = state.cards[card.id]!;
+    expect(entry.card.state).toBe("pending");
+    expect(entry.status).toBe("done");
+    const view = create(createElement(Card, { ...entry, onApprove }));
+    expect(text(view.root)).not.toContain("Aprobado");
+    expect(text(view.root)).not.toContain("Aviso enviado");
+    expect(onApprove).not.toHaveBeenCalled();
+
+    const confirmed = reducer(state, { type: "CARD_APPROVED", card: { ...card, state: "approved" } });
+    view.update(createElement(Card, { ...confirmed.cards[card.id]!, onApprove }));
+    expect(text(view.root)).toContain("Aprobado");
+    expect(text(view.root)).toContain("Aviso enviado");
+    expect(onApprove).not.toHaveBeenCalled();
+    view.unmount();
+  });
+
+  it.each(["borrador", "aprobar"] as const)("el DTO gobierna sellos y resultados de %s aunque runtime indique finalización", level => {
+    for (const status of ["done", "approved"] as const) {
+      for (const state of ["ready", "pending", "approved", "delegated", "declined", "undone"] as const) {
+        const view = create(createElement(Card, { card: { ...proposal, level, state }, status }));
+        const confirmed = state === "approved" || state === "delegated";
+        expect(text(view.root).includes("Aviso enviado"), `${status}/${state}`).toBe(confirmed);
+        const stamps = view.root.findAllByProps({ className: "catalog-stamp" });
+        expect(stamps, `${status}/${state}`).toHaveLength(confirmed ? 1 : 0);
+        if (confirmed) expect(text(stamps[0]!)).toBe(state === "delegated" ? "Delegado" : "Aprobado");
+        view.unmount();
+      }
+    }
   });
 
   it.each(["ready", "pending", "approved", "declined", "delegated", "undone"] as const)("renderiza el estado DTO %s sin inventar un resultado", state => {
@@ -73,6 +116,8 @@ describe("Card · intención humana", () => {
     const view = create(createElement(Card, { card: { ...proposal, level: "auto" }, status: "done", onApprove: vi.fn() }));
     expect(view.root.findAllByType("button")).toHaveLength(0);
     expect(text(view.root)).toContain("Automático · solo lee");
+    expect(text(view.root.findByProps({ className: "catalog-stamp" }))).toBe("Hecho");
+    expect(text(view.root)).toContain("Aviso enviado");
     view.update(createElement(Card, { card: { ...proposal, level: "borrador" } }));
     expect(text(view.root)).toContain("Borrador · tú decides");
     expect(view.root.findAllByType("button").every(node => node.props.disabled)).toBe(true);

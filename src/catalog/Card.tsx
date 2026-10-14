@@ -37,7 +37,9 @@ function CardView({ card, status, error, loadingReason, undoRemainingSeconds, ..
   const processing = action.busy || runtimeStatus === "loading";
   const pending = canApproveCard({ card, status: runtimeStatus, runId: null, error: error ?? null, loadingReason });
   const showActions = pending || (runtimeStatus === "loading" && loadingReason === "approval" && card.level !== "auto" && (card.state === "ready" || card.state === "pending"));
-  const done = runtimeStatus === "approved" || runtimeStatus === "done";
+  // Finishing an agent run does not confirm a human decision.
+  const done = (runtimeStatus === "approved" || runtimeStatus === "done")
+    && (card.level === "auto" || card.state === "approved" || card.state === "delegated");
   const windowOpen = card.reversible !== "window" || (undoRemainingSeconds !== undefined && undoRemainingSeconds > 0);
   const canUndo = done && (card.state === "approved" || card.state === "delegated") && card.undo === true && card.reversible !== "none" && windowOpen;
   const disabled = processing || awaitingUpdate;

@@ -29,6 +29,9 @@ El catálogo muestra `toApiError(error).message`. Los handlers de aprobación,
 alternativa y deshacer actualizan el DTO/estado autoritativo: resolver el callback
 solo bloquea la intención enviada, sin inventar un resultado. Cambiar `id`,
 `revision` o `state` reemplaza esa intención. Reintentar un fallo permanece posible.
+En propuestas humanas, el sello y `result` requieren `card.state` igual a
+`approved` o `delegated`; un `status` runtime `done`/`approved` no confirma la
+decisión. Las tarjetas `auto` conservan su resultado al finalizar la ejecución.
 El dueño del transporte conserva la Idempotency-Key entre reintentos y conecta
 el adaptador real de aprobaciones. Aquí no hay transporte, claves ni datos mock.
 
