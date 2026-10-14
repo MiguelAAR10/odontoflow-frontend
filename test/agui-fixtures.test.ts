@@ -3,9 +3,9 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
-import { CardSchema } from "../src/agui/card.js";
+import { CardSchema, type Card } from "../src/agui/card.js";
 import { createInitialState, reducer } from "../src/agui/reducer.js";
-import { ScenarioSchema, FixtureIndexSchema } from "../src/agui/sim/schema.js";
+import { envelopeFor, ScenarioSchema, FixtureIndexSchema } from "../src/agui/sim/schema.js";
 
 const root = resolve("src/agui/sim/fixtures");
 const read = (file: string): unknown => JSON.parse(readFileSync(resolve(root, file), "utf8"));
@@ -123,5 +123,54 @@ describe("AIRI fixtures", () => {
     expect(ScenarioSchema.safeParse([{ ...steps[0], delayMs: -1 }, ...steps.slice(1)]).success).toBe(false);
     expect(ScenarioSchema.safeParse([{ ...steps[0], event: { type: "RUN_STARTED" } }, ...steps.slice(1)]).success).toBe(false);
     expect(ScenarioSchema.safeParse([...steps.slice(0, -1), { delayMs: 0, event: { type: "CUSTOM", name: "airi.card", value: { id: "invalid" } } }, steps.at(-1)]).success).toBe(false);
+  });
+});
+
+// Independent serialization and Node SHA-256 oracle for the browser helper.
+function canonicalJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+  if (value && typeof value === "object") {
+    return `{${Object.keys(value).sort().map((key) =>
+      `${JSON.stringify(key)}:${canonicalJson((value as Record<string, unknown>)[key])}`).join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+describe("simulated approval envelope", () => {
+  it("hashes every full card canonically without widening or mutating the DTO", () => {
+    const cards = z.array(CardSchema).parse(read("cards.json"));
+    for (const card of cards) {
+      const before = JSON.stringify(card);
+      const envelope = envelopeFor(card);
+      expect(envelope).toEqual({ cardId: card.id, version: 1,
+        payload_hash: createHash("sha256").update(canonicalJson(card)).digest("hex") });
+      expect(JSON.stringify(card)).toBe(before);
+      expect(CardSchema.safeParse({ ...card, ...envelope }).success).toBe(false);
+    }
+  });
+
+  it("ignores object key order at every depth, preserves array order and distinguishes null from absence", () => {
+    const card = CardSchema.parse((read("proposals.json") as unknown[])[0]);
+    const reorder = (value: unknown): unknown => {
+      if (Array.isArray(value)) return value.map(reorder);
+      if (!value || typeof value !== "object") return value;
+      return Object.fromEntries(Object.entries(value).reverse().map(([key, item]) => [key, reorder(item)]));
+    };
+    const reordered = reorder(card) as Card;
+    expect(CardSchema.safeParse(reordered).success).toBe(true);
+    expect(Object.keys(reordered)).not.toEqual(Object.keys(card));
+    expect(envelopeFor(reordered)).toEqual(envelopeFor(card));
+    expect(envelopeFor({ ...card, title: `${card.title}!` })).not.toEqual(envelopeFor(card));
+    expect(envelopeFor({ ...card, srcs: ["uno", "dos"] })).not.toEqual(envelopeFor({ ...card, srcs: ["dos", "uno"] }));
+    expect(envelopeFor({ ...card, why: undefined })).toEqual(envelopeFor(CardSchema.parse(JSON.parse(JSON.stringify({ ...card, why: undefined })))));
+    expect(envelopeFor({ ...card, why: undefined })).not.toEqual(envelopeFor({ ...card, why: null }));
+  });
+
+  it("matches SHA-256 for UTF-8, long inputs and every padding boundary", () => {
+    const card = CardSchema.parse((read("proposals.json") as unknown[])[0]);
+    for (const body of [...Array.from({ length: 130 }, (_, n) => "x".repeat(n)), "Clínica 🦷 Lima", "á🦷".repeat(1000)]) {
+      const changed = { ...card, body };
+      expect(envelopeFor(changed).payload_hash).toBe(createHash("sha256").update(canonicalJson(changed)).digest("hex"));
+    }
   });
 });
