@@ -25,9 +25,58 @@ def contrast(fg, bg):
     return (a + .05) / (b + .05)
 
 
+def role(page, width, value):
+    # networkidle and SSR visibility do not guarantee React event handlers.
+    # Topbar writes data-theme in its mount effect, after hydration commits.
+    expect(page.locator('html')).to_have_attribute('data-theme', re.compile(r'^(light|dark)$'))
+    buttons = page.locator('.shell-roles')
+    chosen = buttons.get_by_role('button', name={
+        'doctor': 'Doctor', 'admin': 'Administrativo', 'dueno': 'Dueño'
+    }[value], exact=True, include_hidden=True)
+    if width == 390:
+        page.locator('.shell-role-select').select_option(value)
+    else:
+        chosen.click()
+    # A native select's value alone can change even before React handles it.
+    expect(chosen).to_have_attribute('aria-pressed', 'true')
+    expect(page.locator('.shell-role-select')).to_have_value(value)
+    expect(page.locator('.sidebar-heading > span')).to_have_text({
+        'doctor': 'Consulta', 'admin': 'Operación', 'dueno': 'Dirección'
+    }[value])
+
+
+def save_failure(page, width, theme, errors, failure):
+    """Keep evidence before closing the browser; never retry a failed journey."""
+    stem = out / f'{width}-{theme}-failure'
+    evidence = {'width': width, 'theme': theme, 'failure': str(failure), 'errors': errors}
+    for name, action in [
+        ('state', lambda: page.evaluate("""() => ({
+            url: location.href, theme: document.documentElement.dataset.theme,
+            role: document.querySelector('.shell-role-select')?.value,
+            roles: [...document.querySelectorAll('.shell-roles button')].map(e => ({
+                label: e.textContent, pressed: e.getAttribute('aria-pressed')})),
+            sede: document.querySelector('.shell-location-select')?.value,
+            view: document.querySelector('.airi-doctor-view')?.innerText,
+            appointments: document.querySelectorAll('[data-airi-doctor-appointment]').length
+        })""")),
+        ('dom', lambda: stem.with_suffix('.html').write_text(page.content())),
+        ('screenshot', lambda: page.screenshot(path=str(stem.with_suffix('.png')), full_page=True)),
+    ]:
+        try:
+            result = action()
+            if name == 'state':
+                evidence[name] = result
+        except Exception as capture_error:
+            evidence[name + '_error'] = str(capture_error)
+    stem.with_suffix('.json').write_text(json.dumps(evidence, indent=2, ensure_ascii=False))
+    (out / 'results.json').write_text(json.dumps(results, indent=2))
+    print(f'Failure evidence: {stem}', flush=True)
+
+
 results = []
 with sync_playwright() as p:
     browser = p.chromium.launch(headless=True)
+    page, width, theme, errors = None, 0, 'unknown', []
     try:
         if args.real_mode:
             for width, height in [(1440, 1000), (390, 844)]:
@@ -52,10 +101,7 @@ with sync_playwright() as p:
                     for path, expected in [('/jornada', 'Tu jornada clínica todavía no está disponible'),
                                            ('/atencion', 'La ficha clínica y la firma todavía no están disponibles')]:
                         page.goto(args.base_url + path, wait_until='networkidle', timeout=120000)
-                        if width == 390:
-                            page.locator('.shell-role-select').select_option('doctor')
-                        else:
-                            page.get_by_role('group', name='Ver como', exact=True).get_by_role('button', name='Doctor', exact=True).click()
+                        role(page, width, 'doctor')
                         expect(page.get_by_text(expected, exact=False)).to_be_visible()
                         expect(page.locator('[data-brief-block]')).to_have_count(0)
                         expect(page.locator('[data-airi-doctor-appointment]')).to_have_count(0)
@@ -82,17 +128,6 @@ with sync_playwright() as p:
                 page.on('console', lambda m: errors.append(m.text) if m.type == 'error' else None)
                 page.goto(args.base_url + '/jornada', wait_until='networkidle', timeout=120000)
 
-                def role(value):
-                    if width == 390:
-                        page.locator('.shell-role-select').select_option(value)
-                    else:
-                        page.get_by_role('group', name='Ver como', exact=True).get_by_role('button', name={'doctor': 'Doctor', 'admin': 'Administrativo', 'dueno': 'Dueño'}[value], exact=True).click()
-
-                def navigate(label):
-                    if width == 390:
-                        page.get_by_role('button', name='Abrir navegación', exact=True).click()
-                    page.get_by_role('link', name=label, exact=True).click()
-
                 ratios = []
                 def capture(state):
                     page.add_style_tag(content='nextjs-portal{display:none!important}')
@@ -112,7 +147,7 @@ with sync_playwright() as p:
                     page.screenshot(path=str(out / f'{width}-{theme}-{state}.png'), full_page=True)
 
                 expect(page.get_by_text('Mi jornada está disponible para el doctor.', exact=False)).to_be_visible()
-                role('doctor')
+                role(page, width, 'doctor')
                 expect(page.locator('[data-airi-doctor-appointment]')).to_have_count(6)
                 expect(page.get_by_role('region', name='Siguiente paciente')).to_contain_text('Ana Torres')
                 expect(page.locator('[data-airi-doctor-appointment]').filter(has_text='Carlos Rojas')).to_contain_text('sin cerrar')
@@ -175,10 +210,10 @@ with sync_playwright() as p:
                 expect(page.locator('.airi-doctor-stamp')).to_contain_text('Dra. Valeria Ruiz')
                 expect(page.locator('.airi-doctor-odo')).to_contain_text('permanece «llegó»')
                 capture('firmada')
-                role('admin')
+                role(page, width, 'admin')
                 expect(page.get_by_role('textbox', name='Evolución de Ana Torres')).to_have_count(0)
                 expect(page.get_by_role('button', name='Firmar', exact=True)).to_have_count(0)
-                role('doctor')
+                role(page, width, 'doctor')
                 expect(page.get_by_text('Firmada en simulación', exact=True)).to_be_visible()
                 page.get_by_role('link', name='Volver a Mi jornada', exact=True).click()
                 expect(page.locator('[data-airi-doctor-appointment]').filter(has_text='Ana Torres')).to_contain_text('llegó')
@@ -190,7 +225,7 @@ with sync_playwright() as p:
                 expect(page.get_by_text('Firmada en simulación', exact=True)).to_be_visible()
                 # Reject forged/foreign visit selection without showing another patient's note.
                 page.goto(args.base_url + '/atencion?cita=c1', wait_until='networkidle')
-                role('doctor')
+                role(page, width, 'doctor')
                 expect(page.get_by_text('No hay una cita disponible para esta atención', exact=False)).to_be_visible()
                 expect(page.get_by_role('textbox', name='Evolución', exact=False)).to_have_count(0)
                 assert not errors, errors
@@ -200,6 +235,9 @@ with sync_playwright() as p:
             for theme in ['light', 'dark']:
                 print(f'Mockup {width}/{theme}', flush=True)
                 reference = browser.new_page(viewport={'width': width, 'height': height}, color_scheme=theme)
+                page, errors = reference, []
+                page.on('pageerror', lambda e: errors.append(str(e)))
+                page.on('console', lambda m: errors.append(m.text) if m.type == 'error' else None)
                 reference.goto(args.mockup_url + f'?rol=doctor&tema={theme}', wait_until='networkidle')
                 skip = reference.get_by_role('button', name=re.compile('Omitir'))
                 if skip.is_visible():
@@ -210,6 +248,10 @@ with sync_playwright() as p:
                 reference.evaluate("APP.sec='ficha';APP.briefReady=true;render()")
                 reference.screenshot(path=str(out / f'{width}-{theme}-mockup-atencion.png'), full_page=True)
                 reference.close()
+    except Exception as failure:
+        if page is not None:
+            save_failure(page, width, theme, errors, failure)
+        raise
     finally:
         browser.close()
 (out / 'results.json').write_text(json.dumps(results, indent=2))
