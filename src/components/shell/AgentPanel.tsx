@@ -2,7 +2,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAgent } from "../../agui/useAgent";
-import { agentStore } from "../../agui/store";
 import { toApiError } from "../../api";
 import { useShellContext } from "./ShellContext";
 import { Thread, moveThread } from "./Thread";
@@ -22,14 +21,20 @@ export function AgentPanel({ open, viewing, onClose, children }: AgentPanelProps
   const router = useRouter();
   const pathname = usePathname();
   const { role } = useShellContext();
-  const previousOpen = useRef(false);
+  const previous = useRef({ open: false, panelOpen: false });
+  const onShellClose = useRef(onClose);
+  onShellClose.current = onClose;
   useEffect(() => {
-    if (previousOpen.current !== open) {
-      previousOpen.current = open;
-      agentStore.setPanelOpen(open);
-      if (open) agentStore.setDocked(true);
-    } else if (open && !agent.panelOpen) onClose();
-  }, [open, agent.panelOpen, onClose]);
+    const shellChanged = previous.current.open !== open;
+    const agentChanged = previous.current.panelOpen !== agent.panelOpen;
+    previous.current = { open, panelOpen: agent.panelOpen };
+    // Explicit shell transitions (topbar / shortcut) take precedence over the
+    // snapshot they are replacing. Callback identity is never a state change.
+    if (shellChanged) {
+      if (open) agent.openPanel();
+      else agent.closePanel();
+    } else if (agentChanged && !agent.panelOpen && open) onShellClose.current();
+  }, [open, agent.panelOpen, agent.openPanel, agent.closePanel]);
   const closePanel = () => { agent.closePanel(); onClose(); };
   const center = () => moveThread(() => { agent.toCenter(); onClose(); router.push("/home"); });
   const root = useRef<HTMLElement>(null);

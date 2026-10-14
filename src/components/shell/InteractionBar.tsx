@@ -19,14 +19,13 @@ export function InteractionBar({ onSubmit, onOpenPanel, disabled = false }: Inte
   const agent = useAgent();
   const pathname = usePathname();
   const { role } = useShellContext();
-  const { version } = usePersona();
-  const identity = `${role}:${version}`;
-  const previousIdentity = useRef(identity);
-  useEffect(() => {
-    if (previousIdentity.current !== identity) { agent.reset(); setValue(""); setError(""); previousIdentity.current = identity; }
-  }, [identity, agent.reset]);
-  // Bridge the B1 shell's open callback without changing the shell owner's file.
-  useEffect(() => { if (agent.panelOpen) onOpenPanel?.(); }, [agent.panelOpen, onOpenPanel]);
+  const { version, current } = usePersona();
+  useEffect(() => { setValue(""); setError(""); }, [role, version, current]);
+  // The shell supplies inline callbacks. Only a store transition requests an
+  // opening; a parent rerender after closing must never reopen the panel.
+  const openPanel = useRef(onOpenPanel);
+  openPanel.current = onOpenPanel;
+  useEffect(() => { if (agent.panelOpen) openPanel.current?.(); }, [agent.panelOpen]);
   const home = pathname === "/home" || pathname === "/";
   const viewing = navigationTitle(pathname, role);
   const submit = (event: FormEvent) => {

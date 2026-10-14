@@ -41,6 +41,7 @@ with sync_playwright() as p:
                 expect(page.locator(".airi-home-task")).to_have_count(5)
                 page.add_style_tag(content="nextjs-portal{display:none!important}")
                 samples = []
+                screenshots = []
 
                 def capture(state):
                     expect(page.locator("[data-airi-input]:visible")).to_have_count(1)
@@ -57,15 +58,45 @@ with sync_playwright() as p:
                         large = item["size"] >= 24 or (item["size"] >= 18.66 and item["weight"] >= 700)
                         assert ratio >= (3 if large else 4.5), f"Contrast {width}/{theme}/{state}: {item} {ratio:.2f}"
                         samples.append(ratio)
+                    screenshots.append(state)
                     page.screenshot(path=str(out / f"{width}-{theme}-{state}.png"), full_page=state in ["inicio", "anclado-cerrado", "centro"])
 
                 capture("inicio")
+                panel = page.locator("#agent-panel")
+                topbar_toggle = page.locator(".shell-assistant")
+
+                def closed():
+                    expect(panel).to_be_hidden()
+                    expect(topbar_toggle).to_have_attribute("aria-expanded", "false")
+                    # Allow the old competing effects to reopen, if still present.
+                    page.wait_for_timeout(350)
+                    expect(panel).to_be_hidden()
+
+                # Empty panel: each explicit close must remain closed.
+                topbar_toggle.click()
+                expect(panel).to_be_visible()
+                topbar_toggle.click()
+                closed()
+                page.keyboard.press("Control+k")
+                expect(panel).to_be_visible()
+                page.keyboard.press("Control+k")
+                closed()
+                topbar_toggle.click()
+                panel.get_by_role("button", name="Cerrar asistente", exact=True).click()
+                closed()
+                capture("cierres-sin-consultas")
                 entry = page.locator("[data-airi-input]:visible")
                 entry.fill("¿Quién toma el hueco de la tarde?")
                 page.evaluate("""() => {
-                    window.__airiAckStart=performance.now();window.__airiAck=null;
+                    window.__airiAckStart=null;window.__airiAck=null;
+                    // Measure from the actual user event, excluding Python/CDP latency.
+                    const start=event=>{
+                        if(event.key==='Enter' && event.target.matches('[data-airi-input]')){
+                            window.__airiAckStart=performance.now();document.removeEventListener('keydown',start,true);
+                        }
+                    };document.addEventListener('keydown',start,true);
                     const observer=new MutationObserver(()=>{
-                        if(document.querySelector('#agent-panel .airi-turn--user') && window.__airiAck===null){window.__airiAck=performance.now()-window.__airiAckStart;observer.disconnect();}
+                        if(window.__airiAckStart!==null && document.querySelector('#agent-panel .airi-turn--user') && window.__airiAck===null){window.__airiAck=performance.now()-window.__airiAckStart;observer.disconnect();}
                     });observer.observe(document.body,{childList:true,subtree:true});
                 }""")
                 entry.press("Enter")
@@ -86,6 +117,15 @@ with sync_playwright() as p:
                 expect(page.locator(".airi-home")).to_have_attribute("data-docked", "true")
                 expect(page.locator('[data-thread-location="center"] [data-turn]')).to_have_count(0)
                 capture("anclado-cerrado")
+                # Repeat topbar and shortcut closing with an existing conversation.
+                topbar_toggle.click()
+                expect(panel.locator(".airi-turn--user")).to_have_count(1)
+                topbar_toggle.click()
+                closed()
+                page.keyboard.press("Control+k")
+                expect(panel).to_be_visible()
+                page.keyboard.press("Control+k")
+                closed()
                 page.locator("[data-airi-input]:visible").fill("sí")
                 page.locator("[data-airi-input]:visible").press("Enter")
                 expect(panel).to_be_visible()
@@ -122,8 +162,50 @@ with sync_playwright() as p:
                 offer = panel.locator('[data-card="r-oferta"]')
                 offer.get_by_role("button", name="Aprobar y ofrecer", exact=True).click()
                 expect(offer.locator(".catalog-stamp")).to_have_text("Aprobado")
+                # Inicio must keep progress and cancellation next to its large input.
+                page.get_by_role("link", name="AIRI, inicio", exact=True).click()
+                expect(page).to_have_url(args.base_url + "/home")
+                if panel.is_visible():
+                    topbar_toggle.click()
+                closed()
+                page.locator("[data-airi-input]:visible").fill("Confirma las citas de mañana")
+                page.locator("[data-airi-input]:visible").press("Enter")
+                expect(panel.get_by_role("button", name="Detener", exact=True)).to_be_visible()
+                topbar_toggle.click()
+                closed()
+                expect(page.get_by_role("button", name="Detener", exact=True)).to_have_count(1)
+                progress = page.locator(".airi-home-progress [role=status]")
+                expect(progress).to_be_visible()
+                expect(progress).to_have_attribute("aria-live", "polite")
+                expect(page.locator('[data-thread-location="center"] [data-turn]')).to_have_count(0)
+                capture("inicio-cerrado-trabajando")
+                page.get_by_role("button", name="Detener", exact=True).click()
+                expect(progress).to_contain_text("Detenido")
+                expect(page.get_by_role("button", name="Detener", exact=True)).to_have_count(0)
+                capture("inicio-cerrado-detenido")
+
+                # Both conversation components unmount on Lienzo. A role change
+                # there must not reuse the previous identity when they remount.
+                if width == 390:
+                    page.get_by_role("button", name="Abrir navegación", exact=True).click()
+                page.locator('.sidebar-item[href="/lienzo"]').click()
+                expect(page).to_have_url(args.base_url + "/lienzo")
+                expect(page.locator("[data-airi-input]:visible")).to_have_count(0)
+                if width == 390:
+                    page.get_by_role("combobox", name="Ver como", exact=True).select_option("doctor")
+                else:
+                    page.get_by_role("button", name="Doctor", exact=True).click()
+                page.get_by_role("link", name="AIRI, inicio", exact=True).click()
+                expect(page).to_have_url(args.base_url + "/home")
+                expect(page.locator(".airi-home-summary")).not_to_contain_text("propuesta espera")
+                topbar_toggle.click()
+                expect(panel).to_be_visible()
+                expect(panel.locator(".airi-turn--user")).to_have_count(0)
+                expect(panel.locator("[data-card]")).to_have_count(0)
+                expect(panel.get_by_role("button", name="Detener", exact=True)).to_have_count(0)
+                capture("identidad-limpia")
                 assert not errors, f"Console errors {width}/{theme}: {errors}"
-                result = {"width": width, "theme": theme, "ack_ms": round(ack, 2), "console_errors": len(errors), "contrast_samples": len(samples), "min_contrast": round(min(samples), 2), "screenshots": 6}
+                result = {"width": width, "theme": theme, "ack_ms": round(ack, 2), "console_errors": len(errors), "contrast_samples": len(samples), "min_contrast": round(min(samples), 2), "screenshots": len(screenshots), "regressions": ["topbar_close", "ctrl_k_close", "internal_close", "home_closed_stop", "role_after_canvas"]}
                 results.append(result)
                 print(json.dumps(result), flush=True)
                 context.close()

@@ -1,17 +1,19 @@
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { EventType } from "../src/agui/events";
+import { agentController } from "../src/agui/useAgent";
 import { agentStore } from "../src/agui/store";
 import { Thread, threadDestination, threadItem, moveThread } from "../src/components/shell/Thread";
 import { CatalogRenderer } from "../src/catalog/registry";
 import { limaGreeting } from "../src/views/HomePage";
 
 const push = vi.hoisted(() => vi.fn());
+vi.mock("../src/components/PersonaContext", () => ({ usePersona: () => ({ version: 0, current: "recepcion" }) }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }), usePathname: () => "/home" }));
 vi.mock("../src/components/shell/ShellContext", () => ({ useShellContext: () => ({ role: "admin" }) }));
 
 describe("Inicio: hilo y navegación", () => {
-  beforeEach(() => { agentStore.clear(); push.mockReset(); });
+  beforeEach(() => { agentController.bindIdentity("admin:0:recepcion"); agentStore.clear(); push.mockReset(); });
   it("usa la hora Lima, incluso alrededor de medianoche UTC", () => {
     expect(limaGreeting(new Date("2026-10-14T03:00:00Z"))).toBe("Buenas noches");
     expect(limaGreeting(new Date("2026-10-14T14:00:00Z"))).toBe("Buenos días");

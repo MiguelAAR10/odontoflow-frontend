@@ -1,5 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
+import { usePersona } from "../components/PersonaContext";
+import { useShellContext } from "../components/shell/ShellContext";
 import { toApiError, newIdempotencyKey } from "../contracts/client";
 import { agentStore, useAgentStore, type AgentStore } from "./store";
 import { getAgentSource, type AgentSourceWithApproval } from "./index";
@@ -14,6 +17,7 @@ type SourceFactory = (options: SimulatedSourceOptions) => Promise<AgentSourceWit
  * Sources survive navigation so pending approvals retain their original owner. */
 export function createAgentController(store: AgentStore, factory: SourceFactory = getAgentSource) {
   let configured = false;
+  let identity: string | null = null;
   let epoch = 0;
   let active: AgentSourceWithApproval | null = null;
   const sources = new Map<string, Promise<AgentSourceWithApproval>>();
@@ -51,7 +55,14 @@ export function createAgentController(store: AgentStore, factory: SourceFactory 
       return owner.approveCard(card, key);
     },
   };
+  const reset = () => { store.clear(); sources.clear(); proposals.clear(); };
   return {
+    matchesIdentity: (next: string) => identity === next,
+    bindIdentity(next: string) {
+      if (identity === next) return;
+      identity = next;
+      reset();
+    },
     send(text: string, context: AgentContext) {
       if (!text.trim()) return Promise.resolve();
       if (!configured) {
@@ -77,12 +88,19 @@ export function createAgentController(store: AgentStore, factory: SourceFactory 
     openPanel() { store.setDocked(true); store.setPanelOpen(true); },
     closePanel: () => store.setPanelOpen(false),
     toCenter() { store.setPanelOpen(false); store.setDocked(false); },
-    reset() { store.clear(); sources.clear(); proposals.clear(); },
+    reset,
   };
 }
 export const agentController = createAgentController(agentStore);
 const snapshot = (state: ReturnType<AgentStore["getSnapshot"]>) => state;
 export function useAgent() {
-  const state = useAgentStore(snapshot);
+  const { role } = useShellContext();
+  const { version, current } = usePersona();
+  const identity = `${role}:${version}:${current ?? ""}`;
+  const stored = useAgentStore(snapshot);
+  // Mask the old identity on the first render, before effects or child controls
+  // can expose its thread. The controller survives Lienzo and PersonaGate.
+  const state = agentController.matchesIdentity(identity) ? stored : agentStore.getServerSnapshot();
+  useEffect(() => { agentController.bindIdentity(identity); }, [identity]);
   return { ...state, ...agentController, working: state.run.status === "working", queries: state.thread.filter(turn => turn.role === "user").length };
 }

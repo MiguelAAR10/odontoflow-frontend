@@ -82,6 +82,10 @@ export function HomePage() {
           <input id="airi-home-input" data-airi-input placeholder={roleCopy[role].question} autoComplete="off" value={value} onChange={event => setValue(event.target.value)} />
           <button aria-label="Enviar" type="submit" disabled={agent.working || !value.trim()}><ArrowUp size={22} aria-hidden="true" /></button>
         </form> : <p className="airi-home-panel-hint">Sigue la conversación en la barra de abajo.</p>}
+        {!agent.panelOpen && agent.docked && agent.run.status !== "idle" ? <div className="airi-home-progress">
+          <p role="status" aria-live="polite">{agent.run.what || "Entendiendo tu consulta…"}</p>
+          {agent.working ? <button type="button" onClick={agent.stop}>Detener</button> : null}
+        </div> : null}
         <div className="airi-home-suggestions" aria-label="Sugerencias">{roleCopy[role].suggestions.slice(0, 3).map(suggestion => <button key={suggestion} type="button" disabled={agent.working} onClick={() => ask(suggestion)}>{suggestion}</button>)}</div>
         {agent.docked && agent.queries ? <div className="airi-home-docked"><span>Tu conversación sigue en el panel · {agent.queries} {agent.queries === 1 ? "consulta" : "consultas"}</span>{!agent.panelOpen ? <button type="button" onClick={agent.openPanel}>Ver hilo</button> : null}<button type="button" onClick={() => moveThread(agent.toCenter)}>Traer al centro</button></div> : null}
         {error ? <p role="alert" className="airi-home-error">{error}</p> : null}
@@ -109,9 +113,10 @@ export function HomePage() {
       .airi-home-composer button{display:grid;place-items:center;flex:none;width:44px;height:44px;border:0;border-radius:50%;background:var(--btn);color:var(--btn-ink)}
       .airi-home-composer button:disabled{opacity:.45}.airi-home-composer:focus-within{outline:2px solid var(--focus);outline-offset:3px}
       .airi-home-suggestions{display:flex;justify-content:center;flex-wrap:wrap;gap:8px}
-      .airi-home-suggestions button,.airi-home-docked button{min-height:36px;padding:7px 12px;background:var(--surface);color:var(--ink-2);border:1px solid var(--line);border-radius:24px;font-size:12px}
+      .airi-home-suggestions button,.airi-home-docked button,.airi-home-progress button{min-height:36px;padding:7px 12px;background:var(--surface);color:var(--ink-2);border:1px solid var(--line);border-radius:24px;font-size:12px}
       .airi-home button:hover:enabled{background:var(--hover);color:var(--ink)}
       .airi-home-docked{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;margin-top:18px;font-size:13px;color:var(--muted)}
+      .airi-home-progress{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;margin:0 0 14px;color:var(--ink-2);font-size:13px}.airi-home-progress p{margin:0}
       .airi-home-panel-hint{margin:24px 0 16px;font-size:14px;color:var(--muted)}
       .airi-home-background{position:absolute;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
       .airi-home-agent{position:absolute;opacity:.65;width:58px;height:58px}
