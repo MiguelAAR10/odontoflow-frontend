@@ -178,10 +178,12 @@
           "undo": false,
           "undo_window_seconds": null,
           "delta": null,
-          "revision": 0,
           "edit": false,
           "ev": null,
-          "amounts": []
+          "amounts": [],
+          "version": 1,
+          "payload_hash": "a4ecaa42efa57000cf517f4a67dc61b6e986c05bd7f11145d7c4ce47df1edd6a",
+          "proposal_id": null
         }
       }
     }
@@ -199,7 +201,7 @@
       "type": "TOOL_CALL_RESULT",
       "messageId": "sim:admin-hueco:r-oferta:result",
       "toolCallId": "sim:admin-hueco:r-oferta",
-      "content": "{\"card\": {\"id\": \"r-oferta\", \"agent\": \"hilo\", \"level\": \"aprobar\", \"state\": \"pending\", \"title\": \"Ofrecer el hueco de 16:00 (30 min, Dra. Ruiz) a Inés Gómez\", \"body\": \"<textarea aria-label=\\\"Mensaje\\\" readonly>Hola Inés, se liberó un espacio hoy a las 16:00 con la Dra. Ruiz. ¿Te lo reservamos?</textarea>\", \"why\": \"Inés espera 9 días · prefiere tardes · su control cabe en 30 min\", \"srcs\": [\"Lista de espera · Lince\", \"Agenda Dra. Ruiz\"], \"scope\": [{\"label\": \"Para\", \"value\": \"Inés Gómez\", \"reversible\": null, \"expires_at\": null, \"amount\": null}, {\"label\": \"rev\", \"value\": \"No se puede deshacer el envío\", \"reversible\": \"none\", \"expires_at\": null, \"amount\": null}, {\"label\": \"Reserva\", \"value\": \"solo si ella acepta y sigue libre\", \"reversible\": null, \"expires_at\": null, \"amount\": null}], \"reversible\": \"none\", \"approve\": \"Aprobar y ofrecer\", \"alt\": null, \"result\": \"Oferta enviada · el hueco sigue libre hasta que Inés responda\", \"undo\": false, \"undo_window_seconds\": null, \"delta\": null, \"revision\": 0, \"edit\": false, \"ev\": null, \"amounts\": []}}",
+      "content": "{\"card\": {\"id\": \"r-oferta\", \"agent\": \"hilo\", \"level\": \"aprobar\", \"state\": \"pending\", \"title\": \"Ofrecer el hueco de 16:00 (30 min, Dra. Ruiz) a Inés Gómez\", \"body\": \"<textarea aria-label=\\\"Mensaje\\\" readonly>Hola Inés, se liberó un espacio hoy a las 16:00 con la Dra. Ruiz. ¿Te lo reservamos?</textarea>\", \"why\": \"Inés espera 9 días · prefiere tardes · su control cabe en 30 min\", \"srcs\": [\"Lista de espera · Lince\", \"Agenda Dra. Ruiz\"], \"scope\": [{\"label\": \"Para\", \"value\": \"Inés Gómez\", \"reversible\": null, \"expires_at\": null, \"amount\": null}, {\"label\": \"rev\", \"value\": \"No se puede deshacer el envío\", \"reversible\": \"none\", \"expires_at\": null, \"amount\": null}, {\"label\": \"Reserva\", \"value\": \"solo si ella acepta y sigue libre\", \"reversible\": null, \"expires_at\": null, \"amount\": null}], \"reversible\": \"none\", \"approve\": \"Aprobar y ofrecer\", \"alt\": null, \"result\": \"Oferta enviada · el hueco sigue libre hasta que Inés responda\", \"undo\": false, \"undo_window_seconds\": null, \"delta\": null, \"edit\": false, \"ev\": null, \"amounts\": [], \"version\": 1, \"payload_hash\": \"a4ecaa42efa57000cf517f4a67dc61b6e986c05bd7f11145d7c4ce47df1edd6a\", \"proposal_id\": null}}",
       "agent": "hilo",
       "metadata": {
         "card": {
@@ -244,10 +246,12 @@
           "undo": false,
           "undo_window_seconds": null,
           "delta": null,
-          "revision": 0,
           "edit": false,
           "ev": null,
-          "amounts": []
+          "amounts": [],
+          "version": 1,
+          "payload_hash": "a4ecaa42efa57000cf517f4a67dc61b6e986c05bd7f11145d7c4ce47df1edd6a",
+          "proposal_id": null
         }
       }
     }
@@ -334,10 +338,12 @@
                 "undo": false,
                 "undo_window_seconds": null,
                 "delta": null,
-                "revision": 0,
                 "edit": false,
                 "ev": null,
-                "amounts": []
+                "amounts": [],
+                "version": 1,
+                "payload_hash": "a4ecaa42efa57000cf517f4a67dc61b6e986c05bd7f11145d7c4ce47df1edd6a",
+                "proposal_id": null
               }
             }
           }

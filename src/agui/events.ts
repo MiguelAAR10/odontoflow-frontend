@@ -16,11 +16,13 @@ export type AiriRunStartedEvent = RunStartedEvent & {
   plan?: string[];
   what?: string;
 };
+/** AG-UI outcomes are objects; cancelled is reserved for local transport stops. */
+export type AiriRunOutcome = Exclude<RunFinishedEvent["outcome"], { type: "interrupt" }> | {
+  type: "interrupt"; interrupts: AiriInterrupt[];
+};
 export type AiriRunFinishedEvent = Omit<RunFinishedEvent, "outcome"> & {
   agent?: AgentId;
-  outcome?: Exclude<RunFinishedEvent["outcome"], { type: "interrupt" }> | {
-    type: "interrupt"; interrupts: AiriInterrupt[];
-  };
+  outcome?: AiriRunOutcome;
 };
 export type AiriSubagentStartedEvent = SubagentStartedEvent & { agent?: AgentId };
 export type AiriStepStartedEvent = StepStartedEvent & { agent?: AgentId; index?: number };

@@ -1,5 +1,5 @@
 import { AxiosError, AxiosHeaders } from "axios";
-import type { Card } from "../card.js";
+import { CardSchema, type Card } from "../card.js";
 import { EventType, type Event, type RunAgentInput } from "../events.js";
 import type { AgentSource } from "../source.js";
 import { matchScenario, type SimRole } from "./match.js";
@@ -103,9 +103,7 @@ export class SimulatedSource implements AgentSource {
     }
   }
 
-  /** Human-only call. Text events never invoke this method. A3's envelope stays
-   * outside Card until backend Card.json gains version/payload_hash.
-   */
+  /** Human-only call; identity comes from the published card, never chat text. */
   async approve(request: ApprovalEnvelope, idempotencyKey: string): Promise<Card> {
     if (!idempotencyKey.trim()) throw conflict("Falta la clave de idempotencia del intento.");
     const fingerprint = JSON.stringify([request.cardId, request.version, request.payload_hash]);
@@ -125,11 +123,16 @@ export class SimulatedSource implements AgentSource {
     return structuredClone(card);
   }
 
-  /** Adapter for createAgentStore's ApprovalHandler; hashes the submitted copy,
-   * so editing any scope/body field invalidates an old proposal.
-   */
-  readonly approveCard = (card: Card, idempotencyKey: string): Promise<Card> =>
-    this.approve(envelopeFor(card), idempotencyKey);
+  /** Compare submitted content as well as the opaque backend envelope. */
+  readonly approveCard = async (card: Card, idempotencyKey: string): Promise<Card> => {
+    const parsed = CardSchema.safeParse(card);
+    const proposal = this.proposals.get(card.id);
+    if (!parsed.success || !proposal
+      || JSON.stringify(parsed.data) !== JSON.stringify(CardSchema.parse(proposal.card))) {
+      throw conflict("La propuesta cambió. Revisa la tarjeta actual antes de aprobar.");
+    }
+    return this.approve(envelopeFor(parsed.data), idempotencyKey);
+  };
 
   stop(): void {
     const token = this.active;

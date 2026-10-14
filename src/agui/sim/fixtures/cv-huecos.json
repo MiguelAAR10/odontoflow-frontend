@@ -111,10 +111,12 @@
           "undo": false,
           "undo_window_seconds": null,
           "delta": null,
-          "revision": 0,
           "edit": false,
           "ev": null,
-          "amounts": []
+          "amounts": [],
+          "version": 1,
+          "payload_hash": "324389be8b54cbe2c2a589cd9e3ab13778d84c6a9cf3db5a89e57bb103184c27",
+          "proposal_id": null
         }
       }
     }
@@ -132,7 +134,7 @@
       "type": "TOOL_CALL_RESULT",
       "messageId": "sim:cv-huecos:cv-agenda:result",
       "toolCallId": "sim:cv-huecos:cv-agenda",
-      "content": "{\"card\": {\"id\": \"cv-agenda\", \"agent\": \"cepillo\", \"level\": \"auto\", \"state\": \"ready\", \"title\": \"Dra. Ruiz · tarde de hoy\", \"body\": \"<div class=\\\"mag-agenda\\\"><span class=\\\"t\\\">15:00</span><span class=\\\"b blue c-blue\\\">Daniela Soto · endodoncia</span><span class=\\\"t\\\">16:00</span><span class=\\\"b gap gap\\\">Hueco · 30 min</span><span class=\\\"t\\\">16:30</span><span class=\\\"b blue c-blue\\\">Carmen Díaz · resina</span><span class=\\\"t\\\">17:30</span><span class=\\\"b green c-green\\\">Luis Chávez · control</span></div>\", \"why\": null, \"srcs\": [], \"scope\": [], \"reversible\": \"unspecified\", \"approve\": null, \"alt\": null, \"result\": null, \"undo\": false, \"undo_window_seconds\": null, \"delta\": null, \"revision\": 0, \"edit\": false, \"ev\": null, \"amounts\": []}}",
+      "content": "{\"card\": {\"id\": \"cv-agenda\", \"agent\": \"cepillo\", \"level\": \"auto\", \"state\": \"ready\", \"title\": \"Dra. Ruiz · tarde de hoy\", \"body\": \"<div class=\\\"mag-agenda\\\"><span class=\\\"t\\\">15:00</span><span class=\\\"b blue c-blue\\\">Daniela Soto · endodoncia</span><span class=\\\"t\\\">16:00</span><span class=\\\"b gap gap\\\">Hueco · 30 min</span><span class=\\\"t\\\">16:30</span><span class=\\\"b blue c-blue\\\">Carmen Díaz · resina</span><span class=\\\"t\\\">17:30</span><span class=\\\"b green c-green\\\">Luis Chávez · control</span></div>\", \"why\": null, \"srcs\": [], \"scope\": [], \"reversible\": \"unspecified\", \"approve\": null, \"alt\": null, \"result\": null, \"undo\": false, \"undo_window_seconds\": null, \"delta\": null, \"edit\": false, \"ev\": null, \"amounts\": [], \"version\": 1, \"payload_hash\": \"324389be8b54cbe2c2a589cd9e3ab13778d84c6a9cf3db5a89e57bb103184c27\", \"proposal_id\": null}}",
       "agent": "cepillo",
       "metadata": {
         "card": {
@@ -152,10 +154,12 @@
           "undo": false,
           "undo_window_seconds": null,
           "delta": null,
-          "revision": 0,
           "edit": false,
           "ev": null,
-          "amounts": []
+          "amounts": [],
+          "version": 1,
+          "payload_hash": "324389be8b54cbe2c2a589cd9e3ab13778d84c6a9cf3db5a89e57bb103184c27",
+          "proposal_id": null
         }
       }
     }
@@ -204,10 +208,12 @@
           "undo": false,
           "undo_window_seconds": null,
           "delta": null,
-          "revision": 0,
           "edit": false,
           "ev": null,
-          "amounts": []
+          "amounts": [],
+          "version": 1,
+          "payload_hash": "a13476bfbc67d0831102f21240a439bc8c91b64878e89f1b475851df11abf0f3",
+          "proposal_id": null
         }
       }
     }
@@ -225,7 +231,7 @@
       "type": "TOOL_CALL_RESULT",
       "messageId": "sim:cv-huecos:cv-espera:result",
       "toolCallId": "sim:cv-huecos:cv-espera",
-      "content": "{\"card\": {\"id\": \"cv-espera\", \"agent\": \"cepillo\", \"level\": \"auto\", \"state\": \"ready\", \"title\": \"En espera, compatibles con 30 min\", \"body\": \"<ul class=\\\"ac-list\\\"><li><span><b>Inés Gómez</b> · ortodoncia</span><span class=\\\"muted\\\">9 días · tardes</span></li><li><span><b>Raúl Vera</b> · control</span><span class=\\\"muted\\\">6 días</span></li><li><span><b>Paula Ñique</b> · evaluación</span><span class=\\\"muted\\\">4 días · 60 min ✕</span></li></ul>\", \"why\": \"Ordenado por días de espera y preferencia horaria\", \"srcs\": [\"Lista de espera · Lince\"], \"scope\": [], \"reversible\": \"unspecified\", \"approve\": null, \"alt\": null, \"result\": null, \"undo\": false, \"undo_window_seconds\": null, \"delta\": null, \"revision\": 0, \"edit\": false, \"ev\": null, \"amounts\": []}}",
+      "content": "{\"card\": {\"id\": \"cv-espera\", \"agent\": \"cepillo\", \"level\": \"auto\", \"state\": \"ready\", \"title\": \"En espera, compatibles con 30 min\", \"body\": \"<ul class=\\\"ac-list\\\"><li><span><b>Inés Gómez</b> · ortodoncia</span><span class=\\\"muted\\\">9 días · tardes</span></li><li><span><b>Raúl Vera</b> · control</span><span class=\\\"muted\\\">6 días</span></li><li><span><b>Paula Ñique</b> · evaluación</span><span class=\\\"muted\\\">4 días · 60 min ✕</span></li></ul>\", \"why\": \"Ordenado por días de espera y preferencia horaria\", \"srcs\": [\"Lista de espera · Lince\"], \"scope\": [], \"reversible\": \"unspecified\", \"approve\": null, \"alt\": null, \"result\": null, \"undo\": false, \"undo_window_seconds\": null, \"delta\": null, \"edit\": false, \"ev\": null, \"amounts\": [], \"version\": 1, \"payload_hash\": \"a13476bfbc67d0831102f21240a439bc8c91b64878e89f1b475851df11abf0f3\", \"proposal_id\": null}}",
       "agent": "cepillo",
       "metadata": {
         "card": {
@@ -247,10 +253,12 @@
           "undo": false,
           "undo_window_seconds": null,
           "delta": null,
-          "revision": 0,
           "edit": false,
           "ev": null,
-          "amounts": []
+          "amounts": [],
+          "version": 1,
+          "payload_hash": "a13476bfbc67d0831102f21240a439bc8c91b64878e89f1b475851df11abf0f3",
+          "proposal_id": null
         }
       }
     }
@@ -356,10 +364,12 @@
           "undo": false,
           "undo_window_seconds": null,
           "delta": null,
-          "revision": 0,
           "edit": false,
           "ev": null,
-          "amounts": []
+          "amounts": [],
+          "version": 1,
+          "payload_hash": "a4ecaa42efa57000cf517f4a67dc61b6e986c05bd7f11145d7c4ce47df1edd6a",
+          "proposal_id": null
         }
       }
     }
@@ -377,7 +387,7 @@
       "type": "TOOL_CALL_RESULT",
       "messageId": "sim:cv-huecos:cv-oferta:result",
       "toolCallId": "sim:cv-huecos:cv-oferta",
-      "content": "{\"card\": {\"id\": \"cv-oferta\", \"agent\": \"hilo\", \"level\": \"aprobar\", \"state\": \"pending\", \"title\": \"Ofrecer 16:00 a Inés Gómez\", \"body\": \"<textarea aria-label=\\\"Mensaje\\\" readonly>Hola Inés, se liberó un espacio hoy a las 16:00 con la Dra. Ruiz. ¿Te lo reservamos?</textarea>\", \"why\": \"Espera 9 días · prefiere tardes\", \"srcs\": [\"WhatsApp · ventana abierta\"], \"scope\": [{\"label\": \"Para\", \"value\": \"Inés Gómez\", \"reversible\": null, \"expires_at\": null, \"amount\": null}, {\"label\": \"rev\", \"value\": \"No se puede deshacer el envío\", \"reversible\": \"none\", \"expires_at\": null, \"amount\": null}, {\"label\": \"Reserva\", \"value\": \"solo si acepta\", \"reversible\": null, \"expires_at\": null, \"amount\": null}], \"reversible\": \"none\", \"approve\": \"Aprobar y ofrecer\", \"alt\": null, \"result\": \"Oferta enviada · el hueco sigue libre hasta que responda\", \"undo\": false, \"undo_window_seconds\": null, \"delta\": null, \"revision\": 0, \"edit\": false, \"ev\": null, \"amounts\": []}}",
+      "content": "{\"card\": {\"id\": \"cv-oferta\", \"agent\": \"hilo\", \"level\": \"aprobar\", \"state\": \"pending\", \"title\": \"Ofrecer 16:00 a Inés Gómez\", \"body\": \"<textarea aria-label=\\\"Mensaje\\\" readonly>Hola Inés, se liberó un espacio hoy a las 16:00 con la Dra. Ruiz. ¿Te lo reservamos?</textarea>\", \"why\": \"Espera 9 días · prefiere tardes\", \"srcs\": [\"WhatsApp · ventana abierta\"], \"scope\": [{\"label\": \"Para\", \"value\": \"Inés Gómez\", \"reversible\": null, \"expires_at\": null, \"amount\": null}, {\"label\": \"rev\", \"value\": \"No se puede deshacer el envío\", \"reversible\": \"none\", \"expires_at\": null, \"amount\": null}, {\"label\": \"Reserva\", \"value\": \"solo si acepta\", \"reversible\": null, \"expires_at\": null, \"amount\": null}], \"reversible\": \"none\", \"approve\": \"Aprobar y ofrecer\", \"alt\": null, \"result\": \"Oferta enviada · el hueco sigue libre hasta que responda\", \"undo\": false, \"undo_window_seconds\": null, \"delta\": null, \"edit\": false, \"ev\": null, \"amounts\": [], \"version\": 1, \"payload_hash\": \"a4ecaa42efa57000cf517f4a67dc61b6e986c05bd7f11145d7c4ce47df1edd6a\", \"proposal_id\": null}}",
       "agent": "hilo",
       "metadata": {
         "card": {
@@ -421,10 +431,12 @@
           "undo": false,
           "undo_window_seconds": null,
           "delta": null,
-          "revision": 0,
           "edit": false,
           "ev": null,
-          "amounts": []
+          "amounts": [],
+          "version": 1,
+          "payload_hash": "a4ecaa42efa57000cf517f4a67dc61b6e986c05bd7f11145d7c4ce47df1edd6a",
+          "proposal_id": null
         }
       }
     }
@@ -546,10 +558,12 @@
                 "undo": false,
                 "undo_window_seconds": null,
                 "delta": null,
-                "revision": 0,
                 "edit": false,
                 "ev": null,
-                "amounts": []
+                "amounts": [],
+                "version": 1,
+                "payload_hash": "a4ecaa42efa57000cf517f4a67dc61b6e986c05bd7f11145d7c4ce47df1edd6a",
+                "proposal_id": null
               }
             }
           }

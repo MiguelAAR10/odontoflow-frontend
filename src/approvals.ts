@@ -10,6 +10,7 @@
  *   `/scheduling/appointment-proposals/confirm|decline` with
  *   `{conversation_id, confirmation_token}` from the same inbox item.
  */
+import { z } from "zod";
 import { CardSchema, type Card } from "./agui/card";
 import { envelopeFor, type ApprovalEnvelope } from "./agui/sim/schema";
 import { USE_MOCKS } from "./env";
@@ -655,11 +656,12 @@ function mockReminder(candidate: Extract<(typeof MOCK_OVERDUE)[number], { patien
 
 
 // AIRI presentation adapter: the legacy inbox does not expose source documents,
-// revisions or reversibility. Leave those fields absent rather than fabricate them.
+// AIRI versions or reversibility. Keep its presentation separate from the AIRI DTO.
+const LegacyInboxCardSchema = z.strictObject(CardSchema.shape).omit({ version: true });
 const escapeCardText = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-export function toCard(item: ApprovalItem): Card {
+export function toCard(item: ApprovalItem): z.infer<typeof LegacyInboxCardSchema> {
   const agent = { cobranza: "pasta", inventario: "airi", lista_espera: "cepillo", cita: "cepillo" } as const;
-  return CardSchema.parse({
+  return LegacyInboxCardSchema.parse({
     id: item.key, agent: agent[item.category], level: "aprobar",
     state: item.status === "executed" ? "approved" : item.status === "declined" ? "declined" : "ready",
     title: item.headline, body: item.message ? `<p>${escapeCardText(item.message)}</p>` : "",
@@ -702,8 +704,10 @@ export function createDraftInbox(fixtures: readonly Card[]) {
       const row = current(request);
       if (row.card.level !== "borrador") throw new ApiError(422, "INVALID_INPUT", "Solo se puede editar un borrador pendiente.");
       if (!text.trim()) throw new ApiError(422, "INVALID_INPUT", "Escribe el texto del borrador.");
-      const card = CardSchema.parse({ ...row.card, body: `<p>${escapeCardText(text.trim())}</p>`, revision: (row.card.revision ?? 0) + 1 });
-      const next = { card, envelope: { ...envelopeFor(card), version: row.envelope.version + 1 } };
+      const edited = { ...row.card, body: `<p>${escapeCardText(text.trim())}</p>`, version: row.card.version + 1, payload_hash: null };
+      const envelope = envelopeFor(edited);
+      const card = CardSchema.parse({ ...edited, payload_hash: envelope.payload_hash });
+      const next = { card, envelope };
       rows.set(card.id, next);
       return structuredClone(next);
     },

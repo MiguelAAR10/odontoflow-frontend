@@ -5,14 +5,15 @@ import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import { CardSchema, type Card } from "../src/agui/card.js";
 import { createInitialState, reducer } from "../src/agui/reducer.js";
-import { envelopeFor, ScenarioSchema, FixtureIndexSchema } from "../src/agui/sim/schema.js";
+import { envelopeFor, ScenarioEventSchema, ScenarioSchema, FixtureIndexSchema } from "../src/agui/sim/schema.js";
 
 const root = resolve("src/agui/sim/fixtures");
 const read = (file: string): unknown => JSON.parse(readFileSync(resolve(root, file), "utf8"));
 const hash = (path: string) => createHash("sha256").update(readFileSync(path)).digest("hex");
 const expectedIds = ["dueno-compara", "admin-confirma", "admin-hueco", "doctor-brief", "doctor-evo", "cv-huecos", "cv-cobranza", "cv-sedes"];
 
-// Inline local $defs so validation uses the copied backend schemas themselves.
+// Inline local $defs and omit annotation-only defaults: JSON Schema defaults
+// must not make a required value optional when imported into Zod.
 function inlineRefs(value: unknown, definitions: Record<string, unknown>): unknown {
   if (Array.isArray(value)) return value.map((item) => inlineRefs(item, definitions));
   if (!value || typeof value !== "object") return value;
@@ -22,7 +23,33 @@ function inlineRefs(value: unknown, definitions: Record<string, unknown>): unkno
     if (!(key in definitions)) throw new Error(`Missing schema reference: ${key}`);
     return inlineRefs(definitions[key], definitions);
   }
-  return Object.fromEntries(Object.entries(object).filter(([key]) => key !== "$defs")
+  // Zod cannot import if/then. Expand the contract's enum condition into two
+  // exhaustive branches, preserving the original constraints in both.
+  if (object.if && object.then) {
+    type ObjectSchema = { properties: Record<string, Record<string, unknown>>; required?: string[] };
+    const condition = object.if as ObjectSchema;
+    const consequence = object.then as ObjectSchema;
+    const [key] = Object.keys(condition.properties);
+    if (!key || Object.keys(condition.properties).length !== 1 || object.else) throw new Error("Unsupported conditional");
+    const matching = condition.properties[key]!.enum as unknown[];
+    const properties = object.properties as ObjectSchema["properties"];
+    const all = properties[key]!.enum as unknown[];
+    if (!Array.isArray(matching) || !Array.isArray(all)) throw new Error("Expected enum condition");
+    const { if: _if, then: _then, ...base } = object;
+    const narrowed = Object.fromEntries(Object.entries(consequence.properties).map(([name, rule]) => {
+      const original = properties[name]!;
+      const alternatives = original.anyOf as Record<string, unknown>[] | undefined;
+      return [name, alternatives && rule.type
+        ? { ...original, anyOf: alternatives.filter(branch => branch.type === rule.type) }
+        : { ...original, ...rule }];
+    }));
+    return inlineRefs({ anyOf: [
+      { ...base, properties: { ...properties, [key]: { ...properties[key], enum: all.filter(item => !matching.includes(item)) } } },
+      { ...base, required: [...new Set([...(object.required as string[]), ...(consequence.required ?? [])])],
+        properties: { ...properties, ...narrowed, [key]: { ...properties[key], enum: matching } } },
+    ] }, definitions);
+  }
+  return Object.fromEntries(Object.entries(object).filter(([key]) => key !== "$defs" && key !== "default")
     .map(([key, item]) => [key, inlineRefs(item, definitions)]));
 }
 const contractPairs = {
@@ -64,6 +91,23 @@ describe("AIRI fixtures", () => {
       const validator = z.fromJSONSchema(inlineRefs(schema, schema.$defs as Record<string, unknown> ?? {}) as z.core.JSONSchema.JSONSchema);
       const rows = read(file) as unknown[];
       for (const row of rows) expect(validator.safeParse(row).success, `${file}: ${JSON.stringify(row)}`).toBe(true);
+    }
+  });
+
+  it("matches the backend conditional Card schema for invalid and optional identities", () => {
+    const schema = read("schema/Card.json") as Record<string, unknown>;
+    const validator = z.fromJSONSchema(inlineRefs(schema, schema.$defs as Record<string, unknown>) as z.core.JSONSchema.JSONSchema);
+    const card = (read("cards.json") as Record<string, unknown>[])[0]!;
+    for (const level of ["auto", "aprobar", "borrador"]) {
+      for (const payload_hash of [undefined, null, "a".repeat(64), "AB".repeat(32), "g".repeat(64), "short"]) {
+        const sample = { ...card, level, payload_hash };
+        expect(CardSchema.safeParse(sample).success, JSON.stringify({ level, payload_hash })).toBe(validator.safeParse(sample).success);
+      }
+    }
+    for (const fields of [{ version: undefined }, { version: 0 }, { version: 1.5 }, { revision: 0 }, { proposal_id: "7" }]) {
+      const sample = { ...card, ...fields };
+      expect(validator.safeParse(sample).success).toBe(false);
+      expect(CardSchema.safeParse(sample).success).toBe(false);
     }
   });
 
@@ -117,6 +161,26 @@ describe("AIRI fixtures", () => {
       && e.outcome.interrupts.some((i) => i.metadata?.card?.level === "aprobar"))).toBe(true);
   });
 
+  it("validates message/tool boundaries and object outcomes before replay", () => {
+    const events = [
+      { type: "TEXT_MESSAGE_START", messageId: "m", role: "assistant" },
+      { type: "TEXT_MESSAGE_CONTENT", messageId: "m", delta: "Hola" },
+      { type: "TEXT_MESSAGE_END", messageId: "m" },
+      { type: "TOOL_CALL_START", toolCallId: "t", toolCallName: "agenda" },
+      { type: "TOOL_CALL_ARGS", toolCallId: "t", delta: "{}" },
+      { type: "TOOL_CALL_END", toolCallId: "t" },
+      { type: "TOOL_CALL_RESULT", toolCallId: "t", messageId: "result", content: "listo" },
+    ];
+    for (const event of events) expect(ScenarioEventSchema.safeParse(event).success).toBe(true);
+    for (const event of [
+      { type: "TEXT_MESSAGE_START", role: "assistant" },
+      { type: "TEXT_MESSAGE_END" }, { type: "TOOL_CALL_ARGS", delta: "{}" },
+      { type: "TOOL_CALL_END" },
+      { type: "RUN_FINISHED", threadId: "t", runId: "r", outcome: "success" },
+      { type: "RUN_FINISHED", threadId: "t", runId: "r", outcome: { type: "interrupt", interrupts: [] } },
+    ]) expect(ScenarioEventSchema.safeParse(event).success).toBe(false);
+  });
+
   it("rejects bad timing, malformed events/cards and missing finish", () => {
     const steps = read("admin-confirma.json") as { delayMs: number; event: Record<string, unknown> }[];
     expect(ScenarioSchema.safeParse(steps.slice(0, -1)).success).toBe(false);
@@ -137,20 +201,26 @@ function canonicalJson(value: unknown): string {
 }
 
 describe("simulated approval envelope", () => {
-  it("hashes every full card canonically without widening or mutating the DTO", () => {
+  it("preserves backend versions and hashes, using canonical SHA-256 only as fallback", () => {
     const cards = z.array(CardSchema).parse(read("cards.json"));
     for (const card of cards) {
       const before = JSON.stringify(card);
       const envelope = envelopeFor(card);
-      expect(envelope).toEqual({ cardId: card.id, version: 1,
-        payload_hash: createHash("sha256").update(canonicalJson(card)).digest("hex") });
+      expect(envelope).toEqual({ cardId: card.id, version: card.version,
+        payload_hash: card.payload_hash ?? createHash("sha256").update(canonicalJson(card)).digest("hex") });
       expect(JSON.stringify(card)).toBe(before);
       expect(CardSchema.safeParse({ ...card, ...envelope }).success).toBe(false);
     }
   });
 
-  it("ignores object key order at every depth, preserves array order and distinguishes null from absence", () => {
+  it("does not recompute an opaque backend hash or reset its version", () => {
     const card = CardSchema.parse((read("proposals.json") as unknown[])[0]);
+    expect(envelopeFor({ ...card, version: 7, payload_hash: "AB".repeat(32) }))
+      .toEqual({ cardId: card.id, version: 7, payload_hash: "AB".repeat(32) });
+  });
+
+  it("ignores object key order at every depth, preserves array order and distinguishes null from absence", () => {
+    const card: Card = { ...CardSchema.parse((read("cards.json") as unknown[])[0]), level: "auto", payload_hash: null };
     const reorder = (value: unknown): unknown => {
       if (Array.isArray(value)) return value.map(reorder);
       if (!value || typeof value !== "object") return value;
@@ -167,7 +237,7 @@ describe("simulated approval envelope", () => {
   });
 
   it("matches SHA-256 for UTF-8, long inputs and every padding boundary", () => {
-    const card = CardSchema.parse((read("proposals.json") as unknown[])[0]);
+    const card: Card = { ...CardSchema.parse((read("cards.json") as unknown[])[0]), level: "auto", payload_hash: null };
     for (const body of [...Array.from({ length: 130 }, (_, n) => "x".repeat(n)), "Clínica 🦷 Lima", "á🦷".repeat(1000)]) {
       const changed = { ...card, body };
       expect(envelopeFor(changed).payload_hash).toBe(createHash("sha256").update(canonicalJson(changed)).digest("hex"));

@@ -8,7 +8,7 @@ import { createElement } from "react";
 import { act, create } from "react-test-renderer";
 import { renderToString } from "react-dom/server";
 
-const card: Card = { id: "p1", agent: "hilo", level: "aprobar", state: "pending", title: "Enviar recordatorios", body: "", approve: "Aprobar y enviar" };
+const card: Card = { id: "p1", agent: "hilo", level: "aprobar", state: "pending", version: 1, payload_hash: "a".repeat(64), title: "Enviar recordatorios", body: "", approve: "Aprobar y enviar" };
 const toApiError = (error: unknown) => ({ code: "NETWORK", httpStatus: 0, message: error instanceof Error ? error.message : "Error de conexión" });
 
 function controlledSource() {
@@ -178,12 +178,12 @@ describe("store AG-UI", () => {
     const run = store.send("Propuesta");
     control.emit({ type: EventType.CUSTOM, name: "airi.card", value: card });
     const first = store.approve("p1"); await Promise.resolve();
-    control.emit({ type: EventType.CUSTOM, name: "airi.card", value: { ...card, revision: 1, title: "Propuesta actualizada" } });
+    control.emit({ type: EventType.CUSTOM, name: "airi.card", value: { ...card, version: 2, title: "Propuesta actualizada" } });
     confirm({ ...card, state: "approved" }); await first;
     expect(store.getSnapshot().cards.p1?.status).toBe("pending");
     const second = store.approve("p1"); await Promise.resolve();
     expect(approveCard.mock.calls[0]?.[1]).not.toBe(approveCard.mock.calls[1]?.[1]);
-    confirm({ ...card, revision: 1, title: "Propuesta actualizada", state: "approved" }); await second;
+    confirm({ ...card, version: 2, title: "Propuesta actualizada", state: "approved" }); await second;
     expect(store.getSnapshot().cards.p1?.status).toBe("approved");
     store.stop(); await run;
   });

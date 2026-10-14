@@ -143,6 +143,19 @@
     }
   },
   "additionalProperties": false,
+  "if": {
+    "properties": {
+      "level": {
+        "enum": [
+          "aprobar",
+          "borrador"
+        ]
+      }
+    },
+    "required": [
+      "level"
+    ]
+  },
   "properties": {
     "agent": {
       "enum": [
@@ -237,6 +250,33 @@
       "title": "Level",
       "type": "string"
     },
+    "payload_hash": {
+      "anyOf": [
+        {
+          "maxLength": 64,
+          "minLength": 64,
+          "pattern": "^[0-9a-fA-F]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Payload Hash"
+    },
+    "proposal_id": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Proposal Id"
+    },
     "result": {
       "anyOf": [
         {
@@ -263,12 +303,6 @@
       ],
       "title": "Reversible",
       "type": "string"
-    },
-    "revision": {
-      "default": 0,
-      "minimum": 0,
-      "title": "Revision",
-      "type": "integer"
     },
     "scope": {
       "items": {
@@ -320,6 +354,11 @@
       "default": null,
       "title": "Undo Window Seconds"
     },
+    "version": {
+      "exclusiveMinimum": 0,
+      "title": "Version",
+      "type": "integer"
+    },
     "why": {
       "anyOf": [
         {
@@ -339,8 +378,19 @@
     "level",
     "state",
     "title",
-    "body"
+    "body",
+    "version"
   ],
+  "then": {
+    "properties": {
+      "payload_hash": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "payload_hash"
+    ]
+  },
   "title": "Card",
   "type": "object"
 }

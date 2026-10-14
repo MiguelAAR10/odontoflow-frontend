@@ -112,7 +112,6 @@
           "undo": false,
           "undo_window_seconds": null,
           "delta": null,
-          "revision": 0,
           "edit": false,
           "ev": null,
           "amounts": [
@@ -136,7 +135,10 @@
               "amount_cents": 82000,
               "currency": "PEN"
             }
-          ]
+          ],
+          "version": 1,
+          "payload_hash": "07233cee2a78a5f4a32ed000d081784ad43abfc3d80e02388d12a4631075e560",
+          "proposal_id": null
         }
       }
     }
@@ -154,7 +156,7 @@
       "type": "TOOL_CALL_RESULT",
       "messageId": "sim:cv-cobranza:cv-saldos:result",
       "toolCallId": "sim:cv-cobranza:cv-saldos",
-      "content": "{\"card\": {\"id\": \"cv-saldos\", \"agent\": \"pasta\", \"level\": \"auto\", \"state\": \"ready\", \"title\": \"Saldo por antigüedad · corte 14:00\", \"body\": \"<div class=\\\"bars\\\"><div class=\\\"bar\\\"><span>0–30 d</span><span class=\\\"track\\\"><span class=\\\"fill\\\" style=\\\"width:100%;background:var(--green)\\\"></span></span><span class=\\\"n\\\">S/ 4,120.00</span></div><div class=\\\"bar\\\"><span>31–60 d</span><span class=\\\"track\\\"><span class=\\\"fill\\\" style=\\\"width:81.06796116504854%;background:var(--yellow)\\\"></span></span><span class=\\\"n\\\">S/ 3,340.00</span></div><div class=\\\"bar\\\"><span>61–90 d</span><span class=\\\"track\\\"><span class=\\\"fill\\\" style=\\\"width:38.349514563106794%;background:var(--red)\\\"></span></span><span class=\\\"n\\\">S/ 1,580.00</span></div><div class=\\\"bar\\\"><span>> 90 d</span><span class=\\\"track\\\"><span class=\\\"fill\\\" style=\\\"width:19.90291262135922%;background:var(--purple)\\\"></span></span><span class=\\\"n\\\">S/ 820.00</span></div></div><p class=\\\"muted\\\" style=\\\"font-size:13.5px;margin:0\\\">Vencido = fecha pactada superada. 2 casos en disputa excluidos.</p>\", \"why\": null, \"srcs\": [\"Caja · cargos y abonos verificados\"], \"scope\": [], \"reversible\": \"unspecified\", \"approve\": null, \"alt\": null, \"result\": null, \"undo\": false, \"undo_window_seconds\": null, \"delta\": null, \"revision\": 0, \"edit\": false, \"ev\": null, \"amounts\": [{\"label\": \"0–30 d\", \"amount_cents\": 412000, \"currency\": \"PEN\"}, {\"label\": \"31–60 d\", \"amount_cents\": 334000, \"currency\": \"PEN\"}, {\"label\": \"61–90 d\", \"amount_cents\": 158000, \"currency\": \"PEN\"}, {\"label\": \"> 90 d\", \"amount_cents\": 82000, \"currency\": \"PEN\"}]}}",
+      "content": "{\"card\": {\"id\": \"cv-saldos\", \"agent\": \"pasta\", \"level\": \"auto\", \"state\": \"ready\", \"title\": \"Saldo por antigüedad · corte 14:00\", \"body\": \"<div class=\\\"bars\\\"><div class=\\\"bar\\\"><span>0–30 d</span><span class=\\\"track\\\"><span class=\\\"fill\\\" style=\\\"width:100%;background:var(--green)\\\"></span></span><span class=\\\"n\\\">S/ 4,120.00</span></div><div class=\\\"bar\\\"><span>31–60 d</span><span class=\\\"track\\\"><span class=\\\"fill\\\" style=\\\"width:81.06796116504854%;background:var(--yellow)\\\"></span></span><span class=\\\"n\\\">S/ 3,340.00</span></div><div class=\\\"bar\\\"><span>61–90 d</span><span class=\\\"track\\\"><span class=\\\"fill\\\" style=\\\"width:38.349514563106794%;background:var(--red)\\\"></span></span><span class=\\\"n\\\">S/ 1,580.00</span></div><div class=\\\"bar\\\"><span>> 90 d</span><span class=\\\"track\\\"><span class=\\\"fill\\\" style=\\\"width:19.90291262135922%;background:var(--purple)\\\"></span></span><span class=\\\"n\\\">S/ 820.00</span></div></div><p class=\\\"muted\\\" style=\\\"font-size:13.5px;margin:0\\\">Vencido = fecha pactada superada. 2 casos en disputa excluidos.</p>\", \"why\": null, \"srcs\": [\"Caja · cargos y abonos verificados\"], \"scope\": [], \"reversible\": \"unspecified\", \"approve\": null, \"alt\": null, \"result\": null, \"undo\": false, \"undo_window_seconds\": null, \"delta\": null, \"edit\": false, \"ev\": null, \"amounts\": [{\"label\": \"0–30 d\", \"amount_cents\": 412000, \"currency\": \"PEN\"}, {\"label\": \"31–60 d\", \"amount_cents\": 334000, \"currency\": \"PEN\"}, {\"label\": \"61–90 d\", \"amount_cents\": 158000, \"currency\": \"PEN\"}, {\"label\": \"> 90 d\", \"amount_cents\": 82000, \"currency\": \"PEN\"}], \"version\": 1, \"payload_hash\": \"07233cee2a78a5f4a32ed000d081784ad43abfc3d80e02388d12a4631075e560\", \"proposal_id\": null}}",
       "agent": "pasta",
       "metadata": {
         "card": {
@@ -176,7 +178,6 @@
           "undo": false,
           "undo_window_seconds": null,
           "delta": null,
-          "revision": 0,
           "edit": false,
           "ev": null,
           "amounts": [
@@ -200,7 +201,10 @@
               "amount_cents": 82000,
               "currency": "PEN"
             }
-          ]
+          ],
+          "version": 1,
+          "payload_hash": "07233cee2a78a5f4a32ed000d081784ad43abfc3d80e02388d12a4631075e560",
+          "proposal_id": null
         }
       }
     }
@@ -288,7 +292,6 @@
           "undo": false,
           "undo_window_seconds": null,
           "delta": null,
-          "revision": 0,
           "edit": false,
           "ev": null,
           "amounts": [
@@ -307,7 +310,10 @@
               "amount_cents": 24000,
               "currency": "PEN"
             }
-          ]
+          ],
+          "version": 1,
+          "payload_hash": "b7bd02946054dd87664b52a9053e5aabb34ee41ef96c6b001c832f4e42fe403a",
+          "proposal_id": null
         }
       }
     }
@@ -325,7 +331,7 @@
       "type": "TOOL_CALL_RESULT",
       "messageId": "sim:cv-cobranza:cv-recordar:result",
       "toolCallId": "sim:cv-cobranza:cv-recordar",
-      "content": "{\"card\": {\"id\": \"cv-recordar\", \"agent\": \"pasta\", \"level\": \"aprobar\", \"state\": \"pending\", \"title\": \"Recordatorio amable a 3 pacientes\", \"body\": \"<ul class=\\\"ac-list\\\"><li><span>Jorge Huamán</span><span class=\\\"money\\\">S/ 95.50</span></li><li><span>Rosa Quispe</span><span class=\\\"money\\\">S/ 180.00</span></li><li><span>Juan Pérez</span><span class=\\\"money\\\">S/ 240.00</span></li></ul>\", \"why\": \"Saldo > 30 días · sin gestión en 15 días · sin pago en revisión\", \"srcs\": [\"Caja · 14:00\"], \"scope\": [{\"label\": \"Afecta\", \"value\": \"3 WhatsApp\", \"reversible\": null, \"expires_at\": null, \"amount\": null}, {\"label\": \"rev\", \"value\": \"No se puede deshacer el envío\", \"reversible\": \"none\", \"expires_at\": null, \"amount\": null}, {\"label\": \"Vence\", \"value\": \"hoy 18:00\", \"reversible\": null, \"expires_at\": \"2026-10-13T18:00:00-05:00\", \"amount\": null}], \"reversible\": \"none\", \"approve\": \"Aprobar envío\", \"alt\": null, \"result\": \"3 enviados · entregados · el cobrado no cambia (enviado ≠ pagado)\", \"undo\": false, \"undo_window_seconds\": null, \"delta\": null, \"revision\": 0, \"edit\": false, \"ev\": null, \"amounts\": [{\"label\": \"Jorge Huamán\", \"amount_cents\": 9550, \"currency\": \"PEN\"}, {\"label\": \"Rosa Quispe\", \"amount_cents\": 18000, \"currency\": \"PEN\"}, {\"label\": \"Juan Pérez\", \"amount_cents\": 24000, \"currency\": \"PEN\"}]}}",
+      "content": "{\"card\": {\"id\": \"cv-recordar\", \"agent\": \"pasta\", \"level\": \"aprobar\", \"state\": \"pending\", \"title\": \"Recordatorio amable a 3 pacientes\", \"body\": \"<ul class=\\\"ac-list\\\"><li><span>Jorge Huamán</span><span class=\\\"money\\\">S/ 95.50</span></li><li><span>Rosa Quispe</span><span class=\\\"money\\\">S/ 180.00</span></li><li><span>Juan Pérez</span><span class=\\\"money\\\">S/ 240.00</span></li></ul>\", \"why\": \"Saldo > 30 días · sin gestión en 15 días · sin pago en revisión\", \"srcs\": [\"Caja · 14:00\"], \"scope\": [{\"label\": \"Afecta\", \"value\": \"3 WhatsApp\", \"reversible\": null, \"expires_at\": null, \"amount\": null}, {\"label\": \"rev\", \"value\": \"No se puede deshacer el envío\", \"reversible\": \"none\", \"expires_at\": null, \"amount\": null}, {\"label\": \"Vence\", \"value\": \"hoy 18:00\", \"reversible\": null, \"expires_at\": \"2026-10-13T18:00:00-05:00\", \"amount\": null}], \"reversible\": \"none\", \"approve\": \"Aprobar envío\", \"alt\": null, \"result\": \"3 enviados · entregados · el cobrado no cambia (enviado ≠ pagado)\", \"undo\": false, \"undo_window_seconds\": null, \"delta\": null, \"edit\": false, \"ev\": null, \"amounts\": [{\"label\": \"Jorge Huamán\", \"amount_cents\": 9550, \"currency\": \"PEN\"}, {\"label\": \"Rosa Quispe\", \"amount_cents\": 18000, \"currency\": \"PEN\"}, {\"label\": \"Juan Pérez\", \"amount_cents\": 24000, \"currency\": \"PEN\"}], \"version\": 1, \"payload_hash\": \"b7bd02946054dd87664b52a9053e5aabb34ee41ef96c6b001c832f4e42fe403a\", \"proposal_id\": null}}",
       "agent": "pasta",
       "metadata": {
         "card": {
@@ -369,7 +375,6 @@
           "undo": false,
           "undo_window_seconds": null,
           "delta": null,
-          "revision": 0,
           "edit": false,
           "ev": null,
           "amounts": [
@@ -388,7 +393,10 @@
               "amount_cents": 24000,
               "currency": "PEN"
             }
-          ]
+          ],
+          "version": 1,
+          "payload_hash": "b7bd02946054dd87664b52a9053e5aabb34ee41ef96c6b001c832f4e42fe403a",
+          "proposal_id": null
         }
       }
     }
@@ -480,7 +488,6 @@
                 "undo": false,
                 "undo_window_seconds": null,
                 "delta": null,
-                "revision": 0,
                 "edit": false,
                 "ev": null,
                 "amounts": [
@@ -499,7 +506,10 @@
                     "amount_cents": 24000,
                     "currency": "PEN"
                   }
-                ]
+                ],
+                "version": 1,
+                "payload_hash": "b7bd02946054dd87664b52a9053e5aabb34ee41ef96c6b001c832f4e42fe403a",
+                "proposal_id": null
               }
             }
           }

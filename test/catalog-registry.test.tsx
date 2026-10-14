@@ -19,7 +19,7 @@ describe("catálogo cerrado", () => {
 
   it.each([
     { type: "Part", props: { kind: "kpi", title: "Resumen", items: [{ label: "Hoy", value: 2 }] } },
-    { type: "Card", props: { card: { id: "test", agent: "airi", level: "auto", state: "ready", title: "Resumen", body: "Datos" } } },
+    { type: "Card", props: { card: { id: "test", agent: "airi", level: "auto", state: "ready", version: 1, title: "Resumen", body: "Datos" } } },
     { type: "Notice", props: { text: "Pendiente de revisar" } },
     { type: "Ask", props: { text: "¿Qué sede?", options: [{ id: "lince", label: "Lince" }] } },
     { type: "Act", props: { label: "Agenda", target: "agenda" } },
@@ -33,7 +33,7 @@ describe("catálogo cerrado", () => {
   });
 
   it("rechaza DTO ampliado, importes negativos y opciones repetidas", () => {
-    const card = { id: "test", agent: "airi", level: "auto", state: "ready", title: "Resumen", body: "Datos" };
+    const card = { id: "test", agent: "airi", level: "auto", state: "ready", version: 1, title: "Resumen", body: "Datos" };
     for (const item of [
       { type: "Card", props: { card: { ...card, payload_hash: "inventado" } } },
       { type: "Part", props: { kind: "kpi", title: "Importe", items: [{ label: "Hoy", value: { amount_cents: -100, currency: "PEN" } }] } },

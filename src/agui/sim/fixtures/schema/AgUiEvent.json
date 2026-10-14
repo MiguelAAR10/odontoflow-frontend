@@ -1,5 +1,351 @@
 {
   "$defs": {
+    "Card": {
+      "additionalProperties": false,
+      "if": {
+        "properties": {
+          "level": {
+            "enum": [
+              "aprobar",
+              "borrador"
+            ]
+          }
+        },
+        "required": [
+          "level"
+        ]
+      },
+      "properties": {
+        "agent": {
+          "enum": [
+            "airi",
+            "cepillo",
+            "pasta",
+            "hilo",
+            "enjuague",
+            "espejo",
+            "escudo"
+          ],
+          "title": "Agent",
+          "type": "string"
+        },
+        "alt": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Alt"
+        },
+        "amounts": {
+          "items": {
+            "$ref": "#/$defs/LabeledMoney"
+          },
+          "title": "Amounts",
+          "type": "array"
+        },
+        "approve": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Approve"
+        },
+        "body": {
+          "title": "Body",
+          "type": "string"
+        },
+        "delta": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CardDelta"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "edit": {
+          "default": false,
+          "title": "Edit",
+          "type": "boolean"
+        },
+        "ev": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ev"
+        },
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "level": {
+          "enum": [
+            "auto",
+            "borrador",
+            "aprobar"
+          ],
+          "title": "Level",
+          "type": "string"
+        },
+        "payload_hash": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "minLength": 64,
+              "pattern": "^[0-9a-fA-F]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Payload Hash"
+        },
+        "proposal_id": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Proposal Id"
+        },
+        "result": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Result"
+        },
+        "reversible": {
+          "default": "unspecified",
+          "enum": [
+            "none",
+            "reversible",
+            "reassign",
+            "until_patient_accepts",
+            "authorized_reversal",
+            "window",
+            "unspecified"
+          ],
+          "title": "Reversible",
+          "type": "string"
+        },
+        "scope": {
+          "items": {
+            "$ref": "#/$defs/CardScope"
+          },
+          "title": "Scope",
+          "type": "array"
+        },
+        "srcs": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Srcs",
+          "type": "array"
+        },
+        "state": {
+          "enum": [
+            "ready",
+            "pending",
+            "approved",
+            "declined",
+            "delegated",
+            "undone"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "title": {
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "undo": {
+          "default": false,
+          "title": "Undo",
+          "type": "boolean"
+        },
+        "undo_window_seconds": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Undo Window Seconds"
+        },
+        "version": {
+          "exclusiveMinimum": 0,
+          "title": "Version",
+          "type": "integer"
+        },
+        "why": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Why"
+        }
+      },
+      "required": [
+        "id",
+        "agent",
+        "level",
+        "state",
+        "title",
+        "body",
+        "version"
+      ],
+      "then": {
+        "properties": {
+          "payload_hash": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "payload_hash"
+        ]
+      },
+      "title": "Card",
+      "type": "object"
+    },
+    "CardDelta": {
+      "additionalProperties": false,
+      "properties": {
+        "amount_cents": {
+          "minimum": 0,
+          "title": "Amount Cents",
+          "type": "integer"
+        },
+        "currency": {
+          "const": "PEN",
+          "title": "Currency",
+          "type": "string"
+        },
+        "sede": {
+          "minLength": 1,
+          "title": "Sede",
+          "type": "string"
+        }
+      },
+      "required": [
+        "amount_cents",
+        "currency",
+        "sede"
+      ],
+      "title": "CardDelta",
+      "type": "object"
+    },
+    "CardScope": {
+      "additionalProperties": false,
+      "properties": {
+        "amount": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Money"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "expires_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expires At"
+        },
+        "label": {
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "reversible": {
+          "anyOf": [
+            {
+              "enum": [
+                "none",
+                "reversible",
+                "reassign",
+                "until_patient_accepts",
+                "authorized_reversal",
+                "window",
+                "unspecified"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reversible"
+        },
+        "value": {
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "label",
+        "value"
+      ],
+      "title": "CardScope",
+      "type": "object"
+    },
     "DeltaEvent": {
       "additionalProperties": false,
       "properties": {
@@ -19,6 +365,95 @@
         "type"
       ],
       "title": "DeltaEvent",
+      "type": "object"
+    },
+    "Interrupt": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "metadata": {
+          "$ref": "#/$defs/InterruptMetadata"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "reason",
+        "metadata"
+      ],
+      "title": "Interrupt",
+      "type": "object"
+    },
+    "InterruptMetadata": {
+      "additionalProperties": false,
+      "properties": {
+        "card": {
+          "$ref": "#/$defs/Card"
+        }
+      },
+      "required": [
+        "card"
+      ],
+      "title": "InterruptMetadata",
+      "type": "object"
+    },
+    "InterruptOutcome": {
+      "additionalProperties": false,
+      "properties": {
+        "interrupts": {
+          "items": {
+            "$ref": "#/$defs/Interrupt"
+          },
+          "minItems": 1,
+          "title": "Interrupts",
+          "type": "array"
+        },
+        "type": {
+          "const": "interrupt",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "interrupts"
+      ],
+      "title": "InterruptOutcome",
+      "type": "object"
+    },
+    "LabeledMoney": {
+      "additionalProperties": false,
+      "properties": {
+        "amount_cents": {
+          "minimum": 0,
+          "title": "Amount Cents",
+          "type": "integer"
+        },
+        "currency": {
+          "const": "PEN",
+          "title": "Currency",
+          "type": "string"
+        },
+        "label": {
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        }
+      },
+      "required": [
+        "amount_cents",
+        "currency",
+        "label"
+      ],
+      "title": "LabeledMoney",
       "type": "object"
     },
     "Money": {
@@ -91,13 +526,22 @@
           "type": "string"
         },
         "outcome": {
-          "enum": [
-            "success",
-            "interrupt",
-            "stopped"
+          "discriminator": {
+            "mapping": {
+              "interrupt": "#/$defs/InterruptOutcome",
+              "success": "#/$defs/SuccessOutcome"
+            },
+            "propertyName": "type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/SuccessOutcome"
+            },
+            {
+              "$ref": "#/$defs/InterruptOutcome"
+            }
           ],
-          "title": "Outcome",
-          "type": "string"
+          "title": "Outcome"
         },
         "type": {
           "const": "RUN_FINISHED",
@@ -349,6 +793,21 @@
       "title": "SubagentStarted",
       "type": "object"
     },
+    "SuccessOutcome": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "success",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "SuccessOutcome",
+      "type": "object"
+    },
     "TextMessageContent": {
       "additionalProperties": false,
       "properties": {
@@ -374,6 +833,132 @@
         "t"
       ],
       "title": "TextMessageContent",
+      "type": "object"
+    },
+    "TextMessageEnd": {
+      "additionalProperties": false,
+      "properties": {
+        "messageId": {
+          "minLength": 1,
+          "title": "Messageid",
+          "type": "string"
+        },
+        "occurred_at": {
+          "format": "date-time",
+          "title": "Occurred At",
+          "type": "string"
+        },
+        "type": {
+          "const": "TEXT_MESSAGE_END",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "occurred_at",
+        "type",
+        "messageId"
+      ],
+      "title": "TextMessageEnd",
+      "type": "object"
+    },
+    "TextMessageStart": {
+      "additionalProperties": false,
+      "properties": {
+        "messageId": {
+          "minLength": 1,
+          "title": "Messageid",
+          "type": "string"
+        },
+        "occurred_at": {
+          "format": "date-time",
+          "title": "Occurred At",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "developer",
+            "system",
+            "assistant",
+            "user",
+            "tool"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "type": {
+          "const": "TEXT_MESSAGE_START",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "occurred_at",
+        "type",
+        "messageId",
+        "role"
+      ],
+      "title": "TextMessageStart",
+      "type": "object"
+    },
+    "ToolCallArgs": {
+      "additionalProperties": false,
+      "properties": {
+        "delta": {
+          "minLength": 1,
+          "title": "Delta",
+          "type": "string"
+        },
+        "occurred_at": {
+          "format": "date-time",
+          "title": "Occurred At",
+          "type": "string"
+        },
+        "toolCallId": {
+          "minLength": 1,
+          "title": "Toolcallid",
+          "type": "string"
+        },
+        "type": {
+          "const": "TOOL_CALL_ARGS",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "occurred_at",
+        "type",
+        "toolCallId",
+        "delta"
+      ],
+      "title": "ToolCallArgs",
+      "type": "object"
+    },
+    "ToolCallEnd": {
+      "additionalProperties": false,
+      "properties": {
+        "occurred_at": {
+          "format": "date-time",
+          "title": "Occurred At",
+          "type": "string"
+        },
+        "toolCallId": {
+          "minLength": 1,
+          "title": "Toolcallid",
+          "type": "string"
+        },
+        "type": {
+          "const": "TOOL_CALL_END",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "occurred_at",
+        "type",
+        "toolCallId"
+      ],
+      "title": "ToolCallEnd",
       "type": "object"
     },
     "ToolCallResult": {
@@ -451,7 +1036,7 @@
       "type": "object"
     }
   },
-  "description": "The mockup's event vocabulary, not the future transport's SSE envelope.",
+  "description": "Published AIRI event vocabulary, including AG-UI transport boundaries.",
   "discriminator": {
     "mapping": {
       "RUN_ERROR": "#/$defs/RunError",
@@ -462,6 +1047,10 @@
       "STEP_STARTED": "#/$defs/StepStarted",
       "SUBAGENT_STARTED": "#/$defs/SubagentStarted",
       "TEXT_MESSAGE_CONTENT": "#/$defs/TextMessageContent",
+      "TEXT_MESSAGE_END": "#/$defs/TextMessageEnd",
+      "TEXT_MESSAGE_START": "#/$defs/TextMessageStart",
+      "TOOL_CALL_ARGS": "#/$defs/ToolCallArgs",
+      "TOOL_CALL_END": "#/$defs/ToolCallEnd",
       "TOOL_CALL_RESULT": "#/$defs/ToolCallResult",
       "TOOL_CALL_START": "#/$defs/ToolCallStart"
     },
@@ -478,10 +1067,22 @@
       "$ref": "#/$defs/SubagentStarted"
     },
     {
+      "$ref": "#/$defs/TextMessageStart"
+    },
+    {
       "$ref": "#/$defs/TextMessageContent"
     },
     {
+      "$ref": "#/$defs/TextMessageEnd"
+    },
+    {
       "$ref": "#/$defs/ToolCallStart"
+    },
+    {
+      "$ref": "#/$defs/ToolCallArgs"
+    },
+    {
+      "$ref": "#/$defs/ToolCallEnd"
     },
     {
       "$ref": "#/$defs/ToolCallResult"

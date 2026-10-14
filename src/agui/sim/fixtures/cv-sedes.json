@@ -111,7 +111,6 @@
           "undo": false,
           "undo_window_seconds": null,
           "delta": null,
-          "revision": 0,
           "edit": false,
           "ev": null,
           "amounts": [
@@ -130,7 +129,10 @@
               "amount_cents": 71000,
               "currency": "PEN"
             }
-          ]
+          ],
+          "version": 1,
+          "payload_hash": "719667f9072e99fd8a03a5aac3139d48bba9b9bacd92c26d6d396a8c3b5f2de4",
+          "proposal_id": null
         }
       }
     }
@@ -148,7 +150,7 @@
       "type": "TOOL_CALL_RESULT",
       "messageId": "sim:cv-sedes:cv-cob:result",
       "toolCallId": "sim:cv-sedes:cv-cob",
-      "content": "{\"card\": {\"id\": \"cv-cob\", \"agent\": \"enjuague\", \"level\": \"auto\", \"state\": \"ready\", \"title\": \"Cobrado verificado vs por verificar\", \"body\": \"<div class=\\\"bars\\\"><div class=\\\"bar\\\"><span>Lince</span><span class=\\\"track\\\"><span class=\\\"fill\\\" style=\\\"width:88.13559322033898%;background:var(--green)\\\"></span><span class=\\\"fill\\\" style=\\\"width:11.864406779661017%;background:var(--yellow)\\\"></span></span><span class=\\\"n\\\">S/ 3,120.00</span></div><div class=\\\"bar\\\"><span>Miraflores</span><span class=\\\"track\\\"><span class=\\\"fill\\\" style=\\\"width:68.07909604519774%;background:var(--green)\\\"></span><span class=\\\"fill\\\" style=\\\"width:18.07909604519774%;background:var(--yellow)\\\"></span></span><span class=\\\"n\\\">S/ 2,410.00</span></div><div class=\\\"bar\\\"><span>San Borja *</span><span class=\\\"track\\\"><span class=\\\"fill\\\" style=\\\"width:20.056497175141246%;background:var(--green)\\\"></span><span class=\\\"fill\\\" style=\\\"width:3.389830508474576%;background:var(--yellow)\\\"></span></span><span class=\\\"n\\\">S/ 710.00</span></div></div><div class=\\\"legend\\\"><span><i class=\\\"dot d-green\\\"></i>verificado</span><span><i class=\\\"dot d-yellow\\\"></i>por verificar</span><span>* parcial: sin caja desde 12:40</span></div>\", \"why\": null, \"srcs\": [\"Caja · 3 sedes\"], \"scope\": [], \"reversible\": \"unspecified\", \"approve\": null, \"alt\": null, \"result\": null, \"undo\": false, \"undo_window_seconds\": null, \"delta\": null, \"revision\": 0, \"edit\": false, \"ev\": null, \"amounts\": [{\"label\": \"Lince · cobrado\", \"amount_cents\": 312000, \"currency\": \"PEN\"}, {\"label\": \"Miraflores · cobrado\", \"amount_cents\": 241000, \"currency\": \"PEN\"}, {\"label\": \"San Borja · cobrado\", \"amount_cents\": 71000, \"currency\": \"PEN\"}]}}",
+      "content": "{\"card\": {\"id\": \"cv-cob\", \"agent\": \"enjuague\", \"level\": \"auto\", \"state\": \"ready\", \"title\": \"Cobrado verificado vs por verificar\", \"body\": \"<div class=\\\"bars\\\"><div class=\\\"bar\\\"><span>Lince</span><span class=\\\"track\\\"><span class=\\\"fill\\\" style=\\\"width:88.13559322033898%;background:var(--green)\\\"></span><span class=\\\"fill\\\" style=\\\"width:11.864406779661017%;background:var(--yellow)\\\"></span></span><span class=\\\"n\\\">S/ 3,120.00</span></div><div class=\\\"bar\\\"><span>Miraflores</span><span class=\\\"track\\\"><span class=\\\"fill\\\" style=\\\"width:68.07909604519774%;background:var(--green)\\\"></span><span class=\\\"fill\\\" style=\\\"width:18.07909604519774%;background:var(--yellow)\\\"></span></span><span class=\\\"n\\\">S/ 2,410.00</span></div><div class=\\\"bar\\\"><span>San Borja *</span><span class=\\\"track\\\"><span class=\\\"fill\\\" style=\\\"width:20.056497175141246%;background:var(--green)\\\"></span><span class=\\\"fill\\\" style=\\\"width:3.389830508474576%;background:var(--yellow)\\\"></span></span><span class=\\\"n\\\">S/ 710.00</span></div></div><div class=\\\"legend\\\"><span><i class=\\\"dot d-green\\\"></i>verificado</span><span><i class=\\\"dot d-yellow\\\"></i>por verificar</span><span>* parcial: sin caja desde 12:40</span></div>\", \"why\": null, \"srcs\": [\"Caja · 3 sedes\"], \"scope\": [], \"reversible\": \"unspecified\", \"approve\": null, \"alt\": null, \"result\": null, \"undo\": false, \"undo_window_seconds\": null, \"delta\": null, \"edit\": false, \"ev\": null, \"amounts\": [{\"label\": \"Lince · cobrado\", \"amount_cents\": 312000, \"currency\": \"PEN\"}, {\"label\": \"Miraflores · cobrado\", \"amount_cents\": 241000, \"currency\": \"PEN\"}, {\"label\": \"San Borja · cobrado\", \"amount_cents\": 71000, \"currency\": \"PEN\"}], \"version\": 1, \"payload_hash\": \"719667f9072e99fd8a03a5aac3139d48bba9b9bacd92c26d6d396a8c3b5f2de4\", \"proposal_id\": null}}",
       "agent": "enjuague",
       "metadata": {
         "card": {
@@ -170,7 +172,6 @@
           "undo": false,
           "undo_window_seconds": null,
           "delta": null,
-          "revision": 0,
           "edit": false,
           "ev": null,
           "amounts": [
@@ -189,7 +190,10 @@
               "amount_cents": 71000,
               "currency": "PEN"
             }
-          ]
+          ],
+          "version": 1,
+          "payload_hash": "719667f9072e99fd8a03a5aac3139d48bba9b9bacd92c26d6d396a8c3b5f2de4",
+          "proposal_id": null
         }
       }
     }
@@ -247,10 +251,12 @@
           "undo": false,
           "undo_window_seconds": null,
           "delta": null,
-          "revision": 0,
           "edit": false,
           "ev": null,
-          "amounts": []
+          "amounts": [],
+          "version": 1,
+          "payload_hash": "fda516338969f93d1c841e7b12160da0510cd16f56751597cf6f3cb036ff0437",
+          "proposal_id": null
         }
       }
     }
@@ -268,7 +274,7 @@
       "type": "TOOL_CALL_RESULT",
       "messageId": "sim:cv-sedes:cv-ocup:result",
       "toolCallId": "sim:cv-sedes:cv-ocup",
-      "content": "{\"card\": {\"id\": \"cv-ocup\", \"agent\": \"cepillo\", \"level\": \"auto\", \"state\": \"ready\", \"title\": \"Ocupación reservada hoy\", \"body\": \"<ul class=\\\"ac-list\\\"><li><span>Lince</span><span class=\\\"num\\\">78 % · 360 min libres</span></li><li><span>Miraflores</span><span class=\\\"num\\\">68 % · 460 min libres</span></li><li><span>San Borja</span><span class=\\\"num\\\">sin capacidad publicada</span></li></ul>\", \"why\": null, \"srcs\": [\"Agenda · capacidad doctor+sillón\"], \"scope\": [], \"reversible\": \"unspecified\", \"approve\": null, \"alt\": null, \"result\": null, \"undo\": false, \"undo_window_seconds\": null, \"delta\": null, \"revision\": 0, \"edit\": false, \"ev\": null, \"amounts\": []}}",
+      "content": "{\"card\": {\"id\": \"cv-ocup\", \"agent\": \"cepillo\", \"level\": \"auto\", \"state\": \"ready\", \"title\": \"Ocupación reservada hoy\", \"body\": \"<ul class=\\\"ac-list\\\"><li><span>Lince</span><span class=\\\"num\\\">78 % · 360 min libres</span></li><li><span>Miraflores</span><span class=\\\"num\\\">68 % · 460 min libres</span></li><li><span>San Borja</span><span class=\\\"num\\\">sin capacidad publicada</span></li></ul>\", \"why\": null, \"srcs\": [\"Agenda · capacidad doctor+sillón\"], \"scope\": [], \"reversible\": \"unspecified\", \"approve\": null, \"alt\": null, \"result\": null, \"undo\": false, \"undo_window_seconds\": null, \"delta\": null, \"edit\": false, \"ev\": null, \"amounts\": [], \"version\": 1, \"payload_hash\": \"fda516338969f93d1c841e7b12160da0510cd16f56751597cf6f3cb036ff0437\", \"proposal_id\": null}}",
       "agent": "cepillo",
       "metadata": {
         "card": {
@@ -290,10 +296,12 @@
           "undo": false,
           "undo_window_seconds": null,
           "delta": null,
-          "revision": 0,
           "edit": false,
           "ev": null,
-          "amounts": []
+          "amounts": [],
+          "version": 1,
+          "payload_hash": "fda516338969f93d1c841e7b12160da0510cd16f56751597cf6f3cb036ff0437",
+          "proposal_id": null
         }
       }
     }

@@ -7,7 +7,7 @@ import { createInitialState, reducer } from "../src/agui/reducer";
 import { ApiError } from "../src/contracts/client";
 
 const proposal: CardDto = {
-  id: "proposal-test", agent: "hilo", level: "aprobar", state: "pending",
+  id: "proposal-test", agent: "hilo", level: "aprobar", state: "pending", version: 1, payload_hash: "a".repeat(64),
   title: "Revisar aviso", body: "sí, ya, apruebo", approve: "Aprobar aviso",
   why: "Solicitud del paciente", srcs: ["Agenda"], scope: [{ label: "Afecta", value: "1 cita" }],
   result: "Aviso enviado",
@@ -144,9 +144,9 @@ describe("Card · intención humana", () => {
     view.update(createElement(Card, { card, onUndo, undoRemainingSeconds: 4 }));
     await act(async () => { view.root.findByType("button").props.onClick(); });
     expect(onUndo).toHaveBeenCalledWith(card);
-    view.update(createElement(Card, { card: { ...card, revision: 1 }, onUndo, undoRemainingSeconds: 0 }));
+    view.update(createElement(Card, { card: { ...card, version: 2 }, onUndo, undoRemainingSeconds: 0 }));
     expect(view.root.findAllByType("button")).toHaveLength(0);
-    view.update(createElement(Card, { card: { ...card, revision: 2, reversible: "none" }, onUndo, undoRemainingSeconds: 4 }));
+    view.update(createElement(Card, { card: { ...card, version: 3, reversible: "none" }, onUndo, undoRemainingSeconds: 4 }));
     expect(view.root.findAllByType("button")).toHaveLength(0);
     view.unmount();
   });

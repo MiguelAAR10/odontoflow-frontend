@@ -5,7 +5,7 @@ import { EventType, type Event } from "../src/agui/events.js";
 import type { Card } from "../src/agui/card.js";
 import { createInitialState, reducer } from "../src/agui/reducer.js";
 
-const card: Card = { id: "proposal", agent: "cepillo", level: "aprobar", state: "pending", title: "Reasignar citas", body: "", approve: "Aprobar" };
+const card: Card = { id: "proposal", agent: "cepillo", level: "aprobar", state: "pending", version: 1, payload_hash: "a".repeat(64), title: "Reasignar citas", body: "", approve: "Aprobar" };
 const start: Event = { type: EventType.RUN_STARTED, runId: "r1", threadId: "t1", agent: "airi", plan: ["Leer agenda", "Proponer"], timestamp: 10 };
 
 // Native V8 coverage without adding a coverage provider to the fixed deps.

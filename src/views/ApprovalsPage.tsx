@@ -16,7 +16,7 @@ import {
   type ActionableError,
   type DecisionIntent,
 } from "../api";
-import { Card as CatalogCard } from "../catalog/Card";
+import { Card as CatalogCard, LegacyInboxCard } from "../catalog/Card";
 import { AgentLabel } from "../catalog/AgentLabel";
 import type { Card } from "../agui/card";
 import { createDraftInbox, toCard, type DraftInboxRow } from "../approvals";
@@ -321,7 +321,7 @@ function ApprovalCard({ item, now, decision, onDecide, onReload }: {
     <div className="bandeja-detail-meta"><Badge tone={badge.tone}>{badge.label}</Badge>
       {pending && <span>{lapsed ? "Pasó el plazo para aprobar" : `Vence en ${formatDuration(new Date(item.expiresAt).getTime() - now)}`}</span>}
     </div>
-    <CatalogCard card={toCard(item)} status={decision?.busy ? "loading" : pending ? "pending" : item.status === "declined" ? "rejected" : item.status === "failed" ? "error" : "done"}
+    <LegacyInboxCard card={toCard(item)} status={decision?.busy ? "loading" : pending ? "pending" : item.status === "declined" ? "rejected" : item.status === "failed" ? "error" : "done"}
       loadingReason={decision?.busy ? "approval" : null}
       {...(canApprove ? { onApprove: () => onDecide(item, "approve") } : {})}
       {...(canDecline ? { onAlternative: () => onDecide(item, "decline") } : {})}
@@ -341,7 +341,7 @@ function InboxViews({ value, onChange, mine, all }: { value: string; onChange: (
   </div>;
 }
 
-function CaseList({ cards, selected, onSelect, states }: { cards: Card[]; selected: string | null; onSelect: (id: string) => void; states?: Record<string, string> }) {
+function CaseList({ cards, selected, onSelect, states }: { cards: Omit<Card, "version">[]; selected: string | null; onSelect: (id: string) => void; states?: Record<string, string> }) {
   return <ul className="bandeja-cases" aria-label="Propuestas">
     {cards.map(card => <li key={card.id}><button type="button" aria-current={card.id === selected ? "true" : undefined} aria-controls="bandeja-selected" onClick={() => onSelect(card.id)}>
       <AgentLabel agent={card.agent} />

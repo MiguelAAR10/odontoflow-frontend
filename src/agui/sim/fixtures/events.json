@@ -70,7 +70,71 @@
   },
   {
     "type": "RUN_FINISHED",
-    "outcome": "interrupt",
+    "outcome": {
+      "type": "interrupt",
+      "interrupts": [
+        {
+          "id": "r-delega",
+          "reason": "approval_required",
+          "metadata": {
+            "card": {
+              "id": "r-delega",
+              "agent": "airi",
+              "level": "borrador",
+              "state": "pending",
+              "title": "Delegar a Administración Miraflores: verificar 4 pagos Yape",
+              "body": "<ul class=\"ac-list\"><li><span>4 pagos · BBVA *1190</span><span class=\"money\">S/ 640.00</span></li><li><span>Responsable sugerido</span><span>Jimena (Caja Miraflores)</span></li></ul>",
+              "why": "Sin verificar no suben el cobrado; la captura del paciente no prueba el ingreso",
+              "srcs": [
+                "Caja Miraflores · 14:00"
+              ],
+              "scope": [
+                {
+                  "label": "Para",
+                  "value": "Jimena · Caja",
+                  "reversible": null,
+                  "expires_at": null,
+                  "amount": null
+                },
+                {
+                  "label": "Plazo",
+                  "value": "hoy 18:00",
+                  "reversible": null,
+                  "expires_at": "2026-10-13T18:00:00-05:00",
+                  "amount": null
+                },
+                {
+                  "label": "rev",
+                  "value": "Reversible: 30 s para deshacer",
+                  "reversible": "window",
+                  "expires_at": null,
+                  "amount": null
+                }
+              ],
+              "reversible": "window",
+              "approve": "Delegar",
+              "alt": null,
+              "result": "Delegado a Jimena · vuelve a ti si vence sin evidencia",
+              "undo": true,
+              "undo_window_seconds": 30,
+              "delta": null,
+              "edit": false,
+              "ev": null,
+              "amounts": [
+                {
+                  "label": "4 pagos · BBVA *1190",
+                  "amount_cents": 64000,
+                  "currency": "PEN"
+                }
+              ],
+              "version": 1,
+              "payload_hash": "5757f294bb3a429a0f355ae20c767052d263a4dd2ae4786f1569897476f83041",
+              "proposal_id": null
+            }
+          }
+        }
+      ]
+    },
     "msg": "delegar la verificación",
     "occurred_at": "2026-10-13T14:00:00-05:00"
   },
@@ -140,7 +204,73 @@
   },
   {
     "type": "RUN_FINISHED",
-    "outcome": "interrupt",
+    "outcome": {
+      "type": "interrupt",
+      "interrupts": [
+        {
+          "id": "r-lote",
+          "reason": "approval_required",
+          "metadata": {
+            "card": {
+              "id": "r-lote",
+              "agent": "hilo",
+              "level": "aprobar",
+              "state": "pending",
+              "title": "Confirmar 9 citas de mañana por WhatsApp",
+              "body": "<ul class=\"ac-list\"><li><span>08:30 Rosa Quispe · Dra. Ruiz</span><span class=\"muted\">ventana abierta</span></li><li><span>09:00 Hugo Ríos · Dr. Salinas</span><span class=\"muted\">plantilla aprobada</span></li><li><span>7 pacientes más</span><span class=\"muted\">ver lista</span></li></ul><textarea aria-label=\"Mensaje\" readonly>Hola {nombre}, te esperamos mañana a las {hora} en Clínica Lince con {doctor}. ¿Confirmas? Responde SÍ o escríbenos para cambiarla.</textarea><p class=\"muted\" style=\"font-size:13.5px\">Excluidos: 2 sin permiso de contacto · 1 ya confirmó por teléfono.</p>",
+              "why": "Citas de mañana sin confirmar · el recordatorio de ayer no tuvo respuesta en 4 casos",
+              "srcs": [
+                "Agenda Lince · mañana",
+                "Permisos de contacto"
+              ],
+              "scope": [
+                {
+                  "label": "Afecta",
+                  "value": "9 pacientes",
+                  "reversible": null,
+                  "expires_at": null,
+                  "amount": null
+                },
+                {
+                  "label": "Envío",
+                  "value": "9 WhatsApp",
+                  "reversible": null,
+                  "expires_at": null,
+                  "amount": null
+                },
+                {
+                  "label": "rev",
+                  "value": "No se puede deshacer el envío",
+                  "reversible": "none",
+                  "expires_at": null,
+                  "amount": null
+                },
+                {
+                  "label": "Vence",
+                  "value": "hoy 19:00",
+                  "reversible": null,
+                  "expires_at": "2026-10-13T19:00:00-05:00",
+                  "amount": null
+                }
+              ],
+              "reversible": "none",
+              "approve": "Aprobar y enviar 9",
+              "alt": null,
+              "result": "9 enviados · 9 entregados · 0 confirmaron aún (enviado ≠ confirmado)",
+              "undo": false,
+              "undo_window_seconds": null,
+              "delta": null,
+              "edit": false,
+              "ev": null,
+              "amounts": [],
+              "version": 1,
+              "payload_hash": "3039937d9059533de72f1acd940899b7f509b1593bc297bfd3ada02c74527aac",
+              "proposal_id": null
+            }
+          }
+        }
+      ]
+    },
     "msg": "aprobar 9 confirmaciones",
     "occurred_at": "2026-10-13T14:00:00-05:00"
   },
@@ -194,7 +324,66 @@
   },
   {
     "type": "RUN_FINISHED",
-    "outcome": "interrupt",
+    "outcome": {
+      "type": "interrupt",
+      "interrupts": [
+        {
+          "id": "r-oferta",
+          "reason": "approval_required",
+          "metadata": {
+            "card": {
+              "id": "r-oferta",
+              "agent": "hilo",
+              "level": "aprobar",
+              "state": "pending",
+              "title": "Ofrecer el hueco de 16:00 (30 min, Dra. Ruiz) a Inés Gómez",
+              "body": "<textarea aria-label=\"Mensaje\" readonly>Hola Inés, se liberó un espacio hoy a las 16:00 con la Dra. Ruiz. ¿Te lo reservamos?</textarea>",
+              "why": "Inés espera 9 días · prefiere tardes · su control cabe en 30 min",
+              "srcs": [
+                "Lista de espera · Lince",
+                "Agenda Dra. Ruiz"
+              ],
+              "scope": [
+                {
+                  "label": "Para",
+                  "value": "Inés Gómez",
+                  "reversible": null,
+                  "expires_at": null,
+                  "amount": null
+                },
+                {
+                  "label": "rev",
+                  "value": "No se puede deshacer el envío",
+                  "reversible": "none",
+                  "expires_at": null,
+                  "amount": null
+                },
+                {
+                  "label": "Reserva",
+                  "value": "solo si ella acepta y sigue libre",
+                  "reversible": null,
+                  "expires_at": null,
+                  "amount": null
+                }
+              ],
+              "reversible": "none",
+              "approve": "Aprobar y ofrecer",
+              "alt": null,
+              "result": "Oferta enviada · el hueco sigue libre hasta que Inés responda",
+              "undo": false,
+              "undo_window_seconds": null,
+              "delta": null,
+              "edit": false,
+              "ev": null,
+              "amounts": [],
+              "version": 1,
+              "payload_hash": "a4ecaa42efa57000cf517f4a67dc61b6e986c05bd7f11145d7c4ce47df1edd6a",
+              "proposal_id": null
+            }
+          }
+        }
+      ]
+    },
     "msg": "aprobar la oferta",
     "occurred_at": "2026-10-13T14:00:00-05:00"
   },
@@ -231,7 +420,9 @@
   },
   {
     "type": "RUN_FINISHED",
-    "outcome": "success",
+    "outcome": {
+      "type": "success"
+    },
     "msg": "brief listo para leer",
     "occurred_at": "2026-10-13T14:00:00-05:00"
   },
@@ -263,7 +454,9 @@
   },
   {
     "type": "RUN_FINISHED",
-    "outcome": "success",
+    "outcome": {
+      "type": "success"
+    },
     "msg": "borrador para revisar",
     "occurred_at": "2026-10-13T14:00:00-05:00"
   },
@@ -350,7 +543,65 @@
   },
   {
     "type": "RUN_FINISHED",
-    "outcome": "interrupt",
+    "outcome": {
+      "type": "interrupt",
+      "interrupts": [
+        {
+          "id": "cv-oferta",
+          "reason": "approval_required",
+          "metadata": {
+            "card": {
+              "id": "cv-oferta",
+              "agent": "hilo",
+              "level": "aprobar",
+              "state": "pending",
+              "title": "Ofrecer 16:00 a Inés Gómez",
+              "body": "<textarea aria-label=\"Mensaje\" readonly>Hola Inés, se liberó un espacio hoy a las 16:00 con la Dra. Ruiz. ¿Te lo reservamos?</textarea>",
+              "why": "Espera 9 días · prefiere tardes",
+              "srcs": [
+                "WhatsApp · ventana abierta"
+              ],
+              "scope": [
+                {
+                  "label": "Para",
+                  "value": "Inés Gómez",
+                  "reversible": null,
+                  "expires_at": null,
+                  "amount": null
+                },
+                {
+                  "label": "rev",
+                  "value": "No se puede deshacer el envío",
+                  "reversible": "none",
+                  "expires_at": null,
+                  "amount": null
+                },
+                {
+                  "label": "Reserva",
+                  "value": "solo si acepta",
+                  "reversible": null,
+                  "expires_at": null,
+                  "amount": null
+                }
+              ],
+              "reversible": "none",
+              "approve": "Aprobar y ofrecer",
+              "alt": null,
+              "result": "Oferta enviada · el hueco sigue libre hasta que responda",
+              "undo": false,
+              "undo_window_seconds": null,
+              "delta": null,
+              "edit": false,
+              "ev": null,
+              "amounts": [],
+              "version": 1,
+              "payload_hash": "a4ecaa42efa57000cf517f4a67dc61b6e986c05bd7f11145d7c4ce47df1edd6a",
+              "proposal_id": null
+            }
+          }
+        }
+      ]
+    },
     "msg": "aprobar la oferta en la tarjeta",
     "occurred_at": "2026-10-13T14:00:00-05:00"
   },
@@ -404,7 +655,81 @@
   },
   {
     "type": "RUN_FINISHED",
-    "outcome": "interrupt",
+    "outcome": {
+      "type": "interrupt",
+      "interrupts": [
+        {
+          "id": "cv-recordar",
+          "reason": "approval_required",
+          "metadata": {
+            "card": {
+              "id": "cv-recordar",
+              "agent": "pasta",
+              "level": "aprobar",
+              "state": "pending",
+              "title": "Recordatorio amable a 3 pacientes",
+              "body": "<ul class=\"ac-list\"><li><span>Jorge Huamán</span><span class=\"money\">S/ 95.50</span></li><li><span>Rosa Quispe</span><span class=\"money\">S/ 180.00</span></li><li><span>Juan Pérez</span><span class=\"money\">S/ 240.00</span></li></ul>",
+              "why": "Saldo > 30 días · sin gestión en 15 días · sin pago en revisión",
+              "srcs": [
+                "Caja · 14:00"
+              ],
+              "scope": [
+                {
+                  "label": "Afecta",
+                  "value": "3 WhatsApp",
+                  "reversible": null,
+                  "expires_at": null,
+                  "amount": null
+                },
+                {
+                  "label": "rev",
+                  "value": "No se puede deshacer el envío",
+                  "reversible": "none",
+                  "expires_at": null,
+                  "amount": null
+                },
+                {
+                  "label": "Vence",
+                  "value": "hoy 18:00",
+                  "reversible": null,
+                  "expires_at": "2026-10-13T18:00:00-05:00",
+                  "amount": null
+                }
+              ],
+              "reversible": "none",
+              "approve": "Aprobar envío",
+              "alt": null,
+              "result": "3 enviados · entregados · el cobrado no cambia (enviado ≠ pagado)",
+              "undo": false,
+              "undo_window_seconds": null,
+              "delta": null,
+              "edit": false,
+              "ev": null,
+              "amounts": [
+                {
+                  "label": "Jorge Huamán",
+                  "amount_cents": 9550,
+                  "currency": "PEN"
+                },
+                {
+                  "label": "Rosa Quispe",
+                  "amount_cents": 18000,
+                  "currency": "PEN"
+                },
+                {
+                  "label": "Juan Pérez",
+                  "amount_cents": 24000,
+                  "currency": "PEN"
+                }
+              ],
+              "version": 1,
+              "payload_hash": "b7bd02946054dd87664b52a9053e5aabb34ee41ef96c6b001c832f4e42fe403a",
+              "proposal_id": null
+            }
+          }
+        }
+      ]
+    },
     "msg": "aprobar el envío en la tarjeta",
     "occurred_at": "2026-10-13T14:00:00-05:00"
   },
@@ -457,7 +782,9 @@
   },
   {
     "type": "RUN_FINISHED",
-    "outcome": "success",
+    "outcome": {
+      "type": "success"
+    },
     "msg": "comparación lista",
     "occurred_at": "2026-10-13T14:00:00-05:00"
   },
@@ -527,9 +854,11 @@
   },
   {
     "type": "RUN_FINISHED",
-    "outcome": "stopped",
+    "outcome": {
+      "type": "success"
+    },
     "occurred_at": "2026-10-13T14:00:00-05:00",
-    "msg": null
+    "msg": "Ejecución detenida por el usuario"
   },
   {
     "type": "RUN_ERROR",

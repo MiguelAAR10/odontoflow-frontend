@@ -60,8 +60,8 @@ export const FixtureIndexSchema = z.strictObject({
 });
 export type FixtureIndex = z.infer<typeof FixtureIndexSchema>;
 
-/** Simulator-only approval metadata; never add these fields to the backend Card DTO.
- * B2-SIM attaches this envelope beside metadata.card when emitting an interrupt.
+/** Approval request identity from the backend Card DTO. The simulator also
+ * attaches a copy beside metadata.card when emitting an interrupt.
  */
 export type ApprovalEnvelope = { cardId: string; version: number; payload_hash: string };
 
@@ -122,9 +122,9 @@ function sha256(text: string): string {
   return Array.from(hash, (word) => word.toString(16).padStart(8, "0")).join("");
 }
 
-/** Pure, deterministic envelope for the immutable fixture card, version 1.
- * This temporary simulation convention must be supplied by the real backend.
+/** Preserve backend proposal identity. Only cards without a hash use the
+ * deterministic simulator fallback; real approval hashes are opaque.
  */
 export function envelopeFor(card: Card): ApprovalEnvelope {
-  return { cardId: card.id, version: 1, payload_hash: sha256(canonicalCard(card)) };
+  return { cardId: card.id, version: card.version, payload_hash: card.payload_hash ?? sha256(canonicalCard(card)) };
 }

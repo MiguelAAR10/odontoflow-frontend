@@ -17,7 +17,6 @@ export const CardScopeSchema = z.strictObject({
 
 /** Mirrors backend contracts/airi-v10/schema/Card.json, including absent vs null.
  * Runtime UI states belong in CardEntry; they must never widen the backend DTO.
- * Do not add version/payload_hash until the backend schema supplies them.
  */
 export const CardSchema = z.strictObject({
   id: z.string().min(1),
@@ -35,11 +34,17 @@ export const CardSchema = z.strictObject({
   result: z.string().min(1).nullable().optional(),
   ev: z.string().min(1).nullable().optional(),
   delta: MoneySchema.extend({ sede: z.string().min(1) }).nullable().optional(),
-  revision: z.number().int().min(0).optional(),
+  version: z.number().int().positive(),
+  payload_hash: z.string().length(64).regex(/^[0-9a-fA-F]{64}$/).nullable().optional(),
+  proposal_id: z.number().int().nullable().optional(),
   edit: z.boolean().optional(),
   undo: z.boolean().optional(),
   reversible: ReversibleSchema.optional(),
   undo_window_seconds: z.number().int().positive().nullable().optional(),
+}).superRefine((card, ctx) => {
+  if (card.level !== "auto" && card.payload_hash == null) {
+    ctx.addIssue({ code: "custom", path: ["payload_hash"], message: "A proposal requires its backend payload hash" });
+  }
 });
 
 export type Card = z.infer<typeof CardSchema>;
@@ -53,7 +58,7 @@ export interface CardEntry {
   loadingReason?: "tool" | "approval" | null;
 }
 
-export function canApproveCard(entry: CardEntry | undefined): boolean {
+export function canApproveCard(entry: (Pick<CardEntry, "status" | "loadingReason"> & { card: Pick<Card, "level" | "state"> }) | undefined): boolean {
   return !!entry && entry.card.level !== "auto"
     && (entry.card.state === "ready" || entry.card.state === "pending")
     && (entry.status === "pending" || (entry.status === "error" && entry.loadingReason === "approval"));

@@ -1,18 +1,18 @@
 {
   "contract": "airi-v10",
-  "source": ".worktrees/backend-airi-contract/contracts/airi-v10",
+  "source": "odontoflow-backend/contracts/airi-v10",
   "cutAt": "2026-10-13T14:00:00-05:00",
   "timezone": "America/Lima",
   "files": [
     {
       "file": "admin-confirma.json",
       "source": null,
-      "sha256": "200d8787784947265073dbb7245ddbe77aff01f4cd369a07f6f82eddb6089423"
+      "sha256": "dee9f3ddd1d1ef3507fb813056574c10464f05fe93ff02b282d1f9302406e242"
     },
     {
       "file": "admin-hueco.json",
       "source": null,
-      "sha256": "7eded750314ab1c2ba7913c6d6d0224156dd9fba068454fed2ec7bc046ea265d"
+      "sha256": "feba93f63be0c52c6a64f368fb23dbcba0f7c54a6c1ee98d6839060138a6134d"
     },
     {
       "file": "agenda.json",
@@ -27,7 +27,7 @@
     {
       "file": "cards.json",
       "source": "cards.json",
-      "sha256": "008e6330bd1d25e4cf9b131f9fd679b9e38788aab30bb1e062e5cdda3c25bc47"
+      "sha256": "68cfe919faf3a4f288934af02cdc5adb88ff45f593e756ed45b969f6c428743a"
     },
     {
       "file": "clinic.json",
@@ -37,17 +37,17 @@
     {
       "file": "cv-cobranza.json",
       "source": null,
-      "sha256": "ae4a4be24ebf0c5206a6885ca2a75ae8f5b813447d3f22a933feed230251b6a6"
+      "sha256": "9f0cfa2616bb12411088e66953fb7b13efe209a6faa1d934fa0ad631096e154b"
     },
     {
       "file": "cv-huecos.json",
       "source": null,
-      "sha256": "ca864ca516065d8e0f46c2c543fb4b64a0906b579a446050c821925ff3701ca7"
+      "sha256": "9d83233b7c2bba497f1197cdd70c94b75fb978958b9bdbd850da72d05309eaa4"
     },
     {
       "file": "cv-sedes.json",
       "source": null,
-      "sha256": "23c549c7da315a8a628d22841b322652e6c7d0e2378ded5d58cc3550968c6041"
+      "sha256": "5259f1fc8a3e835ee30dc092e68c7833ae419ea187216dac2c6d83ded2297946"
     },
     {
       "file": "doctor-brief.json",
@@ -62,12 +62,12 @@
     {
       "file": "dueno-compara.json",
       "source": null,
-      "sha256": "d557a9af124532ed215ea17c966ffb7f28c4da802df19c37a0f2c3127efa6c00"
+      "sha256": "36f8120e6c355aafa04a0089ea94ba6b36c35fa6c246905b98ecf2cbebf7f238"
     },
     {
       "file": "events.json",
       "source": "events.json",
-      "sha256": "8fc95ebffac695c63983eb90e92e731543b167023e0452534ebad9392544476c"
+      "sha256": "c81a7bbc612579d9a7dbf5c6d829276d7d26d7cb047287523469b9d4ca642146"
     },
     {
       "file": "gaps.json",
@@ -77,7 +77,7 @@
     {
       "file": "proposals.json",
       "source": null,
-      "sha256": "f98d7c4a0fa315802f24185c2d9b52a6beffc7ec256b9cdd89f3b6522ebb1356"
+      "sha256": "794b0121cf2de77e5dbc45989bc6ef90aef1ee30a8cc47de43e7f08b2eb1c157"
     },
     {
       "file": "roles.json",
@@ -92,7 +92,7 @@
     {
       "file": "schema/AgUiEvent.json",
       "source": "schema/AgUiEvent.json",
-      "sha256": "ed21af31013c296ea992ece0005fcc9ec49c7273141fc7e3897d2d69c263cada"
+      "sha256": "a4e3b321845a298c0a7a2f4b0c89813f4d8edebf11bba28df8008e8214121afb"
     },
     {
       "file": "schema/AgendaItem.json",
@@ -107,7 +107,7 @@
     {
       "file": "schema/Card.json",
       "source": "schema/Card.json",
-      "sha256": "9b8bf4b9f666c90b681fae235f2da277e0de8b98c78fd917cbaafe5c5fcedf50"
+      "sha256": "3e34c1ec1c2869c12c0522f2de691625a2c4f2d1b182df65ff43c2ec6a740ec5"
     },
     {
       "file": "schema/CardScope.json",
