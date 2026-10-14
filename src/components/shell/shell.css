@@ -1,0 +1,145 @@
+/* B1-SHELL: scoped v10 structure; business view styling remains in A1. */
+.airi-shell.app-shell { --shell-side: 232px; --shell-top: 60px; display: grid; grid-template-columns: var(--shell-side) minmax(0, 1fr); grid-template-rows: var(--shell-top) minmax(0, 1fr); min-height: 100dvh; background: var(--bg); color: var(--ink); }
+.airi-shell--collapsed.app-shell { --shell-side: 72px; }
+.airi-shell .app-workspace { display: contents; }
+.airi-shell .app-topbar { grid-column: 1 / -1; grid-row: 1; position: sticky; top: 0; z-index: 60; display: flex; min-width: 0; height: var(--shell-top); min-height: 0; padding: 0 18px; gap: 10px; background: var(--surface); border-bottom: 1px solid var(--line); backdrop-filter: none; box-shadow: none; }
+.shell-brand { display: inline-flex; flex: none; align-items: center; color: var(--ink); }
+.shell-logo { display: block; width: 129px; height: 30px; background: var(--ink); mask: url('/marca/airi-logo.svg') center / contain no-repeat; }
+.airi-shell .shell-icon-button { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 38px; height: 38px; min-height: 38px; padding: 0; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.airi-shell .shell-icon-button:hover { background: var(--hover); }
+.airi-shell .shell-assistant { width: auto; padding-inline: 10px; gap: 6px; font-size: 14px; }
+.airi-shell .shell-assistant[aria-expanded="true"] { background: var(--surface-2); }
+.shell-crew { display: flex; align-items: center; gap: 4px; height: 100%; margin-left: auto; }
+.shell-roles { display: flex; flex: none; gap: 2px; padding: 3px; background: var(--surface-2); border-radius: 12px; }
+.shell-roles button { min-height: 34px; padding: 5px 10px; border: 0; background: transparent; color: var(--ink-2); border-radius: 9px; font-size: 14px; }
+.shell-roles button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+.shell-role-select { display: none; }
+.shell-location-select, .shell-role-select { height: 38px; max-width: 145px; min-width: 0; padding: 0 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; color: var(--ink-2); font-size: 13px; }
+.shell-location-error { position: absolute; top: 100%; right: 18px; width: min(360px, calc(100vw - 32px)); padding: 10px; background: var(--red-soft); color: var(--red-ink); border: 1px solid var(--line); border-radius: 10px; }
+.airi-shell .global-search { flex: 0 1 210px; min-width: 100px; width: auto; height: 38px; margin: 0; padding: 0 8px; gap: 6px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; color: var(--muted); }
+.airi-shell .global-search input { width: 100%; min-width: 0; color: var(--ink); background: transparent; font-size: 13px; }
+.airi-shell .global-search input::placeholder { color: var(--muted); }
+.airi-shell .global-search__results { color: var(--ink); background: var(--surface); border-color: var(--line); }
+.airi-shell .global-search__results button { color: var(--ink); background: var(--surface); border-color: var(--line); }
+.airi-shell .global-search__results button:hover { background: var(--hover); }
+.airi-shell .topbar-actions { display: flex; gap: 6px; margin: 0; }
+.airi-shell .notification-button { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.airi-shell .new-appointment-button { position: static; display: inline-flex; align-items: center; justify-content: center; min-height: 38px; height: 38px; width: auto; padding: 0 10px; gap: 6px; background: var(--btn); color: var(--btn-ink); border: 1px solid var(--btn); border-radius: 10px; box-shadow: none; font-size: 14px; white-space: nowrap; }
+.airi-shell .mobile-menu { display: none; }
+.airi-shell .app-sidebar { grid-row: 2; grid-column: 1; position: sticky; top: var(--shell-top); inset-inline: auto; height: calc(100dvh - var(--shell-top)); width: auto; z-index: 50; display: flex; padding: 16px 12px 12px; color: var(--ink-2); background: var(--bg); border-right: 1px solid var(--line); box-shadow: none; overflow: visible; transform: none; }
+.airi-shell .app-sidebar::before { display: none; }
+.sidebar-heading { display: flex; align-items: center; justify-content: space-between; gap: 4px; min-height: 38px; padding-left: 10px; color: var(--muted); font-size: 12.5px; }
+.airi-shell .sidebar-heading .shell-icon-button { width: 32px; height: 32px; min-height: 32px; background: transparent; border: 0; }
+.airi-shell .sidebar-mobile-close { display: none; }
+.airi-shell .sidebar-nav { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; min-height: 0; overflow-y: auto; }
+.airi-shell .sidebar-item { display: flex; align-items: center; gap: 10px; min-height: 42px; padding: 7px 10px; border-radius: 10px; color: var(--ink-2); background: transparent; box-shadow: none; font-size: 15px; font-weight: 400; text-decoration: none; white-space: nowrap; }
+.airi-shell .sidebar-item:hover { background: var(--hover); color: var(--ink); }
+.airi-shell .sidebar-item--active { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); font-weight: 500; }
+.shell-clay { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 26px; height: 26px; border-radius: 8px; background: var(--surface-2); color: var(--ink-2); box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 2px 0 rgba(17,18,20,.12); }
+.shell-clay--home { background: var(--yellow-soft); color: var(--yellow-ink); }
+.shell-clay--agenda { background: var(--blue-soft); color: var(--blue-ink); }
+.shell-clay--cash { background: var(--green-soft); color: var(--green-ink); }
+.shell-clay--inbox { background: var(--red-soft); color: var(--red-ink); }
+.shell-clay--canvas, .shell-clay--patient { background: var(--purple-soft); color: var(--purple-ink); }
+.airi-shell .sidebar-admin { display: grid; gap: 6px; margin-top: auto; padding-top: 16px; }
+.airi-shell .sidebar-profile { min-width: 0; display: flex; align-items: center; gap: 10px; padding: 12px 8px; color: var(--ink); background: transparent; border: 0; border-top: 1px solid var(--line); border-radius: 0; }
+.airi-shell .sidebar-profile__avatar { background: var(--ink); color: var(--bg); }
+.airi-shell .sidebar-profile strong { color: var(--ink); font-size: 13px; }
+.airi-shell .sidebar-profile small { color: var(--muted); font-size: 12px; }
+.airi-shell .persona-switcher__text { min-width: 0; }
+.airi-shell .persona-switcher__text strong, .airi-shell .persona-switcher__text small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.airi-shell .persona-menu { color: var(--ink); background: var(--surface); border-color: var(--line); z-index: 100; }
+.airi-shell .persona-menu__option, .airi-shell .persona-menu__option strong { color: var(--ink); }
+.airi-shell .persona-menu__label, .airi-shell .persona-menu__empty, .airi-shell .persona-menu__option small { color: var(--muted); }
+.airi-shell .persona-menu__option:hover { background: var(--hover); }
+.airi-shell .persona-menu__option[aria-pressed="true"] { border-color: var(--ink-2); }
+.airi-shell .persona-menu__option svg { color: var(--ink-2); }
+/* PersonaPicker uses inline colors for the server access-code prompt. */
+.airi-shell .persona-menu .field { color: var(--ink-2) !important; }
+.airi-shell .persona-menu .field input { color: var(--ink); background: var(--surface); border-color: var(--line-2); }
+.airi-shell .persona-menu .field [role="alert"] { color: var(--red-ink) !important; }
+.shell-empty-page .empty-state { color: var(--muted); }
+@media (min-width: 761px) {
+.airi-shell--collapsed .sidebar-heading { padding: 0; justify-content: center; }
+.airi-shell--collapsed .sidebar-heading > span, .airi-shell--collapsed .sidebar-item > span:last-child, .airi-shell--collapsed .persona-switcher__text, .airi-shell--collapsed .persona-switcher__trigger > svg { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.airi-shell--collapsed .sidebar-item, .airi-shell--collapsed .sidebar-profile { justify-content: center; padding-inline: 0; }
+.airi-shell--collapsed .persona-menu { left: 0; right: auto; width: 260px; }
+.airi-shell--collapsed .shell-more summary > span:last-child { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.airi-shell--collapsed .shell-more[open] nav { position: absolute; left: 60px; bottom: 100px; width: 220px; padding: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); }
+.airi-shell--collapsed .shell-more nav .sidebar-item > span:last-child { position: static; width: auto; height: auto; clip-path: none; }
+}
+.shell-content { grid-column: 2; grid-row: 2; position: relative; display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; }
+.airi-shell--panel-open .shell-content { grid-template-columns: minmax(0, 1fr) 408px; }
+.airi-shell .app-main { min-width: 0; min-height: calc(100dvh - var(--shell-top)); padding-bottom: 100px; background: var(--bg); border: 0; }
+.airi-shell--canvas .app-main { padding-bottom: 0; }
+.agent-panel { position: sticky; top: var(--shell-top); height: calc(100dvh - var(--shell-top)); min-width: 0; display: flex; flex-direction: column; background: var(--surface); border-left: 1px solid var(--line); }
+.agent-panel[hidden] { display: none; }
+.agent-panel__header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+.agent-panel__header strong { font-family: var(--font-display); font-weight: 600; }
+.agent-panel__header span { color: var(--muted); font-family: var(--font-text); font-weight: 400; }
+.agent-panel__context { margin: 0; padding: 10px 16px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 13.5px; }
+.agent-panel__context strong { color: var(--ink-2); font-weight: 400; }
+.agent-panel__body { flex: 1; min-height: 0; overflow: auto; padding: 16px; }
+.interaction-bar { position: fixed; z-index: 55; bottom: 18px; left: calc(50% + var(--shell-side) / 2); transform: translateX(-50%); display: flex; align-items: center; gap: 6px; width: min(600px, calc(100vw - var(--shell-side) - 48px)); padding: 5px 5px 5px 6px; background: var(--surface); border: 1px solid var(--line-2); border-radius: 99px; box-shadow: var(--shadow); }
+.airi-shell--panel-open .interaction-bar { left: calc(50% + (var(--shell-side) - 408px) / 2); width: min(600px, calc(100vw - var(--shell-side) - 408px - 48px)); }
+.airi-shell .interaction-bar__thread { background: var(--surface-2); border: 0; border-radius: 50%; }
+.interaction-bar form { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; }
+.interaction-bar input { min-height: 38px; flex: 1; width: 100%; min-width: 0; padding: 0 6px; border: 0; border-radius: 8px; background: transparent; color: var(--ink); font-size: 15px; }
+.interaction-bar input::placeholder { color: var(--muted); }
+.interaction-bar__send { display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; padding: 0; flex: none; border: 0; border-radius: 50%; background: var(--btn); color: var(--btn-ink); }
+.interaction-bar__send:disabled { opacity: .45; cursor: default; }
+.interaction-bar:focus-within { border-color: var(--focus); }
+.airi-shell :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.airi-shell .toast { z-index: 150; }
+@media (max-width: 1180px) {
+  .airi-shell .app-topbar { gap: 6px; }
+  .shell-roles { display: none; }
+  .shell-role-select { display: block; }
+  .airi-shell .global-search { flex-basis: 140px; }
+  .airi-shell--panel-open .shell-content { grid-template-columns: minmax(0, 1fr); }
+  .airi-shell--panel-open .agent-panel { position: fixed; top: var(--shell-top); right: 0; width: 408px; z-index: 54; box-shadow: var(--shadow); }
+  .airi-shell--panel-open .interaction-bar { left: calc(50% + var(--shell-side) / 2); width: min(600px, calc(100vw - var(--shell-side) - 48px)); }
+}
+@media (max-width: 760px) {
+  .airi-shell.app-shell { --shell-top: 98px; --shell-side: 0px; grid-template-columns: minmax(0, 1fr); }
+  .airi-shell .app-topbar { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto auto auto; grid-template-rows: 56px 42px; gap: 0 6px; height: 98px; padding: 0 12px; }
+  .airi-shell .mobile-menu { display: inline-flex; order: -1; align-items: center; justify-content: center; width: 34px; height: 38px; min-height: 38px; padding: 0; color: var(--ink); background: transparent; border: 1px solid var(--line); border-radius: 10px; }
+  .shell-logo { width: 86px; height: 20px; }
+  .airi-shell .global-search, .airi-shell .notification-button, .shell-location-select { display: none; }
+  .shell-role-select { width: 94px; padding-inline: 4px; font-size: 12px; }
+  .airi-shell .shell-assistant { width: 34px; padding: 0; }
+  .shell-assistant span, .airi-shell .new-appointment-button span { display: none; }
+  .airi-shell .shell-theme { width: 34px; }
+  .airi-shell .new-appointment-button { width: 34px; padding: 0; }
+  .shell-crew { grid-column: 1 / -1; grid-row: 2; width: calc(100% + 24px); margin: 0 -12px; padding: 0 16px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .airi-shell .app-sidebar { position: fixed; inset: var(--shell-top) auto 0 0; width: min(280px, calc(100vw - 56px)); height: calc(100dvh - var(--shell-top)); transform: translateX(-105%); transition: transform 150ms var(--ease-standard); z-index: 80; box-shadow: var(--shadow-lg); }
+  .airi-shell .app-sidebar:not(.app-sidebar--open) { visibility: hidden; }
+  .airi-shell .app-sidebar--open { transform: translateX(0); }
+  .airi-shell .sidebar-mobile-close { display: inline-flex; }
+  .airi-shell .sidebar-collapse { display: none; }
+  .airi-shell .sidebar-backdrop { position: fixed; inset: var(--shell-top) 0 0; z-index: 75; background: var(--shell-scrim); }
+  .airi-shell .shell-content { grid-column: 1; }
+  .airi-shell--panel-open .agent-panel { inset: var(--shell-top) 0 0; width: auto; height: calc(100dvh - var(--shell-top)); z-index: 54; }
+  .airi-shell .agent-panel__body { padding-bottom: 100px; }
+  .airi-shell .interaction-bar { left: 50%; bottom: max(12px, env(safe-area-inset-bottom)); width: calc(100vw - 32px); }
+}
+@media (prefers-reduced-motion: reduce) { .airi-shell .app-sidebar { transition: none; } }
+
+.shell-more { position: relative; }
+.shell-more summary { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 7px 10px; min-height: 42px; border-radius: 10px; font-size: 14px; list-style: none; }
+.shell-more summary::-webkit-details-marker { display: none; }
+.shell-more summary > span:first-child { display: inline-flex; justify-content: center; width: 26px; flex: none; }
+.shell-more summary:hover { background: var(--hover); }
+@media (max-width: 760px) {
+  .airi-shell .shell-location-select { display: block; position: absolute; top: 58px; right: 12px; height: 36px; width: 130px; }
+  .airi-shell .shell-crew { padding-right: 150px; }
+}
+
+.airi-shell .shell-mobile-search { display: none; }
+@media (max-width: 760px) {
+  .airi-shell .app-topbar { grid-template-columns: auto minmax(0, 1fr) auto auto auto auto auto; }
+  .airi-shell .shell-logo { width: 70px; }
+  .airi-shell .shell-role-select { width: 78px; }
+  .airi-shell .shell-mobile-search { display: inline-flex; width: 34px; }
+  .airi-shell .global-search--open { display: flex; position: absolute; top: 104px; left: 12px; width: calc(100vw - 24px); height: 44px; z-index: 70; background: var(--surface); box-shadow: var(--shadow); }
+}

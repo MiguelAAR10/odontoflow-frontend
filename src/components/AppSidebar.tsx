@@ -1,31 +1,26 @@
 "use client";
 
-import { Activity, Boxes, CalendarDays, ChartColumn, ChevronsUpDown, ClipboardCheck, House, MessageCircleMore, Mic, Settings, Users, WalletCards } from "lucide-react";
+import { Boxes, ChartColumn, ChevronsUpDown, MessageCircleMore, Mic, PanelLeftClose, PanelLeftOpen, Settings, Users, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { voiceEnabled } from "../voice";
 import { canOpen, useMocks } from "../api";
-import { BrandLogo } from "./BrandLogo";
 import { PersonaPicker, usePersona } from "./PersonaContext";
 
-type SidebarEntry = { to: string; label: string; icon: typeof CalendarDays };
-const groups: Array<{ label: string; items: SidebarEntry[] }> = [
-  { label: "OPERACIÓN", items: [{ to: "/home", label: "Inicio", icon: House }, { to: "/agenda", label: "Agenda", icon: CalendarDays }, { to: "/pacientes", label: "Pacientes", icon: Users }, { to: "/aprobaciones", label: "Bandeja", icon: ClipboardCheck }] },
-  { label: "GESTIÓN", items: [{ to: "/caja", label: "Caja", icon: WalletCards }, { to: "/inventario", label: "Inventario", icon: Boxes }, { to: "/productividad", label: "Productividad", icon: ChartColumn }] },
-  { label: "IA & CANALES", items: [{ to: "/agente", label: "Actividad", icon: Activity }, { to: "/chat", label: "Chat", icon: MessageCircleMore }, ...(voiceEnabled ? [{ to: "/asistente", label: "Asistente", icon: Mic }] : [])] },
-];
+import { getNavigation, type NavigationEntry } from "../nav";
+import { useShellContext } from "./shell/ShellContext";
+import { ClayIcon } from "./shell/ClayIcon";
+import { useFocusTrap } from "./useFocusTrap";
 
 export function SidebarSection({ label, children }: { label: string; children: ReactNode }) {
   return <div className="sidebar-section"><p className="sidebar-section__label">{label}</p>{children}</div>;
 }
-
-export function SidebarItem({ item, onNavigate }: { item: SidebarEntry; onNavigate: () => void }) {
+export function SidebarItem({ item, onNavigate }: { item: NavigationEntry; onNavigate: () => void }) {
   const pathname = usePathname();
-  const Icon = item.icon;
   const active = pathname === item.to || pathname.startsWith(`${item.to}/`);
-  return <Link href={item.to} onClick={onNavigate} className={`sidebar-item ${active ? "sidebar-item--active" : ""}`} aria-current={active ? "page" : undefined}>
-    <Icon size={19} strokeWidth={1.9} aria-hidden="true" /><span>{item.label}</span>
+  return <Link href={item.to} title={item.label} onClick={onNavigate} className={`sidebar-item ${active ? "sidebar-item--active" : ""}`} aria-current={active ? "page" : undefined}>
+    <ClayIcon name={item.icon} /><span>{item.label}</span>
   </Link>;
 }
 
@@ -80,19 +75,25 @@ function PersonaSwitcher() {
   </div>;
 }
 
-export function AppSidebar({ mobileOpen, onNavigate }: { mobileOpen: boolean; onNavigate: () => void }) {
+export function AppSidebar({ mobileOpen, collapsed, onNavigate, onToggleCollapse }: { mobileOpen: boolean; collapsed: boolean; onNavigate: () => void; onToggleCollapse: () => void }) {
   const { identity } = usePersona();
-  // Modules are shown from the backend's permissions (`/me`), never from role names.
-  const visibleGroups = groups
-    .map((group) => ({ ...group, items: group.items.filter((item) => canOpen(identity, item.to)) }))
-    .filter((group) => group.items.length > 0);
-  return <aside className={`app-sidebar ${mobileOpen ? "app-sidebar--open" : ""}`} aria-label="Navegación principal">
-    <Link className="sidebar-brand" href="/agenda" onClick={onNavigate} aria-label="Ir a la agenda"><BrandLogo variant="horizontal" priority /></Link>
-    <nav className="sidebar-nav">
-      {visibleGroups.map((group) => <SidebarSection key={group.label} label={group.label}>{group.items.map((item) => <SidebarItem key={item.to} item={item} onNavigate={onNavigate} />)}</SidebarSection>)}
-    </nav>
+  const { role } = useShellContext();
+  const sidebar = useRef<HTMLElement>(null);
+  useFocusTrap(sidebar, mobileOpen, onNavigate);
+  const items = getNavigation(role).filter(item => canOpen(identity, item.to));
+  return <aside ref={sidebar} tabIndex={-1} id="app-sidebar" className={`app-sidebar ${mobileOpen ? "app-sidebar--open" : ""}`} aria-label="Navegación principal" role={mobileOpen ? "dialog" : undefined} aria-modal={mobileOpen || undefined}>
+    <div className="sidebar-heading"><span>{({ dueno: "Dirección", doctor: "Consulta", admin: "Operación" })[role]}</span>
+      <button className="shell-icon-button sidebar-collapse" type="button" onClick={onToggleCollapse} aria-label={collapsed ? "Expandir navegación" : "Plegar navegación"} aria-expanded={!collapsed} title="Plegar navegación (⌘B)">{collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}</button>
+      <button className="shell-icon-button sidebar-mobile-close" type="button" onClick={onNavigate} aria-label="Cerrar navegación"><X size={18} /></button>
+    </div>
+    <nav className="sidebar-nav">{items.map(item => <SidebarItem key={item.to} item={item} onNavigate={onNavigate} />)}</nav>
     <div className="sidebar-admin">
-      <SidebarItem item={{ to: "/configuracion", label: "Configuración", icon: Settings }} onNavigate={onNavigate} />
+      <details className="shell-more"><summary title="Más secciones"><span aria-hidden="true">•••</span><span>Más secciones</span></summary><nav aria-label="Más secciones">{[
+        { to: "/pacientes", label: "Pacientes", icon: Users }, { to: "/inventario", label: "Inventario", icon: Boxes },
+        { to: "/productividad", label: "Productividad", icon: ChartColumn }, { to: "/chat", label: "Chat", icon: MessageCircleMore },
+        ...(voiceEnabled ? [{ to: "/asistente", label: "Asistente de voz", icon: Mic }] : []),
+      ].filter(item => canOpen(identity, item.to)).map(item => <Link key={item.to} href={item.to} title={item.label} onClick={onNavigate} className="sidebar-item"><span className="shell-clay" aria-hidden="true"><item.icon size={19} /></span><span>{item.label}</span></Link>)}</nav></details>
+      <Link className="sidebar-item" href="/configuracion" title="Configuración" onClick={onNavigate}><span className="shell-clay" aria-hidden="true"><Settings size={19} /></span><span>Configuración</span></Link>
       <PersonaSwitcher />
     </div>
   </aside>;
