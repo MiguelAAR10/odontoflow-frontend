@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { Check, ClipboardCheck, Play, RotateCcw, ShieldCheck } from "lucide-react";
 import {
@@ -18,6 +18,7 @@ import {
 } from "../api";
 import { Card as CatalogCard, LegacyInboxCard } from "../catalog/Card";
 import { AgentLabel } from "../catalog/AgentLabel";
+import { Character } from "../crew/characters/Character";
 import type { Card } from "../agui/card";
 import { createDraftInbox, toCard, type DraftInboxRow } from "../approvals";
 import { Badge } from "../components/Badge";
@@ -44,11 +45,18 @@ export function ApprovalsPage() {
     </div>
     {!loading && !human && <p className="approvals-notice" role="note">Para aprobar o declinar, elige quién eres en el menú de perfil, abajo a la izquierda.</p>}
     <BandejaStyles />
-    {useMocks ? <FixtureInbox key={version} identity={identity} /> : <>
-      <InboxSection reloadToken={reloadToken} />
-      <AgentRunsPanel identity={identity} onRan={() => setReloadToken((value) => value + 1)} />
-    </>}
+    <ClinicInbox key={version} reloadToken={reloadToken} />
+    {!useMocks && <AgentRunsPanel identity={identity} onRan={() => setReloadToken((value) => value + 1)} />}
   </section>;
+}
+
+export interface InboxSummary { pending: number; verification: number | null }
+/** Same clinic queue in Bandeja and Mi turno, independent of an agent thread. */
+export function ClinicInbox({ reloadToken = 0, onSummary }: { reloadToken?: number; onSummary?: (summary: InboxSummary) => void }) {
+  const { identity, version } = usePersona();
+  return <div className="clinic-inbox airi-catalog"><BandejaStyles />
+    {useMocks ? <FixtureInbox key={version} identity={identity} onSummary={onSummary} /> : <InboxSection key={version} reloadToken={reloadToken} onSummary={onSummary} />}
+  </div>;
 }
 
 // --- Ejecutar ahora ---------------------------------------------------------------
@@ -175,7 +183,7 @@ interface DecisionState {
   error: ActionableError | null;
 }
 
-function InboxSection({ reloadToken }: { reloadToken: number }) {
+function InboxSection({ reloadToken, onSummary }: { reloadToken: number; onSummary?: (summary: InboxSummary) => void }) {
   const [view, setView] = useState("all");
   const [selected, setSelected] = useState<string | null>(null);
   const [status, setStatus] = useState<ApprovalStatus>("pending");
@@ -267,7 +275,11 @@ function InboxSection({ reloadToken }: { reloadToken: number }) {
     }
   };
 
-  const visible = items.filter(item => view === "all" || (item.status === "pending" && item.actions.length > 0));
+  const presentation = items.map(toCard);
+  const filteredIds = new Set(filterInboxCards(presentation, view, true).map(card => card.id));
+  const visible = items.filter(item => filteredIds.has(item.key) && (view !== "mine" || (item.status === "pending" && item.actions.length > 0)) && (view !== "verify" || item.status === "pending"));
+  const pendingCount = items.filter(item => item.status === "pending").length;
+  useEffect(() => { if (!loading && !error && status === "pending") onSummary?.({ pending: pendingCount, verification: null }); }, [loading, error, status, pendingCount, onSummary]);
   const active = visible.find(item => item.key === selected) ?? visible[0];
   const tabLabel = STATUS_TABS.find((tab) => tab.id === status)?.label ?? "";
 
@@ -283,13 +295,13 @@ function InboxSection({ reloadToken }: { reloadToken: number }) {
         <Tabs ariaLabel="Filtrar por estado" panelId="inbox-list" value={status} onChange={(value) => { reads.current.invalidate(); currentStatus.current = value as ApprovalStatus; setAnnouncement(""); setStatus(value as ApprovalStatus); }} items={STATUS_TABS} />
       </header>
       {error && <div className="form-error approvals-error" role="alert">{error}<Button compact icon={RotateCcw} onClick={() => void refresh()}>Reintentar</Button></div>}
-      <InboxViews value={view} onChange={setView} mine={items.filter(item => item.status === "pending" && item.actions.length > 0).length} all={items.length} />
+      <InboxViews value={view} onChange={setView} cards={presentation} canDecide mine={items.filter(item => item.status === "pending" && item.actions.length > 0).length} />
       <div id="inbox-list">
         {loading ? <p className="table-loading" role="status">Cargando propuestas…</p>
-          : !error && visible.length === 0 ? <p className="empty-state approvals-empty">{EMPTY_COPY[status]}</p>
+          : !error && visible.length === 0 ? <p className="empty-state approvals-empty">{view === "all" || view === "mine" ? EMPTY_COPY[status] : "No hay casos con este filtro en los datos disponibles."}</p>
           : <div className="bandeja-layout">
             <CaseList cards={visible.map(toCard)} selected={active?.key ?? null} onSelect={setSelected} states={Object.fromEntries(visible.map(item => [item.key, STATUS_BADGE[item.status].label]))} />
-            {active && <div id="bandeja-selected" className="bandeja-detail"><ApprovalCard key={active.key} item={active} now={now} decision={decisions[active.key]} onDecide={decide} onReload={() => void refresh()} /></div>}
+            {active && <div id="bandeja-selected" className="bandeja-detail"><ConversationContext card={toCard(active)} /><div className="bandeja-proposal"><ApprovalCard key={active.key} item={active} now={now} decision={decisions[active.key]} onDecide={decide} onReload={() => void refresh()} /></div></div>}
           </div>}
         {nextCursor && !loading && <div className="approvals-more"><Button compact onClick={() => void loadMore()} disabled={loadingMore}>{loadingMore ? "Cargando…" : "Cargar más"}</Button></div>}
       </div>
@@ -333,25 +345,68 @@ function ApprovalCard({ item, now, decision, onDecide, onReload }: {
   </>;
 }
 
-function InboxViews({ value, onChange, mine, all }: { value: string; onChange: (value: string) => void; mine: number; all: number }) {
+type InboxCard = Omit<Card, "version">;
+const pendingCard = (card: InboxCard) => card.state === "pending" || card.state === "ready";
+const scopeValue = (card: InboxCard, label: string) => card.scope?.find(item => item.label.toLowerCase() === label.toLowerCase())?.value;
+const needsVerification = (card: InboxCard) => pendingCard(card) && /(?:por verificar|confirmar ingreso)/i.test(card.title);
+
+export function filterInboxCards<T extends InboxCard>(cards: readonly T[], view: string, canDecide: boolean): T[] {
+  return cards.filter(card => {
+    if (view === "mine") return canDecide && pendingCard(card);
+    if (view === "verify") return needsVerification(card);
+    if (view === "unassigned") return pendingCard(card) && scopeValue(card, "Responsable")?.toLowerCase() === "sin asignar";
+    if (view === "waiting") return scopeValue(card, "Estado")?.toLowerCase() === "esperando respuesta";
+    return true;
+  });
+}
+
+export function inboxContext(card: InboxCard) {
+  const sources = (card.srcs ?? []).filter(source => /whatsapp/i.test(source));
+  return {
+    sources,
+    evidence: sources.length && card.why ? card.why : "No consta",
+    channel: scopeValue(card, "Canal") ?? "No consta",
+    responsible: scopeValue(card, "Responsable") ?? "No consta",
+    reply: "No consta",
+  };
+}
+
+function ConversationContext({ card }: { card: InboxCard }) {
+  const context = inboxContext(card);
+  const titleId = useId();
+  return <section className="bandeja-conversation" aria-labelledby={titleId}>
+    <div className="bandeja-chat">
+      <h3 id={titleId}>Conversación · WhatsApp</h3>
+      <div className="bandeja-bubble"><small>Contexto registrado</small><p>{context.evidence}</p><small>{context.sources.length ? context.sources.join(" · ") : "Historial de mensajes: No consta"}</small></div>
+      <p className="bandeja-chat-missing">Historial completo: No consta · Respuesta del equipo: {context.reply}</p>
+    </div>
+    <dl className="bandeja-window"><div><dt>Ventana / canal</dt><dd>{context.channel}</dd></div><div><dt>Responsable</dt><dd>{context.responsible}</dd></div></dl>
+  </section>;
+}
+
+function InboxViews({ value, onChange, cards, canDecide, mine }: { value: string; onChange: (value: string) => void; cards: InboxCard[]; canDecide: boolean; mine: number }) {
+  const views = [{ id: "mine", label: "Mías", count: mine },
+    { id: "unassigned", label: "Sin asignar", count: filterInboxCards(cards, "unassigned", canDecide).length },
+    { id: "verify", label: "Por verificar", count: filterInboxCards(cards, "verify", canDecide).length },
+    { id: "waiting", label: "Esperando respuesta", count: filterInboxCards(cards, "waiting", canDecide).length },
+    { id: "all", label: "Todas", count: cards.length }];
   return <div className="bandeja-views" role="group" aria-label="Vistas de bandeja">
-    <button type="button" aria-pressed={value === "mine"} onClick={() => onChange("mine")}>Mías <span>{mine}</span></button>
-    <button type="button" aria-pressed={value === "all"} onClick={() => onChange("all")}>Todas <span>{all}</span></button>
-    <p>Mías: pendientes que puedes decidir.</p>
+    {views.map(view => <button key={view.id} type="button" aria-pressed={value === view.id} onClick={() => onChange(view.id)}>{`${view.label} `}<span>{view.count}</span></button>)}
+    <p>Mías: pendientes que puedes decidir. Asignación y espera solo si constan.</p>
   </div>;
 }
 
-function CaseList({ cards, selected, onSelect, states }: { cards: Omit<Card, "version">[]; selected: string | null; onSelect: (id: string) => void; states?: Record<string, string> }) {
+function CaseList({ cards, selected, onSelect, states }: { cards: InboxCard[]; selected: string | null; onSelect: (id: string) => void; states?: Record<string, string> }) {
   return <ul className="bandeja-cases" aria-label="Propuestas">
     {cards.map(card => <li key={card.id}><button type="button" aria-current={card.id === selected ? "true" : undefined} aria-controls="bandeja-selected" onClick={() => onSelect(card.id)}>
-      <AgentLabel agent={card.agent} />
-      <b>{card.title}</b>
+      <Character agent={card.agent} decorative gaze={false} state="idle" size={28} />
+      <span className="bandeja-case-body"><b>{scopeValue(card, "Para") ?? card.title}</b><small>{scopeValue(card, "Para") ? card.title : <AgentLabel agent={card.agent} />}</small></span>
       <span className="bandeja-case-state">{states?.[card.id] ?? (card.state === "approved" ? "Aprobada" : card.state === "declined" ? "Descartada" : card.level === "borrador" ? "Borrador" : "Requiere decisión")}</span>
     </button></li>)}
   </ul>;
 }
 
-function FixtureInbox({ identity }: { identity: StaffIdentity | null }) {
+function FixtureInbox({ identity, onSummary }: { identity: StaffIdentity | null; onSummary?: (summary: InboxSummary) => void }) {
   const inbox = useRef<ReturnType<typeof createDraftInbox> | null>(null);
   const [rows, setRows] = useState<DraftInboxRow[]>([]);
   const [error, setError] = useState("");
@@ -376,8 +431,13 @@ function FixtureInbox({ identity }: { identity: StaffIdentity | null }) {
     return () => { live = false; };
   }, []);
   const canDecide = identity?.principalType === "human" && identity.permissions.includes("proposals.decide");
-  const mine = rows.filter(row => canDecide && row.card.state === "pending");
-  const visible = view === "mine" ? mine : rows;
+  const cards = rows.map(row => row.card);
+  const mine = filterInboxCards(cards, "mine", canDecide === true);
+  const filteredIds = new Set(filterInboxCards(cards, view, canDecide === true).map(card => card.id));
+  const visible = rows.filter(row => filteredIds.has(row.card.id));
+  const pendingCount = cards.filter(pendingCard).length;
+  const verificationCount = cards.filter(needsVerification).length;
+  useEffect(() => { if (loaded && !error) onSummary?.({ pending: pendingCount, verification: verificationCount }); }, [loaded, error, pendingCount, verificationCount, onSummary]);
   const active = visible.find(row => row.card.id === selected) ?? visible[0];
   const select = (id: string) => { setSelected(id); setEditing(false); setError(""); };
   const decide = (decision: ProposalDecision) => {
@@ -414,12 +474,13 @@ function FixtureInbox({ identity }: { identity: StaffIdentity | null }) {
   };
   return <section aria-labelledby="bandeja-title" className="bandeja-inbox" aria-busy={!loaded}>
     <header className="bandeja-section-head"><h2 id="bandeja-title">Necesita acción</h2><span>{mine.length} pendientes</span></header>
-    <InboxViews value={view} onChange={value => { setView(value); setEditing(false); setError(""); }} mine={mine.length} all={rows.length} />
+    <InboxViews value={view} onChange={value => { setView(value); setEditing(false); setError(""); }} mine={mine.length} cards={cards} canDecide={canDecide === true} />
     <p className="bandeja-announcement" role="status">{announcement}</p>
     {error && <p className="form-error" role="alert">{error}</p>}
-    {!loaded ? <p role="status">Cargando propuestas…</p> : !visible.length ? <p className="empty-state">No hay propuestas pendientes que puedas decidir. Revisa Todas para consultar la evidencia.</p> : <div className="bandeja-layout">
+    {!loaded ? <p role="status">Cargando propuestas…</p> : !visible.length ? <p className="empty-state">No hay casos con este filtro en los datos disponibles. Revisa Todas para consultar la evidencia.</p> : <div className="bandeja-layout">
       <CaseList cards={visible.map(row => row.card)} selected={active?.card.id ?? null} onSelect={select} />
       {active && <div id="bandeja-selected" className="bandeja-detail">
+        <ConversationContext card={active.card} /><div className="bandeja-proposal">
         <h2 ref={detailHeading} tabIndex={-1} className="bandeja-detail-heading">Detalle de propuesta <span>Versión {active.envelope.version}</span></h2>
         {editing ? <form className="bandeja-editor" onSubmit={save}>
           <label htmlFor="bandeja-draft">Texto del borrador</label>
@@ -432,7 +493,7 @@ function FixtureInbox({ identity }: { identity: StaffIdentity | null }) {
           {canDecide && active.card.level === "borrador" && active.card.state === "pending" && <button ref={editButton} className="catalog-button bandeja-edit" type="button" onClick={() => { setText(active.card.body.replace(/<[^>]*>/g, " ").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&").trim()); setEditing(true); }}>Editar borrador</button>}
         </>}
         {!canDecide && <p className="field-note">Elige una persona con permiso para decidir.</p>}
-      </div>}
+      </div></div>}
     </div>}
   </section>;
 }
@@ -440,35 +501,43 @@ function FixtureInbox({ identity }: { identity: StaffIdentity | null }) {
 function BandejaStyles() {
   return <style>{`
     .approvals-page{max-width:1200px;margin:0 auto;color:var(--ink)}
+    .clinic-inbox{min-width:0;color:var(--ink)}
     .bandeja-section-head,.bandeja-detail-meta{display:flex;align-items:center;gap:12px;margin:12px 0}
-    .bandeja-section-head h2{font:600 20px var(--font-display);margin:0}
+    .bandeja-section-head h2{font:500 19px var(--font-display);margin:0}
     .bandeja-section-head>span,.bandeja-detail-meta>span{font-size:13px;color:var(--muted)}
     .bandeja-section-head h2:before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--yellow);margin-right:9px}
-    .bandeja-views{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:18px 0}
-    .bandeja-views button{display:flex;gap:8px;align-items:center;min-height:44px;padding:8px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font:inherit;cursor:pointer}
+    .bandeja-views{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:10px 0}
+    .bandeja-views button{display:flex;gap:6px;align-items:center;min-height:36px;padding:6px 12px;border:1px solid var(--line);border-radius:99px;background:transparent;color:var(--ink);font:inherit;font-size:14px;cursor:pointer}
     .bandeja-views button[aria-pressed=true]{background:var(--btn);color:var(--btn-ink);border-color:var(--btn)}
-    .bandeja-views p{font-size:12px;color:var(--muted);margin:0}
+    .bandeja-views p{flex-basis:100%;font-size:12px;color:var(--muted);margin:2px 0}
     .bandeja-views span{font-variant-numeric:tabular-nums}
-    .bandeja-layout{display:grid;grid-template-columns:minmax(240px,.85fr) minmax(0,1.4fr);gap:20px;align-items:start}
+    .bandeja-layout{display:grid;gap:16px;align-items:start}
     .bandeja-cases{margin:0;padding:0;list-style:none;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+    .bandeja-cases .personaje,.bandeja-cases .personaje *{animation:none!important;transition:none!important}
     .bandeja-cases li+li{border-top:1px solid var(--line)}
-    .bandeja-cases button{display:grid;gap:8px;text-align:left;padding:16px;width:100%;min-height:100px;border:0;border-left:3px solid transparent;background:transparent;color:var(--ink);font:inherit;cursor:pointer;overflow-wrap:anywhere}
+    .bandeja-cases button{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:12px;align-items:center;text-align:left;padding:10px 14px;width:100%;min-height:66px;border:0;background:transparent;color:var(--ink);font:inherit;cursor:pointer;overflow-wrap:anywhere}
     .bandeja-cases button:hover{background:var(--hover)}
-    .bandeja-cases button[aria-current=true]{border-left-color:var(--blue);background:var(--blue-soft)}
+    .bandeja-cases button[aria-current=true]{background:var(--blue-soft)}
     .bandeja-cases b{font-weight:500;font-size:14px;line-height:1.5}
-    .bandeja-case-state{font-size:12px;color:var(--muted)}
-    .bandeja-detail{min-width:0;scroll-margin-top:80px}
-    .bandeja-detail-heading{font:500 14px var(--font-text);display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;margin:0 0 12px;color:var(--muted)}
+    .bandeja-case-body small{display:block;font-size:13px;color:var(--muted);margin-top:3px}
+    .bandeja-case-state{font-size:12px;color:var(--muted);text-align:right}
+    .bandeja-detail{min-width:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start;scroll-margin-top:80px}
+    .bandeja-conversation{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;min-width:0}
+    .bandeja-chat{padding:16px;display:grid;gap:12px}
+    .bandeja-chat h3{font:500 14px var(--font-text);margin:0;color:var(--muted)}
+    .bandeja-bubble{padding:10px 12px;background:var(--surface-2);border-radius:12px 12px 12px 4px;font-size:14px;line-height:1.6;overflow-wrap:anywhere}
+    .bandeja-bubble p{margin:0 0 5px}.bandeja-bubble small,.bandeja-chat-missing{font-size:12px;color:var(--muted)}
+    .bandeja-chat-missing{margin:0}.bandeja-window{display:grid;gap:6px;margin:0;padding:12px 16px;border-top:1px solid var(--line);font-size:12px;line-height:1.6}
+    .bandeja-window div{display:flex;gap:6px;flex-wrap:wrap}.bandeja-window dt{color:var(--muted)}.bandeja-window dt:after{content:":"}.bandeja-window dd{margin:0;overflow-wrap:anywhere}
+    .bandeja-proposal{min-width:0}.bandeja-detail-heading{font:400 12px var(--font-text);display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;margin:0 0 8px;color:var(--muted)}
     .bandeja-detail-heading span{font-variant-numeric:tabular-nums}
     .bandeja-editor{padding:20px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
     .bandeja-editor label{display:block;font-weight:500;margin-bottom:12px}
     .bandeja-editor textarea{width:100%;min-height:180px;resize:vertical;padding:12px;background:var(--surface-2);color:var(--ink);border:1px solid var(--line-2);border-radius:8px;font:inherit}
-    .bandeja-editor p{font-size:13px;color:var(--muted);line-height:1.6}
-    .bandeja-editor>div{display:flex;flex-wrap:wrap;gap:8px}
-    .bandeja-edit{margin-top:12px;min-height:44px}
-    .bandeja-announcement:empty{display:none}
-    .bandeja-announcement{color:var(--green-ink);font-size:14px;line-height:1.6}
-    .approvals-page button:focus-visible,.approvals-page textarea:focus-visible,.bandeja-detail-heading:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
-    @media(max-width:850px){.bandeja-layout{grid-template-columns:minmax(0,1fr)}.bandeja-cases button{min-height:88px;padding:12px}.bandeja-views p{flex-basis:100%}.bandeja-detail{margin-top:8px}}
+    .bandeja-editor p{font-size:13px;color:var(--muted);line-height:1.6}.bandeja-editor>div{display:flex;flex-wrap:wrap;gap:8px}
+    .bandeja-edit{margin-top:12px;min-height:44px}.bandeja-announcement:empty{display:none}.bandeja-announcement{color:var(--green-ink);font-size:14px;line-height:1.6}
+    .clinic-inbox button:focus-visible,.clinic-inbox textarea:focus-visible,.bandeja-detail-heading:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+    @media(max-width:1100px){.turn-page .bandeja-detail{grid-template-columns:minmax(0,1fr)}}
+    @media(max-width:760px){.bandeja-detail{grid-template-columns:minmax(0,1fr)}.bandeja-cases button{grid-template-columns:28px minmax(0,1fr);padding:10px 12px;gap:6px 10px}.bandeja-case-state{grid-column:2;text-align:left}.bandeja-views button{min-height:44px}}
   `}</style>;
 }

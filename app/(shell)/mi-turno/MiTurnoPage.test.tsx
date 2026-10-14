@@ -4,8 +4,8 @@ import { MiTurnoPage } from "../../../src/views/MiTurnoPage";
 import agenda from "../../../src/agui/sim/fixtures/agenda.json";
 import snapshots from "../../../src/agui/sim/fixtures/state.json";
 
-const model = vi.hoisted(() => ({ useMocks: false, role: "admin", locationId: "1", version: 1, worldState: {} as unknown, loadAgenda: vi.fn() }));
-vi.mock("../../../src/api", () => ({ get useMocks() { return model.useMocks; }, loadAgenda: model.loadAgenda, toApiError: (error: Error) => ({ message: error.message }) }));
+const model = vi.hoisted(() => ({ useMocks: false, role: "admin", locationId: "1", version: 1, worldState: {} as unknown, loadAgenda: vi.fn(), loadInbox: vi.fn() }));
+vi.mock("../../../src/api", () => ({ get useMocks() { return model.useMocks; }, loadAgenda: model.loadAgenda, loadInbox: model.loadInbox, describeApprovalError: (error: Error) => ({ message: error.message }), toApiError: (error: Error) => ({ message: error.message }) }));
 vi.mock("../../../src/components/shell/ShellContext", () => ({ useShellContext: () => model }));
 vi.mock("../../../src/components/PersonaContext", () => ({ usePersona: () => model }));
 vi.mock("../../../src/agui/useAgent", () => ({ useAgent: () => ({ worldState: model.worldState, cards: {}, working: false }) }));
@@ -24,6 +24,7 @@ describe("Mi turno: fuentes honestas y recarga por ámbito", () => {
     vi.useFakeTimers(); vi.setSystemTime(new Date("2026-10-14T15:00:00Z"));
     Object.assign(model, { useMocks: false, role: "admin", locationId: "1", version: 1, worldState: {} });
     model.loadAgenda.mockReset().mockResolvedValue([row]);
+    model.loadInbox.mockReset().mockResolvedValue({ items: [], nextCursor: null });
   });
   afterEach(() => { if (view) act(() => view.unmount()); vi.useRealTimers(); });
   it("sin proyección de llegadas declara indisponibilidad, incluso con agenda vacía", async () => {
@@ -55,6 +56,19 @@ describe("Mi turno: fuentes honestas y recarga por ámbito", () => {
     expect(view.root.findAllByProps({ className: "operations-count" })[0]!.children).toEqual([String(agenda.filter(row => row.state === "llegó").length)]);
     expect(content()).toContain("Carlos Rojas");
     expect(model.loadAgenda).not.toHaveBeenCalled();
+  });
+  it("abre la cola de la clínica aunque el hilo no tenga propuestas", async () => {
+    model.useMocks = true;
+    await mount();
+    expect(content()).toContain("Responder a Daniela Soto");
+    expect(content()).toContain("Confirmar ingreso Yape");
+    expect(content()).not.toContain("No hay decisiones pendientes en este hilo");
+  });
+  it("en modo real consulta la bandeja sin cargar los casos simulados", async () => {
+    await mount();
+    expect(model.loadInbox).toHaveBeenCalledWith({ status: "pending" });
+    expect(content()).not.toContain("Daniela Soto");
+    expect(content()).not.toContain("Confirmar ingreso Yape");
   });
   it("recarga lenta mantiene el radar y reemplaza el corte al resolver", async () => {
     await mount();
