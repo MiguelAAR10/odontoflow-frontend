@@ -1,0 +1,391 @@
+{
+  "timezone": "America/Lima",
+  "currency": "PEN",
+  "sedes": [
+    {
+      "name": "Lince",
+      "occupied_minutes": 1260,
+      "capacity_minutes": 1620,
+      "collected": {
+        "amount_cents": 312000,
+        "currency": "PEN"
+      },
+      "pending_verification": {
+        "amount_cents": 42000,
+        "currency": "PEN"
+      },
+      "exception": "Diferencia de caja · Caja",
+      "complete": true
+    },
+    {
+      "name": "Miraflores",
+      "occupied_minutes": 980,
+      "capacity_minutes": 1440,
+      "collected": {
+        "amount_cents": 241000,
+        "currency": "PEN"
+      },
+      "pending_verification": {
+        "amount_cents": 64000,
+        "currency": "PEN"
+      },
+      "exception": "Dr. Paredes ausente mañana · Recepción",
+      "complete": true
+    },
+    {
+      "name": "San Borja",
+      "occupied_minutes": null,
+      "capacity_minutes": null,
+      "collected": {
+        "amount_cents": 71000,
+        "currency": "PEN"
+      },
+      "pending_verification": {
+        "amount_cents": 12000,
+        "currency": "PEN"
+      },
+      "exception": "Sin datos de caja desde 12:40",
+      "complete": false
+    }
+  ],
+  "doctors": [
+    {
+      "id": "ruiz",
+      "name": "Dra. Valeria Ruiz"
+    },
+    {
+      "id": "leon",
+      "name": "Dra. Paula León"
+    },
+    {
+      "id": "salinas",
+      "name": "Dr. Andrés Salinas"
+    }
+  ],
+  "appointments": [
+    {
+      "id": "c0",
+      "start_at": "2026-10-13T11:30:00-05:00",
+      "end_at": "2026-10-13T12:30:00-05:00",
+      "duration_minutes": 60,
+      "practitioner": "ruiz",
+      "practitioner_name": "Dra. Valeria Ruiz",
+      "patient": "Marco Díaz",
+      "procedure": "Control post-endodoncia",
+      "kind": "control",
+      "state": "cerrada",
+      "arrived_at": null,
+      "sede": "Lince"
+    },
+    {
+      "id": "c1",
+      "start_at": "2026-10-13T11:30:00-05:00",
+      "end_at": "2026-10-13T12:15:00-05:00",
+      "duration_minutes": 45,
+      "practitioner": "leon",
+      "practitioner_name": "Dra. Paula León",
+      "patient": "Sofía Paredes",
+      "procedure": "Profilaxis",
+      "kind": "control",
+      "state": "cerrada",
+      "arrived_at": null,
+      "sede": "Lince"
+    },
+    {
+      "id": "c2",
+      "start_at": "2026-10-13T12:00:00-05:00",
+      "end_at": "2026-10-13T13:00:00-05:00",
+      "duration_minutes": 60,
+      "practitioner": "salinas",
+      "practitioner_name": "Dr. Andrés Salinas",
+      "patient": "Rosa Quispe",
+      "procedure": "Corona 2.4 · prueba",
+      "kind": "tratamiento",
+      "state": "cerrada",
+      "arrived_at": null,
+      "sede": "Lince"
+    },
+    {
+      "id": "c3",
+      "start_at": "2026-10-13T12:30:00-05:00",
+      "end_at": "2026-10-13T13:30:00-05:00",
+      "duration_minutes": 60,
+      "practitioner": "ruiz",
+      "practitioner_name": "Dra. Valeria Ruiz",
+      "patient": "Carlos Rojas",
+      "procedure": "Resina 1.1",
+      "kind": "tratamiento",
+      "state": "sin cerrar",
+      "arrived_at": null,
+      "sede": "Lince"
+    },
+    {
+      "id": "c4",
+      "start_at": "2026-10-13T12:45:00-05:00",
+      "end_at": "2026-10-13T13:30:00-05:00",
+      "duration_minutes": 45,
+      "practitioner": "leon",
+      "practitioner_name": "Dra. Paula León",
+      "patient": "Jorge Huamán",
+      "procedure": "Evaluación",
+      "kind": "evaluacion",
+      "state": "ausente",
+      "arrived_at": null,
+      "sede": "Lince"
+    },
+    {
+      "id": "c5",
+      "start_at": "2026-10-13T13:30:00-05:00",
+      "end_at": "2026-10-13T14:30:00-05:00",
+      "duration_minutes": 60,
+      "practitioner": "salinas",
+      "practitioner_name": "Dr. Andrés Salinas",
+      "patient": "Tomás Vega",
+      "procedure": "Implante · fase 2",
+      "kind": "tratamiento",
+      "state": "en consulta",
+      "arrived_at": null,
+      "sede": "Lince"
+    },
+    {
+      "id": "c6",
+      "start_at": "2026-10-13T13:45:00-05:00",
+      "end_at": "2026-10-13T14:30:00-05:00",
+      "duration_minutes": 45,
+      "practitioner": "leon",
+      "practitioner_name": "Dra. Paula León",
+      "patient": "Elena Castro",
+      "procedure": "Ortodoncia · control",
+      "kind": "ortodoncia",
+      "state": "en consulta",
+      "arrived_at": null,
+      "sede": "Lince"
+    },
+    {
+      "id": "c7",
+      "start_at": "2026-10-13T14:00:00-05:00",
+      "end_at": "2026-10-13T15:00:00-05:00",
+      "duration_minutes": 60,
+      "practitioner": "ruiz",
+      "practitioner_name": "Dra. Valeria Ruiz",
+      "patient": "Ana Torres",
+      "procedure": "Endodoncia 3.6 · sesión 2",
+      "kind": "tratamiento",
+      "state": "llegó",
+      "arrived_at": "2026-10-13T13:48:00-05:00",
+      "sede": "Lince"
+    },
+    {
+      "id": "c8",
+      "start_at": "2026-10-13T14:30:00-05:00",
+      "end_at": "2026-10-13T15:15:00-05:00",
+      "duration_minutes": 45,
+      "practitioner": "leon",
+      "practitioner_name": "Dra. Paula León",
+      "patient": "Bruno Lara",
+      "procedure": "Evaluación",
+      "kind": "evaluacion",
+      "state": "confirmada",
+      "arrived_at": null,
+      "sede": "Lince"
+    },
+    {
+      "id": "c9",
+      "start_at": "2026-10-13T15:00:00-05:00",
+      "end_at": "2026-10-13T16:00:00-05:00",
+      "duration_minutes": 60,
+      "practitioner": "ruiz",
+      "practitioner_name": "Dra. Valeria Ruiz",
+      "patient": "Daniela Soto",
+      "procedure": "Endodoncia 2.1",
+      "kind": "tratamiento",
+      "state": "sin confirmar",
+      "arrived_at": null,
+      "sede": "Lince"
+    },
+    {
+      "id": "c10",
+      "start_at": "2026-10-13T15:00:00-05:00",
+      "end_at": "2026-10-13T16:00:00-05:00",
+      "duration_minutes": 60,
+      "practitioner": "salinas",
+      "practitioner_name": "Dr. Andrés Salinas",
+      "patient": "Martín Paz",
+      "procedure": "Implante · control",
+      "kind": "control",
+      "state": "confirmada",
+      "arrived_at": null,
+      "sede": "Lince"
+    },
+    {
+      "id": "c11",
+      "start_at": "2026-10-13T15:30:00-05:00",
+      "end_at": "2026-10-13T16:15:00-05:00",
+      "duration_minutes": 45,
+      "practitioner": "leon",
+      "practitioner_name": "Dra. Paula León",
+      "patient": "Inés Gómez",
+      "procedure": "Ortodoncia · ajuste",
+      "kind": "ortodoncia",
+      "state": "confirmada",
+      "arrived_at": null,
+      "sede": "Lince"
+    },
+    {
+      "id": "c12",
+      "start_at": "2026-10-13T16:30:00-05:00",
+      "end_at": "2026-10-13T17:30:00-05:00",
+      "duration_minutes": 60,
+      "practitioner": "ruiz",
+      "practitioner_name": "Dra. Valeria Ruiz",
+      "patient": "Carmen Díaz",
+      "procedure": "Resina 4.6",
+      "kind": "tratamiento",
+      "state": "sin confirmar",
+      "arrived_at": null,
+      "sede": "Lince"
+    },
+    {
+      "id": "c13",
+      "start_at": "2026-10-13T16:30:00-05:00",
+      "end_at": "2026-10-13T17:00:00-05:00",
+      "duration_minutes": 30,
+      "practitioner": "salinas",
+      "practitioner_name": "Dr. Andrés Salinas",
+      "patient": "Raúl Vera",
+      "procedure": "Urgencia · dolor 3.7",
+      "kind": "urgencia",
+      "state": "confirmada",
+      "arrived_at": null,
+      "sede": "Lince"
+    },
+    {
+      "id": "c14",
+      "start_at": "2026-10-13T17:00:00-05:00",
+      "end_at": "2026-10-13T18:00:00-05:00",
+      "duration_minutes": 60,
+      "practitioner": "leon",
+      "practitioner_name": "Dra. Paula León",
+      "patient": "Paula Ñique",
+      "procedure": "Evaluación ortodoncia",
+      "kind": "evaluacion",
+      "state": "confirmada",
+      "arrived_at": null,
+      "sede": "Lince"
+    },
+    {
+      "id": "c15",
+      "start_at": "2026-10-13T17:30:00-05:00",
+      "end_at": "2026-10-13T18:30:00-05:00",
+      "duration_minutes": 60,
+      "practitioner": "ruiz",
+      "practitioner_name": "Dra. Valeria Ruiz",
+      "patient": "Luis Chávez",
+      "procedure": "Control",
+      "kind": "control",
+      "state": "confirmada",
+      "arrived_at": null,
+      "sede": "Lince"
+    }
+  ],
+  "cash": [
+    {
+      "cut_at": "2026-10-13T14:00:00-05:00",
+      "sedes": [
+        {
+          "name": "Lince",
+          "occupied_minutes": 1260,
+          "capacity_minutes": 1620,
+          "collected": {
+            "amount_cents": 312000,
+            "currency": "PEN"
+          },
+          "pending_verification": {
+            "amount_cents": 42000,
+            "currency": "PEN"
+          },
+          "exception": "Diferencia de caja · Caja",
+          "complete": true
+        },
+        {
+          "name": "Miraflores",
+          "occupied_minutes": 980,
+          "capacity_minutes": 1440,
+          "collected": {
+            "amount_cents": 241000,
+            "currency": "PEN"
+          },
+          "pending_verification": {
+            "amount_cents": 64000,
+            "currency": "PEN"
+          },
+          "exception": "Dr. Paredes ausente mañana · Recepción",
+          "complete": true
+        },
+        {
+          "name": "San Borja",
+          "occupied_minutes": null,
+          "capacity_minutes": null,
+          "collected": {
+            "amount_cents": 71000,
+            "currency": "PEN"
+          },
+          "pending_verification": {
+            "amount_cents": 12000,
+            "currency": "PEN"
+          },
+          "exception": "Sin datos de caja desde 12:40",
+          "complete": false
+        }
+      ],
+      "free_next_7_days_minutes": 2460,
+      "overdue": {
+        "amount_cents": 986000,
+        "currency": "PEN"
+      },
+      "overdue_patients": 23
+    }
+  ],
+  "trail": [
+    {
+      "at": "2026-10-13T07:02:00-05:00",
+      "agent": "enjuague",
+      "action": "3 abonos conciliados",
+      "object": "Lince · BCP",
+      "result": "automático",
+      "approver": "—",
+      "reversible": "reversible",
+      "reversibility_label": "↶ reversible"
+    },
+    {
+      "at": "2026-10-13T07:15:00-05:00",
+      "agent": "hilo",
+      "action": "12 recordatorios enviados",
+      "object": "citas de hoy",
+      "result": "12 entregados · 9 confirmaron",
+      "approver": "LM (ayer 18:40)",
+      "reversible": "none",
+      "reversibility_label": "no reversible"
+    },
+    {
+      "at": "2026-10-13T08:40:00-05:00",
+      "agent": "escudo",
+      "action": "Identidad revisada",
+      "object": "Ana Torres (homónimo)",
+      "result": "vinculada a HC-2231",
+      "approver": "LM",
+      "reversible": "reversible",
+      "reversibility_label": "↶ reversible"
+    },
+    {
+      "at": "2026-10-13T11:52:00-05:00",
+      "agent": "cepillo",
+      "action": "Propuesta preparada",
+      "object": "cobertura Dr. Paredes",
+      "result": "espera a Dirección",
+      "approver": "—",
+      "reversible": "unspecified",
+      "reversibility_label": "—"
+    }
+  ]
+}

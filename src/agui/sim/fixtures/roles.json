@@ -1,0 +1,147 @@
+[
+  {
+    "role": "dueno",
+    "name": "Carlos Rivas",
+    "subtitle": "Dirección · 3 sedes",
+    "initials": "CR",
+    "sections": [
+      {
+        "id": "home",
+        "label": "Inicio",
+        "icon": "home"
+      },
+      {
+        "id": "direccion",
+        "label": "Dirección",
+        "icon": "trail"
+      },
+      {
+        "id": "agenda",
+        "label": "Agenda",
+        "icon": "agenda"
+      },
+      {
+        "id": "caja",
+        "label": "Caja",
+        "icon": "caja"
+      },
+      {
+        "id": "bandeja",
+        "label": "Bandeja",
+        "icon": "inbox"
+      },
+      {
+        "id": "canvas",
+        "label": "Lienzo",
+        "icon": "canvas"
+      },
+      {
+        "id": "actividad",
+        "label": "Rastro",
+        "icon": "trail"
+      }
+    ],
+    "suggestions": [
+      "¿Qué requiere mi decisión hoy?",
+      "¿Cómo van las sedes?",
+      "¿Por qué Miraflores cobra menos?",
+      "Revisión semanal",
+      "Abrir el lienzo"
+    ]
+  },
+  {
+    "role": "doctor",
+    "name": "Dra. Valeria Ruiz",
+    "subtitle": "Odontóloga · Lince",
+    "initials": "VR",
+    "sections": [
+      {
+        "id": "home",
+        "label": "Inicio",
+        "icon": "home"
+      },
+      {
+        "id": "jornada",
+        "label": "Mi jornada",
+        "icon": "agenda"
+      },
+      {
+        "id": "ficha",
+        "label": "Atención",
+        "icon": "ficha"
+      },
+      {
+        "id": "agenda",
+        "label": "Mi agenda",
+        "icon": "agenda"
+      },
+      {
+        "id": "canvas",
+        "label": "Lienzo",
+        "icon": "canvas"
+      },
+      {
+        "id": "actividad",
+        "label": "Rastro",
+        "icon": "trail"
+      }
+    ],
+    "suggestions": [
+      "¿Quién es mi siguiente paciente?",
+      "Prepara el brief de Ana",
+      "Mis pendientes",
+      "Mi agenda de hoy",
+      "Abrir el lienzo"
+    ]
+  },
+  {
+    "role": "admin",
+    "name": "Lucía Méndez",
+    "subtitle": "Recepción y caja · Lince",
+    "initials": "LM",
+    "sections": [
+      {
+        "id": "home",
+        "label": "Inicio",
+        "icon": "home"
+      },
+      {
+        "id": "turno",
+        "label": "Mi turno",
+        "icon": "agenda"
+      },
+      {
+        "id": "bandeja",
+        "label": "Bandeja",
+        "icon": "inbox"
+      },
+      {
+        "id": "agenda",
+        "label": "Agenda",
+        "icon": "agenda"
+      },
+      {
+        "id": "caja",
+        "label": "Caja",
+        "icon": "caja"
+      },
+      {
+        "id": "canvas",
+        "label": "Lienzo",
+        "icon": "canvas"
+      },
+      {
+        "id": "actividad",
+        "label": "Rastro",
+        "icon": "trail"
+      }
+    ],
+    "suggestions": [
+      "¿Quién está esperando?",
+      "Abre la bandeja",
+      "Agenda de hoy",
+      "Confirma las citas de mañana",
+      "¿Quién toma el hueco de la tarde?"
+    ]
+  }
+]

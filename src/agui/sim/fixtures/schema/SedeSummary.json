@@ -1,0 +1,83 @@
+{
+  "$defs": {
+    "Money": {
+      "additionalProperties": false,
+      "properties": {
+        "amount_cents": {
+          "minimum": 0,
+          "title": "Amount Cents",
+          "type": "integer"
+        },
+        "currency": {
+          "const": "PEN",
+          "title": "Currency",
+          "type": "string"
+        }
+      },
+      "required": [
+        "amount_cents",
+        "currency"
+      ],
+      "title": "Money",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "capacity_minutes": {
+      "anyOf": [
+        {
+          "exclusiveMinimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Capacity Minutes"
+    },
+    "collected": {
+      "$ref": "#/$defs/Money"
+    },
+    "complete": {
+      "title": "Complete",
+      "type": "boolean"
+    },
+    "exception": {
+      "minLength": 1,
+      "title": "Exception",
+      "type": "string"
+    },
+    "name": {
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "occupied_minutes": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Occupied Minutes"
+    },
+    "pending_verification": {
+      "$ref": "#/$defs/Money"
+    }
+  },
+  "required": [
+    "name",
+    "occupied_minutes",
+    "capacity_minutes",
+    "collected",
+    "pending_verification",
+    "exception",
+    "complete"
+  ],
+  "title": "SedeSummary",
+  "type": "object"
+}

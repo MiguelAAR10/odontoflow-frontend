@@ -1,0 +1,561 @@
+[
+  {
+    "delayMs": 0,
+    "event": {
+      "type": "RUN_STARTED",
+      "threadId": "sim:thread:cv-huecos",
+      "runId": "sim:cv-huecos",
+      "agent": "cepillo",
+      "plan": [
+        "Leyendo la agenda de la tarde",
+        "Buscando pacientes en espera compatibles",
+        "Dibujando el caso en el lienzo",
+        "Redactando la oferta"
+      ],
+      "what": "Leyendo la agenda de la tarde"
+    }
+  },
+  {
+    "delayMs": 0,
+    "event": {
+      "type": "STATE_SNAPSHOT",
+      "snapshot": {
+        "cut_at": "2026-10-13T14:00:00-05:00",
+        "sedes": [
+          {
+            "name": "Lince",
+            "occupied_minutes": 1260,
+            "capacity_minutes": 1620,
+            "collected": {
+              "amount_cents": 312000,
+              "currency": "PEN"
+            },
+            "pending_verification": {
+              "amount_cents": 42000,
+              "currency": "PEN"
+            },
+            "exception": "Diferencia de caja · Caja",
+            "complete": true
+          },
+          {
+            "name": "Miraflores",
+            "occupied_minutes": 980,
+            "capacity_minutes": 1440,
+            "collected": {
+              "amount_cents": 241000,
+              "currency": "PEN"
+            },
+            "pending_verification": {
+              "amount_cents": 64000,
+              "currency": "PEN"
+            },
+            "exception": "Dr. Paredes ausente mañana · Recepción",
+            "complete": true
+          },
+          {
+            "name": "San Borja",
+            "occupied_minutes": null,
+            "capacity_minutes": null,
+            "collected": {
+              "amount_cents": 71000,
+              "currency": "PEN"
+            },
+            "pending_verification": {
+              "amount_cents": 12000,
+              "currency": "PEN"
+            },
+            "exception": "Sin datos de caja desde 12:40",
+            "complete": false
+          }
+        ],
+        "free_next_7_days_minutes": 2460,
+        "overdue": {
+          "amount_cents": 986000,
+          "currency": "PEN"
+        },
+        "overdue_patients": 23
+      }
+    }
+  },
+  {
+    "delayMs": 350,
+    "event": {
+      "type": "STEP_STARTED",
+      "stepName": "Leyendo la agenda de la tarde",
+      "index": 0,
+      "agent": "cepillo"
+    }
+  },
+  {
+    "delayMs": 180,
+    "event": {
+      "type": "TOOL_CALL_START",
+      "toolCallId": "sim:cv-huecos:cv-agenda",
+      "toolCallName": "prepare_card",
+      "agent": "cepillo",
+      "metadata": {
+        "card": {
+          "id": "cv-agenda",
+          "agent": "cepillo",
+          "level": "auto",
+          "state": "ready",
+          "title": "Dra. Ruiz · tarde de hoy",
+          "body": "<div class=\"mag-agenda\"><span class=\"t\">15:00</span><span class=\"b blue c-blue\">Daniela Soto · endodoncia</span><span class=\"t\">16:00</span><span class=\"b gap gap\">Hueco · 30 min</span><span class=\"t\">16:30</span><span class=\"b blue c-blue\">Carmen Díaz · resina</span><span class=\"t\">17:30</span><span class=\"b green c-green\">Luis Chávez · control</span></div>",
+          "why": null,
+          "srcs": [],
+          "scope": [],
+          "reversible": "unspecified",
+          "approve": null,
+          "alt": null,
+          "result": null,
+          "undo": false,
+          "undo_window_seconds": null,
+          "delta": null,
+          "revision": 0,
+          "edit": false,
+          "ev": null,
+          "amounts": []
+        }
+      }
+    }
+  },
+  {
+    "delayMs": 0,
+    "event": {
+      "type": "TOOL_CALL_END",
+      "toolCallId": "sim:cv-huecos:cv-agenda"
+    }
+  },
+  {
+    "delayMs": 220,
+    "event": {
+      "type": "TOOL_CALL_RESULT",
+      "messageId": "sim:cv-huecos:cv-agenda:result",
+      "toolCallId": "sim:cv-huecos:cv-agenda",
+      "content": "{\"card\": {\"id\": \"cv-agenda\", \"agent\": \"cepillo\", \"level\": \"auto\", \"state\": \"ready\", \"title\": \"Dra. Ruiz · tarde de hoy\", \"body\": \"<div class=\\\"mag-agenda\\\"><span class=\\\"t\\\">15:00</span><span class=\\\"b blue c-blue\\\">Daniela Soto · endodoncia</span><span class=\\\"t\\\">16:00</span><span class=\\\"b gap gap\\\">Hueco · 30 min</span><span class=\\\"t\\\">16:30</span><span class=\\\"b blue c-blue\\\">Carmen Díaz · resina</span><span class=\\\"t\\\">17:30</span><span class=\\\"b green c-green\\\">Luis Chávez · control</span></div>\", \"why\": null, \"srcs\": [], \"scope\": [], \"reversible\": \"unspecified\", \"approve\": null, \"alt\": null, \"result\": null, \"undo\": false, \"undo_window_seconds\": null, \"delta\": null, \"revision\": 0, \"edit\": false, \"ev\": null, \"amounts\": []}}",
+      "agent": "cepillo",
+      "metadata": {
+        "card": {
+          "id": "cv-agenda",
+          "agent": "cepillo",
+          "level": "auto",
+          "state": "ready",
+          "title": "Dra. Ruiz · tarde de hoy",
+          "body": "<div class=\"mag-agenda\"><span class=\"t\">15:00</span><span class=\"b blue c-blue\">Daniela Soto · endodoncia</span><span class=\"t\">16:00</span><span class=\"b gap gap\">Hueco · 30 min</span><span class=\"t\">16:30</span><span class=\"b blue c-blue\">Carmen Díaz · resina</span><span class=\"t\">17:30</span><span class=\"b green c-green\">Luis Chávez · control</span></div>",
+          "why": null,
+          "srcs": [],
+          "scope": [],
+          "reversible": "unspecified",
+          "approve": null,
+          "alt": null,
+          "result": null,
+          "undo": false,
+          "undo_window_seconds": null,
+          "delta": null,
+          "revision": 0,
+          "edit": false,
+          "ev": null,
+          "amounts": []
+        }
+      }
+    }
+  },
+  {
+    "delayMs": 0,
+    "event": {
+      "type": "STEP_FINISHED",
+      "stepName": "Leyendo la agenda de la tarde",
+      "agent": "cepillo"
+    }
+  },
+  {
+    "delayMs": 350,
+    "event": {
+      "type": "STEP_STARTED",
+      "stepName": "Buscando pacientes en espera compatibles",
+      "index": 1,
+      "agent": "cepillo"
+    }
+  },
+  {
+    "delayMs": 180,
+    "event": {
+      "type": "TOOL_CALL_START",
+      "toolCallId": "sim:cv-huecos:cv-espera",
+      "toolCallName": "prepare_card",
+      "agent": "cepillo",
+      "metadata": {
+        "card": {
+          "id": "cv-espera",
+          "agent": "cepillo",
+          "level": "auto",
+          "state": "ready",
+          "title": "En espera, compatibles con 30 min",
+          "body": "<ul class=\"ac-list\"><li><span><b>Inés Gómez</b> · ortodoncia</span><span class=\"muted\">9 días · tardes</span></li><li><span><b>Raúl Vera</b> · control</span><span class=\"muted\">6 días</span></li><li><span><b>Paula Ñique</b> · evaluación</span><span class=\"muted\">4 días · 60 min ✕</span></li></ul>",
+          "why": "Ordenado por días de espera y preferencia horaria",
+          "srcs": [
+            "Lista de espera · Lince"
+          ],
+          "scope": [],
+          "reversible": "unspecified",
+          "approve": null,
+          "alt": null,
+          "result": null,
+          "undo": false,
+          "undo_window_seconds": null,
+          "delta": null,
+          "revision": 0,
+          "edit": false,
+          "ev": null,
+          "amounts": []
+        }
+      }
+    }
+  },
+  {
+    "delayMs": 0,
+    "event": {
+      "type": "TOOL_CALL_END",
+      "toolCallId": "sim:cv-huecos:cv-espera"
+    }
+  },
+  {
+    "delayMs": 220,
+    "event": {
+      "type": "TOOL_CALL_RESULT",
+      "messageId": "sim:cv-huecos:cv-espera:result",
+      "toolCallId": "sim:cv-huecos:cv-espera",
+      "content": "{\"card\": {\"id\": \"cv-espera\", \"agent\": \"cepillo\", \"level\": \"auto\", \"state\": \"ready\", \"title\": \"En espera, compatibles con 30 min\", \"body\": \"<ul class=\\\"ac-list\\\"><li><span><b>Inés Gómez</b> · ortodoncia</span><span class=\\\"muted\\\">9 días · tardes</span></li><li><span><b>Raúl Vera</b> · control</span><span class=\\\"muted\\\">6 días</span></li><li><span><b>Paula Ñique</b> · evaluación</span><span class=\\\"muted\\\">4 días · 60 min ✕</span></li></ul>\", \"why\": \"Ordenado por días de espera y preferencia horaria\", \"srcs\": [\"Lista de espera · Lince\"], \"scope\": [], \"reversible\": \"unspecified\", \"approve\": null, \"alt\": null, \"result\": null, \"undo\": false, \"undo_window_seconds\": null, \"delta\": null, \"revision\": 0, \"edit\": false, \"ev\": null, \"amounts\": []}}",
+      "agent": "cepillo",
+      "metadata": {
+        "card": {
+          "id": "cv-espera",
+          "agent": "cepillo",
+          "level": "auto",
+          "state": "ready",
+          "title": "En espera, compatibles con 30 min",
+          "body": "<ul class=\"ac-list\"><li><span><b>Inés Gómez</b> · ortodoncia</span><span class=\"muted\">9 días · tardes</span></li><li><span><b>Raúl Vera</b> · control</span><span class=\"muted\">6 días</span></li><li><span><b>Paula Ñique</b> · evaluación</span><span class=\"muted\">4 días · 60 min ✕</span></li></ul>",
+          "why": "Ordenado por días de espera y preferencia horaria",
+          "srcs": [
+            "Lista de espera · Lince"
+          ],
+          "scope": [],
+          "reversible": "unspecified",
+          "approve": null,
+          "alt": null,
+          "result": null,
+          "undo": false,
+          "undo_window_seconds": null,
+          "delta": null,
+          "revision": 0,
+          "edit": false,
+          "ev": null,
+          "amounts": []
+        }
+      }
+    }
+  },
+  {
+    "delayMs": 120,
+    "event": {
+      "type": "SUBAGENT_STARTED",
+      "agent": "airi",
+      "name": "airi",
+      "subagentRunId": "sim:cv-huecos:airi"
+    }
+  },
+  {
+    "delayMs": 0,
+    "event": {
+      "type": "STEP_FINISHED",
+      "stepName": "Buscando pacientes en espera compatibles",
+      "agent": "airi"
+    }
+  },
+  {
+    "delayMs": 350,
+    "event": {
+      "type": "STEP_STARTED",
+      "stepName": "Dibujando el caso en el lienzo",
+      "index": 2,
+      "agent": "airi"
+    }
+  },
+  {
+    "delayMs": 120,
+    "event": {
+      "type": "SUBAGENT_STARTED",
+      "agent": "hilo",
+      "name": "hilo",
+      "subagentRunId": "sim:cv-huecos:hilo"
+    }
+  },
+  {
+    "delayMs": 0,
+    "event": {
+      "type": "STEP_FINISHED",
+      "stepName": "Dibujando el caso en el lienzo",
+      "agent": "hilo"
+    }
+  },
+  {
+    "delayMs": 350,
+    "event": {
+      "type": "STEP_STARTED",
+      "stepName": "Redactando la oferta",
+      "index": 3,
+      "agent": "hilo"
+    }
+  },
+  {
+    "delayMs": 180,
+    "event": {
+      "type": "TOOL_CALL_START",
+      "toolCallId": "sim:cv-huecos:cv-oferta",
+      "toolCallName": "prepare_card",
+      "agent": "hilo",
+      "metadata": {
+        "card": {
+          "id": "cv-oferta",
+          "agent": "hilo",
+          "level": "aprobar",
+          "state": "pending",
+          "title": "Ofrecer 16:00 a Inés Gómez",
+          "body": "<textarea aria-label=\"Mensaje\" readonly>Hola Inés, se liberó un espacio hoy a las 16:00 con la Dra. Ruiz. ¿Te lo reservamos?</textarea>",
+          "why": "Espera 9 días · prefiere tardes",
+          "srcs": [
+            "WhatsApp · ventana abierta"
+          ],
+          "scope": [
+            {
+              "label": "Para",
+              "value": "Inés Gómez",
+              "reversible": null,
+              "expires_at": null,
+              "amount": null
+            },
+            {
+              "label": "rev",
+              "value": "No se puede deshacer el envío",
+              "reversible": "none",
+              "expires_at": null,
+              "amount": null
+            },
+            {
+              "label": "Reserva",
+              "value": "solo si acepta",
+              "reversible": null,
+              "expires_at": null,
+              "amount": null
+            }
+          ],
+          "reversible": "none",
+          "approve": "Aprobar y ofrecer",
+          "alt": null,
+          "result": "Oferta enviada · el hueco sigue libre hasta que responda",
+          "undo": false,
+          "undo_window_seconds": null,
+          "delta": null,
+          "revision": 0,
+          "edit": false,
+          "ev": null,
+          "amounts": []
+        }
+      }
+    }
+  },
+  {
+    "delayMs": 0,
+    "event": {
+      "type": "TOOL_CALL_END",
+      "toolCallId": "sim:cv-huecos:cv-oferta"
+    }
+  },
+  {
+    "delayMs": 220,
+    "event": {
+      "type": "TOOL_CALL_RESULT",
+      "messageId": "sim:cv-huecos:cv-oferta:result",
+      "toolCallId": "sim:cv-huecos:cv-oferta",
+      "content": "{\"card\": {\"id\": \"cv-oferta\", \"agent\": \"hilo\", \"level\": \"aprobar\", \"state\": \"pending\", \"title\": \"Ofrecer 16:00 a Inés Gómez\", \"body\": \"<textarea aria-label=\\\"Mensaje\\\" readonly>Hola Inés, se liberó un espacio hoy a las 16:00 con la Dra. Ruiz. ¿Te lo reservamos?</textarea>\", \"why\": \"Espera 9 días · prefiere tardes\", \"srcs\": [\"WhatsApp · ventana abierta\"], \"scope\": [{\"label\": \"Para\", \"value\": \"Inés Gómez\", \"reversible\": null, \"expires_at\": null, \"amount\": null}, {\"label\": \"rev\", \"value\": \"No se puede deshacer el envío\", \"reversible\": \"none\", \"expires_at\": null, \"amount\": null}, {\"label\": \"Reserva\", \"value\": \"solo si acepta\", \"reversible\": null, \"expires_at\": null, \"amount\": null}], \"reversible\": \"none\", \"approve\": \"Aprobar y ofrecer\", \"alt\": null, \"result\": \"Oferta enviada · el hueco sigue libre hasta que responda\", \"undo\": false, \"undo_window_seconds\": null, \"delta\": null, \"revision\": 0, \"edit\": false, \"ev\": null, \"amounts\": []}}",
+      "agent": "hilo",
+      "metadata": {
+        "card": {
+          "id": "cv-oferta",
+          "agent": "hilo",
+          "level": "aprobar",
+          "state": "pending",
+          "title": "Ofrecer 16:00 a Inés Gómez",
+          "body": "<textarea aria-label=\"Mensaje\" readonly>Hola Inés, se liberó un espacio hoy a las 16:00 con la Dra. Ruiz. ¿Te lo reservamos?</textarea>",
+          "why": "Espera 9 días · prefiere tardes",
+          "srcs": [
+            "WhatsApp · ventana abierta"
+          ],
+          "scope": [
+            {
+              "label": "Para",
+              "value": "Inés Gómez",
+              "reversible": null,
+              "expires_at": null,
+              "amount": null
+            },
+            {
+              "label": "rev",
+              "value": "No se puede deshacer el envío",
+              "reversible": "none",
+              "expires_at": null,
+              "amount": null
+            },
+            {
+              "label": "Reserva",
+              "value": "solo si acepta",
+              "reversible": null,
+              "expires_at": null,
+              "amount": null
+            }
+          ],
+          "reversible": "none",
+          "approve": "Aprobar y ofrecer",
+          "alt": null,
+          "result": "Oferta enviada · el hueco sigue libre hasta que responda",
+          "undo": false,
+          "undo_window_seconds": null,
+          "delta": null,
+          "revision": 0,
+          "edit": false,
+          "ev": null,
+          "amounts": []
+        }
+      }
+    }
+  },
+  {
+    "delayMs": 0,
+    "event": {
+      "type": "CUSTOM",
+      "name": "airi.part",
+      "value": {
+        "key": "pointer",
+        "props": {
+          "points": [
+            {
+              "selector": ".tl-airi [data-card=\"cv-oferta\"] [data-act=\"approve\"]",
+              "label": null
+            }
+          ]
+        }
+      },
+      "agent": "hilo"
+    }
+  },
+  {
+    "delayMs": 0,
+    "event": {
+      "type": "STEP_FINISHED",
+      "stepName": "Redactando la oferta",
+      "agent": "hilo"
+    }
+  },
+  {
+    "delayMs": 0,
+    "event": {
+      "type": "CUSTOM",
+      "name": "airi.part",
+      "value": {
+        "key": "canvas",
+        "props": {
+          "cardIds": [
+            "cv-agenda",
+            "cv-espera",
+            "cv-oferta"
+          ],
+          "arrows": [
+            {
+              "from": "cv-agenda",
+              "to": "cv-espera",
+              "label": "hueco de 16:00"
+            },
+            {
+              "from": "cv-espera",
+              "to": "cv-oferta",
+              "label": "propuesta para"
+            }
+          ],
+          "points": [
+            {
+              "selector": ".tl-airi [data-card=\"cv-oferta\"] [data-act=\"approve\"]",
+              "label": null
+            }
+          ]
+        }
+      },
+      "agent": "hilo"
+    }
+  },
+  {
+    "delayMs": 120,
+    "event": {
+      "type": "RUN_FINISHED",
+      "threadId": "sim:thread:cv-huecos",
+      "runId": "sim:cv-huecos",
+      "outcome": {
+        "type": "interrupt",
+        "interrupts": [
+          {
+            "id": "cv-oferta",
+            "reason": "aprobar la oferta en la tarjeta",
+            "metadata": {
+              "card": {
+                "id": "cv-oferta",
+                "agent": "hilo",
+                "level": "aprobar",
+                "state": "pending",
+                "title": "Ofrecer 16:00 a Inés Gómez",
+                "body": "<textarea aria-label=\"Mensaje\" readonly>Hola Inés, se liberó un espacio hoy a las 16:00 con la Dra. Ruiz. ¿Te lo reservamos?</textarea>",
+                "why": "Espera 9 días · prefiere tardes",
+                "srcs": [
+                  "WhatsApp · ventana abierta"
+                ],
+                "scope": [
+                  {
+                    "label": "Para",
+                    "value": "Inés Gómez",
+                    "reversible": null,
+                    "expires_at": null,
+                    "amount": null
+                  },
+                  {
+                    "label": "rev",
+                    "value": "No se puede deshacer el envío",
+                    "reversible": "none",
+                    "expires_at": null,
+                    "amount": null
+                  },
+                  {
+                    "label": "Reserva",
+                    "value": "solo si acepta",
+                    "reversible": null,
+                    "expires_at": null,
+                    "amount": null
+                  }
+                ],
+                "reversible": "none",
+                "approve": "Aprobar y ofrecer",
+                "alt": null,
+                "result": "Oferta enviada · el hueco sigue libre hasta que responda",
+                "undo": false,
+                "undo_window_seconds": null,
+                "delta": null,
+                "revision": 0,
+                "edit": false,
+                "ev": null,
+                "amounts": []
+              }
+            }
+          }
+        ]
+      },
+      "agent": "hilo"
+    }
+  }
+]

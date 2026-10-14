@@ -1,0 +1,106 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "arrived_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Arrived At"
+    },
+    "duration_minutes": {
+      "exclusiveMinimum": 0,
+      "title": "Duration Minutes",
+      "type": "integer"
+    },
+    "end_at": {
+      "format": "date-time",
+      "title": "End At",
+      "type": "string"
+    },
+    "id": {
+      "minLength": 1,
+      "title": "Id",
+      "type": "string"
+    },
+    "kind": {
+      "enum": [
+        "control",
+        "tratamiento",
+        "evaluacion",
+        "ortodoncia",
+        "urgencia"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "patient": {
+      "minLength": 1,
+      "title": "Patient",
+      "type": "string"
+    },
+    "practitioner": {
+      "enum": [
+        "ruiz",
+        "salinas",
+        "leon"
+      ],
+      "title": "Practitioner",
+      "type": "string"
+    },
+    "practitioner_name": {
+      "minLength": 1,
+      "title": "Practitioner Name",
+      "type": "string"
+    },
+    "procedure": {
+      "minLength": 1,
+      "title": "Procedure",
+      "type": "string"
+    },
+    "sede": {
+      "minLength": 1,
+      "title": "Sede",
+      "type": "string"
+    },
+    "start_at": {
+      "format": "date-time",
+      "title": "Start At",
+      "type": "string"
+    },
+    "state": {
+      "enum": [
+        "cerrada",
+        "sin cerrar",
+        "ausente",
+        "en consulta",
+        "llegó",
+        "confirmada",
+        "sin confirmar"
+      ],
+      "title": "State",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "start_at",
+    "end_at",
+    "duration_minutes",
+    "practitioner",
+    "practitioner_name",
+    "patient",
+    "procedure",
+    "kind",
+    "state",
+    "arrived_at",
+    "sede"
+  ],
+  "title": "AgendaItem",
+  "type": "object"
+}

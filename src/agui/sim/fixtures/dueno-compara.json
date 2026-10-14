@@ -1,0 +1,509 @@
+[
+  {
+    "delayMs": 0,
+    "event": {
+      "type": "RUN_STARTED",
+      "threadId": "sim:thread:dueno-compara",
+      "runId": "sim:dueno-compara",
+      "agent": "airi",
+      "plan": [
+        "Leyendo caja de las 3 sedes",
+        "Comparando con el martes pasado a la misma hora",
+        "Buscando pagos sin verificar",
+        "Preparando una delegación"
+      ],
+      "what": "Leyendo caja de las 3 sedes"
+    }
+  },
+  {
+    "delayMs": 0,
+    "event": {
+      "type": "STATE_SNAPSHOT",
+      "snapshot": {
+        "cut_at": "2026-10-13T14:00:00-05:00",
+        "sedes": [
+          {
+            "name": "Lince",
+            "occupied_minutes": 1260,
+            "capacity_minutes": 1620,
+            "collected": {
+              "amount_cents": 312000,
+              "currency": "PEN"
+            },
+            "pending_verification": {
+              "amount_cents": 42000,
+              "currency": "PEN"
+            },
+            "exception": "Diferencia de caja · Caja",
+            "complete": true
+          },
+          {
+            "name": "Miraflores",
+            "occupied_minutes": 980,
+            "capacity_minutes": 1440,
+            "collected": {
+              "amount_cents": 241000,
+              "currency": "PEN"
+            },
+            "pending_verification": {
+              "amount_cents": 64000,
+              "currency": "PEN"
+            },
+            "exception": "Dr. Paredes ausente mañana · Recepción",
+            "complete": true
+          },
+          {
+            "name": "San Borja",
+            "occupied_minutes": null,
+            "capacity_minutes": null,
+            "collected": {
+              "amount_cents": 71000,
+              "currency": "PEN"
+            },
+            "pending_verification": {
+              "amount_cents": 12000,
+              "currency": "PEN"
+            },
+            "exception": "Sin datos de caja desde 12:40",
+            "complete": false
+          }
+        ],
+        "free_next_7_days_minutes": 2460,
+        "overdue": {
+          "amount_cents": 986000,
+          "currency": "PEN"
+        },
+        "overdue_patients": 23
+      }
+    }
+  },
+  {
+    "delayMs": 120,
+    "event": {
+      "type": "SUBAGENT_STARTED",
+      "agent": "enjuague",
+      "name": "enjuague",
+      "subagentRunId": "sim:dueno-compara:enjuague"
+    }
+  },
+  {
+    "delayMs": 350,
+    "event": {
+      "type": "STEP_STARTED",
+      "stepName": "Leyendo caja de las 3 sedes",
+      "index": 0,
+      "agent": "enjuague"
+    }
+  },
+  {
+    "delayMs": 180,
+    "event": {
+      "type": "TOOL_CALL_START",
+      "toolCallId": "sim:dueno-compara:r-compara",
+      "toolCallName": "prepare_card",
+      "agent": "enjuague",
+      "metadata": {
+        "card": {
+          "id": "r-compara",
+          "agent": "enjuague",
+          "level": "auto",
+          "state": "ready",
+          "title": "Cobrado hoy por sede · corte 14:00",
+          "body": "<div class=\"bars\"><div class=\"bar\"><span>Lince</span><span class=\"track\"><span class=\"fill\" style=\"width:88.13559322033898%;background:var(--green)\"></span><span class=\"fill\" style=\"width:11.864406779661017%;background:var(--yellow)\"></span></span><span class=\"n\">S/ 3,120.00</span></div><div class=\"bar\"><span>Miraflores</span><span class=\"track\"><span class=\"fill\" style=\"width:68.07909604519774%;background:var(--green)\"></span><span class=\"fill\" style=\"width:18.07909604519774%;background:var(--yellow)\"></span></span><span class=\"n\">S/ 2,410.00</span></div><div class=\"bar\"><span>San Borja *</span><span class=\"track\"><span class=\"fill\" style=\"width:20.056497175141246%;background:var(--green)\"></span><span class=\"fill\" style=\"width:3.389830508474576%;background:var(--yellow)\"></span></span><span class=\"n\">S/ 710.00</span></div></div><div class=\"legend\"><span><i class=\"dot d-green\"></i>verificado</span><span><i class=\"dot d-yellow\"></i>por verificar</span><span>* parcial: sin caja desde 12:40</span></div>",
+          "why": "Miraflores tiene más pagos registrados sin verificar que las otras sedes",
+          "srcs": [
+            "Caja · 3 sedes · 14:00",
+            "Martes pasado · misma hora"
+          ],
+          "scope": [],
+          "reversible": "unspecified",
+          "approve": null,
+          "alt": null,
+          "result": null,
+          "undo": false,
+          "undo_window_seconds": null,
+          "delta": null,
+          "revision": 0,
+          "edit": false,
+          "ev": null,
+          "amounts": [
+            {
+              "label": "Lince · cobrado",
+              "amount_cents": 312000,
+              "currency": "PEN"
+            },
+            {
+              "label": "Miraflores · cobrado",
+              "amount_cents": 241000,
+              "currency": "PEN"
+            },
+            {
+              "label": "San Borja · cobrado",
+              "amount_cents": 71000,
+              "currency": "PEN"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "delayMs": 0,
+    "event": {
+      "type": "TOOL_CALL_END",
+      "toolCallId": "sim:dueno-compara:r-compara"
+    }
+  },
+  {
+    "delayMs": 220,
+    "event": {
+      "type": "TOOL_CALL_RESULT",
+      "messageId": "sim:dueno-compara:r-compara:result",
+      "toolCallId": "sim:dueno-compara:r-compara",
+      "content": "{\"card\": {\"id\": \"r-compara\", \"agent\": \"enjuague\", \"level\": \"auto\", \"state\": \"ready\", \"title\": \"Cobrado hoy por sede · corte 14:00\", \"body\": \"<div class=\\\"bars\\\"><div class=\\\"bar\\\"><span>Lince</span><span class=\\\"track\\\"><span class=\\\"fill\\\" style=\\\"width:88.13559322033898%;background:var(--green)\\\"></span><span class=\\\"fill\\\" style=\\\"width:11.864406779661017%;background:var(--yellow)\\\"></span></span><span class=\\\"n\\\">S/ 3,120.00</span></div><div class=\\\"bar\\\"><span>Miraflores</span><span class=\\\"track\\\"><span class=\\\"fill\\\" style=\\\"width:68.07909604519774%;background:var(--green)\\\"></span><span class=\\\"fill\\\" style=\\\"width:18.07909604519774%;background:var(--yellow)\\\"></span></span><span class=\\\"n\\\">S/ 2,410.00</span></div><div class=\\\"bar\\\"><span>San Borja *</span><span class=\\\"track\\\"><span class=\\\"fill\\\" style=\\\"width:20.056497175141246%;background:var(--green)\\\"></span><span class=\\\"fill\\\" style=\\\"width:3.389830508474576%;background:var(--yellow)\\\"></span></span><span class=\\\"n\\\">S/ 710.00</span></div></div><div class=\\\"legend\\\"><span><i class=\\\"dot d-green\\\"></i>verificado</span><span><i class=\\\"dot d-yellow\\\"></i>por verificar</span><span>* parcial: sin caja desde 12:40</span></div>\", \"why\": \"Miraflores tiene más pagos registrados sin verificar que las otras sedes\", \"srcs\": [\"Caja · 3 sedes · 14:00\", \"Martes pasado · misma hora\"], \"scope\": [], \"reversible\": \"unspecified\", \"approve\": null, \"alt\": null, \"result\": null, \"undo\": false, \"undo_window_seconds\": null, \"delta\": null, \"revision\": 0, \"edit\": false, \"ev\": null, \"amounts\": [{\"label\": \"Lince · cobrado\", \"amount_cents\": 312000, \"currency\": \"PEN\"}, {\"label\": \"Miraflores · cobrado\", \"amount_cents\": 241000, \"currency\": \"PEN\"}, {\"label\": \"San Borja · cobrado\", \"amount_cents\": 71000, \"currency\": \"PEN\"}]}}",
+      "agent": "enjuague",
+      "metadata": {
+        "card": {
+          "id": "r-compara",
+          "agent": "enjuague",
+          "level": "auto",
+          "state": "ready",
+          "title": "Cobrado hoy por sede · corte 14:00",
+          "body": "<div class=\"bars\"><div class=\"bar\"><span>Lince</span><span class=\"track\"><span class=\"fill\" style=\"width:88.13559322033898%;background:var(--green)\"></span><span class=\"fill\" style=\"width:11.864406779661017%;background:var(--yellow)\"></span></span><span class=\"n\">S/ 3,120.00</span></div><div class=\"bar\"><span>Miraflores</span><span class=\"track\"><span class=\"fill\" style=\"width:68.07909604519774%;background:var(--green)\"></span><span class=\"fill\" style=\"width:18.07909604519774%;background:var(--yellow)\"></span></span><span class=\"n\">S/ 2,410.00</span></div><div class=\"bar\"><span>San Borja *</span><span class=\"track\"><span class=\"fill\" style=\"width:20.056497175141246%;background:var(--green)\"></span><span class=\"fill\" style=\"width:3.389830508474576%;background:var(--yellow)\"></span></span><span class=\"n\">S/ 710.00</span></div></div><div class=\"legend\"><span><i class=\"dot d-green\"></i>verificado</span><span><i class=\"dot d-yellow\"></i>por verificar</span><span>* parcial: sin caja desde 12:40</span></div>",
+          "why": "Miraflores tiene más pagos registrados sin verificar que las otras sedes",
+          "srcs": [
+            "Caja · 3 sedes · 14:00",
+            "Martes pasado · misma hora"
+          ],
+          "scope": [],
+          "reversible": "unspecified",
+          "approve": null,
+          "alt": null,
+          "result": null,
+          "undo": false,
+          "undo_window_seconds": null,
+          "delta": null,
+          "revision": 0,
+          "edit": false,
+          "ev": null,
+          "amounts": [
+            {
+              "label": "Lince · cobrado",
+              "amount_cents": 312000,
+              "currency": "PEN"
+            },
+            {
+              "label": "Miraflores · cobrado",
+              "amount_cents": 241000,
+              "currency": "PEN"
+            },
+            {
+              "label": "San Borja · cobrado",
+              "amount_cents": 71000,
+              "currency": "PEN"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "delayMs": 0,
+    "event": {
+      "type": "STEP_FINISHED",
+      "stepName": "Leyendo caja de las 3 sedes",
+      "agent": "enjuague"
+    }
+  },
+  {
+    "delayMs": 350,
+    "event": {
+      "type": "STEP_STARTED",
+      "stepName": "Comparando con el martes pasado a la misma hora",
+      "index": 1,
+      "agent": "enjuague"
+    }
+  },
+  {
+    "delayMs": 0,
+    "event": {
+      "type": "STEP_FINISHED",
+      "stepName": "Comparando con el martes pasado a la misma hora",
+      "agent": "enjuague"
+    }
+  },
+  {
+    "delayMs": 350,
+    "event": {
+      "type": "STEP_STARTED",
+      "stepName": "Buscando pagos sin verificar",
+      "index": 2,
+      "agent": "enjuague"
+    }
+  },
+  {
+    "delayMs": 0,
+    "event": {
+      "type": "TEXT_MESSAGE_START",
+      "messageId": "sim:dueno-compara:message:11",
+      "role": "assistant",
+      "agent": "enjuague"
+    }
+  },
+  {
+    "delayMs": 120,
+    "event": {
+      "type": "TEXT_MESSAGE_CONTENT",
+      "messageId": "sim:dueno-compara:message:11",
+      "delta": "Miraflores no cobra menos: tiene <b>S/ 640.00</b> en 4 pagos Yape aún sin verificar. San Borja no envía caja desde las 12:40, así que el total es parcial.",
+      "agent": "enjuague"
+    }
+  },
+  {
+    "delayMs": 0,
+    "event": {
+      "type": "TEXT_MESSAGE_END",
+      "messageId": "sim:dueno-compara:message:11"
+    }
+  },
+  {
+    "delayMs": 120,
+    "event": {
+      "type": "SUBAGENT_STARTED",
+      "agent": "airi",
+      "name": "airi",
+      "subagentRunId": "sim:dueno-compara:airi"
+    }
+  },
+  {
+    "delayMs": 0,
+    "event": {
+      "type": "STEP_FINISHED",
+      "stepName": "Buscando pagos sin verificar",
+      "agent": "airi"
+    }
+  },
+  {
+    "delayMs": 350,
+    "event": {
+      "type": "STEP_STARTED",
+      "stepName": "Preparando una delegación",
+      "index": 3,
+      "agent": "airi"
+    }
+  },
+  {
+    "delayMs": 180,
+    "event": {
+      "type": "TOOL_CALL_START",
+      "toolCallId": "sim:dueno-compara:r-delega",
+      "toolCallName": "prepare_card",
+      "agent": "airi",
+      "metadata": {
+        "card": {
+          "id": "r-delega",
+          "agent": "airi",
+          "level": "borrador",
+          "state": "pending",
+          "title": "Delegar a Administración Miraflores: verificar 4 pagos Yape",
+          "body": "<ul class=\"ac-list\"><li><span>4 pagos · BBVA *1190</span><span class=\"money\">S/ 640.00</span></li><li><span>Responsable sugerido</span><span>Jimena (Caja Miraflores)</span></li></ul>",
+          "why": "Sin verificar no suben el cobrado; la captura del paciente no prueba el ingreso",
+          "srcs": [
+            "Caja Miraflores · 14:00"
+          ],
+          "scope": [
+            {
+              "label": "Para",
+              "value": "Jimena · Caja",
+              "reversible": null,
+              "expires_at": null,
+              "amount": null
+            },
+            {
+              "label": "Plazo",
+              "value": "hoy 18:00",
+              "reversible": null,
+              "expires_at": "2026-10-13T18:00:00-05:00",
+              "amount": null
+            },
+            {
+              "label": "rev",
+              "value": "Reversible: 30 s para deshacer",
+              "reversible": "window",
+              "expires_at": null,
+              "amount": null
+            }
+          ],
+          "reversible": "window",
+          "approve": "Delegar",
+          "alt": null,
+          "result": "Delegado a Jimena · vuelve a ti si vence sin evidencia",
+          "undo": true,
+          "undo_window_seconds": 30,
+          "delta": null,
+          "revision": 0,
+          "edit": false,
+          "ev": null,
+          "amounts": [
+            {
+              "label": "4 pagos · BBVA *1190",
+              "amount_cents": 64000,
+              "currency": "PEN"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "delayMs": 0,
+    "event": {
+      "type": "TOOL_CALL_END",
+      "toolCallId": "sim:dueno-compara:r-delega"
+    }
+  },
+  {
+    "delayMs": 220,
+    "event": {
+      "type": "TOOL_CALL_RESULT",
+      "messageId": "sim:dueno-compara:r-delega:result",
+      "toolCallId": "sim:dueno-compara:r-delega",
+      "content": "{\"card\": {\"id\": \"r-delega\", \"agent\": \"airi\", \"level\": \"borrador\", \"state\": \"pending\", \"title\": \"Delegar a Administración Miraflores: verificar 4 pagos Yape\", \"body\": \"<ul class=\\\"ac-list\\\"><li><span>4 pagos · BBVA *1190</span><span class=\\\"money\\\">S/ 640.00</span></li><li><span>Responsable sugerido</span><span>Jimena (Caja Miraflores)</span></li></ul>\", \"why\": \"Sin verificar no suben el cobrado; la captura del paciente no prueba el ingreso\", \"srcs\": [\"Caja Miraflores · 14:00\"], \"scope\": [{\"label\": \"Para\", \"value\": \"Jimena · Caja\", \"reversible\": null, \"expires_at\": null, \"amount\": null}, {\"label\": \"Plazo\", \"value\": \"hoy 18:00\", \"reversible\": null, \"expires_at\": \"2026-10-13T18:00:00-05:00\", \"amount\": null}, {\"label\": \"rev\", \"value\": \"Reversible: 30 s para deshacer\", \"reversible\": \"window\", \"expires_at\": null, \"amount\": null}], \"reversible\": \"window\", \"approve\": \"Delegar\", \"alt\": null, \"result\": \"Delegado a Jimena · vuelve a ti si vence sin evidencia\", \"undo\": true, \"undo_window_seconds\": 30, \"delta\": null, \"revision\": 0, \"edit\": false, \"ev\": null, \"amounts\": [{\"label\": \"4 pagos · BBVA *1190\", \"amount_cents\": 64000, \"currency\": \"PEN\"}]}}",
+      "agent": "airi",
+      "metadata": {
+        "card": {
+          "id": "r-delega",
+          "agent": "airi",
+          "level": "borrador",
+          "state": "pending",
+          "title": "Delegar a Administración Miraflores: verificar 4 pagos Yape",
+          "body": "<ul class=\"ac-list\"><li><span>4 pagos · BBVA *1190</span><span class=\"money\">S/ 640.00</span></li><li><span>Responsable sugerido</span><span>Jimena (Caja Miraflores)</span></li></ul>",
+          "why": "Sin verificar no suben el cobrado; la captura del paciente no prueba el ingreso",
+          "srcs": [
+            "Caja Miraflores · 14:00"
+          ],
+          "scope": [
+            {
+              "label": "Para",
+              "value": "Jimena · Caja",
+              "reversible": null,
+              "expires_at": null,
+              "amount": null
+            },
+            {
+              "label": "Plazo",
+              "value": "hoy 18:00",
+              "reversible": null,
+              "expires_at": "2026-10-13T18:00:00-05:00",
+              "amount": null
+            },
+            {
+              "label": "rev",
+              "value": "Reversible: 30 s para deshacer",
+              "reversible": "window",
+              "expires_at": null,
+              "amount": null
+            }
+          ],
+          "reversible": "window",
+          "approve": "Delegar",
+          "alt": null,
+          "result": "Delegado a Jimena · vuelve a ti si vence sin evidencia",
+          "undo": true,
+          "undo_window_seconds": 30,
+          "delta": null,
+          "revision": 0,
+          "edit": false,
+          "ev": null,
+          "amounts": [
+            {
+              "label": "4 pagos · BBVA *1190",
+              "amount_cents": 64000,
+              "currency": "PEN"
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "delayMs": 0,
+    "event": {
+      "type": "STEP_FINISHED",
+      "stepName": "Preparando una delegación",
+      "agent": "airi"
+    }
+  },
+  {
+    "delayMs": 120,
+    "event": {
+      "type": "RUN_FINISHED",
+      "threadId": "sim:thread:dueno-compara",
+      "runId": "sim:dueno-compara",
+      "outcome": {
+        "type": "interrupt",
+        "interrupts": [
+          {
+            "id": "r-delega",
+            "reason": "delegar la verificación",
+            "metadata": {
+              "card": {
+                "id": "r-delega",
+                "agent": "airi",
+                "level": "borrador",
+                "state": "pending",
+                "title": "Delegar a Administración Miraflores: verificar 4 pagos Yape",
+                "body": "<ul class=\"ac-list\"><li><span>4 pagos · BBVA *1190</span><span class=\"money\">S/ 640.00</span></li><li><span>Responsable sugerido</span><span>Jimena (Caja Miraflores)</span></li></ul>",
+                "why": "Sin verificar no suben el cobrado; la captura del paciente no prueba el ingreso",
+                "srcs": [
+                  "Caja Miraflores · 14:00"
+                ],
+                "scope": [
+                  {
+                    "label": "Para",
+                    "value": "Jimena · Caja",
+                    "reversible": null,
+                    "expires_at": null,
+                    "amount": null
+                  },
+                  {
+                    "label": "Plazo",
+                    "value": "hoy 18:00",
+                    "reversible": null,
+                    "expires_at": "2026-10-13T18:00:00-05:00",
+                    "amount": null
+                  },
+                  {
+                    "label": "rev",
+                    "value": "Reversible: 30 s para deshacer",
+                    "reversible": "window",
+                    "expires_at": null,
+                    "amount": null
+                  }
+                ],
+                "reversible": "window",
+                "approve": "Delegar",
+                "alt": null,
+                "result": "Delegado a Jimena · vuelve a ti si vence sin evidencia",
+                "undo": true,
+                "undo_window_seconds": 30,
+                "delta": null,
+                "revision": 0,
+                "edit": false,
+                "ev": null,
+                "amounts": [
+                  {
+                    "label": "4 pagos · BBVA *1190",
+                    "amount_cents": 64000,
+                    "currency": "PEN"
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "agent": "airi"
+    }
+  }
+]

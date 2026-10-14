@@ -1,0 +1,43 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "duration_minutes": {
+      "exclusiveMinimum": 0,
+      "title": "Duration Minutes",
+      "type": "integer"
+    },
+    "end_at": {
+      "format": "date-time",
+      "title": "End At",
+      "type": "string"
+    },
+    "practitioner": {
+      "enum": [
+        "ruiz",
+        "salinas",
+        "leon"
+      ],
+      "title": "Practitioner",
+      "type": "string"
+    },
+    "sede": {
+      "minLength": 1,
+      "title": "Sede",
+      "type": "string"
+    },
+    "start_at": {
+      "format": "date-time",
+      "title": "Start At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "start_at",
+    "end_at",
+    "duration_minutes",
+    "practitioner",
+    "sede"
+  ],
+  "title": "Gap",
+  "type": "object"
+}

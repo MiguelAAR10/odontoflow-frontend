@@ -1,0 +1,307 @@
+[
+  {
+    "id": "p-cobertura",
+    "agent": "cepillo",
+    "level": "aprobar",
+    "state": "pending",
+    "title": "Reasignar 6 citas de mañana del Dr. Paredes a la Dra. León",
+    "body": "<ul class=\"ac-list\"><li><span>09:00 Rosa Quispe · control</span><span class=\"muted\">León 09:00</span></li><li><span>10:00 Hugo Ríos · resina</span><span class=\"muted\">León 10:30</span></li><li><span>4 citas más</span><span class=\"muted\">mismo día</span></li></ul>",
+    "why": "Dr. Paredes avisó ausencia (Telegram, hoy 11:52) · la Dra. León tiene 6 h libres mañana en Miraflores",
+    "srcs": [
+      "Agenda Miraflores · 14:00",
+      "Mensaje Telegram · 11:52"
+    ],
+    "scope": [
+      {
+        "label": "Afecta",
+        "value": "6 pacientes",
+        "reversible": null,
+        "expires_at": null,
+        "amount": null
+      },
+      {
+        "label": "Después",
+        "value": "6 WhatsApp de aviso",
+        "reversible": null,
+        "expires_at": null,
+        "amount": null
+      },
+      {
+        "label": "rev",
+        "value": "No se puede deshacer el envío",
+        "reversible": "none",
+        "expires_at": null,
+        "amount": null
+      },
+      {
+        "label": "Vence",
+        "value": "hoy 18:00",
+        "reversible": null,
+        "expires_at": "2026-10-13T18:00:00-05:00",
+        "amount": null
+      }
+    ],
+    "reversible": "none",
+    "approve": "Aprobar reasignación",
+    "alt": null,
+    "result": "6 citas movidas · 6 avisos encolados · confirmación pendiente de cada paciente",
+    "undo": false,
+    "undo_window_seconds": null,
+    "delta": null,
+    "revision": 0,
+    "edit": false,
+    "ev": "RUN_FINISHED · interrupt",
+    "amounts": []
+  },
+  {
+    "id": "p-caja",
+    "agent": "enjuague",
+    "level": "borrador",
+    "state": "pending",
+    "title": "Lince: diferencia de caja de S/ 180.00",
+    "body": "<ul class=\"ac-list\"><li><span>Esperado en efectivo</span><span class=\"money\">S/ 1,460.00</span></li><li><span>Contado por Caja (13:30)</span><span class=\"money\">S/ 1,280.00</span></li><li><span>Posible causa</span><span>vuelto de Yape registrado como efectivo</span></li></ul>",
+    "why": "Cierre parcial 13:30 · 2 movimientos Yape sin referencia",
+    "srcs": [
+      "Caja Lince · 13:30",
+      "Movimientos BCP *4821"
+    ],
+    "scope": [
+      {
+        "label": "Responsable",
+        "value": "Caja · Rosa",
+        "reversible": null,
+        "expires_at": null,
+        "amount": null
+      },
+      {
+        "label": "rev",
+        "value": "Reversible: puedes reasignar",
+        "reversible": "reassign",
+        "expires_at": null,
+        "amount": null
+      },
+      {
+        "label": "Plazo",
+        "value": "hoy",
+        "reversible": null,
+        "expires_at": null,
+        "amount": null
+      }
+    ],
+    "reversible": "reassign",
+    "approve": "Delegar a Caja",
+    "alt": "Lo veo yo",
+    "result": "Delegado a Rosa (Caja) · vuelve a ti si no se resuelve hoy",
+    "undo": false,
+    "undo_window_seconds": null,
+    "delta": null,
+    "revision": 0,
+    "edit": false,
+    "ev": "RUN_FINISHED · interrupt",
+    "amounts": [
+      {
+        "label": "Esperado en efectivo",
+        "amount_cents": 146000,
+        "currency": "PEN"
+      },
+      {
+        "label": "Contado por Caja (13:30)",
+        "amount_cents": 128000,
+        "currency": "PEN"
+      },
+      {
+        "label": "Diferencia de caja",
+        "amount_cents": 18000,
+        "currency": "PEN"
+      }
+    ]
+  },
+  {
+    "id": "p-desc",
+    "agent": "pasta",
+    "level": "aprobar",
+    "state": "pending",
+    "title": "3 descuentos fuera de política",
+    "body": "<ul class=\"ac-list\"><li><span>Miraflores · ortodoncia familiar</span><span class=\"money\">S/ 240.00</span></li><li><span>Lince · blanqueamiento</span><span class=\"money\">S/ 120.00</span></li><li><span>San Borja · profilaxis</span><span class=\"money\">S/ 60.00</span></li></ul>",
+    "why": "Política: máximo 10 % sin aprobación de Dirección",
+    "srcs": [
+      "Presupuestos v2 · hoy"
+    ],
+    "scope": [
+      {
+        "label": "Afecta",
+        "value": "3 presupuestos",
+        "reversible": null,
+        "expires_at": null,
+        "amount": null
+      },
+      {
+        "label": "Total",
+        "value": "S/ 420.00",
+        "reversible": null,
+        "expires_at": null,
+        "amount": {
+          "amount_cents": 42000,
+          "currency": "PEN"
+        }
+      },
+      {
+        "label": "rev",
+        "value": "Reversible hasta que el paciente acepte",
+        "reversible": "until_patient_accepts",
+        "expires_at": null,
+        "amount": null
+      },
+      {
+        "label": "Vence",
+        "value": "viernes",
+        "reversible": null,
+        "expires_at": null,
+        "amount": null
+      }
+    ],
+    "reversible": "until_patient_accepts",
+    "approve": "Aprobar 3 descuentos",
+    "alt": null,
+    "result": "3 descuentos aprobados · presupuestos actualizados a v3",
+    "undo": false,
+    "undo_window_seconds": null,
+    "delta": null,
+    "revision": 0,
+    "edit": false,
+    "ev": "RUN_FINISHED · interrupt",
+    "amounts": [
+      {
+        "label": "Miraflores · ortodoncia familiar",
+        "amount_cents": 24000,
+        "currency": "PEN"
+      },
+      {
+        "label": "Lince · blanqueamiento",
+        "amount_cents": 12000,
+        "currency": "PEN"
+      },
+      {
+        "label": "San Borja · profilaxis",
+        "amount_cents": 6000,
+        "currency": "PEN"
+      }
+    ]
+  },
+  {
+    "id": "p-yape",
+    "agent": "enjuague",
+    "level": "aprobar",
+    "state": "pending",
+    "title": "Confirmar ingreso Yape de S/ 120.00 · Ana Torres",
+    "body": "<ul class=\"ac-list\"><li><span>Captura enviada por WhatsApp</span><span>13:58</span></li><li><span>Cuenta receptora</span><span>Yape BCP *4821 (Lince)</span></li><li><span>Movimiento cotejado</span><span>14:02 · ref 88213</span></li></ul>",
+    "why": "El ingreso aparece en la cuenta receptora; la captura sola no basta",
+    "srcs": [
+      "Movimientos BCP *4821 · 14:02",
+      "WhatsApp · 13:58"
+    ],
+    "scope": [
+      {
+        "label": "Efecto",
+        "value": "sube cobrado verificado",
+        "reversible": null,
+        "expires_at": null,
+        "amount": null
+      },
+      {
+        "label": "rev",
+        "value": "Reversible con reversa autorizada",
+        "reversible": "authorized_reversal",
+        "expires_at": null,
+        "amount": null
+      },
+      {
+        "label": "Cargo",
+        "value": "Endodoncia 3.6",
+        "reversible": null,
+        "expires_at": null,
+        "amount": null
+      }
+    ],
+    "reversible": "authorized_reversal",
+    "approve": "Confirmar ingreso",
+    "alt": null,
+    "result": "Abono verificado · recibo R-1042 · saldo de Ana: S/ 330.00",
+    "undo": false,
+    "undo_window_seconds": null,
+    "delta": {
+      "sede": "Lince",
+      "amount_cents": 12000,
+      "currency": "PEN"
+    },
+    "revision": 0,
+    "edit": false,
+    "ev": "RUN_FINISHED · interrupt",
+    "amounts": [
+      {
+        "label": "Ingreso Yape",
+        "amount_cents": 12000,
+        "currency": "PEN"
+      },
+      {
+        "label": "Saldo de Ana",
+        "amount_cents": 33000,
+        "currency": "PEN"
+      }
+    ]
+  },
+  {
+    "id": "p-reprog",
+    "agent": "hilo",
+    "level": "aprobar",
+    "state": "pending",
+    "title": "Responder a Daniela Soto: mover su cita a las 17:00",
+    "body": "<textarea aria-label=\"Mensaje\" readonly>Hola Daniela, sí podemos pasar tu cita de endodoncia a hoy 17:00 con la Dra. Ruiz. ¿Te la confirmo?</textarea>",
+    "why": "Daniela pidió «más tarde» (WhatsApp 13:41) · hueco compatible 17:00 Dra. Ruiz",
+    "srcs": [
+      "WhatsApp · 13:41",
+      "Agenda Lince · 14:00"
+    ],
+    "scope": [
+      {
+        "label": "Para",
+        "value": "Daniela Soto · +51 9•• ••• 214",
+        "reversible": null,
+        "expires_at": null,
+        "amount": null
+      },
+      {
+        "label": "Canal",
+        "value": "WhatsApp · ventana 24 h abierta",
+        "reversible": null,
+        "expires_at": null,
+        "amount": null
+      },
+      {
+        "label": "rev",
+        "value": "No se puede deshacer el envío",
+        "reversible": "none",
+        "expires_at": null,
+        "amount": null
+      },
+      {
+        "label": "Cita",
+        "value": "se mueve solo si ella confirma",
+        "reversible": null,
+        "expires_at": null,
+        "amount": null
+      }
+    ],
+    "reversible": "none",
+    "approve": "Aprobar y enviar",
+    "alt": null,
+    "result": "Enviado 14:06 · entregado · la cita sigue a la hora original hasta que confirme",
+    "undo": false,
+    "undo_window_seconds": null,
+    "delta": null,
+    "revision": 0,
+    "edit": false,
+    "ev": "RUN_FINISHED · interrupt",
+    "amounts": []
+  }
+]

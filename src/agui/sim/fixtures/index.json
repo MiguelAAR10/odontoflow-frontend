@@ -1,0 +1,242 @@
+{
+  "contract": "airi-v10",
+  "source": ".worktrees/backend-airi-contract/contracts/airi-v10",
+  "cutAt": "2026-10-13T14:00:00-05:00",
+  "timezone": "America/Lima",
+  "files": [
+    {
+      "file": "admin-confirma.json",
+      "source": null,
+      "sha256": "200d8787784947265073dbb7245ddbe77aff01f4cd369a07f6f82eddb6089423"
+    },
+    {
+      "file": "admin-hueco.json",
+      "source": null,
+      "sha256": "7eded750314ab1c2ba7913c6d6d0224156dd9fba068454fed2ec7bc046ea265d"
+    },
+    {
+      "file": "agenda.json",
+      "source": "agenda.json",
+      "sha256": "9087b85c57da8c3f12291285f4c2561677c876ab8fb3f51d64ae1a491d0d558d"
+    },
+    {
+      "file": "agents.json",
+      "source": "agents.json",
+      "sha256": "0ffebe2804bdc3ecebdb9b472de7ba5b3bdbf8fa1cb8f2e6bdcfd120afe5dff6"
+    },
+    {
+      "file": "cards.json",
+      "source": "cards.json",
+      "sha256": "008e6330bd1d25e4cf9b131f9fd679b9e38788aab30bb1e062e5cdda3c25bc47"
+    },
+    {
+      "file": "clinic.json",
+      "source": null,
+      "sha256": "eef79ed6c981b518125a47b89b673b8a68602dd7d1fb68c2ba315d35e3e9116c"
+    },
+    {
+      "file": "cv-cobranza.json",
+      "source": null,
+      "sha256": "ae4a4be24ebf0c5206a6885ca2a75ae8f5b813447d3f22a933feed230251b6a6"
+    },
+    {
+      "file": "cv-huecos.json",
+      "source": null,
+      "sha256": "ca864ca516065d8e0f46c2c543fb4b64a0906b579a446050c821925ff3701ca7"
+    },
+    {
+      "file": "cv-sedes.json",
+      "source": null,
+      "sha256": "23c549c7da315a8a628d22841b322652e6c7d0e2378ded5d58cc3550968c6041"
+    },
+    {
+      "file": "doctor-brief.json",
+      "source": null,
+      "sha256": "ea4c5fba836a55ce0c1d79a6a5e2980eb609967df4e41166b39d473d8806aafa"
+    },
+    {
+      "file": "doctor-evo.json",
+      "source": null,
+      "sha256": "282accfae78ba33cd138fa3d39b12b748a8b53172aea3af0b169c7710a1f85eb"
+    },
+    {
+      "file": "dueno-compara.json",
+      "source": null,
+      "sha256": "d557a9af124532ed215ea17c966ffb7f28c4da802df19c37a0f2c3127efa6c00"
+    },
+    {
+      "file": "events.json",
+      "source": "events.json",
+      "sha256": "8fc95ebffac695c63983eb90e92e731543b167023e0452534ebad9392544476c"
+    },
+    {
+      "file": "gaps.json",
+      "source": "gaps.json",
+      "sha256": "f29771759bfc36a64c41871947d609db789a4e7f111f4f7f057f01600e4da3b9"
+    },
+    {
+      "file": "proposals.json",
+      "source": null,
+      "sha256": "f98d7c4a0fa315802f24185c2d9b52a6beffc7ec256b9cdd89f3b6522ebb1356"
+    },
+    {
+      "file": "roles.json",
+      "source": "roles.json",
+      "sha256": "8b8631377ee0f62a7363af741e2612525c5eae554d8c02e7d277749227cc2f82"
+    },
+    {
+      "file": "scenarios.json",
+      "source": "scenarios.json",
+      "sha256": "cc4e886384a20fefa641106c81d72465231d277506c9205d6fafb6256e24d7b1"
+    },
+    {
+      "file": "schema/AgUiEvent.json",
+      "source": "schema/AgUiEvent.json",
+      "sha256": "ed21af31013c296ea992ece0005fcc9ec49c7273141fc7e3897d2d69c263cada"
+    },
+    {
+      "file": "schema/AgendaItem.json",
+      "source": "schema/AgendaItem.json",
+      "sha256": "2abbe1ba3c3892cc41ac9d0bba164b510a1243fcc3e62c5635da83b659bc9e4a"
+    },
+    {
+      "file": "schema/Agent.json",
+      "source": "schema/Agent.json",
+      "sha256": "b2d7381adc40e709c63e35d5cc72c75790f367d03e8ba212b7827bf2eba844fa"
+    },
+    {
+      "file": "schema/Card.json",
+      "source": "schema/Card.json",
+      "sha256": "9b8bf4b9f666c90b681fae235f2da277e0de8b98c78fd917cbaafe5c5fcedf50"
+    },
+    {
+      "file": "schema/CardScope.json",
+      "source": "schema/CardScope.json",
+      "sha256": "eaf64ccfdbe59a7e9cd5c38bfc56d5648f33b8d8f7d143f1011077ebce391d62"
+    },
+    {
+      "file": "schema/Gap.json",
+      "source": "schema/Gap.json",
+      "sha256": "d901d6c67e9b73d3d6d30fc7feaba0c93363e56a1f751ec9f543a7144e282f7f"
+    },
+    {
+      "file": "schema/Money.json",
+      "source": "schema/Money.json",
+      "sha256": "31ede61ea196310cf9768582e2b9faa5b1bd8fe0ec1064c17cea19826de1cffb"
+    },
+    {
+      "file": "schema/RoleHome.json",
+      "source": "schema/RoleHome.json",
+      "sha256": "17022a53d2a9c2d354db8b5f62a9f2d29bdd7ad7171d23d1101a080805edede6"
+    },
+    {
+      "file": "schema/Scenario.json",
+      "source": "schema/Scenario.json",
+      "sha256": "aaa8a04dbe6d264dd62b11adc78986d6f30c4b268b2ce7179c2aee3ffcf52b1a"
+    },
+    {
+      "file": "schema/SedeSummary.json",
+      "source": "schema/SedeSummary.json",
+      "sha256": "748fc3734b5e4d774257cfd338eea3954c3c83977a5343cf0eb6723b53d7b262"
+    },
+    {
+      "file": "schema/StateSnapshot.json",
+      "source": "schema/StateSnapshot.json",
+      "sha256": "12552f364e9f4e707c155a36c7725592c4b2a4d94a5cb298db62d423c1b1e30c"
+    },
+    {
+      "file": "schema/TrailEntry.json",
+      "source": "schema/TrailEntry.json",
+      "sha256": "5267211aa0d2ec8cc486847aed8128dfdf8069b4cf693554814e7f64d8b865b9"
+    },
+    {
+      "file": "sedes.json",
+      "source": "sedes.json",
+      "sha256": "c3d4a9eccb283afa6217cefa2ed192ebf15e58102a3a2fa204214430c78da65a"
+    },
+    {
+      "file": "state.json",
+      "source": "state.json",
+      "sha256": "bef74beb96ed84c48c6cb7710d99b89cca0b4f71604495b0bd3e2acc1ca89c54"
+    },
+    {
+      "file": "trail.json",
+      "source": "trail.json",
+      "sha256": "5977d702af20faa11b6c7266a8ae3dff6dbe5762fcf58f694b6d60d7b65ce146"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "dueno-compara",
+      "name": "¿Por qué Miraflores cobra menos hoy?",
+      "role": "dueno",
+      "phrases": [
+        "¿Por qué Miraflores cobra menos hoy?"
+      ],
+      "file": "dueno-compara.json"
+    },
+    {
+      "id": "admin-confirma",
+      "name": "Confirma las citas de mañana",
+      "role": "admin",
+      "phrases": [
+        "Confirma las citas de mañana"
+      ],
+      "file": "admin-confirma.json"
+    },
+    {
+      "id": "admin-hueco",
+      "name": "¿Quién puede tomar el hueco de la tarde?",
+      "role": "admin",
+      "phrases": [
+        "¿Quién puede tomar el hueco de la tarde?"
+      ],
+      "file": "admin-hueco.json"
+    },
+    {
+      "id": "doctor-brief",
+      "name": "Prepara el brief de Ana Torres",
+      "role": "doctor",
+      "phrases": [
+        "Prepara el brief de Ana Torres"
+      ],
+      "file": "doctor-brief.json"
+    },
+    {
+      "id": "doctor-evo",
+      "name": "Ayúdame con la evolución",
+      "role": "doctor",
+      "phrases": [
+        "Ayúdame con la evolución"
+      ],
+      "file": "doctor-evo.json"
+    },
+    {
+      "id": "cv-huecos",
+      "name": "Relaciona los huecos de la tarde con pacientes en espera",
+      "role": "admin",
+      "phrases": [
+        "Relaciona los huecos de la tarde con pacientes en espera"
+      ],
+      "file": "cv-huecos.json"
+    },
+    {
+      "id": "cv-cobranza",
+      "name": "Trae la cobranza al lienzo",
+      "role": "admin",
+      "phrases": [
+        "Trae la cobranza al lienzo"
+      ],
+      "file": "cv-cobranza.json"
+    },
+    {
+      "id": "cv-sedes",
+      "name": "Compara las sedes",
+      "role": "dueno",
+      "phrases": [
+        "Compara las sedes"
+      ],
+      "file": "cv-sedes.json"
+    }
+  ]
+}

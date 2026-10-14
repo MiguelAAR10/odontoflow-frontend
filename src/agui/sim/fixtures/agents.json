@@ -1,0 +1,44 @@
+[
+  {
+    "id": "airi",
+    "name": "AIRI",
+    "responsibility": "coordina",
+    "image": "../personajes-svg/01-diente-flat.svg"
+  },
+  {
+    "id": "cepillo",
+    "name": "Cepillo",
+    "responsibility": "agenda y cupos",
+    "image": "../personajes-svg/02-cepillo-flat.svg"
+  },
+  {
+    "id": "pasta",
+    "name": "Pasta",
+    "responsibility": "cobranza",
+    "image": "../personajes-svg/03-pasta-flat.svg"
+  },
+  {
+    "id": "hilo",
+    "name": "Hilo",
+    "responsibility": "confirmaciones",
+    "image": "../personajes-svg/04-hilo-flat.svg"
+  },
+  {
+    "id": "enjuague",
+    "name": "Enjuague",
+    "responsibility": "caja",
+    "image": "pj/05-enjuague-flat.svg"
+  },
+  {
+    "id": "espejo",
+    "name": "Espejo",
+    "responsibility": "fichas",
+    "image": "../personajes-svg/06-espejo-flat.svg"
+  },
+  {
+    "id": "escudo",
+    "name": "Escudo",
+    "responsibility": "identidad",
+    "image": "pj/07-escudo-flat.svg"
+  }
+]

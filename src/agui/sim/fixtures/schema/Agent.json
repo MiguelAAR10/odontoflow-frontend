@@ -1,0 +1,41 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "enum": [
+        "airi",
+        "cepillo",
+        "pasta",
+        "hilo",
+        "enjuague",
+        "espejo",
+        "escudo"
+      ],
+      "title": "Id",
+      "type": "string"
+    },
+    "image": {
+      "minLength": 1,
+      "title": "Image",
+      "type": "string"
+    },
+    "name": {
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "responsibility": {
+      "minLength": 1,
+      "title": "Responsibility",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "responsibility",
+    "image"
+  ],
+  "title": "Agent",
+  "type": "object"
+}

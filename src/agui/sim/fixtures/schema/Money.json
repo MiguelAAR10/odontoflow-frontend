@@ -1,0 +1,21 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "amount_cents": {
+      "minimum": 0,
+      "title": "Amount Cents",
+      "type": "integer"
+    },
+    "currency": {
+      "const": "PEN",
+      "title": "Currency",
+      "type": "string"
+    }
+  },
+  "required": [
+    "amount_cents",
+    "currency"
+  ],
+  "title": "Money",
+  "type": "object"
+}

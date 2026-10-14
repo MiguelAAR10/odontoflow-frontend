@@ -1,0 +1,503 @@
+{
+  "$defs": {
+    "DeltaEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "occurred_at": {
+          "format": "date-time",
+          "title": "Occurred At",
+          "type": "string"
+        },
+        "type": {
+          "const": "STATE_DELTA",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "occurred_at",
+        "type"
+      ],
+      "title": "DeltaEvent",
+      "type": "object"
+    },
+    "Money": {
+      "additionalProperties": false,
+      "properties": {
+        "amount_cents": {
+          "minimum": 0,
+          "title": "Amount Cents",
+          "type": "integer"
+        },
+        "currency": {
+          "const": "PEN",
+          "title": "Currency",
+          "type": "string"
+        }
+      },
+      "required": [
+        "amount_cents",
+        "currency"
+      ],
+      "title": "Money",
+      "type": "object"
+    },
+    "RunError": {
+      "additionalProperties": false,
+      "properties": {
+        "msg": {
+          "minLength": 1,
+          "title": "Msg",
+          "type": "string"
+        },
+        "occurred_at": {
+          "format": "date-time",
+          "title": "Occurred At",
+          "type": "string"
+        },
+        "type": {
+          "const": "RUN_ERROR",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "occurred_at",
+        "type",
+        "msg"
+      ],
+      "title": "RunError",
+      "type": "object"
+    },
+    "RunFinished": {
+      "additionalProperties": false,
+      "properties": {
+        "msg": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Msg"
+        },
+        "occurred_at": {
+          "format": "date-time",
+          "title": "Occurred At",
+          "type": "string"
+        },
+        "outcome": {
+          "enum": [
+            "success",
+            "interrupt",
+            "stopped"
+          ],
+          "title": "Outcome",
+          "type": "string"
+        },
+        "type": {
+          "const": "RUN_FINISHED",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "occurred_at",
+        "type",
+        "outcome"
+      ],
+      "title": "RunFinished",
+      "type": "object"
+    },
+    "RunStarted": {
+      "additionalProperties": false,
+      "properties": {
+        "agent": {
+          "enum": [
+            "airi",
+            "cepillo",
+            "pasta",
+            "hilo",
+            "enjuague",
+            "espejo",
+            "escudo"
+          ],
+          "title": "Agent",
+          "type": "string"
+        },
+        "occurred_at": {
+          "format": "date-time",
+          "title": "Occurred At",
+          "type": "string"
+        },
+        "plan": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Plan",
+          "type": "array"
+        },
+        "type": {
+          "const": "RUN_STARTED",
+          "title": "Type",
+          "type": "string"
+        },
+        "what": {
+          "minLength": 1,
+          "title": "What",
+          "type": "string"
+        }
+      },
+      "required": [
+        "occurred_at",
+        "type",
+        "agent",
+        "what",
+        "plan"
+      ],
+      "title": "RunStarted",
+      "type": "object"
+    },
+    "SedeSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "capacity_minutes": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Capacity Minutes"
+        },
+        "collected": {
+          "$ref": "#/$defs/Money"
+        },
+        "complete": {
+          "title": "Complete",
+          "type": "boolean"
+        },
+        "exception": {
+          "minLength": 1,
+          "title": "Exception",
+          "type": "string"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "occupied_minutes": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Occupied Minutes"
+        },
+        "pending_verification": {
+          "$ref": "#/$defs/Money"
+        }
+      },
+      "required": [
+        "name",
+        "occupied_minutes",
+        "capacity_minutes",
+        "collected",
+        "pending_verification",
+        "exception",
+        "complete"
+      ],
+      "title": "SedeSummary",
+      "type": "object"
+    },
+    "SnapshotEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "occurred_at": {
+          "format": "date-time",
+          "title": "Occurred At",
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/$defs/StateSnapshot"
+        },
+        "type": {
+          "const": "STATE_SNAPSHOT",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "occurred_at",
+        "type",
+        "state"
+      ],
+      "title": "SnapshotEvent",
+      "type": "object"
+    },
+    "StateSnapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "cut_at": {
+          "format": "date-time",
+          "title": "Cut At",
+          "type": "string"
+        },
+        "free_next_7_days_minutes": {
+          "minimum": 0,
+          "title": "Free Next 7 Days Minutes",
+          "type": "integer"
+        },
+        "overdue": {
+          "$ref": "#/$defs/Money"
+        },
+        "overdue_patients": {
+          "minimum": 0,
+          "title": "Overdue Patients",
+          "type": "integer"
+        },
+        "sedes": {
+          "items": {
+            "$ref": "#/$defs/SedeSummary"
+          },
+          "title": "Sedes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "cut_at",
+        "sedes",
+        "free_next_7_days_minutes",
+        "overdue",
+        "overdue_patients"
+      ],
+      "title": "StateSnapshot",
+      "type": "object"
+    },
+    "StepStarted": {
+      "additionalProperties": false,
+      "properties": {
+        "i": {
+          "minimum": 0,
+          "title": "I",
+          "type": "integer"
+        },
+        "occurred_at": {
+          "format": "date-time",
+          "title": "Occurred At",
+          "type": "string"
+        },
+        "type": {
+          "const": "STEP_STARTED",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "occurred_at",
+        "type",
+        "i"
+      ],
+      "title": "StepStarted",
+      "type": "object"
+    },
+    "SubagentStarted": {
+      "additionalProperties": false,
+      "properties": {
+        "agent": {
+          "enum": [
+            "airi",
+            "cepillo",
+            "pasta",
+            "hilo",
+            "enjuague",
+            "espejo",
+            "escudo"
+          ],
+          "title": "Agent",
+          "type": "string"
+        },
+        "occurred_at": {
+          "format": "date-time",
+          "title": "Occurred At",
+          "type": "string"
+        },
+        "type": {
+          "const": "SUBAGENT_STARTED",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "occurred_at",
+        "type",
+        "agent"
+      ],
+      "title": "SubagentStarted",
+      "type": "object"
+    },
+    "TextMessageContent": {
+      "additionalProperties": false,
+      "properties": {
+        "occurred_at": {
+          "format": "date-time",
+          "title": "Occurred At",
+          "type": "string"
+        },
+        "t": {
+          "minLength": 1,
+          "title": "T",
+          "type": "string"
+        },
+        "type": {
+          "const": "TEXT_MESSAGE_CONTENT",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "occurred_at",
+        "type",
+        "t"
+      ],
+      "title": "TextMessageContent",
+      "type": "object"
+    },
+    "ToolCallResult": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "occurred_at": {
+          "format": "date-time",
+          "title": "Occurred At",
+          "type": "string"
+        },
+        "type": {
+          "const": "TOOL_CALL_RESULT",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "occurred_at",
+        "type",
+        "id"
+      ],
+      "title": "ToolCallResult",
+      "type": "object"
+    },
+    "ToolCallStart": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Id"
+        },
+        "occurred_at": {
+          "format": "date-time",
+          "title": "Occurred At",
+          "type": "string"
+        },
+        "tool": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tool"
+        },
+        "type": {
+          "const": "TOOL_CALL_START",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "occurred_at",
+        "type"
+      ],
+      "title": "ToolCallStart",
+      "type": "object"
+    }
+  },
+  "description": "The mockup's event vocabulary, not the future transport's SSE envelope.",
+  "discriminator": {
+    "mapping": {
+      "RUN_ERROR": "#/$defs/RunError",
+      "RUN_FINISHED": "#/$defs/RunFinished",
+      "RUN_STARTED": "#/$defs/RunStarted",
+      "STATE_DELTA": "#/$defs/DeltaEvent",
+      "STATE_SNAPSHOT": "#/$defs/SnapshotEvent",
+      "STEP_STARTED": "#/$defs/StepStarted",
+      "SUBAGENT_STARTED": "#/$defs/SubagentStarted",
+      "TEXT_MESSAGE_CONTENT": "#/$defs/TextMessageContent",
+      "TOOL_CALL_RESULT": "#/$defs/ToolCallResult",
+      "TOOL_CALL_START": "#/$defs/ToolCallStart"
+    },
+    "propertyName": "type"
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/RunStarted"
+    },
+    {
+      "$ref": "#/$defs/StepStarted"
+    },
+    {
+      "$ref": "#/$defs/SubagentStarted"
+    },
+    {
+      "$ref": "#/$defs/TextMessageContent"
+    },
+    {
+      "$ref": "#/$defs/ToolCallStart"
+    },
+    {
+      "$ref": "#/$defs/ToolCallResult"
+    },
+    {
+      "$ref": "#/$defs/SnapshotEvent"
+    },
+    {
+      "$ref": "#/$defs/DeltaEvent"
+    },
+    {
+      "$ref": "#/$defs/RunFinished"
+    },
+    {
+      "$ref": "#/$defs/RunError"
+    }
+  ],
+  "title": "AgUiEvent"
+}
