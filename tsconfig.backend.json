@@ -43,6 +43,7 @@
     "test/bff-secret-guard.test.ts",
     "test/setup-e2e-auth.ts",
     "test/approvals-adapter.test.ts",
+    "test/approvals-cards*.test.ts",
     "test/approvals-mock.test.ts",
     "test/bff-persona.test.ts",
     "test/bff-session.test.ts",

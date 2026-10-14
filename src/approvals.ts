@@ -10,6 +10,8 @@
  *   `/scheduling/appointment-proposals/confirm|decline` with
  *   `{conversation_id, confirmation_token}` from the same inbox item.
  */
+import { CardSchema, type Card } from "./agui/card";
+import { envelopeFor, type ApprovalEnvelope } from "./agui/sim/schema";
 import { USE_MOCKS } from "./env";
 import {
   ApiError,
@@ -648,5 +650,77 @@ function mockReminder(candidate: Extract<(typeof MOCK_OVERDUE)[number], { patien
     result_ref: null,
     error_code: null,
     actions: [],
+  };
+}
+
+
+// AIRI presentation adapter: the legacy inbox does not expose source documents,
+// revisions or reversibility. Leave those fields absent rather than fabricate them.
+const escapeCardText = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+export function toCard(item: ApprovalItem): Card {
+  const agent = { cobranza: "pasta", inventario: "airi", lista_espera: "cepillo", cita: "cepillo" } as const;
+  return CardSchema.parse({
+    id: item.key, agent: agent[item.category], level: "aprobar",
+    state: item.status === "executed" ? "approved" : item.status === "declined" ? "declined" : "ready",
+    title: item.headline, body: item.message ? `<p>${escapeCardText(item.message)}</p>` : "",
+    why: item.detail, srcs: [],
+    scope: [...item.facts, ...(item.locationName ? [{ label: "Sede", value: item.locationName }] : []),
+      { label: "Vence", value: localDate(item.expiresAt, DEFAULT_TIME_ZONE), expires_at: item.expiresAt }],
+    approve: item.actions.includes("approve") ? "Aprobar" : null,
+    alt: "Declinar", result: item.outcome, undo: false,
+  });
+}
+
+export interface DraftInboxRow { card: Card; envelope: ApprovalEnvelope }
+/** Local fixture authority, exclusively for mock design work. Metadata stays
+ * beside the DTO, just as in SimulatedSource. Never call a nonexistent edit API. */
+export function createDraftInbox(fixtures: readonly Card[]) {
+  if (!USE_MOCKS) throw new ApiError(409, "MOCKS_DISABLED", "El simulador está desactivado.");
+  const rows = new Map(fixtures.map(value => {
+    const card = CardSchema.parse(value);
+    return [card.id, { card, envelope: envelopeFor(card) }] as const;
+  }));
+  const receipts = new Map<string, { fingerprint: string; row: DraftInboxRow }>();
+  function current(request: ApprovalEnvelope) {
+    const row = rows.get(request.cardId);
+    if (!row || row.envelope.version !== request.version || row.envelope.payload_hash !== request.payload_hash) {
+      throw new ApiError(409, "PROPOSAL_HASH_MISMATCH", "La propuesta cambió. Revisa la versión actual antes de decidir.");
+    }
+    if (row.card.state !== "pending" && row.card.state !== "ready") {
+      throw new ApiError(409, "PROPOSAL_NOT_PENDING", "Alguien ya resolvió esta propuesta.");
+    }
+    return row;
+  }
+  function requireHuman() {
+    const me = requireMockMe();
+    if (me.principal.type !== "human" || !me.permissions.includes("proposals.decide")) throw PERMISSION_DENIED();
+  }
+  return {
+    list: (): DraftInboxRow[] => structuredClone([...rows.values()]),
+    edit(request: ApprovalEnvelope, text: string): DraftInboxRow {
+      requireHuman();
+      const row = current(request);
+      if (row.card.level !== "borrador") throw new ApiError(422, "INVALID_INPUT", "Solo se puede editar un borrador pendiente.");
+      if (!text.trim()) throw new ApiError(422, "INVALID_INPUT", "Escribe el texto del borrador.");
+      const card = CardSchema.parse({ ...row.card, body: `<p>${escapeCardText(text.trim())}</p>`, revision: (row.card.revision ?? 0) + 1 });
+      const next = { card, envelope: { ...envelopeFor(card), version: row.envelope.version + 1 } };
+      rows.set(card.id, next);
+      return structuredClone(next);
+    },
+    decide(request: ApprovalEnvelope, decision: ProposalDecision, key: string): DraftInboxRow {
+      requireHuman();
+      if (!key.trim()) throw new ApiError(422, "INVALID_INPUT", "Falta la clave del intento.");
+      const fingerprint = JSON.stringify([request.cardId, request.version, request.payload_hash, decision]);
+      const replay = receipts.get(key);
+      if (replay) {
+        if (replay.fingerprint !== fingerprint) throw new ApiError(409, "IDEMPOTENCY_KEY_REUSED", "La clave pertenece a otro intento.");
+        return structuredClone(replay.row);
+      }
+      const row = current(request);
+      const next: DraftInboxRow = { ...row, card: { ...row.card, state: decision === "approve" ? "approved" : "declined" } };
+      rows.set(next.card.id, next);
+      receipts.set(key, { fingerprint, row: structuredClone(next) });
+      return structuredClone(next);
+    },
   };
 }
