@@ -67,7 +67,7 @@ export function AgentCursor({ agent, target, origin, reduced = false }: {
   }, [origin, target.selector, target.fallbackSelector, reduced, x, y]);
 
   return createPortal(<motion.div className="airi-agent-cursor" data-agent={agent} aria-hidden="true"
-    style={{ ...agentColor(agent), ...(reduced ? { left: x, top: y } : { x, y }), opacity: visible ? 1 : 0 }}>
+    style={{ ...agentColor(agent), ...(reduced ? { left: x, top: y, visibility: visible ? "visible" : "hidden", opacity: 1 } : { x, y, opacity: visible ? 1 : 0 }) }}>
     <svg viewBox="0 0 24 24" width="24" height="24"><path d="M3 2l7 19 2.6-7.6L20 11z" /></svg>
     <span ref={tag} className="airi-agent-cursor__tag" data-flip={fit.flip} style={{ left: fit.offset }}><b>{identity.name}</b> · {target.label}</span>
   </motion.div>, document.body);

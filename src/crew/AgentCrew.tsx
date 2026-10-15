@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, MotionConfig, motion, useAnimate } from "motion/react";
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { agentStore, useAgentStore, type AgentStore } from "../agui/store";
 import type { AgentId } from "../agui/card";
 import type { RunState } from "../agui/reducer";
@@ -10,9 +10,9 @@ import { AgentDialog, agentColor, CREW, STATUS } from "./AgentDialog";
 import { AgentCursor, type CursorTarget } from "./AgentCursor";
 
 const snapshot = (state: RunState) => state;
+const useClientLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
 const CrewCharacter = memo(Character);
 const FORWARD = { type: "spring", stiffness: 520, damping: 24, mass: .9 } as const;
-const BACK = { type: "spring", visualDuration: .42, bounce: .45 } as const;
 
 export function AgentCrew({ store = agentStore, onOpenCard }: { store?: AgentStore; onOpenCard?: () => void }) {
   return <MotionConfig reducedMotion="user"><Crew store={store} onOpenCard={onOpenCard} /></MotionConfig>;
@@ -21,13 +21,13 @@ export function AgentCrew({ store = agentStore, onOpenCard }: { store?: AgentSto
 function Crew({ store, onOpenCard }: { store: AgentStore; onOpenCard?: (() => void) | undefined }) {
   const state = useAgentStore(snapshot, store);
   const [scope, animate] = useAnimate<HTMLDivElement>();
-  const [reduced, setReduced] = useState(false);
+  const [reduced, setReduced] = useState(true);
   const [mobile, setMobile] = useState(false);
   const [visible, setVisible] = useState(true);
   const [hovered, setHovered] = useState<AgentId | null>(null);
   const [dialog, setDialog] = useState<{ agent: AgentId; trigger: HTMLButtonElement } | null>(null);
   const [doneRest, setDoneRest] = useState(false);
-  const previous = useRef<AgentId[]>([]);
+  const [admitted, setAdmitted] = useState<AgentId[]>([]);
   const buttons = useRef<Partial<Record<AgentId, HTMLButtonElement>>>({});
   const focusCleanup = useRef<(() => void) | null>(null);
 
@@ -35,11 +35,12 @@ function Crew({ store, onOpenCard }: { store: AgentStore; onOpenCard?: (() => vo
     const reduce = matchMedia("(prefers-reduced-motion: reduce)");
     const small = matchMedia("(max-width: 760px)");
     let onscreen = true;
-    const sync = () => { setReduced(reduce.matches); setMobile(small.matches); setVisible(onscreen && !document.hidden); };
+    const sync = () => { setReduced(reduce.matches); setMobile(small.matches); setVisible(onscreen && !document.hidden && !document.querySelector(".airi-intro[open]")); };
     const observer = new IntersectionObserver(entries => { onscreen = entries[0]?.isIntersecting ?? false; sync(); });
     if (scope.current) observer.observe(scope.current);
+    window.addEventListener("airi:intro-visibility", sync);
     sync(); reduce.addEventListener("change", sync); small.addEventListener("change", sync); document.addEventListener("visibilitychange", sync);
-    return () => { observer.disconnect(); reduce.removeEventListener("change", sync); small.removeEventListener("change", sync); document.removeEventListener("visibilitychange", sync); };
+    return () => { observer.disconnect(); window.removeEventListener("airi:intro-visibility", sync); reduce.removeEventListener("change", sync); small.removeEventListener("change", sync); document.removeEventListener("visibilitychange", sync); };
   }, [scope]);
   useEffect(() => {
     setDoneRest(false);
@@ -55,28 +56,31 @@ function Crew({ store, onOpenCard }: { store: AgentStore; onOpenCard?: (() => vo
   const active = primary ?? (dialog ? null : hovered);
   const secondary = primary && state.run.status === "working" && state.run.agent !== primary ? state.run.agent : null;
 
-  useEffect(() => {
+  useClientLayoutEffect(() => {
+    // Settling a cancelled spring/SVG also moves its outgoing identity. Paint
+    // that rest frame before admitting the next pair, including rapid handoffs.
+    setAdmitted([]);
+    if (reduced || !visible) return;
+    let frame = requestAnimationFrame(() => {
+      frame = requestAnimationFrame(() => setAdmitted([active, secondary].filter((id): id is AgentId => id !== null)));
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [active, secondary, reduced, visible]);
+
+  useClientLayoutEffect(() => {
     const faces = scope.current?.querySelectorAll<HTMLElement>(".airi-crew-face");
     const controls: ReturnType<typeof animate>[] = [];
-    const selected = [active, secondary].filter((id): id is AgentId => id !== null);
-    const returning = selected.length < 2 ? previous.current.find(id => !selected.includes(id)) : undefined;
-    previous.current = selected;
-    // Cancel previous springs before selecting the next pair. A pending agent
-    // and a working agent share the budget; rapid handoffs cannot accumulate.
-    faces?.forEach(face => { if (!selected.includes(face.dataset.face as AgentId) && face.dataset.face !== returning) face.style.transform = "none"; });
+    faces?.forEach(face => { if (!admitted.includes(face.dataset.face as AgentId)) face.style.transform = "none"; });
     if (reduced || !visible) { faces?.forEach(face => { face.style.transform = "none"; }); return; }
-    if (returning) {
-      const face = scope.current?.querySelector<HTMLElement>(`[data-face="${returning}"]`);
-      if (face) controls.push(animate(face, { y: 0, scale: 1, rotate: 0 }, BACK));
-    }
-    for (const id of selected) {
+    if (admitted.some(id => id !== active && id !== secondary)) return;
+    for (const id of admitted) {
       const face = scope.current?.querySelector<HTMLElement>(`[data-face="${id}"]`);
       if (face) controls.push(animate(face, primary ? { y: mobile ? 0 : 7, scale: mobile ? 1.16 : 1.24, rotate: 0 }
         : { y: 3, scale: 1.14, rotate: -6 }, primary ? FORWARD : { type: "spring", visualDuration: .22, bounce: .3 }));
     }
     let breathing = false;
     let index = 0;
-    const timer = !active ? setInterval(() => {
+    const timer = !active && admitted.length === 0 ? setInterval(() => {
       if (breathing || controls.some(control => control.state === "running")) return;
       const identity = CREW[index++ % CREW.length]!;
       const face = scope.current?.querySelector<HTMLElement>(`[data-face="${identity.id}"]`);
@@ -87,7 +91,7 @@ function Crew({ store, onOpenCard }: { store: AgentStore; onOpenCard?: (() => vo
       void control.then(() => { breathing = false; const at = controls.indexOf(control); if (at >= 0) controls.splice(at, 1); });
     }, 2300) : null;
     return () => { if (timer) clearInterval(timer); controls.forEach(control => control.stop()); };
-  }, [active, secondary, primary, mobile, reduced, visible, animate, scope]);
+  }, [admitted, active, primary, mobile, reduced, visible, animate, scope]);
 
   const card = Object.values(state.cards).filter(entry => entry.card.agent === primary).at(-1)?.card;
   let target: CursorTarget | null = card ? { selector: `[data-card=${JSON.stringify(card.id)}]`, label: state.agents[primary!] === "needs-you" ? "Revisa y aprueba tú" : "Preparando la tarjeta" } : null;
@@ -126,7 +130,7 @@ function Crew({ store, onOpenCard }: { store: AgentStore; onOpenCard?: (() => vo
     <style>{CREW_STYLES}</style>
     {CREW.map(identity => <button key={identity.id} ref={element => { if (element) buttons.current[identity.id] = element; }}
       className="airi-crew-agent" type="button" data-agent={identity.id} data-state={state.agents[identity.id]}
-      data-motion={visible && !reduced && (primary === identity.id || secondary === identity.id) ? "active" : "quiet"} style={agentColor(identity.id)}
+      data-motion={visible && !reduced && admitted.includes(identity.id) ? "active" : "quiet"} style={agentColor(identity.id)}
       aria-label={`${identity.name}, ${identity.role}: ${STATUS[state.agents[identity.id]]}. Ver su rastro`}
       aria-haspopup="dialog" aria-expanded={dialog?.agent === identity.id}
       onPointerEnter={event => { if (event.pointerType === "mouse" && matchMedia("(hover: hover) and (pointer: fine)").matches) setHovered(identity.id); }}
@@ -141,7 +145,7 @@ function Crew({ store, onOpenCard }: { store: AgentStore; onOpenCard?: (() => vo
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .15 }}>{STATUS[state.agents[primary]]}</motion.span>}</AnimatePresence>
     <span className="airi-crew-now" role="status">{primary ? `${CREW.find(item => item.id === primary)!.name} · ${STATUS[state.agents[primary]]}` : "en reposo"}</span>
     {dialog && <AgentDialog agent={dialog.agent} state={state} trigger={dialog.trigger} onClose={() => setDialog(null)} onOpenCard={openCard} />}
-    {primary && origin && target && !dialog && visible && (state.run.status === "working" || state.agents[primary] === "needs-you") && <AgentCursor key={`${state.run.id}:${primary}`} agent={primary} origin={origin} target={target} reduced={reduced} />}
+    {primary && origin && target && !dialog && visible && (reduced || admitted.includes(primary)) && (state.run.status === "working" || state.agents[primary] === "needs-you") && <AgentCursor key={`${state.run.id}:${primary}`} agent={primary} origin={origin} target={target} reduced={reduced} />}
   </div>;
 }
 

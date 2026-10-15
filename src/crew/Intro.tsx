@@ -3,18 +3,19 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { Character } from "./characters/Character";
 import { agentColor, CREW } from "./AgentDialog";
+import { useReducedMotionPreference } from "./useReducedMotionPreference";
 
 const SESSION_KEY = "airi.intro.v1";
 const PRESENTATION_START = 350;
 const PRESENTATION_MS = 380;
+const PRESENTATION_END = 190;
 
 /** Presentation only: no source, business fixtures or automatic audio unlock. */
 export function Intro() {
   const [visible, setVisible] = useState(false);
-  const [reduced, setReduced] = useState(false);
+  const reduced = useReducedMotionPreference();
   const [presenting, setPresenting] = useState(-1);
   const dialog = useRef<HTMLDialogElement>(null);
-  const orbit = useRef<HTMLDivElement>(null);
   const finished = useRef(false);
   const finish = useCallback(() => {
     if (finished.current) return;
@@ -27,7 +28,6 @@ export function Intro() {
     let seen = false;
     try { seen = sessionStorage.getItem(SESSION_KEY) === "1"; } catch { /* Storage is optional. */ }
     if (seen && new URLSearchParams(window.location.search).get("intro") !== "1") return;
-    setReduced(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
     setVisible(true);
   }, []);
 
@@ -35,20 +35,10 @@ export function Intro() {
     const element = dialog.current;
     if (!visible || !element) return;
     element.showModal();
+    window.dispatchEvent(new Event("airi:intro-visibility"));
     element.querySelector<HTMLButtonElement>("button")?.focus({ preventScroll: true });
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    const timers: ReturnType<typeof setTimeout>[] = [];
-    // One shared orbit spins, then individual introductions animate at most
-    // the incoming/outgoing disc. Character animations themselves stay quiet.
-    const animation = reduced ? null : orbit.current?.animate([
-      { transform: "rotate(-1turn)" }, { transform: "rotate(0turn)" },
-    ], { duration: 1050, easing: "cubic-bezier(.2,.8,.2,1)" });
-    if (!reduced) {
-      CREW.forEach((_, index) => timers.push(setTimeout(() => setPresenting(index), PRESENTATION_START + index * PRESENTATION_MS)));
-      timers.push(setTimeout(() => setPresenting(CREW.length), PRESENTATION_START + CREW.length * PRESENTATION_MS));
-    }
-    timers.push(setTimeout(finish, reduced ? 1300 : 3200));
     const keyboard = (event: KeyboardEvent) => {
       if (event.key === "Tab") {
         event.preventDefault(); element.querySelector<HTMLButtonElement>("button")?.focus({ preventScroll: true }); return;
@@ -58,12 +48,40 @@ export function Intro() {
     };
     window.addEventListener("keydown", keyboard, true);
     return () => {
-      timers.forEach(clearTimeout); animation?.cancel();
       window.removeEventListener("keydown", keyboard, true);
       element.close(); document.body.style.overflow = overflow;
+      window.dispatchEvent(new Event("airi:intro-visibility"));
       document.querySelector<HTMLInputElement>("#airi-home-input")?.focus({ preventScroll: true });
     };
   }, [visible, reduced, finish]);
+
+  useEffect(() => {
+    if (!visible) return;
+    // A slow renderer can leave an outgoing transition unpainted past its
+    // deadline. Wait for it to finish and paint rest before the next handoff.
+    const complete = reduced || presenting === CREW.length;
+    const delay = reduced ? 1300 : complete ? PRESENTATION_END : presenting < 0 ? PRESENTATION_START : PRESENTATION_MS;
+    if (reduced) { const timer = setTimeout(finish, delay); return () => clearTimeout(timer); }
+    const started = performance.now();
+    let cancelled = false;
+    let frame = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const afterPaint = (callback: () => void) => {
+      frame = requestAnimationFrame(() => { frame = requestAnimationFrame(callback); });
+    };
+    afterPaint(() => {
+      const discs = dialog.current?.querySelectorAll?.(".airi-intro__disc") ?? [];
+      const animations = Array.from(discs).flatMap(disc => disc.getAnimations());
+      void Promise.allSettled(animations.map(animation => animation.finished)).then(() => {
+        if (cancelled) return;
+        afterPaint(() => {
+          if (cancelled) return;
+          timer = setTimeout(complete ? finish : () => setPresenting(index => index + 1), Math.max(0, delay - (performance.now() - started)));
+        });
+      });
+    });
+    return () => { cancelled = true; cancelAnimationFrame(frame); clearTimeout(timer); };
+  }, [visible, reduced, presenting, finish]);
 
   if (!visible) return null;
   const agent = CREW[presenting];
@@ -71,7 +89,7 @@ export function Intro() {
     data-reduced={reduced} onCancel={event => { event.preventDefault(); finish(); }}>
     <style>{INTRO_STYLES}</style>
     <div className="airi-intro__stage">
-      <div ref={orbit} className="airi-intro__orbit" aria-hidden="true">
+      <div className="airi-intro__orbit" aria-hidden="true">
         {CREW.map((identity, index) => <div key={identity.id} className="airi-intro__agent" data-intro-agent={identity.id}
           data-presenting={!reduced && presenting === index} style={{ ...agentColor(identity.id), "--angle": `${index / CREW.length * 360}deg` } as CSSProperties}>
           <div className="airi-intro__disc"><Character agent={identity.id} decorative gaze={false} state="idle" size={76} /></div>
