@@ -25,7 +25,7 @@ const FORWARDED_REQUEST_HEADERS = ["content-type", "accept", "idempotency-key", 
 
 /** Backend response headers returned to the browser as-is. `idempotent-replay`
  *  tells the UI a retried intent was replayed, not executed twice. */
-const FORWARDED_RESPONSE_HEADERS = ["content-type", "retry-after", "x-request-id", "idempotent-replay"] as const;
+const FORWARDED_RESPONSE_HEADERS = ["content-type", "retry-after", "x-request-id", "idempotent-replay", "x-run-id"] as const;
 
 /** `/internal/*` is server-to-server only. Defence in depth behind the
  *  allowlist in `handleBackendRequest`. */
@@ -116,6 +116,11 @@ export interface BrowserRoute {
  * `/agent-tools`, creating proposals) are deliberately absent.
  */
 export const BROWSER_ROUTES: readonly BrowserRoute[] = [
+  { method: "GET", path: "agent/cards/:id" },
+  { method: "GET", path: "state" },
+  { method: "GET", path: "home/dueno" },
+  { method: "GET", path: "home/admin" },
+  { method: "GET", path: "home/doctor" },
   { method: "GET", path: "me" },
   { method: "GET", path: "patients" },
   { method: "POST", path: "patients" },

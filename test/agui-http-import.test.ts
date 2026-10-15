@@ -23,7 +23,7 @@ it.each(["false", undefined])("la fábrica usa HTTP sin cargar mocks con flag %s
   const source = await getAgentSource();
   expect(source).toBeInstanceOf(HttpSource);
   const events: unknown[] = [];
-  await source.run({ threadId: "factory-thread", runId: "factory-run", messages: [], tools: [], context: [] }, (event) => events.push(event));
+  await source.run({ threadId: "factory-thread", runId: "factory-run", messages: [{ id: "user", role: "user", content: "Hola" }], tools: [], context: [] }, (event) => events.push(event));
   expect(simulation).not.toHaveBeenCalled();
   expect(mockData).not.toHaveBeenCalled();
   expect(transport).toHaveBeenCalledTimes(1);
@@ -54,7 +54,7 @@ it("importar la fuente HTTP en modo real no evalúa simulador ni datos mock", as
   const transport = vi.fn(async () => { throw new TypeError("offline"); });
   const source = new HttpSource({ fetch: transport });
   const events: unknown[] = [];
-  await source.run({ threadId: "real-thread", runId: "real-run", messages: [], tools: [], context: [] }, (event) => events.push(event));
+  await source.run({ threadId: "real-thread", runId: "real-run", messages: [{ id: "user", role: "user", content: "Hola" }], tools: [], context: [] }, (event) => events.push(event));
   expect(simulation).not.toHaveBeenCalled();
   expect(mockData).not.toHaveBeenCalled();
   expect(transport).toHaveBeenCalledWith("/api/backend/agent/runs", expect.objectContaining({ method: "POST" }));

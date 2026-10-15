@@ -113,6 +113,7 @@ describe("HttpSource contra SSE real", () => {
 
   it.each(["clear", "configure", "new-run", "new-run-stopped"])("descarta el fallo de stop tardío tras %s", async (action) => {
     let rejectStop: (() => void) | undefined;
+    let runNumber = 0;
     const { source } = await serve((request, response) => {
       if (request.url === "/api/backend/agent/runs/next-run/stop") { response.writeHead(204); response.end(); return; }
       if (request.url?.endsWith("/stop")) {
@@ -123,7 +124,7 @@ describe("HttpSource contra SSE real", () => {
         return;
       }
       void body(request).then((payload) => {
-        const run = payload as RunAgentInput;
+        const run = { threadId: (payload as { thread_id: string }).thread_id, runId: runNumber++ === 0 ? "run-http" : "next-run" };
         startSse(response);
         response.write(frame({ type: EventType.RUN_STARTED, threadId: run.threadId, runId: run.runId }));
         if (run.runId === "next-run" && action !== "new-run-stopped") {
@@ -208,7 +209,7 @@ describe("HttpSource contra SSE real", () => {
     expect(state.cards["r-oferta"]?.status).toBe("pending");
     expect(state.run.plan).toHaveLength(3);
     expect(transport).toHaveBeenCalledTimes(1);
-    expect(requests).toEqual([{ url: "/api/backend/agent/runs", method: "POST", key: expect.any(String), payload: input() }]);
+    expect(requests).toEqual([{ url: "/api/backend/agent/runs", method: "POST", key: expect.any(String), payload: { ask: "Busca un hueco", role: "admin", thread_id: "thread-http" } }]);
     expect(requests[0]?.key).toMatch(/^[a-f0-9-]{36}$/);
   });
 
@@ -219,7 +220,7 @@ describe("HttpSource contra SSE real", () => {
       requests.push({ url: request.url, key: request.headers["idempotency-key"] });
       if (request.url?.endsWith("/stop")) { response.writeHead(204); response.end(); return; }
       void body(request).then((payload) => {
-        const run = payload as RunAgentInput;
+        const run = { threadId: (payload as { thread_id: string }).thread_id, runId: requests.filter(item => !item.url?.endsWith("/stop")).length === 1 ? "run-http" : "second-run" };
         startSse(response);
         response.write(frame({ type: EventType.RUN_STARTED, threadId: run.threadId, runId: run.runId }));
         if (run.runId === "second-run") {

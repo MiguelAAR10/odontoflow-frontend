@@ -3,7 +3,10 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { HomePage } from "../src/views/HomePage";
 
 const model = vi.hoisted(() => ({ role: "admin", panelOpen: false, docked: false, queries: 0, working: false, stop: vi.fn(), run: { status: "idle", what: null }, send: vi.fn(() => Promise.resolve()) }));
-vi.mock("../src/api", () => ({ useMocks: false, toApiError: (error: Error) => ({ message: error.message }) }));
+vi.mock("../src/api", () => ({ useMocks: false, toApiError: (error: Error) => ({ message: error.message }),
+  loadAiriHome: async () => { throw new Error("Inicio no disponible"); },
+  loadAiriState: async () => { throw new Error("Corte no disponible"); },
+}));
 vi.mock("../src/components/PersonaContext", () => ({ usePersona: () => ({ identity: { displayName: "María Real" } }) }));
 vi.mock("../src/components/shell/ShellContext", () => ({ useShellContext: () => ({ role: model.role }) }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { toApiError, useMocks } from "../api";
+import { loadAiriState, toApiError, useMocks } from "../api";
 import { CardSchema, type Card } from "../agui/card";
 import { useAgent } from "../agui/useAgent";
 import { useShellContext } from "../components/shell/ShellContext";
@@ -24,6 +24,10 @@ export function DireccionPage() {
       const parsed = directionSnapshotSchema.parse(state.default[0]);
       const previews = ["p-caja", "p-cobertura", "p-desc"].flatMap(id => cards.default.filter(card => card.id === id)).map(card => CardSchema.parse(card));
       if (active) { setFixture(parsed); setDecisions(previews); }
+    }).catch(caught => { if (active) setError(toApiError(caught).message); });
+    else void loadAiriState().then(value => {
+      const parsed = directionSnapshotSchema.parse(value);
+      if (active) setFixture(parsed);
     }).catch(caught => { if (active) setError(toApiError(caught).message); });
     return () => { active = false; };
   }, []);

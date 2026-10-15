@@ -20,5 +20,5 @@ export async function getAgentSource(options: SimulatedSourceOptions = {}): Prom
   }
   // A scoped specifier avoids aliasing Axios's own ./http.js in Turbopack.
   const { HttpSource } = await import("../agui/http.js");
-  return new HttpSource();
+  return new HttpSource(options.role ? { role: options.role } : {});
 }

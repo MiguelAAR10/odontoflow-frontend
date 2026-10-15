@@ -3,8 +3,10 @@ import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { describe, expect, it, vi } from "vitest";
 import snapshot from "../../../src/agui/sim/fixtures/state.json";
 
-const config = vi.hoisted(() => ({ mocks: false, state: {} as unknown }));
-vi.mock("../../../src/api", () => ({ get useMocks() { return config.mocks; }, toApiError: (e: Error) => ({ message: e.message }) }));
+const config = vi.hoisted(() => ({ mocks: false, state: {} as unknown, response: null as unknown }));
+vi.mock("../../../src/api", () => ({ get useMocks() { return config.mocks; }, toApiError: (e: Error) => ({ message: e.message }),
+  loadAiriState: async () => { if (config.response === null) throw new Error("Sin corte disponible"); return config.response; },
+}));
 vi.mock("../../../src/agui/useAgent", () => ({ useAgent: () => ({ worldState: config.state, working: false, send: vi.fn() }) }));
 vi.mock("../../../src/components/shell/ShellContext", () => ({ useShellContext: () => ({ role: "dueno" }) }));
 vi.mock("../../../src/home/PendingDecisions", () => ({ PendingDecisions: () => null }));
@@ -17,6 +19,15 @@ async function render() {
   return { tree, text: JSON.stringify(tree.toJSON()) };
 }
 describe("Dirección: origen de datos", () => {
+  it("carga un corte REST sin necesitar una consulta previa al agente", async () => {
+    config.mocks = false; config.state = {}; config.response = snapshot[0];
+    try {
+      const { tree, text } = await render();
+      expect(text).toContain("S/ 6,240.00");
+      expect(text).not.toContain("Datos de demostración");
+      tree.unmount();
+    } finally { config.response = null; }
+  });
   it("no muestra fixtures ni ceros inventados en modo real sin snapshot", async () => {
     config.mocks = false; config.state = {};
     const { tree, text } = await render();

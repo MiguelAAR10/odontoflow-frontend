@@ -4,7 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowUp, ArrowUpRight } from "lucide-react";
 import { z } from "zod";
-import { toApiError, useMocks } from "../api";
+import { loadAiriHome, loadAiriState, toApiError, useMocks } from "../api";
 import { useAgent } from "../agui/useAgent";
 import { useShellContext } from "../components/shell/ShellContext";
 import { usePersona } from "../components/PersonaContext";
@@ -43,6 +43,7 @@ export function HomePage() {
   const [error, setError] = useState("");
   const [clock, setClock] = useState<Date | null>(null);
   const [fixture, setFixture] = useState<{ name: string; summary: Summary } | null>(null);
+  const [homeName, setHomeName] = useState<string | null>(null);
   const router = useRouter();
   useEffect(() => {
     if (!agent.docked && agent.queries > 0) document.getElementById("airi-home-input")?.focus({ preventScroll: true });
@@ -55,18 +56,26 @@ export function HomePage() {
   useEffect(() => {
     let current = true;
     setFixture(null);
+    setHomeName(null);
     if (useMocks) {
       void Promise.all([import("../agui/sim/fixtures/roles.json"), import("../agui/sim/fixtures/state.json")]).then(([roles, state]) => {
         const home = roles.default.find(item => item.role === role);
         const summary = summarySchema.safeParse(state.default[0]);
         if (current && home && summary.success) setFixture({ name: home.name, summary: summary.data });
       }).catch(caught => { if (current) setError(toApiError(caught).message); });
+    } else {
+      void loadAiriHome(role).then(home => { if (current) setHomeName(home.name); })
+        .catch(caught => { if (current) setError(toApiError(caught).message); });
+      if (role === "dueno") void loadAiriState().then(value => {
+        const summary = summarySchema.parse(value);
+        if (current) setFixture({ name: "", summary });
+      }).catch(caught => { if (current) setError(toApiError(caught).message); });
     }
     return () => { current = false; };
   }, [role]);
   const live = summarySchema.safeParse(agent.worldState);
   const summary = live.success ? live.data : fixture?.summary;
-  const name = (useMocks ? fixture?.name : identity?.displayName) || roleCopy[role].name;
+  const name = (useMocks ? fixture?.name : homeName || identity?.displayName) || roleCopy[role].name;
   const ask = (intent: string) => {
     if (!intent.trim() || agent.working) return;
     setError("");

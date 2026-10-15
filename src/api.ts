@@ -23,6 +23,8 @@ import {
   createServiceExecution as createServiceExecutionReal,
   createVisit as createVisitReal,
   getAppointment as getAppointmentReal,
+  getAiriState as getAiriStateReal,
+  getAiriHome as getAiriHomeReal,
   getBalance as getBalanceReal,
   getVisit as getVisitReal,
   http,
@@ -100,6 +102,21 @@ export const api = http;
 
 const useMocks = USE_MOCKS;
 export { useMocks, ApiError, toApiError, newIdempotencyKey };
+
+/** v10 reads share the explicit mode seam; views validate their projection. */
+export async function loadAiriState(): Promise<unknown> {
+  if (!useMocks) return getAiriStateReal();
+  const fixtures = await import("./agui/sim/fixtures/state.json");
+  return structuredClone(fixtures.default[0]);
+}
+
+export async function loadAiriHome(role: "dueno" | "admin" | "doctor") {
+  if (!useMocks) return getAiriHomeReal(role);
+  const fixtures = await import("./agui/sim/fixtures/roles.json");
+  const home = fixtures.default.find(row => row.role === role);
+  if (!home) throw new ApiError(404, "NOT_FOUND", "No se encuentra el inicio de este rol.");
+  return structuredClone(home);
+}
 const copy = <T,>(value: T): T => structuredClone(value);
 
 async function getOrMock<T>(path: string, fallback: T): Promise<T> {

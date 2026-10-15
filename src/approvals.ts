@@ -102,6 +102,10 @@ export interface InboxCatalogNames {
 }
 
 const CATEGORY: Record<InboxItem["kind"], ApprovalCategory> = {
+  appointment_confirm_batch: "cita",
+  appointments_reassign: "cita",
+  reschedule_reply: "cita",
+  payment_verify: "cobranza",
   collection_reminder: "cobranza",
   collection_follow_up: "cobranza",
   inventory_transfer: "inventario",
@@ -454,6 +458,10 @@ export async function runAgentNow(agent: RunnableAgent, idempotencyKey: string):
 // --- mock mode: mirrors the backend rules -------------------------------------------
 
 const KIND_PERMISSION: Record<InboxItem["kind"], string> = {
+  appointment_confirm_batch: "deliveries.create",
+  appointments_reassign: "appointments.reschedule",
+  reschedule_reply: "deliveries.create",
+  payment_verify: "payments.verify",
   collection_reminder: "deliveries.create",
   collection_follow_up: "follow_ups.create",
   inventory_transfer: "movements.create",

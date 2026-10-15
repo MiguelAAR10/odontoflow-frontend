@@ -7,6 +7,12 @@
  * under `src/` never reads this variable.
  */
 import axios from "axios";
+import { readFileSync } from "node:fs";
 
-const token = process.env.BACKEND_DEMO_TOKEN;
-if (token) axios.defaults.headers.common.Authorization = `Bearer ${token}`;
+const config = process.env.AIRI_E2E_CONFIG;
+const token = config ? (JSON.parse(readFileSync(config, "utf8")) as { token: string }).token : process.env.BACKEND_DEMO_TOKEN;
+if (token) {
+  axios.defaults.headers.common.Authorization = `Bearer ${token}`;
+  // Raw fetch journeys use the same temporary identity as Axios adapters.
+  process.env.BACKEND_DEMO_TOKEN = token;
+}

@@ -242,6 +242,244 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/direccion/sedes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Sedes */
+        get: operations["get_sedes_direccion_sedes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/state": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get State */
+        get: operations["get_state_state_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/collections/aging": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Aging */
+        get: operations["get_aging_collections_aging_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/agenda/board": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Board */
+        get: operations["board_agenda_board_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/radar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Radar */
+        get: operations["radar_radar_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/agent/cards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Cards */
+        get: operations["cards_agent_cards_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/agent/cards/{proposal_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Card */
+        get: operations["card_agent_cards__proposal_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/inbox": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Inbox */
+        get: operations["inbox_inbox_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/trail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Trail */
+        get: operations["trail_trail_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/home/{role}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Home */
+        get: operations["get_home_home__role__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/agent/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Run */
+        post: operations["create_run_agent_runs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/agent/runs/{run_id}/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Stop Run */
+        post: operations["stop_run_agent_runs__run_id__stop_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Tasks Route */
+        get: operations["tasks_route_tasks_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tasks/{task_id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Complete Task Route */
+        post: operations["complete_task_route_tasks__task_id__complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/agent-runs": {
         parameters: {
             query?: never;
@@ -1025,6 +1263,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/opportunities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Opportunities Route */
+        get: operations["opportunities_route_opportunities_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/opportunities/{domain}/{subject_id}/commitment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Commitment Route */
+        put: operations["commitment_route_opportunities__domain___subject_id__commitment_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/locations": {
         parameters: {
             query?: never;
@@ -1156,6 +1428,23 @@ export interface paths {
         put?: never;
         /** Approve Proposal Route */
         post: operations["approve_proposal_route_agent_proposals__proposal_id__approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/agent/proposals/{proposal_id}/edit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Edit Proposal Route */
+        post: operations["edit_proposal_route_agent_proposals__proposal_id__edit_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1347,6 +1636,46 @@ export interface paths {
          * @description B0.5: confirmed → no_show, only once the appointment has started.
          */
         post: operations["mark_no_show_route_appointments__appointment_id__no_show_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/appointments/{appointment_id}/arrive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mark Arrived Route
+         * @description B3-STATES: confirmed → arrived; the server stamps ``arrived_at``.
+         */
+        post: operations["mark_arrived_route_appointments__appointment_id__arrive_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/appointments/{appointment_id}/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Consultation Route
+         * @description B3-STATES: arrived → in_consultation.
+         */
+        post: operations["start_consultation_route_appointments__appointment_id__start_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1688,6 +2017,75 @@ export interface components {
             /** Reason */
             reason?: string | null;
         };
+        /** AgendaEvidence */
+        AgendaEvidence: {
+            /** Appointment Id */
+            appointment_id: number;
+            /** Service Name */
+            service_name: string;
+            /** Practitioner Name */
+            practitioner_name: string;
+            /**
+             * Start Utc
+             * Format: date-time
+             */
+            start_utc: string;
+            /**
+             * End Utc
+             * Format: date-time
+             */
+            end_utc: string;
+            /** Minutes */
+            minutes: number;
+            /** Candidates Count */
+            candidates_count: number;
+            /** Offers Queued */
+            offers_queued: number;
+            /** Offers Delivered */
+            offers_delivered: number;
+        };
+        /** AgendaItem */
+        AgendaItem: {
+            /** Id */
+            id: string;
+            /**
+             * Start At
+             * Format: date-time
+             */
+            start_at: string;
+            /**
+             * End At
+             * Format: date-time
+             */
+            end_at: string;
+            /** Duration Minutes */
+            duration_minutes: number;
+            /**
+             * Practitioner
+             * @enum {string}
+             */
+            practitioner: "ruiz" | "salinas" | "leon";
+            /** Practitioner Name */
+            practitioner_name: string;
+            /** Patient */
+            patient: string;
+            /** Procedure */
+            procedure: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "control" | "tratamiento" | "evaluacion" | "ortodoncia" | "urgencia";
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "cerrada" | "sin cerrar" | "ausente" | "en consulta" | "llegó" | "confirmada" | "sin confirmar";
+            /** Arrived At */
+            arrived_at: string | null;
+            /** Sede */
+            sede: string;
+        };
         /** AgentProposalCounts */
         AgentProposalCounts: {
             /** Agent Key */
@@ -1862,6 +2260,20 @@ export interface components {
             /** Duration Ms */
             duration_ms: number;
         };
+        /** AgingBucket */
+        AgingBucket: {
+            /** Label */
+            label: string;
+            balance: components["schemas"]["Money"];
+            /** Charge Count */
+            charge_count: number;
+        };
+        /** AgingSummary */
+        AgingSummary: {
+            /** Buckets */
+            buckets: components["schemas"]["AgingBucket"][];
+            total: components["schemas"]["Money"];
+        };
         /**
          * AppointmentCancel
          * @description Empty by design: the appointment is identified by the path, and nothing
@@ -1926,6 +2338,10 @@ export interface components {
             state: string;
             /** Patient Id */
             patient_id?: number | null;
+            /** Arrived At */
+            arrived_at?: string | null;
+            /** Patient Confirmed At */
+            patient_confirmed_at?: string | null;
             /** Lead Name */
             lead_name: string;
             /** Service Name */
@@ -2042,6 +2458,10 @@ export interface components {
             state: string;
             /** Patient Id */
             patient_id?: number | null;
+            /** Arrived At */
+            arrived_at?: string | null;
+            /** Patient Confirmed At */
+            patient_confirmed_at?: string | null;
         };
         /** AppointmentReschedule */
         AppointmentReschedule: {
@@ -2126,6 +2546,95 @@ export interface components {
             location_id: number;
             /** Is Active */
             is_active: boolean;
+        };
+        /** Card */
+        Card: {
+            /** Id */
+            id: string;
+            /**
+             * Agent
+             * @enum {string}
+             */
+            agent: "airi" | "cepillo" | "pasta" | "hilo" | "enjuague" | "espejo" | "escudo";
+            /**
+             * Level
+             * @enum {string}
+             */
+            level: "auto" | "borrador" | "aprobar";
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "ready" | "pending" | "approved" | "declined" | "delegated" | "undone";
+            /** Title */
+            title: string;
+            /** Body */
+            body: string;
+            /** Why */
+            why?: string | null;
+            /** Srcs */
+            srcs?: string[];
+            /** Scope */
+            scope?: components["schemas"]["CardScope"][];
+            /**
+             * Reversible
+             * @default unspecified
+             * @enum {string}
+             */
+            reversible: "none" | "reversible" | "reassign" | "until_patient_accepts" | "authorized_reversal" | "window" | "unspecified";
+            /** Approve */
+            approve?: string | null;
+            /** Alt */
+            alt?: string | null;
+            /** Result */
+            result?: string | null;
+            /**
+             * Undo
+             * @default false
+             */
+            undo: boolean;
+            /** Undo Window Seconds */
+            undo_window_seconds?: number | null;
+            delta?: components["schemas"]["CardDelta"] | null;
+            /** Version */
+            version: number;
+            /** Payload Hash */
+            payload_hash?: string | null;
+            /** Proposal Id */
+            proposal_id?: number | null;
+            /**
+             * Edit
+             * @default false
+             */
+            edit: boolean;
+            /** Ev */
+            ev?: string | null;
+            /** Amounts */
+            amounts?: components["schemas"]["LabeledMoney"][];
+        };
+        /** CardDelta */
+        CardDelta: {
+            /** Amount Cents */
+            amount_cents: number;
+            /**
+             * Currency
+             * @constant
+             */
+            currency: "PEN";
+            /** Sede */
+            sede: string;
+        };
+        /** CardScope */
+        CardScope: {
+            /** Label */
+            label: string;
+            /** Value */
+            value: string;
+            /** Reversible */
+            reversible?: ("none" | "reversible" | "reassign" | "until_patient_accepts" | "authorized_reversal" | "window" | "unspecified") | null;
+            /** Expires At */
+            expires_at?: string | null;
+            amount?: components["schemas"]["Money"] | null;
         };
         /** ChargeCreate */
         ChargeCreate: {
@@ -2246,6 +2755,38 @@ export interface components {
              */
             executed_at: string;
         };
+        /** CommitmentRead */
+        CommitmentRead: {
+            responsible: components["schemas"]["DecidedBy"];
+            /**
+             * Next Action At
+             * Format: date-time
+             */
+            next_action_at: string;
+            /** Reason */
+            reason: ("patient_declined" | "patient_requested_delay" | "unreachable" | "wrong_contact" | "already_managed" | "other") | null;
+            /** Note */
+            note: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** CommitmentWrite */
+        CommitmentWrite: {
+            /** Responsible Principal Id */
+            responsible_principal_id: number;
+            /**
+             * Next Action At
+             * Format: date-time
+             */
+            next_action_at: string;
+            /** Reason */
+            reason?: ("patient_declined" | "patient_requested_delay" | "unreachable" | "wrong_contact" | "already_managed" | "other") | null;
+            /** Note */
+            note?: string | null;
+        };
         /** ConversationCloseReceipt */
         ConversationCloseReceipt: {
             /** Conversation Id */
@@ -2328,6 +2869,50 @@ export interface components {
             quantity: number | string;
             /** Unit Price */
             unit_price?: number | string | null;
+        };
+        /** FinanceEvidence */
+        FinanceEvidence: {
+            /**
+             * Verified Paid
+             * @default 0.00
+             */
+            verified_paid: string;
+            /** Payment Methods */
+            payment_methods?: string[];
+            /** Charge Id */
+            charge_id: number;
+            /** Patient Name */
+            patient_name: string;
+            /** Amount */
+            amount: string;
+            /** Paid */
+            paid: string;
+            /** Balance */
+            balance: string;
+            /** Age Days */
+            age_days: number;
+        };
+        /** Gap */
+        Gap: {
+            /**
+             * Start At
+             * Format: date-time
+             */
+            start_at: string;
+            /**
+             * End At
+             * Format: date-time
+             */
+            end_at: string;
+            /** Duration Minutes */
+            duration_minutes: number;
+            /**
+             * Practitioner
+             * @enum {string}
+             */
+            practitioner: "ruiz" | "salinas" | "leon";
+            /** Sede */
+            sede: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -2417,6 +3002,10 @@ export interface components {
         };
         /** InboxItem */
         InboxItem: {
+            /** Decision Reason */
+            decision_reason?: ("patient_declined" | "patient_requested_delay" | "unreachable" | "wrong_contact" | "already_managed" | "other") | null;
+            /** Decision Note */
+            decision_note?: string | null;
             /**
              * Source
              * @enum {string}
@@ -2428,7 +3017,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "collection_reminder" | "collection_follow_up" | "inventory_transfer" | "inventory_entry" | "waitlist_offer" | "appointment_booking";
+            kind: "collection_reminder" | "collection_follow_up" | "inventory_transfer" | "inventory_entry" | "waitlist_offer" | "appointment_confirm_batch" | "appointments_reassign" | "reschedule_reply" | "payment_verify" | "appointment_booking";
             /** Agent Key */
             agent_key: string | null;
             /**
@@ -2488,6 +3077,31 @@ export interface components {
             /** Next Cursor */
             next_cursor: string | null;
         };
+        /** InventoryDonor */
+        InventoryDonor: {
+            /** Location Id */
+            location_id: number;
+            /** Location Name */
+            location_name: string;
+            /** Balance */
+            balance: string;
+        };
+        /** InventoryEvidence */
+        InventoryEvidence: {
+            /** Product Id */
+            product_id: number;
+            /** Product Name */
+            product_name: string;
+            /** Unit */
+            unit: string;
+            /** Balance */
+            balance: string;
+            /** Min Quantity */
+            min_quantity: string;
+            /** Deficit */
+            deficit: string;
+            donor: components["schemas"]["InventoryDonor"] | null;
+        };
         /** JobOut */
         JobOut: {
             /** Id */
@@ -2540,6 +3154,18 @@ export interface components {
             disabled_agents: "backfill"[];
             /** Jobs */
             jobs: components["schemas"]["JobOut"][];
+        };
+        /** LabeledMoney */
+        LabeledMoney: {
+            /** Amount Cents */
+            amount_cents: number;
+            /**
+             * Currency
+             * @constant
+             */
+            currency: "PEN";
+            /** Label */
+            label: string;
         };
         /** LeadCreate */
         LeadCreate: {
@@ -2674,6 +3300,16 @@ export interface components {
              */
             occurred_at: string;
         };
+        /** Money */
+        Money: {
+            /** Amount Cents */
+            amount_cents: number;
+            /**
+             * Currency
+             * @constant
+             */
+            currency: "PEN";
+        };
         /** MoneyTotals */
         MoneyTotals: {
             /**
@@ -2714,6 +3350,119 @@ export interface components {
              * Format: date-time
              */
             moved_at: string;
+        };
+        /** NavigationSection */
+        NavigationSection: {
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /** Icon */
+            icon: string;
+        };
+        /** OpportunityDecision */
+        OpportunityDecision: {
+            /** Reason */
+            reason?: ("patient_declined" | "patient_requested_delay" | "unreachable" | "wrong_contact" | "already_managed" | "other") | null;
+            /** Note */
+            note?: string | null;
+            /** By Display Name */
+            by_display_name: string | null;
+            /** At */
+            at: string | null;
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "approved" | "declined";
+        };
+        /** OpportunityEffect */
+        OpportunityEffect: {
+            /** Ref Type */
+            ref_type: string;
+            /** Ref Id */
+            ref_id: number | string | null;
+            /** At */
+            at: string | null;
+        };
+        /** OpportunityOutcome */
+        OpportunityOutcome: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "partial" | "confirmed" | "not_applicable";
+            /** Detail */
+            detail: string;
+        };
+        /** OpportunityPage */
+        OpportunityPage: {
+            /** Items */
+            items: components["schemas"]["OpportunityRead"][];
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+        };
+        /** OpportunityProposal */
+        OpportunityProposal: {
+            /** Id */
+            id: number;
+            /** Kind */
+            kind: string;
+            /** Status */
+            status: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+        };
+        /** OpportunityRead */
+        OpportunityRead: {
+            commitment?: components["schemas"]["CommitmentRead"] | null;
+            /** Id */
+            id: string;
+            /**
+             * Domain
+             * @enum {string}
+             */
+            domain: "finance" | "inventory" | "agenda";
+            /** Location Id */
+            location_id: number | null;
+            /** Location Name */
+            location_name: string | null;
+            /** Title */
+            title: string;
+            /**
+             * Detected At
+             * Format: date-time
+             */
+            detected_at: string;
+            /**
+             * Urgency
+             * @enum {string}
+             */
+            urgency: "high" | "medium" | "low";
+            /** Evidence */
+            evidence: components["schemas"]["FinanceEvidence"] | components["schemas"]["InventoryEvidence"] | components["schemas"]["AgendaEvidence"];
+            potential: components["schemas"]["Potential"];
+            potential_money?: components["schemas"]["PotentialMoney"] | null;
+            proposal?: components["schemas"]["OpportunityProposal"] | null;
+            decision?: components["schemas"]["OpportunityDecision"] | null;
+            effect?: components["schemas"]["OpportunityEffect"] | null;
+            outcome: components["schemas"]["OpportunityOutcome"];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "detected" | "proposed" | "decided" | "effected" | "resolved";
         };
         /** OutboundClaimRequest */
         OutboundClaimRequest: {
@@ -2883,6 +3632,28 @@ export interface components {
             /** Reconciliation Note */
             reconciliation_note?: string | null;
         };
+        /** Potential */
+        Potential: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "money" | "units" | "minutes";
+            /** Value */
+            value: string;
+            /** Currency */
+            currency: "PEN" | null;
+        };
+        /** PotentialMoney */
+        PotentialMoney: {
+            /** Value */
+            value: string;
+            /**
+             * Currency
+             * @constant
+             */
+            currency: "PEN";
+        };
         /** PractitionerCreate */
         PractitionerCreate: {
             /** Display Name */
@@ -3012,6 +3783,19 @@ export interface components {
         ProposalDecline: {
             /** Note */
             note?: string | null;
+            /** Reason */
+            reason?: ("patient_declined" | "patient_requested_delay" | "unreachable" | "wrong_contact" | "already_managed" | "other") | null;
+        };
+        /** ProposalEdit */
+        ProposalEdit: {
+            /** Expected Revision */
+            expected_revision: number;
+            /** Payload */
+            payload: {
+                [key: string]: unknown;
+            };
+            /** Note */
+            note?: string | null;
         };
         /**
          * PublicBookingCreate
@@ -3105,6 +3889,48 @@ export interface components {
         };
         /** ResumeAutomationRequest */
         ResumeAutomationRequest: Record<string, never>;
+        /** RoleHome */
+        RoleHome: {
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "dueno" | "admin" | "doctor";
+            /** Name */
+            name: string;
+            /** Subtitle */
+            subtitle: string;
+            /** Initials */
+            initials: string;
+            /** Sections */
+            sections: components["schemas"]["NavigationSection"][];
+            /** Suggestions */
+            suggestions: string[];
+        };
+        /** RunCreate */
+        RunCreate: {
+            /** Scenario */
+            scenario?: string | null;
+            /** Ask */
+            ask?: string | null;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "dueno" | "admin" | "doctor";
+            /** Thread Id */
+            thread_id?: string | null;
+        };
+        /** RunStopped */
+        RunStopped: {
+            /** Run Id */
+            run_id: string;
+            /**
+             * Stopping
+             * @constant
+             */
+            stopping: true;
+        };
         /** SandboxDeliveryReceiptRead */
         SandboxDeliveryReceiptRead: {
             /** Outbound Id */
@@ -3184,6 +4010,21 @@ export interface components {
              * Format: date-time
              */
             end_utc: string;
+        };
+        /** SedeSummary */
+        SedeSummary: {
+            /** Name */
+            name: string;
+            /** Occupied Minutes */
+            occupied_minutes: number | null;
+            /** Capacity Minutes */
+            capacity_minutes: number | null;
+            collected: components["schemas"]["Money"];
+            pending_verification: components["schemas"]["Money"];
+            /** Exception */
+            exception: string;
+            /** Complete */
+            complete: boolean;
         };
         /** ServiceConsumptionCreate */
         ServiceConsumptionCreate: {
@@ -3329,12 +4170,103 @@ export interface components {
              */
             occurred_at: string;
         };
+        /** StateSnapshot */
+        StateSnapshot: {
+            /**
+             * Cut At
+             * Format: date-time
+             */
+            cut_at: string;
+            /** Sedes */
+            sedes: components["schemas"]["SedeSummary"][];
+            /** Free Next 7 Days Minutes */
+            free_next_7_days_minutes: number;
+            overdue: components["schemas"]["Money"];
+            /** Overdue Patients */
+            overdue_patients: number;
+        };
         /** SubjectRef */
         SubjectRef: {
             /** Type */
             type: string;
             /** Id */
             id: string;
+        };
+        /** TaskComplete */
+        TaskComplete: {
+            /** Note */
+            note?: string | null;
+            /** Evidence */
+            evidence?: string[] | null;
+        };
+        /**
+         * TaskOut
+         * @description Instants are rendered with the Lima offset (``-05:00``), like every AIRI instant.
+         */
+        TaskOut: {
+            /** Id */
+            id: number;
+            /** Title */
+            title: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "open" | "done" | "escalated" | "cancelled";
+            /** Location Id */
+            location_id: number;
+            /** Proposal Id */
+            proposal_id: number;
+            /** Assignee Principal Id */
+            assignee_principal_id: number;
+            /** Assignee Name */
+            assignee_name: string;
+            /** Escalation Principal Id */
+            escalation_principal_id: number;
+            /** Due At */
+            due_at: string | null;
+            /** Overdue */
+            overdue: boolean;
+            /** Result Ref */
+            result_ref: {
+                [key: string]: unknown;
+            } | null;
+            /** Completed By Principal Id */
+            completed_by_principal_id: number | null;
+            /** Completed At */
+            completed_at: string | null;
+            /** Escalated At */
+            escalated_at: string | null;
+            /** Created At */
+            created_at: string | null;
+        };
+        /** TrailEntry */
+        TrailEntry: {
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /**
+             * Agent
+             * @enum {string}
+             */
+            agent: "airi" | "cepillo" | "pasta" | "hilo" | "enjuague" | "espejo" | "escudo";
+            /** Action */
+            action: string;
+            /** Object */
+            object: string;
+            /** Result */
+            result: string;
+            /** Approver */
+            approver: string;
+            /**
+             * Reversible
+             * @enum {string}
+             */
+            reversible: "none" | "reversible" | "reassign" | "until_patient_accepts" | "authorized_reversal" | "window" | "unspecified";
+            /** Reversibility Label */
+            reversibility_label: string;
         };
         /**
          * TransferCreate
@@ -4873,6 +5805,1363 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AdminToggleRead"];
+                };
+            };
+            /** @description A valid integration credential is required. */
+            401: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The authenticated principal lacks the required permission. */
+            403: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The request body exceeds the configured limit. */
+            413: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description The credential rate limit was exceeded. */
+            429: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    /** @description Seconds until the current rate-limit window resets. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The integration surface is disabled. */
+            503: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    get_sedes_direccion_sedes_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Request-Id"?: string;
+                "X-Correlation-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SedeSummary"][];
+                };
+            };
+            /** @description A valid integration credential is required. */
+            401: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The authenticated principal lacks the required permission. */
+            403: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The credential rate limit was exceeded. */
+            429: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    /** @description Seconds until the current rate-limit window resets. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The integration surface is disabled. */
+            503: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    get_state_state_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Request-Id"?: string;
+                "X-Correlation-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StateSnapshot"];
+                };
+            };
+            /** @description A valid integration credential is required. */
+            401: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The authenticated principal lacks the required permission. */
+            403: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The credential rate limit was exceeded. */
+            429: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    /** @description Seconds until the current rate-limit window resets. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The integration surface is disabled. */
+            503: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    get_aging_collections_aging_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Request-Id"?: string;
+                "X-Correlation-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgingSummary"];
+                };
+            };
+            /** @description A valid integration credential is required. */
+            401: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The authenticated principal lacks the required permission. */
+            403: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The credential rate limit was exceeded. */
+            429: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    /** @description Seconds until the current rate-limit window resets. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The integration surface is disabled. */
+            503: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    board_agenda_board_get: {
+        parameters: {
+            query?: {
+                /** @description Día calendario en America/Lima */
+                date?: string | null;
+                sede?: string | null;
+                practitioner?: string | null;
+            };
+            header?: {
+                "X-Request-Id"?: string;
+                "X-Correlation-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgendaItem"][];
+                };
+            };
+            /** @description A valid integration credential is required. */
+            401: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The authenticated principal lacks the required permission. */
+            403: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description The credential rate limit was exceeded. */
+            429: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    /** @description Seconds until the current rate-limit window resets. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The integration surface is disabled. */
+            503: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    radar_radar_get: {
+        parameters: {
+            query?: {
+                /** @description Día calendario en America/Lima */
+                date?: string | null;
+                sede?: string | null;
+                practitioner?: string | null;
+            };
+            header?: {
+                "X-Request-Id"?: string;
+                "X-Correlation-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Gap"][];
+                };
+            };
+            /** @description A valid integration credential is required. */
+            401: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The authenticated principal lacks the required permission. */
+            403: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description The credential rate limit was exceeded. */
+            429: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    /** @description Seconds until the current rate-limit window resets. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The integration surface is disabled. */
+            503: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    cards_agent_cards_get: {
+        parameters: {
+            query?: {
+                state?: ("ready" | "pending" | "approved" | "declined" | "delegated" | "undone") | null;
+                agent?: ("airi" | "cepillo" | "pasta" | "hilo" | "enjuague" | "espejo" | "escudo") | null;
+                sede?: string | null;
+                limit?: number;
+            };
+            header?: {
+                "X-Request-Id"?: string;
+                "X-Correlation-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Card"][];
+                };
+            };
+            /** @description A valid integration credential is required. */
+            401: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The authenticated principal lacks the required permission. */
+            403: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description The credential rate limit was exceeded. */
+            429: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    /** @description Seconds until the current rate-limit window resets. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The integration surface is disabled. */
+            503: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    card_agent_cards__proposal_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Request-Id"?: string;
+                "X-Correlation-Id"?: string;
+            };
+            path: {
+                proposal_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Card"];
+                };
+            };
+            /** @description A valid integration credential is required. */
+            401: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The authenticated principal lacks the required permission. */
+            403: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description The credential rate limit was exceeded. */
+            429: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    /** @description Seconds until the current rate-limit window resets. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The integration surface is disabled. */
+            503: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    inbox_inbox_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: {
+                "X-Request-Id"?: string;
+                "X-Correlation-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Card"][];
+                };
+            };
+            /** @description A valid integration credential is required. */
+            401: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The authenticated principal lacks the required permission. */
+            403: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description The credential rate limit was exceeded. */
+            429: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    /** @description Seconds until the current rate-limit window resets. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The integration surface is disabled. */
+            503: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    trail_trail_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: {
+                "X-Request-Id"?: string;
+                "X-Correlation-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrailEntry"][];
+                };
+            };
+            /** @description A valid integration credential is required. */
+            401: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The authenticated principal lacks the required permission. */
+            403: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description The credential rate limit was exceeded. */
+            429: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    /** @description Seconds until the current rate-limit window resets. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The integration surface is disabled. */
+            503: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    get_home_home__role__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Request-Id"?: string;
+                "X-Correlation-Id"?: string;
+            };
+            path: {
+                role: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoleHome"];
+                };
+            };
+            /** @description A valid integration credential is required. */
+            401: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The authenticated principal lacks the required permission. */
+            403: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description The credential rate limit was exceeded. */
+            429: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    /** @description Seconds until the current rate-limit window resets. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The integration surface is disabled. */
+            503: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    create_run_agent_runs_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Request-Id"?: string;
+                "X-Correlation-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RunCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": unknown;
+                };
+            };
+            /** @description A valid integration credential is required. */
+            401: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The authenticated principal lacks the required permission. */
+            403: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The request body exceeds the configured limit. */
+            413: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description The credential rate limit was exceeded. */
+            429: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    /** @description Seconds until the current rate-limit window resets. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The integration surface is disabled. */
+            503: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    stop_run_agent_runs__run_id__stop_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Request-Id"?: string;
+                "X-Correlation-Id"?: string;
+            };
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunStopped"];
+                };
+            };
+            /** @description A valid integration credential is required. */
+            401: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The authenticated principal lacks the required permission. */
+            403: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The request body exceeds the configured limit. */
+            413: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description The credential rate limit was exceeded. */
+            429: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    /** @description Seconds until the current rate-limit window resets. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The integration surface is disabled. */
+            503: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    tasks_route_tasks_get: {
+        parameters: {
+            query?: {
+                location_id?: number | null;
+                status?: ("open" | "done" | "escalated" | "cancelled") | null;
+                limit?: number;
+            };
+            header?: {
+                "X-Request-Id"?: string;
+                "X-Correlation-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskOut"][];
+                };
+            };
+            /** @description A valid integration credential is required. */
+            401: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The authenticated principal lacks the required permission. */
+            403: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description The credential rate limit was exceeded. */
+            429: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    /** @description Seconds until the current rate-limit window resets. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The integration surface is disabled. */
+            503: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    complete_task_route_tasks__task_id__complete_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+                "X-Request-Id"?: string;
+                "X-Correlation-Id"?: string;
+            };
+            path: {
+                task_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaskComplete"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskOut"];
                 };
             };
             /** @description A valid integration credential is required. */
@@ -10692,6 +12981,220 @@ export interface operations {
             };
         };
     };
+    opportunities_route_opportunities_get: {
+        parameters: {
+            query?: {
+                domain?: ("finance" | "inventory" | "agenda") | null;
+                status?: "open" | "resolved" | "all";
+                location_id?: number | null;
+                /** @description G1: maximum 100 rows, without cursor. */
+                limit?: number;
+            };
+            header?: {
+                "X-Request-Id"?: string;
+                "X-Correlation-Id"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpportunityPage"];
+                };
+            };
+            /** @description A valid integration credential is required. */
+            401: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The authenticated principal lacks the required permission. */
+            403: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description The credential rate limit was exceeded. */
+            429: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    /** @description Seconds until the current rate-limit window resets. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The integration surface is disabled. */
+            503: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    commitment_route_opportunities__domain___subject_id__commitment_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Request-Id"?: string;
+                "X-Correlation-Id"?: string;
+            };
+            path: {
+                domain: "finance" | "agenda";
+                subject_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommitmentWrite"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommitmentRead"];
+                };
+            };
+            /** @description A valid integration credential is required. */
+            401: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The authenticated principal lacks the required permission. */
+            403: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The request body exceeds the configured limit. */
+            413: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description The credential rate limit was exceeded. */
+            429: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    /** @description Seconds until the current rate-limit window resets. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The integration surface is disabled. */
+            503: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
     list_locations_route_locations_get: {
         parameters: {
             query?: never;
@@ -11320,7 +13823,7 @@ export interface operations {
             query?: {
                 status?: "pending" | "approved" | "executed" | "failed" | "declined" | "expired" | "superseded";
                 source?: ("agent_proposal" | "appointment_proposal") | null;
-                kind?: ("collection_reminder" | "collection_follow_up" | "inventory_transfer" | "inventory_entry" | "waitlist_offer" | "appointment_booking") | null;
+                kind?: ("collection_reminder" | "collection_follow_up" | "inventory_transfer" | "inventory_entry" | "waitlist_offer" | "appointment_confirm_batch" | "appointments_reassign" | "reschedule_reply" | "payment_verify" | "appointment_booking") | null;
                 location_id?: number | null;
                 limit?: number;
                 cursor?: string | null;
@@ -11528,6 +14031,120 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ProposalApprove"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InboxItem"];
+                };
+            };
+            /** @description A valid integration credential is required. */
+            401: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The authenticated principal lacks the required permission. */
+            403: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The request body exceeds the configured limit. */
+            413: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description The credential rate limit was exceeded. */
+            429: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    /** @description Seconds until the current rate-limit window resets. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The integration surface is disabled. */
+            503: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    edit_proposal_route_agent_proposals__proposal_id__edit_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+                "X-Request-Id"?: string;
+                "X-Correlation-Id"?: string;
+            };
+            path: {
+                proposal_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProposalEdit"];
             };
         };
         responses: {
@@ -12716,6 +15333,232 @@ export interface operations {
         };
     };
     mark_no_show_route_appointments__appointment_id__no_show_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Request-Id"?: string;
+                "X-Correlation-Id"?: string;
+            };
+            path: {
+                appointment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["AppointmentOutcome"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppointmentRead"];
+                };
+            };
+            /** @description A valid integration credential is required. */
+            401: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The authenticated principal lacks the required permission. */
+            403: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The request body exceeds the configured limit. */
+            413: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description The credential rate limit was exceeded. */
+            429: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    /** @description Seconds until the current rate-limit window resets. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The integration surface is disabled. */
+            503: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    mark_arrived_route_appointments__appointment_id__arrive_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Request-Id"?: string;
+                "X-Correlation-Id"?: string;
+            };
+            path: {
+                appointment_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["AppointmentOutcome"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppointmentRead"];
+                };
+            };
+            /** @description A valid integration credential is required. */
+            401: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The authenticated principal lacks the required permission. */
+            403: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The request body exceeds the configured limit. */
+            413: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description The credential rate limit was exceeded. */
+            429: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    /** @description Seconds until the current rate-limit window resets. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description The integration surface is disabled. */
+            503: {
+                headers: {
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Request-Id"?: string;
+                    /** @description Canonical UUID used for end-to-end traceability. */
+                    "X-Correlation-Id"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    start_consultation_route_appointments__appointment_id__start_post: {
         parameters: {
             query?: never;
             header?: {

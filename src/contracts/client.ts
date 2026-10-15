@@ -651,6 +651,23 @@ export async function getMe(): Promise<MeRead> {
 
 // --- agent proposals inbox ----------------------------------------------------
 
+export type AiriCard = components["schemas"]["Card"];
+export type AiriState = components["schemas"]["StateSnapshot"];
+export type AiriRoleHome = components["schemas"]["RoleHome"];
+
+export async function getAiriCard(proposalId: number): Promise<AiriCard> {
+  return (await http.get<AiriCard>(`/agent/cards/${proposalId}`)).data;
+}
+
+export async function getAiriState(): Promise<AiriState> {
+  return (await http.get<AiriState>("/state")).data;
+}
+
+export async function getAiriHome(role: components["schemas"]["RunCreate"]["role"]): Promise<AiriRoleHome> {
+  const paths = { dueno: "/home/dueno", admin: "/home/admin", doctor: "/home/doctor" } as const;
+  return (await http.get<AiriRoleHome>(paths[role])).data;
+}
+
 type InboxQuery = NonNullable<paths["/agent/inbox"]["get"]["parameters"]["query"]>;
 
 export async function listInbox(query: Pick<InboxQuery, "status" | "source" | "kind" | "location_id" | "limit" | "cursor"> = {}): Promise<InboxPage> {
