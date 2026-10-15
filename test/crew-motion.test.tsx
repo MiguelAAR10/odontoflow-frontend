@@ -154,7 +154,7 @@ describe("preferencia de movimiento · render sin navegador", () => {
 
 
 describe("intro · relevos bajo carga", () => {
-  it("schedules the next character after the previous render instead of batching overdue timers", () => {
+  it("schedules the next character after the previous render instead of batching overdue timers", async () => {
     browser(); Object.assign(window, { location: { search: "" } });
     Object.assign(document, { body: { style: { overflow: "" } } });
     vi.stubGlobal("sessionStorage", { getItem: () => null, setItem: vi.fn() });
@@ -163,9 +163,14 @@ describe("intro · relevos bajo carga", () => {
     act(() => { view = create(createElement(Intro), { createNodeMock: node => node.type === "dialog" ? dialog : null }); });
     views.push(view);
     const presented = () => view.root.findAll(node => node.props["data-presenting"] === true).map(node => node.props["data-intro-agent"]);
+    const paintRest = async () => { flushFrame(); flushFrame(); await act(async () => {}); flushFrame(); flushFrame(); };
     // Simulate a busy renderer: several original deadlines elapsed before React committed.
     act(() => { vi.advanceTimersByTime(350 + 3 * 380); });
+    expect(presented()).toEqual([]);
+    await paintRest();
+    act(() => { vi.advanceTimersByTime(350); });
     expect(presented()).toEqual(["airi"]);
+    await paintRest();
     act(() => { vi.advanceTimersByTime(380); }); expect(presented()).toEqual(["cepillo"]);
   });
 });

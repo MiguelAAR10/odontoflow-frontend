@@ -57,12 +57,30 @@ export function Intro() {
 
   useEffect(() => {
     if (!visible) return;
-    // Only the incoming/outgoing discs move. Schedule from each committed
-    // presentation: overdue wall-clock timers must not pile up under load.
+    // A slow renderer can leave an outgoing transition unpainted past its
+    // deadline. Wait for it to finish and paint rest before the next handoff.
     const complete = reduced || presenting === CREW.length;
-    const timer = setTimeout(complete ? finish : () => setPresenting(index => index + 1),
-      reduced ? 1300 : complete ? PRESENTATION_END : presenting < 0 ? PRESENTATION_START : PRESENTATION_MS);
-    return () => clearTimeout(timer);
+    const delay = reduced ? 1300 : complete ? PRESENTATION_END : presenting < 0 ? PRESENTATION_START : PRESENTATION_MS;
+    if (reduced) { const timer = setTimeout(finish, delay); return () => clearTimeout(timer); }
+    const started = performance.now();
+    let cancelled = false;
+    let frame = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const afterPaint = (callback: () => void) => {
+      frame = requestAnimationFrame(() => { frame = requestAnimationFrame(callback); });
+    };
+    afterPaint(() => {
+      const discs = dialog.current?.querySelectorAll?.(".airi-intro__disc") ?? [];
+      const animations = Array.from(discs).flatMap(disc => disc.getAnimations());
+      void Promise.allSettled(animations.map(animation => animation.finished)).then(() => {
+        if (cancelled) return;
+        afterPaint(() => {
+          if (cancelled) return;
+          timer = setTimeout(complete ? finish : () => setPresenting(index => index + 1), Math.max(0, delay - (performance.now() - started)));
+        });
+      });
+    });
+    return () => { cancelled = true; cancelAnimationFrame(frame); clearTimeout(timer); };
   }, [visible, reduced, presenting, finish]);
 
   if (!visible) return null;
