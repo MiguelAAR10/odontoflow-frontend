@@ -20,6 +20,10 @@
     "test/**/*.ts"
   ],
   "exclude": [
+    "test/crew-activity.test.ts",
+    "test/tasks-adapter.test.ts",
+    "test/agentic-adapter.test.ts",
+    "test/agentic-mock.test.ts",
     "test/airi-integration.test.ts",
     "test/agui-http*.test.ts",
     "test/agui-sim-import.test.ts",

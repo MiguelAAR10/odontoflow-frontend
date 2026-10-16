@@ -10,6 +10,7 @@ import { useShellContext } from "../components/shell/ShellContext";
 import { Card } from "../catalog/Card";
 import { OperationsStyles } from "./ActivityPage";
 import { ClinicInbox, type InboxSummary } from "./ApprovalsPage";
+import { TaskPanel } from "./TaskPanel";
 
 // Presentation projection of AgendaItem. No clock-driven status changes.
 const appointmentSchema = z.object({
@@ -90,9 +91,10 @@ export function MiTurnoPage() {
 
   return <section className="airi-operations airi-catalog turn-page" aria-labelledby="turn-title">
     <OperationsStyles/><TurnStyles />
-    <header className="operations-head"><div><h1 id="turn-title">Mi turno</h1><p className="operations-meta">{snapshot ? `${useMocks ? "Corte simulado" : "Agenda consultada"}: ${new Intl.DateTimeFormat("es-PE",{timeZone:"America/Lima",dateStyle:"short",timeStyle:"short"}).format(new Date(snapshot.cut_at))} · hora Lima` : "Recepción"}</p></div>
+    <header className="operations-head"><div><h1 id="turn-title">{role === "doctor" ? "Mis tareas" : "Mi turno"}</h1><p className="operations-meta">{role === "doctor" ? "Coordinación del equipo" : snapshot ? `${useMocks ? "Corte simulado" : "Agenda consultada"}: ${new Intl.DateTimeFormat("es-PE",{timeZone:"America/Lima",dateStyle:"short",timeStyle:"short"}).format(new Date(snapshot.cut_at))} · hora Lima` : "Recepción"}</p></div>
       {role === "admin" && <button className="catalog-button" disabled={agent.working} onClick={ask}>Confirma citas de mañana</button>}</header>
-    {role !== "admin" ? <p role="note">Mi turno es la cola de recepción. Elige Administrativo en «Ver como» para consultarla.</p> : <>
+    <TaskPanel locationId={locationId} />
+    {role !== "admin" ? <p role="note">Tus tareas están arriba. La cola de recepción está disponible en la vista Administrativo.</p> : <>
       <p className="operations-note">Primero quién está en la clínica y qué te necesita. La bandeja reúne los casos de la clínica; revisa el alcance y decide en la tarjeta.</p>
       {displayError && <p role="alert">{displayError} <button className="catalog-button" onClick={() => setRequest(value => value+1)}>Reintentar</button></p>}
       <div className="operations-layout"><div className="turn-radar">

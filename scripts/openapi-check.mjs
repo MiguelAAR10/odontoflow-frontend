@@ -4,8 +4,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 const candidates = process.env.OPENAPI_SPEC ? [resolve(process.env.OPENAPI_SPEC)] : [
-  resolve("../odontoflow-backend/docs/api/openapi.yaml"),
-  resolve("../../odontoflow-backend/docs/api/openapi.yaml"),
+  resolve("docs/api/openapi.yaml"),
 ];
 const spec = candidates.find(existsSync);
 if (!spec) { console.error("No se encuentra el OpenAPI del backend. Define OPENAPI_SPEC."); process.exit(1); }

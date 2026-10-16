@@ -17,6 +17,7 @@ describe("AIRI shell navigation", () => {
     expect(getNavigation("admin").find(item => item.label === "Bandeja")?.to).toBe("/aprobaciones");
     expect(navigationTitle("/agente", "admin")).toBe("Rastro");
     expect(navigationTitle("/agenda", "doctor")).toBe("Mi agenda");
+    expect(navigationTitle("/mi-turno", "doctor")).toBe("Mis tareas");
   });
 });
 describe("InteractionBar intent", () => {

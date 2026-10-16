@@ -4,6 +4,8 @@ import type { InboxItem } from "../src/contracts/client";
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 
+vi.mock("next/link", () => ({ default: "a" }));
+
 vi.mock("../src/components/PersonaContext", () => ({ usePersona: () => ({ identity: null, version: 0 }) }));
 
 const { mockGet, mockPost } = vi.hoisted(() => ({ mockGet: vi.fn(), mockPost: vi.fn() }));
@@ -143,6 +145,29 @@ describe("Bandeja real-mode adapter (mocked axios)", () => {
         expect(JSON.stringify(view.toJSON())).toContain("02/10 18:00");
       } finally { act(() => view?.unmount()); }
       expect(toCard(page.items[0])).toMatchObject({ ...card, id: "agent_proposal:7" });
+    });
+
+    it("reads a linked proposal by canonical id instead of searching a page", async () => {
+      mockGet.mockImplementation(async (url: string, config?: { params?: Record<string, unknown> }) => {
+        if (url === "/agent/proposals/7") return { data: { ...reminder, status: "executed", actions: [] } };
+        return catalogs(url, config);
+      });
+      expect(await api.loadInboxRecord(7)).toMatchObject({ key: "agent_proposal:7", status: "executed", actions: [] });
+      expect(mockGet.mock.calls.some(([url]) => url === "/agent/inbox")).toBe(false);
+    });
+
+    it("loads a physical count card with its real hash and preserves the backend adjustment result", async () => {
+      const count: InboxItem = { ...transfer, id: 81, kind: "inventory_count", agent_key: "airi", status: "executed", actions: [], payload_hash: HASH, result_ref: { type: "inventory_movement", id: 72 } };
+      const card = { id: "81", proposal_id: 81, version: 1, payload_hash: HASH, agent: "airi", level: "aprobar", state: "approved", title: "Conteo físico de Guantes", body: "Saldo 8.00 · contado 5.00 · diferencia -3.00", result: "Ajuste por conteo registrado", scope: [{ label: "Unidad", value: "caja" }] };
+      mockGet.mockImplementation(async (url: string, config?: { params?: Record<string, unknown> }) => {
+        if (url === "/agent/inbox") return { data: { items: [count], next_cursor: null } };
+        if (url === "/agent/cards/81") return { data: card };
+        return catalogs(url, config);
+      });
+      const page = await api.loadInbox({ status: "executed" });
+      expect(page.items[0]).toMatchObject({ key: "agent_proposal:81", kind: "inventory_count", category: "inventario", headline: card.title, payloadHash: HASH, actions: [], outcome: "Ajuste por conteo registrado en el kardex" });
+      expect(page.items[0].card).toMatchObject({ ...card, id: "agent_proposal:81" });
+      expect(mockPost).not.toHaveBeenCalled();
     });
 
     it("rechaza una tarjeta delegada si cambió la propuesta desde la lectura de la bandeja", async () => {
@@ -425,6 +450,7 @@ describe("Bandeja real-mode adapter (mocked axios)", () => {
       const identity = await api.loadIdentity();
       expect(mockGet).toHaveBeenCalledWith("/me");
       expect(identity).toEqual({
+        principalId: 2,
         principalType: "human",
         displayName: "Lucía Ramos",
         organizationName: "ODONTO SMART",

@@ -3,7 +3,7 @@ import { createElement } from "react";
 import { act, create, type ReactTestInstance, type ReactTestRenderer } from "react-test-renderer";
 import type { PatientRead } from "../src/contracts/client";
 
-const { mockGet } = vi.hoisted(() => ({ mockGet: vi.fn() }));
+const { mockGet, query } = vi.hoisted(() => ({ mockGet: vi.fn(), query: { value: "" } }));
 
 vi.mock("axios", () => ({
   default: {
@@ -11,7 +11,7 @@ vi.mock("axios", () => ({
     isAxiosError: (error: unknown) => Boolean((error as { isAxiosError?: boolean })?.isAxiosError),
   },
 }));
-vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams() }));
+vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams(query.value) }));
 
 // The public contract has neither a creation date nor patient/lead metrics.
 const fortyPatients: PatientRead[] = Array.from({ length: 40 }, (_, index) => ({
@@ -34,6 +34,7 @@ describe("PatientsPage directory counts", () => {
     vi.resetModules();
     vi.stubEnv("NEXT_PUBLIC_USE_MOCKS", "false");
     mockGet.mockReset();
+    query.value = "";
     mockGet.mockImplementation(async (url: string) => {
       if (url === "/patients") return { data: fortyPatients };
       throw new Error(`Unexpected GET ${url}`);
@@ -44,6 +45,7 @@ describe("PatientsPage directory counts", () => {
     if (page) act(() => page!.unmount());
     page = undefined;
     vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
   });
 
   const renderPage = async () => {
@@ -97,4 +99,19 @@ describe("PatientsPage directory counts", () => {
     expect(root.findByType("tbody").findAllByType("tr")).toHaveLength(6);
     expect(text(root.findByProps({ className: "pagination" }))).toContain("Mostrando 6 de 6 pacientes");
   });
+  it("abre el paciente canónico aunque no esté incluido en el directorio cargado", async () => {
+    vi.stubGlobal("document", Object.assign(new EventTarget(), { activeElement: null }));
+    vi.stubGlobal("HTMLElement", class {});
+    query.value = "patient=99";
+    mockGet.mockImplementation(async (url: string) => {
+      if (url === "/patients") return { data: fortyPatients };
+      if (url === "/patients/99") return { data: { ...fortyPatients[0], id: 99, full_name: "Paciente exacto del caso" } };
+      if (url === "/visits") return { data: [] };
+      throw new Error(`Unexpected GET ${url}`);
+    });
+    const root = await renderPage();
+    expect(mockGet).toHaveBeenCalledWith("/patients/99");
+    expect(text(root)).toContain("Paciente exacto del caso");
+  });
+
 });

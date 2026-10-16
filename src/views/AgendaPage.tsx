@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import Link from "next/link";
 import {
   CalendarDays,
   CheckCircle2,
@@ -30,6 +31,7 @@ import {
   rescheduleReal,
   toApiError,
   toUiStatus,
+  toUiAppointment,
   useMocks,
 } from "../api";
 import type { AppointmentListItem, LocationRead, SlotResult } from "../contracts/client";
@@ -45,6 +47,7 @@ import { approvalReceipts } from "../agui";
 import { useShellContext } from "../components/shell/ShellContext";
 import { Card as CatalogCard } from "../catalog/Card";
 import type { DemoAgendaData } from "../agui/sim/gaps";
+import { TaskDelegationDraft } from "./TaskDelegationDraft";
 
 const LIMA = "America/Lima";
 const APPOINTMENT_KINDS = [
@@ -200,8 +203,8 @@ function AgendaStyles() {
   `}</style>;
 }
 
-export function AgendaPage() {
-  return useMocks ? <DemoAgenda /> : <AgendaManagement />;
+export function AgendaPage({ appointmentId, conversationId }: { appointmentId?: number; conversationId?: number } = {}) {
+  return useMocks ? <DemoAgenda /> : <AgendaManagement appointmentId={appointmentId} conversationId={conversationId} />;
 }
 
 const HOURS = ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00"];
@@ -320,7 +323,8 @@ function groupSlots(slots: SlotResult[], timeZone: string): Array<[string, SlotR
   return Array.from(grouped.entries());
 }
 
-function AgendaManagement() {
+function AgendaManagement({ appointmentId, conversationId }: { appointmentId?: number; conversationId?: number }) {
+  const [delegationAppointment, setDelegationAppointment] = useState<Appointment | null>(null);
   const [now, setNow] = useState(() => new Date().toISOString());
   useEffect(() => { const timer = window.setInterval(() => setNow(new Date().toISOString()), 30_000); return () => window.clearInterval(timer); }, []);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -472,6 +476,21 @@ function AgendaManagement() {
       .finally(() => { if (isCurrent()) setDetailLoading(false); });
   };
 
+  // Read the exact canonical record even when it is outside the displayed week.
+  useEffect(() => {
+    if (!appointmentId) return;
+    const isCurrent = detailRequests.current.begin();
+    setSelected(null); setDetail(null); setError("");
+    setDetailLoading(true);
+    void Promise.all([getAgendaDetail(appointmentId), getLocations()]).then(([row, sites]) => {
+      if (!isCurrent()) return;
+      const appointment = toUiAppointment(row, new Map(sites.map(site => [site.id, site.timezone])));
+      setSelected(appointment); setDetail(row);
+    }).catch(caught => { if (isCurrent()) setError(toApiError(caught).message); })
+      .finally(() => { if (isCurrent()) setDetailLoading(false); });
+    return () => detailRequests.current.invalidate();
+  }, [appointmentId, calendarTimeZone]);
+
   const closeDetail = () => {
     if (busy) return;
     detailRequests.current.invalidate();
@@ -606,6 +625,7 @@ function AgendaManagement() {
     <div className="agenda-layout">
       <section className="page agenda-page">
         <div className="page-heading page-heading--with-actions">
+          {conversationId && <Link href={`/chat?conversation=${conversationId}`}>Volver a la conversación de origen</Link>}
           <div>
             <h1>Agenda de citas</h1>
             <p>{formatWeekRange(weekWindow.from)}</p>
@@ -690,6 +710,10 @@ function AgendaManagement() {
           {error && <div className="form-error" role="alert">{error}</div>}
           <div className="form-actions appointment-detail__actions">
             <Button onClick={closeDetail}>Cerrar</Button>
+            {detail && <Button disabled={busy || detailLoading} onClick={() => {
+              setDelegationAppointment(toUiAppointment(detail, new Map(locations.map(site => [site.id, site.timezone]))));
+              closeDetail();
+            }}>Coordinar con el doctor</Button>}
             {canRecordAttendance(selected) && <Button variant="primary" onClick={() => { setAttendanceAppointment(selected); setAttendanceDetail(detail); closeDetail(); }}>Registrar atención</Button>}
             {useMocks && <><Button onClick={openEdit}>Editar cita</Button><Button variant="danger" onClick={() => { setError(""); setDeleteOpen(true); }}>Eliminar cita</Button></>}
             {!useMocks && detailState !== "Cancelada" && <>
@@ -701,6 +725,9 @@ function AgendaManagement() {
       </Drawer>
 
       <AttendancePanel appointment={attendanceAppointment} detail={attendanceDetail} onClose={() => { setAttendanceAppointment(null); setAttendanceDetail(null); }} />
+      <Modal title="Coordinar con el doctor · AIRI" open={Boolean(delegationAppointment)} onClose={() => setDelegationAppointment(null)}>
+        {delegationAppointment && <TaskDelegationDraft key={delegationAppointment.id} appointment={delegationAppointment} />}
+      </Modal>
       <Modal title="Editar cita" open={editOpen} onClose={() => !busy && setEditOpen(false)}>
         <form className="form-grid" onSubmit={submitEdit}>
           <label className="field field--wide"><span>Paciente</span><input name="patient" defaultValue={selected?.patient} required autoFocus /></label>

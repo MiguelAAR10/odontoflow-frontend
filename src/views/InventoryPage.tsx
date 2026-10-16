@@ -9,6 +9,8 @@ import { type Column, DataTable } from "../components/DataTable";
 import { KpiCard } from "../components/KpiCard";
 import { Modal } from "../components/Modal";
 import type { InventoryLocation, InventoryMovement, MovementType, Product, Tone } from "../types";
+import { InventoryCountDraft } from "./InventoryCountDraft";
+import { createLatestRequest } from "../session";
 
 const kindLabel = (kind: Product["kind"]) => (kind === "reventa" ? "Reventa" : "Consumible");
 const kindTone = (kind: Product["kind"]): Tone => (kind === "reventa" ? "blue" : "cyan");
@@ -41,10 +43,10 @@ function formatInstant(iso: string): string {
 const locationName = (locations: InventoryLocation[], id: string): string =>
   locations.find((location) => location.id === id)?.name ?? "sede";
 
-function inventoryLoadError(caught: unknown): ApiError {
+function inventoryLoadError(caught: unknown, balanceRead = false): ApiError {
   const error = toApiError(caught);
   return error.httpStatus === 403
-    ? new ApiError(error.httpStatus, error.code, "Tu rol no permite acceder al inventario.", error.details)
+    ? new ApiError(error.httpStatus, error.code, balanceRead ? "No tienes acceso a los saldos de esta sede. Elige otra sede o reintenta." : "Tu rol no permite acceder al inventario.", error.details)
     : error;
 }
 
@@ -53,12 +55,15 @@ export function InventoryPage() {
   const [locations, setLocations] = useState<InventoryLocation[]>([]);
   const [selectedLocationId, setSelectedLocationId] = useState("");
   const [balances, setBalances] = useState<Map<string, number>>(new Map());
+  const [balanceLocationId, setBalanceLocationId] = useState("");
   const [kind, setKind] = useState("Todos");
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<ApiError | null>(null);
+  const [catalogLoaded, setCatalogLoaded] = useState(false);
 
   const [newOpen, setNewOpen] = useState(false);
+  const [countTarget, setCountTarget] = useState<{ product: Product; locationId: string } | null>(null);
   const [entryTarget, setEntryTarget] = useState<Product | null>(null);
   const [adjustTarget, setAdjustTarget] = useState<Product | null>(null);
   const [transferTarget, setTransferTarget] = useState<Product | null>(null);
@@ -75,9 +80,11 @@ export function InventoryPage() {
       const data = await loadInventoryData();
       setProducts(data.products);
       setLocations(data.locations);
+      setCatalogLoaded(true);
       const active = data.locations.find((location) => location.isActive);
       setSelectedLocationId((current) => current || active?.id || "");
     } catch (caught) {
+      setCatalogLoaded(false);
       setError(inventoryLoadError(caught));
     } finally {
       setLoading(false);
@@ -89,20 +96,23 @@ export function InventoryPage() {
   // Balance per product at the selected location.
   useEffect(() => {
     if (!products.length || !selectedLocationId) return;
-    let cancelled = false;
+    const request = createLatestRequest();
+    const isCurrent = request.begin();
     setLoading(true);
     setError(null);
+    setBalances(new Map());
+    setBalanceLocationId("");
     Promise.all(products.map((product) => loadProductBalance(product.id, selectedLocationId)))
       .then((rows) => {
-        if (!cancelled) setBalances(new Map(rows.map((row) => [row.productId, row.available])));
+        if (isCurrent()) { setBalances(new Map(rows.map((row) => [row.productId, row.available]))); setBalanceLocationId(selectedLocationId); }
       })
       .catch((caught) => {
-        if (!cancelled) setError(inventoryLoadError(caught));
+        if (isCurrent()) { setBalanceLocationId(""); setError(inventoryLoadError(caught, true)); }
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (isCurrent()) setLoading(false);
       });
-    return () => { cancelled = true; };
+    return () => request.invalidate();
   }, [products, selectedLocationId]);
 
   const filtered = useMemo(() => {
@@ -114,6 +124,7 @@ export function InventoryPage() {
   }, [products, kind, query]);
 
   const balanceOf = (productId: string): number => balances.get(productId) ?? 0;
+  const balanceReady = !loading && !error && (products.length === 0 || balanceLocationId === selectedLocationId);
   const unitOf = (productId: string): string => products.find((product) => product.id === productId)?.unit ?? "";
   const balanceRows = useMemo(
     () => products.map((product) => ({ productId: product.id, locationId: selectedLocationId, available: balanceOf(product.id) })),
@@ -219,6 +230,7 @@ export function InventoryPage() {
 
   const actionsCell = (product: Product) => (
     <div className="row-actions">
+      <Button compact icon={ClipboardPen} disabled={!selectedLocationId} onClick={() => setCountTarget({ product, locationId: selectedLocationId })}>Revisar conteo con AIRI</Button>
       <Button compact icon={PackagePlus} onClick={() => { setEntryTarget(product); setMutationError(""); }}>Entrada</Button>
       <Button compact icon={SlidersHorizontal} onClick={() => { setAdjustTarget(product); setMutationError(""); }}>Ajuste</Button>
       <Button compact icon={ArrowUpDown} onClick={() => { setTransferTarget(product); setMutationError(""); }}>Transferir</Button>
@@ -244,7 +256,9 @@ export function InventoryPage() {
     { key: "transferId", header: "Transferencia", render: (row) => row.transferId ?? "—" },
   ];
 
-  if (error?.httpStatus === 403) {
+  // A denied catalogue has no usable selector. A denied balance must keep the
+  // readable catalogue/sedes available so the person can explicitly choose another.
+  if (error?.httpStatus === 403 && !catalogLoaded) {
     return (
       <section className="page">
         <div className="page-heading"><h1>Gestión de inventario</h1><p>Stock por producto y sede</p></div>
@@ -257,10 +271,10 @@ export function InventoryPage() {
     <section className="page">
       <div className="page-heading"><h1>Gestión de inventario</h1><p>Stock por producto y sede</p></div>
       <div className="kpi-grid">
-        <KpiCard icon={Boxes} value={products.length} label="Productos" tone="cyan" />
-        <KpiCard icon={MapPin} value={locations.length} label="Sedes" tone="blue" />
-        <KpiCard icon={PackagePlus} value={sumAvailable(balanceRows)} label={selectedLocationId ? `Unidades en ${locationName(locations, selectedLocationId)}` : "Unidades en stock"} tone="green" />
-        <KpiCard icon={ArrowRightLeft} value={balanceRows.filter((row) => row.available <= 0).length} label="Sin stock en la sede" tone="amber" />
+        <KpiCard icon={Boxes} value={loading ? "…" : products.length} label="Productos" tone="cyan" />
+        <KpiCard icon={MapPin} value={loading ? "…" : locations.length} label="Sedes" tone="blue" />
+        <KpiCard icon={PackagePlus} value={balanceReady ? sumAvailable(balanceRows) : "…"} label={selectedLocationId ? `Unidades en ${locationName(locations, selectedLocationId)}` : "Unidades en stock"} tone="green" />
+        <KpiCard icon={ArrowRightLeft} value={balanceReady ? balanceRows.filter((row) => row.available <= 0).length : "…"} label="Sin stock en la sede" tone="amber" />
       </div>
       <section className="panel table-panel table-panel--flush">
         <div className="table-toolbar inventory-toolbar">
@@ -269,12 +283,15 @@ export function InventoryPage() {
           <label className="search-control"><Search size={18} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar producto" aria-label="Buscar producto" /></label>
           <Button variant="primary" icon={Plus} onClick={() => { setNewOpen(true); setMutationError(""); }}>Nuevo producto</Button>
         </div>
-        {error && <div className="form-error" role="alert">{error.message}<Button compact onClick={() => void refresh()}>Reintentar</Button></div>}
+        {error && <div className="form-error" role="alert">{error.httpStatus === 403 && <strong>Sin acceso a esta sede. </strong>}{error.message}<Button compact onClick={() => void refresh()}>Reintentar</Button></div>}
         {loading && <div className="table-loading" role="status">Cargando inventario…</div>}
-        {!loading && <DataTable className="inventory-table" columns={columns} rows={filtered} rowKey={(product) => product.id} emptyMessage="No hay productos registrados" />}
+        {balanceReady && <DataTable className="inventory-table" columns={columns} rows={filtered} rowKey={(product) => product.id} emptyMessage="No hay productos registrados" />}
         <div className="pagination"><span>{filtered.length} productos · balance por sede</span><div /></div>
       </section>
 
+      <Modal title={countTarget ? `Conteo con AIRI · ${countTarget.product.name}` : "Conteo con AIRI"} open={Boolean(countTarget)} onClose={() => setCountTarget(null)}>
+        {countTarget && <InventoryCountDraft key={`${countTarget.product.id}:${countTarget.locationId}`} productId={Number(countTarget.product.id)} locationId={Number(countTarget.locationId)} />}
+      </Modal>
       <Modal title="Nuevo producto" open={newOpen} onClose={() => setNewOpen(false)}>
         <form className="form-grid" onSubmit={submitProduct}>
           {mutationError && <div className="form-error field--wide" role="alert">{mutationError}</div>}

@@ -22,6 +22,7 @@ import {
   declineAppointmentProposal,
   declineProposal,
   getAiriCard,
+  getInboxProposal,
   listEligiblePractitioners,
   listInbox,
   listLocations,
@@ -112,6 +113,7 @@ const CATEGORY: Record<InboxItem["kind"], ApprovalCategory> = {
   collection_follow_up: "cobranza",
   inventory_transfer: "inventario",
   inventory_entry: "inventario",
+  inventory_count: "inventario",
   waitlist_offer: "lista_espera",
   appointment_booking: "cita",
 };
@@ -131,7 +133,8 @@ function outcomeFor(item: InboxItem): string | null {
     case "outbound_message": return "Mensaje en cola de envío";
     case "charge_follow_up": return "Seguimiento agendado";
     case "inventory_transfer": return "Traspaso registrado en el kardex";
-    case "inventory_movement": return "Entrada registrada en el kardex";
+    case "inventory_movement": return item.kind === "inventory_count" ? "Ajuste por conteo registrado en el kardex" : "Entrada registrada en el kardex";
+    case "delegation_task": return typeof ref.id === "number" ? `Tarea delegada #${ref.id}` : "Tarea delegada";
     case "waitlist_offer": {
       const offered = Array.isArray(ref.entry_ids) ? ref.entry_ids.length : null;
       return offered === null ? "Cupo ofrecido" : `Cupo ofrecido a ${plural(offered, "paciente", "pacientes")}`;
@@ -320,12 +323,39 @@ export async function loadInbox({ status = "pending", cursor }: { status?: Inbox
   return { items: await Promise.all(page.items.map(item => presentInboxItem(item, names))), nextCursor: page.next_cursor };
 }
 
+export async function loadInboxRecord(id: number): Promise<ApprovalItem> {
+  if (USE_MOCKS) throw new ApiError(404, "NOT_FOUND", "La demo no incluye este registro canónico.");
+  const item = await getInboxProposal(id);
+  if (item.id !== id || item.source !== "agent_proposal") throw new ApiError(409, "PROPOSAL_CHANGED", "La propuesta recibida no coincide con el registro solicitado.");
+  return presentInboxItem(item, await resolveNames([item]));
+}
+
+/** Sede-authorized projection; does not require the legacy org-wide inbox. */
+export async function loadProposalCard(id: number) {
+  if (USE_MOCKS) throw new ApiError(404, "NOT_FOUND", "La demo no incluye esta tarjeta canónica.");
+  const card = CardSchema.parse(await getAiriCard(id));
+  if (card.proposal_id !== id || card.id !== String(id)) {
+    throw new ApiError(409, "PROPOSAL_CHANGED", "La tarjeta recibida no coincide con la propuesta solicitada.");
+  }
+  return card;
+}
+
+/** Exact inbox state for callers with org-wide read; never inferred from Card.state. */
+export async function loadProposalRecord(id: number): Promise<InboxItem> {
+  if (USE_MOCKS) throw new ApiError(404, "NOT_FOUND", "La demo no incluye este registro canónico.");
+  const item = await getInboxProposal(id);
+  if (item.id !== id || item.source !== "agent_proposal") {
+    throw new ApiError(409, "PROPOSAL_CHANGED", "La propuesta recibida no coincide con el registro solicitado.");
+  }
+  return item;
+}
+
 async function presentInboxItem(item: InboxItem, names?: Partial<InboxCatalogNames>): Promise<ApprovalItem> {
   const view = toUiInboxItem(item, names);
-  if (item.kind !== "delegation") return view;
+  if (item.kind !== "delegation" && item.kind !== "inventory_count") return view;
   const card = CardSchema.parse(await getAiriCard(item.id));
   if (card.proposal_id !== item.id || card.payload_hash !== item.payload_hash) {
-    throw new ApiError(409, "PROPOSAL_CHANGED", "La tarea cambió; vuelve a cargar la bandeja.");
+    throw new ApiError(409, "PROPOSAL_CHANGED", "La propuesta cambió; vuelve a cargar la bandeja.");
   }
   return { ...view, card: { ...card, id: view.key }, headline: card.title, detail: card.why ?? item.reason,
     facts: (card.scope ?? []).map(({ label, value }) => ({ label, value })) };
@@ -481,6 +511,7 @@ const KIND_PERMISSION: Record<InboxItem["kind"], string> = {
   collection_follow_up: "follow_ups.create",
   inventory_transfer: "movements.create",
   inventory_entry: "movements.create",
+  inventory_count: "movements.create",
   waitlist_offer: "deliveries.create",
   appointment_booking: "contact_appointments.book",
 };

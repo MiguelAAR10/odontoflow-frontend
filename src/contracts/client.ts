@@ -9,6 +9,7 @@
 import axios, { AxiosError } from "axios";
 import type { components, paths } from "./api";
 import { BACKEND_URL } from "../env";
+import { errorCopy } from "./errorCopy";
 
 // ADMIN-01 (/admin, backend B7): generated from the backend's OpenAPI like every other contract.
 export type PractitionerRosterRead = components["schemas"]["PractitionerRosterRead"];
@@ -137,11 +138,14 @@ export class ApiError extends Error {
 
 /** Map any thrown error into the envelope shape (or a generic connection error). */
 export function toApiError(error: unknown): ApiError {
-  if (error instanceof ApiError) return error;
+  if (error instanceof ApiError) {
+    const message = errorCopy(error.code, error.details, error.message);
+    return message === error.message ? error : new ApiError(error.httpStatus, error.code, message, error.details);
+  }
   if (axios.isAxiosError(error)) {
     const payload = (error as AxiosError<{ error?: ApiErrorShape }>).response?.data?.error;
     if (payload?.code && payload?.message) {
-      return new ApiError(error.response?.status ?? 0, payload.code, payload.message, payload.details);
+      return new ApiError(error.response?.status ?? 0, payload.code, errorCopy(payload.code, payload.details ?? {}, payload.message), payload.details);
     }
     return new ApiError(error.response?.status ?? 0, "NETWORK", "Error de conexión con el servidor.");
   }
@@ -223,6 +227,55 @@ export type AdminEntity = "practitioners" | "capabilities" | "availability-rules
  * stored outcome (`Idempotent-Replay: true`), other data with that key is 409 IDEMPOTENCY_KEY_REUSED.
  * The three altas below keep sending it for the day their routes adopt PF4; today the backend ignores it there. */
 const keyed = (idempotencyKey: string) => ({ headers: { "Idempotency-Key": idempotencyKey } });
+
+export type TaskOut = components["schemas"]["TaskOut"];
+export type ConversationContext = components["schemas"]["ConversationContext"];
+export type StaffReplyCreate = components["schemas"]["StaffReplyCreate"];
+export type StaffReplyReceipt = components["schemas"]["OutboundReceipt"];
+export type ResumeAutomationReceipt = components["schemas"]["ResumeAutomationReceipt"];
+export async function getConversationContext(id: number): Promise<ConversationContext> {
+  return (await http.get<ConversationContext>(`/conversations/${id}/context`)).data;
+}
+export async function replyConversation(id: number, input: StaffReplyCreate, key: string): Promise<StaffReplyReceipt> {
+  return (await http.post<StaffReplyReceipt>(`/conversations/${id}/reply`, input, keyed(key))).data;
+}
+export async function resumeConversation(id: number, key: string): Promise<ResumeAutomationReceipt> {
+  return (await http.post<ResumeAutomationReceipt>(`/conversations/${id}/resume`, {}, keyed(key))).data;
+}
+export async function getPatient(id: number): Promise<PatientRead> {
+  return (await http.get<PatientRead>(`/patients/${id}`)).data;
+}
+export type TaskComplete = components["schemas"]["TaskComplete"];
+export type TaskQuery = NonNullable<paths["/tasks"]["get"]["parameters"]["query"]>;
+export async function listTasks(query: TaskQuery = {}): Promise<TaskOut[]> {
+  return (await http.get<TaskOut[]>("/tasks", { params: query })).data;
+}
+export async function completeTask(id: number, input: TaskComplete, key: string): Promise<TaskOut> {
+  return (await http.post<TaskOut>(`/tasks/${id}/complete`, input, keyed(key))).data;
+}
+export async function acknowledgeTask(id: number, key: string): Promise<TaskOut> {
+  return (await http.post<TaskOut>(`/tasks/${id}/ack`, {}, keyed(key))).data;
+}
+export type TaskAssignees = paths["/tasks/assignees"]["get"]["responses"][200]["content"]["application/json"];
+export type TaskDelegationCreate = components["schemas"]["TaskDelegationCreate"];
+export async function listTaskAssignees(locationId: number): Promise<TaskAssignees> {
+  return (await http.get<TaskAssignees>("/tasks/assignees", { params: { location_id: locationId } })).data;
+}
+export async function createTaskDelegation(input: TaskDelegationCreate, key: string): Promise<InboxItem> {
+  return (await http.post<InboxItem>("/tasks/delegations", input, keyed(key))).data;
+}
+export type CountContext = components["schemas"]["CountContext"];
+export type InventoryCountCreate = components["schemas"]["InventoryCountCreate"];
+export type InventoryCountReceipt = components["schemas"]["InventoryCountReceipt"];
+export async function getCountContext(productId: number, locationId: number): Promise<CountContext> {
+  return (await http.get<CountContext>("/inventory/count-context", { params: { product_id: productId, location_id: locationId } })).data;
+}
+export async function getInboxProposal(id: number): Promise<InboxItem> {
+  return (await http.get<InboxItem>(`/agent/proposals/${id}`)).data;
+}
+export async function createInventoryCount(input: InventoryCountCreate, key: string): Promise<InventoryCountReceipt> {
+  return (await http.post<InventoryCountReceipt>("/inventory/counts", input, keyed(key))).data;
+}
 const reasoned = (reason: string | undefined): DeactivationRequest => ({ reason: reason ?? "" });
 
 export async function listPractitionerRoster(): Promise<PractitionerRosterRead[]> {

@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { AgentId } from "../agui/card";
 import type { AgentStatus, RunState } from "../agui/reducer";
 import { Character } from "./characters/Character";
+import { agentActivity, responsibilities } from "./activity";
 
 // Presentation identity from the v10 cast, never business data.
 export const CREW = [
@@ -42,7 +43,8 @@ export function AgentDialog({ agent, state, trigger, onClose, onOpenCard }: {
   const dialog = useRef<HTMLDialogElement>(null);
   const [position, setPosition] = useState({ left: 16, top: 110 });
   const latest = state.trace.filter(row => row.agent === agent).slice(-3).reverse();
-  const card = Object.values(state.cards).filter(entry => entry.card.agent === agent).at(-1)?.card;
+  const activity = agentActivity(state, agent);
+  const card = (activity.pending ?? activity.latest)?.card;
 
   useEffect(() => {
     const element = dialog.current;
@@ -74,12 +76,17 @@ export function AgentDialog({ agent, state, trigger, onClose, onOpenCard }: {
     <div className="airi-crew-dialog__header"><span className="airi-crew-face"><Character agent={agent} state="idle" gaze={false} decorative size={36} /></span>
       <div><strong id={titleId}>{identity.name}</strong><small>{identity.role}</small></div>
       <button type="button" aria-label="Cerrar diálogo" onClick={onClose}>×</button></div>
-    <p><span className="airi-crew-muted">Ahora · {STATUS[state.agents[agent]]}</span>{state.run.agent === agent && state.run.what ? `: ${state.run.what}` : ""}</p>
+    <p>{responsibilities[agent]}</p>
+    <p><span className="airi-crew-muted">En este hilo · {STATUS[state.agents[agent]]}</span>{state.run.agent === agent && state.run.what ? `: ${state.run.what}` : ""}</p>
+    <p className="airi-crew-muted">Actividad reciente del hilo actual; no representa el total del turno.</p>
     {latest.length ? <ul aria-label={`Rastro de ${identity.name}`}>{latest.map((row, i) => <li key={i}>
       <time>{row.timestamp === null ? "—" : new Intl.DateTimeFormat("es-PE", { timeZone: "America/Lima", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(row.timestamp)}</time>
       <span>{row.message ?? traceLabels[row.type] ?? "Actividad del agente"}</span></li>)}</ul>
       : <p className="airi-crew-muted">Aún no hay acciones de {identity.name} en el rastro de esta conversación.</p>}
-    <div className="airi-crew-dialog__actions">{card && <button type="button" onClick={() => { onClose(); onOpenCard(card.id); }}>Ver su tarjeta</button>}
+    {activity.latest && <p><strong>Última tarjeta · </strong>{activity.latest.card.title}. {activity.latest.card.state === "approved" ? "Aprobada." : activity.latest.card.state === "declined" ? "Rechazada." : activity.latest.card.state === "undone" ? "Revertida." : activity.latest.card.state === "delegated" ? "Delegada." : activity.latest.card.level === "auto" ? "Información consultada." : "Propuesta preparada; aún no aplicada."}</p>}
+    <p><strong>{activity.resultOrdered ? "Último resultado aprobado" : "Resultado aprobado disponible"} · </strong>{activity.result?.card.result ?? "Sin resultado aprobado registrado en este hilo."}</p>
+    <p><strong>Siguiente decisión · </strong>{activity.decision}</p>
+    <div className="airi-crew-dialog__actions">{card && <button type="button" onClick={() => { onClose(); onOpenCard(card.id); }}>{activity.pending ? "Revisar propuesta" : "Ver su tarjeta"}</button>}
       <Link href="/agente" onClick={onClose}>Abrir el Rastro</Link></div>
   </dialog>, document.body);
 }

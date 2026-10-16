@@ -250,6 +250,26 @@ describe("D · route allowlist", () => {
     expect(headers.get("authorization")).toBe("Bearer ofk_carlos");
   });
 
+  it("allows only the two exported physical count routes and their methods", () => {
+    expect(isRouteAllowed("GET", segments("inventory/count-context"))).toBe(true);
+    expect(isRouteAllowed("POST", segments("inventory/counts"))).toBe(true);
+    expect(isRouteAllowed("POST", segments("inventory/count-context"))).toBe(false);
+    expect(isRouteAllowed("GET", segments("inventory/counts"))).toBe(false);
+    expect(isRouteAllowed("POST", segments("inventory/counts/1/approve"))).toBe(false);
+  });
+
+  it("allows the existing staff task routes without opening generic task mutation", () => {
+    expect(isRouteAllowed("GET", segments("tasks/assignees"))).toBe(true);
+    expect(isRouteAllowed("POST", segments("tasks/delegations"))).toBe(true);
+    expect(isRouteAllowed("POST", segments("tasks/8/ack"))).toBe(true);
+    expect(isRouteAllowed("POST", segments("tasks/8/complete"))).toBe(true);
+    expect(isRouteAllowed("POST", segments("tasks/assignees"))).toBe(false);
+    expect(isRouteAllowed("GET", segments("tasks/8/ack"))).toBe(false);
+    expect(isRouteAllowed("POST", segments("tasks/8"))).toBe(false);
+    expect(isRouteAllowed("GET", segments("agent/proposals/8"))).toBe(true);
+    expect(isRouteAllowed("POST", segments("agent/proposals/8"))).toBe(false);
+  });
+
   it("covers every backend call the browser client makes", () => {
     const sources = ["src/contracts/client.ts", "src/api.ts"].map((file) => readFileSync(join(process.cwd(), file), "utf8")).join("\n");
     const calls = [...sources.matchAll(/\b(?:http|api)\.(get|post|put|patch|delete)\s*(?:<[^()]*?>)?\(\s*(["'`])(.*?)\2/gs)].map((match) => ({

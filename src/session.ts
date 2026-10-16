@@ -36,6 +36,7 @@ export function mockCurrentMe(): MeRead | null {
 
 export function toStaffIdentity(me: MeRead): StaffIdentity {
   return {
+    principalId: me.principal.id,
     principalType: me.principal.type,
     displayName: me.principal.display_name,
     organizationName: me.organization.name,

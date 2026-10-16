@@ -9,6 +9,7 @@ import {
   decideInboxItem,
   describeApprovalError,
   loadInbox,
+  loadInboxRecord,
   newIdempotencyKey,
   RUNNABLE_AGENTS,
   runAgentNow,
@@ -34,7 +35,7 @@ import { getSessionVersion } from "../contracts/client";
  * Nothing runs until a person approves it; the backend decides who may
  * (`actions` per item) and re-checks every decision.
  */
-export function ApprovalsPage() {
+export function ApprovalsPage({ focusedKey, focusedStatus, conversationId }: { focusedKey?: string; focusedStatus?: string; conversationId?: number } = {}) {
   const { identity, loading, version } = usePersona();
   const [reloadToken, setReloadToken] = useState(0);
   const human = identity?.principalType === "human";
@@ -44,18 +45,19 @@ export function ApprovalsPage() {
       <span className="cash-authority-note"><ShieldCheck size={17} aria-hidden="true" /> {useMocks ? "Simulación con datos de referencia" : "Cada decisión queda registrada"}</span>
     </div>
     {!loading && !human && <p className="approvals-notice" role="note">Para aprobar o declinar, elige quién eres en el menú de perfil, abajo a la izquierda.</p>}
+    {conversationId && <Link href={`/chat?conversation=${conversationId}`}>Volver a la conversación de origen</Link>}
     <BandejaStyles />
-    <ClinicInbox key={version} reloadToken={reloadToken} />
+    <ClinicInbox key={`${version}:${focusedKey}:${focusedStatus}`} reloadToken={reloadToken} focusedKey={focusedKey} focusedStatus={focusedStatus} />
     {!useMocks && <AgentRunsPanel identity={identity} onRan={() => setReloadToken((value) => value + 1)} />}
   </section>;
 }
 
 export interface InboxSummary { pending: number; pendingPartial: boolean; verification: number | null }
 /** Same clinic queue in Bandeja and Mi turno, independent of an agent thread. */
-export function ClinicInbox({ reloadToken = 0, onSummary }: { reloadToken?: number; onSummary?: (summary: InboxSummary) => void }) {
+export function ClinicInbox({ reloadToken = 0, onSummary, focusedKey, focusedStatus }: { reloadToken?: number; onSummary?: (summary: InboxSummary) => void; focusedKey?: string; focusedStatus?: string }) {
   const { identity, version } = usePersona();
   return <div className="clinic-inbox airi-catalog"><BandejaStyles />
-    {useMocks ? <FixtureInbox key={version} identity={identity} onSummary={onSummary} /> : <InboxSection key={version} reloadToken={reloadToken} onSummary={onSummary} />}
+    {useMocks ? <FixtureInbox key={version} identity={identity} onSummary={onSummary} /> : <InboxSection key={version} reloadToken={reloadToken} onSummary={onSummary} focusedKey={focusedKey} focusedStatus={focusedStatus} />}
   </div>;
 }
 
@@ -183,10 +185,10 @@ interface DecisionState {
   error: ActionableError | null;
 }
 
-function InboxSection({ reloadToken, onSummary }: { reloadToken: number; onSummary?: (summary: InboxSummary) => void }) {
+function InboxSection({ reloadToken, onSummary, focusedKey, focusedStatus }: { reloadToken: number; onSummary?: (summary: InboxSummary) => void; focusedKey?: string; focusedStatus?: string }) {
   const [view, setView] = useState("all");
-  const [selected, setSelected] = useState<string | null>(null);
-  const [status, setStatus] = useState<ApprovalStatus>("pending");
+  const [selected, setSelected] = useState<string | null>(focusedKey ?? null);
+  const [status, setStatus] = useState<ApprovalStatus>(() => STATUS_TABS.find(tab => tab.id === focusedStatus)?.id as ApprovalStatus ?? "pending");
   const [items, setItems] = useState<ApprovalItem[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -199,6 +201,7 @@ function InboxSection({ reloadToken, onSummary }: { reloadToken: number; onSumma
   const headingRef = useRef<HTMLHeadingElement>(null);
   const reads = useRef(createLatestRequest());
   const currentStatus = useRef(status);
+  const focusStatusResolved = useRef(false);
   const now = useNow();
 
   const refresh = useCallback(async () => {
@@ -209,10 +212,24 @@ function InboxSection({ reloadToken, onSummary }: { reloadToken: number; onSumma
     setError("");
     setDecisions({});
     try {
-      const page = await loadInbox({ status });
+      const linked = focusedKey?.startsWith("agent_proposal:") ? await loadInboxRecord(Number(focusedKey.split(":")[1])) : null;
+      if (!isCurrent()) return;
+      if (linked && !focusStatusResolved.current) {
+        focusStatusResolved.current = true;
+        if (linked.status !== status) { currentStatus.current = linked.status; setStatus(linked.status); return; }
+      }
+      let page = await loadInbox({ status });
+      if (linked?.status === status) page = { ...page, items: [...page.items.filter(item => item.key !== linked.key), linked] };
+      const visited = new Set<string>();
+      while (!linked && focusedKey && !page.items.some(item => item.key === focusedKey) && page.nextCursor && !visited.has(page.nextCursor) && isCurrent()) {
+        visited.add(page.nextCursor);
+        const next = await loadInbox({ status, cursor: page.nextCursor });
+        page = { items: [...page.items, ...next.items], nextCursor: next.nextCursor };
+      }
       if (!isCurrent()) return;
       setItems(page.items);
       setNextCursor(page.nextCursor);
+      if (focusedKey && !page.items.some(item => item.key === focusedKey)) setAnnouncement("La propuesta vinculada no está disponible en este estado o con tus permisos.");
     } catch (caught) {
       if (!isCurrent()) return;
       setItems([]);
@@ -221,7 +238,7 @@ function InboxSection({ reloadToken, onSummary }: { reloadToken: number; onSumma
     } finally {
       if (isCurrent()) setLoading(false);
     }
-  }, [status]);
+  }, [status, focusedKey]);
 
   useEffect(() => {
     void refresh();
@@ -280,7 +297,7 @@ function InboxSection({ reloadToken, onSummary }: { reloadToken: number; onSumma
   const visible = items.filter(item => filteredIds.has(item.key) && (view !== "mine" || (item.status === "pending" && item.actions.length > 0)) && (view !== "verify" || item.status === "pending"));
   const pendingCount = items.filter(item => item.status === "pending").length;
   useEffect(() => { if (!loading && !error && status === "pending") onSummary?.({ pending: pendingCount, pendingPartial: nextCursor !== null, verification: null }); }, [loading, error, status, pendingCount, nextCursor, onSummary]);
-  const active = visible.find(item => item.key === selected) ?? visible[0];
+  const active = visible.find(item => item.key === selected) ?? (focusedKey && selected === focusedKey ? undefined : visible[0]);
   const tabLabel = STATUS_TABS.find((tab) => tab.id === status)?.label ?? "";
 
   return <>
@@ -301,7 +318,7 @@ function InboxSection({ reloadToken, onSummary }: { reloadToken: number; onSumma
           : !error && visible.length === 0 ? <p className="empty-state approvals-empty">{view === "all" || view === "mine" ? EMPTY_COPY[status] : "No hay casos con este filtro en los datos disponibles."}</p>
           : <div className="bandeja-layout">
             <CaseList cards={visible.map(toCard)} selected={active?.key ?? null} onSelect={setSelected} states={Object.fromEntries(visible.map(item => [item.key, STATUS_BADGE[item.status].label]))} />
-            {active && <div id="bandeja-selected" className="bandeja-detail"><ConversationContext card={toCard(active)} /><div className="bandeja-proposal"><ApprovalCard key={active.key} item={active} now={now} decision={decisions[active.key]} onDecide={decide} onReload={() => void refresh()} /></div></div>}
+            {active && <div id="bandeja-selected" className="bandeja-detail"><ConversationContext card={toCard(active)} conversationId={active.conversationId} /><div className="bandeja-proposal"><ApprovalCard key={active.key} item={active} now={now} decision={decisions[active.key]} onDecide={decide} onReload={() => void refresh()} /></div></div>}
           </div>}
         {nextCursor && !loading && <div className="approvals-more"><Button compact onClick={() => void loadMore()} disabled={loadingMore}>{loadingMore ? "Cargando…" : "Cargar más"}</Button></div>}
       </div>
@@ -372,14 +389,14 @@ export function inboxContext(card: InboxCard) {
   };
 }
 
-function ConversationContext({ card }: { card: InboxCard }) {
+function ConversationContext({ card, conversationId }: { card: InboxCard; conversationId?: number | null }) {
   const context = inboxContext(card);
   const titleId = useId();
   return <section className="bandeja-conversation" aria-labelledby={titleId}>
     <div className="bandeja-chat">
-      <h3 id={titleId}>Conversación · WhatsApp</h3>
+      <h3 id={titleId}>Contexto del caso</h3>
       <div className="bandeja-bubble"><small>Contexto registrado</small><p>{context.evidence}</p><small>{context.sources.length ? context.sources.join(" · ") : "Historial de mensajes: No consta"}</small></div>
-      <p className="bandeja-chat-missing">Historial completo: No consta · Respuesta del equipo: {context.reply}</p>
+      <p className="bandeja-chat-missing">{conversationId ? <Link href={`/chat?conversation=${conversationId}`}>Abrir conversación vinculada e historial</Link> : "Historial completo: No consta"} · Respuesta del equipo: {context.reply}</p>
     </div>
     <dl className="bandeja-window"><div><dt>Ventana / canal</dt><dd>{context.channel}</dd></div><div><dt>Responsable</dt><dd>{context.responsible}</dd></div></dl>
   </section>;

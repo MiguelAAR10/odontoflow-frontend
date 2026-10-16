@@ -211,6 +211,8 @@ export interface ChatAppointmentContext {
   conversationId: number;
   contactIdentityId: number;
   displayName: string;
+  leadId?: number;
+  patientId?: number;
 }
 
 export interface ChatConversationPage {
@@ -439,6 +441,7 @@ export type ProposalDecision = "approve" | "decline";
 
 /** Which person is acting, from `GET /me` (permissions drive the UI). */
 export interface StaffIdentity {
+  principalId?: number;
   principalType: string;
   displayName: string;
   organizationName: string;

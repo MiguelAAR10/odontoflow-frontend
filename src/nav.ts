@@ -17,6 +17,7 @@ const NAVIGATION: Record<ShellRole, readonly NavigationEntry[]> = {
 };
 export function getNavigation(role: ShellRole): readonly NavigationEntry[] { return NAVIGATION[role]; }
 export function navigationTitle(path: string, role: ShellRole): string {
+  if (path === "/mi-turno" && role === "doctor") return "Mis tareas";
   return NAVIGATION[role].find(item => path === item.to || path.startsWith(`${item.to}/`))?.label
     ?? ({ "/pacientes": "Pacientes", "/inventario": "Inventario", "/productividad": "Productividad", "/chat": "Chat", "/asistente": "Asistente", "/configuracion": "Configuración" } as Record<string, string>)[path] ?? "Inicio";
 }

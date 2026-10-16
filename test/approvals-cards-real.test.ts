@@ -4,6 +4,8 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ApprovalItem } from "../src/types";
 
 const stubs = vi.hoisted(() => ({ load: vi.fn(), decide: vi.fn(), begin: vi.fn() }));
+vi.mock("next/link", () => ({ default: "a" }));
+
 vi.mock("../src/api", () => ({
   useMocks: false, loadInbox: stubs.load, decideInboxItem: stubs.decide, beginDecision: stubs.begin,
   canRunAgent: () => false, RUNNABLE_AGENTS: [], newIdempotencyKey: () => "key",

@@ -2,8 +2,10 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { ChevronDown, Eye, Plus, Search, Users } from "lucide-react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { createPatient, getPatients, loadPatientHistory, loadPatients, newIdempotencyKey, toApiError, useMocks } from "../api";
+import { createPatient, getPatients, loadPatientHistory, loadPatientRecord, loadPatients, newIdempotencyKey, toApiError, useMocks } from "../api";
+import { createLatestRequest } from "../session";
 import { Badge, statusTone } from "../components/Badge";
 import { Button } from "../components/Button";
 import { type Column, DataTable } from "../components/DataTable";
@@ -16,6 +18,7 @@ const money = (value: number) => `S/ ${value.toLocaleString("es-PE", { minimumFr
 export function PatientsPage() {
   const searchParams = useSearchParams();
   const patientQuery = searchParams.get("patient");
+  const origin = searchParams.get("conversation");
   const [patients, setPatients] = useState<Patient[]>([]);
   const [query, setQuery] = useState("");
   const [branch, setBranch] = useState("Todas las sedes");
@@ -26,29 +29,46 @@ export function PatientsPage() {
   const [error, setError] = useState("");
   const [history, setHistory] = useState<PatientVisitHistory[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [linkedLoading, setLinkedLoading] = useState(false);
   const [historyError, setHistoryError] = useState("");
 
   useEffect(() => {
+    const request = createLatestRequest();
+    const isCurrent = request.begin();
     setLoading(true);
     setError("");
+    setSelected(null);
+    setLinkedLoading(false);
     void (useMocks ? getPatients() : loadPatients()).then((data) => {
+      if (!isCurrent()) return;
       setPatients(data);
-      if (patientQuery) setSelected(data.find((item) => item.id === patientQuery) ?? null);
-    }).catch((caught) => setError(toApiError(caught).message)).finally(() => setLoading(false));
+      if (patientQuery && useMocks) setSelected(data.find((item) => item.id === patientQuery) ?? null);
+    }).catch((caught) => { if (isCurrent()) setError(toApiError(caught).message); }).finally(() => { if (isCurrent()) setLoading(false); });
+    if (patientQuery && !useMocks && /^[1-9]\d*$/.test(patientQuery)) {
+      setLinkedLoading(true);
+      void loadPatientRecord(Number(patientQuery)).then(row => { if (isCurrent()) setSelected(row); })
+        .catch(caught => { if (isCurrent()) setError(toApiError(caught).message); })
+        .finally(() => { if (isCurrent()) setLinkedLoading(false); });
+    }
+    return () => request.invalidate();
   }, [patientQuery]);
 
   useEffect(() => {
+    const request = createLatestRequest();
+    const isCurrent = request.begin();
+    setHistory([]);
     if (!selected) {
-      setHistory([]);
+      setHistoryLoading(false);
       setHistoryError("");
       return;
     }
     setHistoryLoading(true);
     setHistoryError("");
     void loadPatientHistory(selected.id)
-      .then(setHistory)
-      .catch((caught) => setHistoryError(toApiError(caught).message))
-      .finally(() => setHistoryLoading(false));
+      .then(rows => { if (isCurrent()) setHistory(rows); })
+      .catch((caught) => { if (isCurrent()) setHistoryError(toApiError(caught).message); })
+      .finally(() => { if (isCurrent()) setHistoryLoading(false); });
+    return () => request.invalidate();
   }, [selected]);
 
   const visible = useMemo(() => {
@@ -89,6 +109,8 @@ export function PatientsPage() {
 
   return (
     <section className="page">
+      {linkedLoading && <p role="status">Cargando paciente vinculado…</p>}
+      {origin && /^[1-9]\d*$/.test(origin) && <Link href={`/chat?conversation=${origin}`}>Volver a la conversación de origen</Link>}
       <div className="page-heading page-heading--with-actions"><div><h1>Pacientes</h1><p>Directorio clínico de las tres sedes</p></div><Button variant="primary" icon={Plus} onClick={() => setNewOpen(true)}>Nuevo paciente</Button></div>
       <div className="kpi-grid kpi-grid--patients">
         <KpiCard icon={Users} value={patients.length} label="Pacientes registrados" tone="blue" />

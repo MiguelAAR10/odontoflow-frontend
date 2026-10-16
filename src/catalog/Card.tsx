@@ -24,6 +24,8 @@ export interface CardProps<T extends CardPresentation = CardDto> extends CardAct
   loadingReason?: "tool" | "approval" | null;
   /** Supplied by the owner of the decision; never invent an undo deadline here. */
   undoRemainingSeconds?: number;
+  /** A readable card is not an authorization to decide it. */
+  readOnly?: boolean;
 }
 
 export function Card(props: CardProps) {
@@ -35,7 +37,7 @@ export function LegacyInboxCard(props: CardProps<CardPresentation>) {
   return <CardView key={`${props.card.id}:legacy:${props.card.state}`} {...props} />;
 }
 
-function CardView<T extends CardPresentation>({ card, status, error, loadingReason, undoRemainingSeconds, ...actions }: CardProps<T>) {
+function CardView<T extends CardPresentation>({ card, status, error, loadingReason, undoRemainingSeconds, readOnly = false, ...actions }: CardProps<T>) {
   const titleId = useId();
   const action = useAction();
   const submitted = useRef(false);
@@ -63,7 +65,7 @@ function CardView<T extends CardPresentation>({ card, status, error, loadingReas
   return <Layers as="article" className={`catalog-card catalog-level-${card.level} ${pending ? "catalog-pending" : ""}`} labelledBy={titleId} busy={processing} cardId={card.id}>
     <Layer stage="title">
       <div className="catalog-card-head"><AgentLabel agent={card.agent} /><span className={`catalog-level ${card.level}`}>
-        {card.level === "auto" ? "Automático · solo lee" : card.level === "borrador" ? "Borrador · tú decides" : "Requiere tu aprobación"}
+        {card.level === "auto" ? "Automático · solo lee" : readOnly ? "Revisión humana" : card.level === "borrador" ? "Borrador · tú decides" : "Requiere tu aprobación"}
       </span></div>
       <h3 id={titleId}>{card.title}</h3>
     </Layer>
@@ -76,7 +78,7 @@ function CardView<T extends CardPresentation>({ card, status, error, loadingReas
     <Layer stage="data">
       {amounts?.length ? <dl className="catalog-amounts">{amounts.map((amount, index) => <div key={index}><dt>{amount.label}</dt><dd>{formatMoney(amount.amount_cents)}</dd></div>)}</dl> : null}
       {card.scope?.length ? <div className="catalog-scope" aria-label="Alcance">{card.scope.map((item, index) => <span key={index} className={item.reversible === "none" ? "catalog-irreversible" : ""}>{item.label === "rev" ? item.value : <>{item.label}: <b>{item.value}</b></>}</span>)}</div> : null}
-      {showActions ? <div className="catalog-actions">
+      {showActions && !readOnly ? <div className="catalog-actions">
         {card.edit || actions.onEdit ? <button type="button" className="catalog-button" disabled={disabled || !actions.onEdit} onClick={() => { if (!disabled) void action.run(() => actions.onEdit!(card)); }}>Editar</button> : null}
         <button type="button" className="catalog-button" disabled={disabled || !actions.onAlternative} onClick={() => void decide(actions.onAlternative, pending)}>{card.alt ?? "Descartar"}</button>
         <button type="button" className="catalog-button catalog-primary" disabled={disabled || !actions.onApprove || !card.approve} onClick={() => void decide(actions.onApprove, pending)}>{processing ? "Procesando…" : card.approve ?? "Aprobar"}</button>
@@ -84,7 +86,7 @@ function CardView<T extends CardPresentation>({ card, status, error, loadingReas
       {processing ? <p role="status" className="catalog-muted">{loadingReason === "tool" ? "Preparando…" : "Procesando…"}</p> : null}
       {awaitingUpdate && !done ? <p role="status" className="catalog-muted">Esperando actualización…</p> : null}
       {done && card.state !== "undone" ? <div role="status" className="catalog-completion"><p className="catalog-stamp">{card.state === "delegated" ? "Delegado" : card.level === "auto" ? "Hecho" : "Aprobado"}</p>{card.result ? <p className="catalog-result">✓ {card.result}</p> : null}</div> : null}
-      {canUndo ? <div className="catalog-undo">{card.reversible === "window" ? <span>Se puede deshacer durante {undoRemainingSeconds} s</span> : null}<button type="button" className="catalog-button" disabled={disabled || !actions.onUndo} onClick={() => void decide(actions.onUndo, canUndo)}>Deshacer</button></div> : null}
+      {canUndo && !readOnly ? <div className="catalog-undo">{card.reversible === "window" ? <span>Se puede deshacer durante {undoRemainingSeconds} s</span> : null}<button type="button" className="catalog-button" disabled={disabled || !actions.onUndo} onClick={() => void decide(actions.onUndo, canUndo)}>Deshacer</button></div> : null}
       {runtimeStatus === "rejected" ? <p className="catalog-muted">Descartado · queda en el rastro.</p> : null}
       {runtimeStatus === "stopped" ? <p className="catalog-muted">Detenido por ti · lo hecho hasta aquí queda en el rastro.</p> : null}
       {card.state === "undone" ? <p className="catalog-muted">Deshecho · queda en el rastro.</p> : null}

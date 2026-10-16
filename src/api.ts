@@ -23,6 +23,7 @@ import {
   createServiceExecution as createServiceExecutionReal,
   createVisit as createVisitReal,
   getAppointment as getAppointmentReal,
+  getPatient as getPatientReal,
   getAiriState as getAiriStateReal,
   getAiriHome as getAiriHomeReal,
   getBalance as getBalanceReal,
@@ -102,6 +103,9 @@ export const api = http;
 
 const useMocks = USE_MOCKS;
 export { useMocks, ApiError, toApiError, newIdempotencyKey };
+export { loadTasks, finishTask, acceptTask, canCompleteTask, loadTaskAssignees, proposeTaskDelegation } from "./tasks";
+export { loadCountContext, proposeInventoryCount } from "./inventoryCount";
+export { loadConversationContext, sendConversationReply, returnConversationToAgent } from "./conversationContext";
 
 /** v10 reads share the explicit mode seam; views validate their projection. */
 export async function loadAiriState(): Promise<unknown> {
@@ -266,6 +270,13 @@ export async function loadPatients(search?: string): Promise<Patient[]> {
   }
   const rows = await listPatientsReal(search);
   return rows.map(toUiPatient);
+}
+
+export async function loadPatientRecord(id: number): Promise<Patient> {
+  if (!useMocks) return toUiPatient(await getPatientReal(id));
+  const row = patients.find(patient => patient.id === String(id));
+  if (!row) throw new ApiError(404, "NOT_FOUND", "Paciente no disponible en esta demostración.");
+  return copy(row);
 }
 
 /**
@@ -1392,6 +1403,9 @@ export {
   decideInboxItem,
   describeApprovalError,
   loadInbox,
+  loadInboxRecord,
+  loadProposalCard,
+  loadProposalRecord,
   RUNNABLE_AGENTS,
   runAgentNow,
   toUiInboxItem,

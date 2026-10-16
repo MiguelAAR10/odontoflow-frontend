@@ -1,63 +1,45 @@
-# OdontoFlow Frontend
+# OdontoFlow · AIRI v10
 
-Interfaz de operación clínica construida con Next.js App Router, React y TypeScript. El frontend adapta las respuestas del backend FastAPI; el backend es la autoridad para disponibilidad, precios, cobros, inventario y permisos.
+Interfaz de operación clínica en Next.js, React y TypeScript. Conserva el diseño v10: personajes, hilo compartido, propuestas con revisión humana y Rastro. Una propuesta preparada no equivale a una operación aplicada.
 
-## Iniciar la interfaz
+## Demo visual y verificación pública
 
-Requiere Node.js 24 (versión indicada en `.nvmrc`).
+Requiere Node.js 24 (`.nvmrc`). El lockfile fija las dependencias; no se necesita el backend privado para estos comandos:
 
 ```bash
 npm ci
+npm run typecheck
+npm test
+npm run build
 npm run dev
 ```
 
-Abre [http://127.0.0.1:5173/agenda](http://127.0.0.1:5173/agenda). Por defecto se usan datos de demostración; no hace falta levantar el backend para revisar el diseño. Las variables disponibles están explicadas en [`.env.example`](.env.example).
+Abre [localhost:5173](http://127.0.0.1:5173). Por defecto se usan datos de demostración, identificados como simulación. `npm start` sirve la compilación. La CI ejecuta instalación, typecheck, tests y build sin credenciales ni servicios de negocio.
 
-Para conectar el backend, crea `.env.local` con `NEXT_PUBLIC_USE_MOCKS=false`, `BACKEND_URL=http://127.0.0.1:8010` y (si el backend lo exige) `BACKEND_DEMO_TOKEN=<credencial>` — ambas solo de servidor: el navegador habla con `/api/backend/*` y Next reenvía al backend (ver "BFF" en `DEVELOPMENT.md`) —, e inicia FastAPI y PostgreSQL según el README del repositorio `odontoflow-backend`. Chat aún no consume el contrato de conversaciones de ese backend.
+## Datos reales
 
-## Estado de los módulos
+El backend FastAPI/PostgreSQL es un repositorio privado separado; este repositorio no instala ni ejecuta ese servicio. El modo real requiere una instancia compatible con el contrato exportado en [`docs/api/openapi.yaml`](docs/api/openapi.yaml), credenciales de personal autorizadas y configuración del BFF según [DEVELOPMENT.md](DEVELOPMENT.md) y [`.env.example`](.env.example). `NEXT_PUBLIC_USE_MOCKS=false` selecciona datos reales. Las credenciales permanecen en el servidor Next; el navegador usa `/api/backend/*`.
 
-| Ruta | Estado actual |
-| --- | --- |
-| `/agenda` | Citas y disponibilidad conectadas al backend en modo real. El calendario y los filtros son de la interfaz. Editar/eliminar una cita y agregar un usuario a la lista son interacciones de demostración; el backend ofrece reprogramar y cancelar, no borrar. |
-| `/pacientes` | Lectura y registro conectados a `/patients` en modo real. |
-| `/caja` | Cargos y pagos conectados a `/charges` y `/charges/{id}/payments` en modo real. |
-| `/inventario` | Productos, saldos por sede, movimientos, entradas, ajustes y transferencias conectados en modo real. |
-| `/chat` | Prototipo para explorar conversaciones, filtros y transferencia. Las asignaciones de secretarias son temporales en modo demo; no hay persistencia de chats en el backend actual. |
-| `/agente` | Prototipo visual; sus métricas y actividad no provienen del backend operativo. |
-| `/configuracion` | Mapa de secciones previsto para el administrador; aún no edita usuarios, roles ni ajustes. |
-| `/asistente` | Asistente de voz opcional. Oculto por defecto; `NEXT_PUBLIC_ENABLE_VOICE=true` muestra la pantalla. En modo demo no envía peticiones al servicio de voz. |
+Agenda, pacientes, caja, inventario, conversaciones y Bandeja consultan el backend. Los personajes describen actividad del hilo actual, no métricas globales del turno. Mi Turno conserva las tareas accesibles al principal autenticado; completar una tarea no firma una ficha ni cambia su estado clínico. La disponibilidad de WhatsApp depende del contrato y configuración del backend, no de la demo. La voz es opcional y no sustituye autenticación ni catálogo canónico.
 
-El nombre de administrador mostrado en modo demo es una muestra visual, no una sesión autenticada. El panel de notificaciones también es una vista previa sin servicio conectado.
+Los flujos nuevos requieren `GET /conversations/{id}/context`, `POST /conversations/{id}/reply` y `POST /conversations/{id}/resume`; `GET /inventory/count-context` y `POST /inventory/counts`; `GET /tasks`, `GET /tasks/assignees?location_id=…`, `POST /tasks/{id}/ack`, `POST /tasks/{id}/complete` y `POST /tasks/delegations`. El backend necesita la migración aditiva `0033_v10_agentic` y los esquemas de este snapshot. La aprobación sigue las rutas existentes de Bandeja. Si el canal de personal devuelve `not_configured`, AIRI lo muestra como no configurado: no acredita envío ni entrega por WhatsApp.
 
-## Comandos
+## Contrato de API
+
+[`src/contracts/api.ts`](src/contracts/api.ts) se genera; nunca se edita a mano. El snapshot YAML se copia del exportador OpenAPI del backend, sin inventar ni modificar esquemas. Los comandos públicos usan ese snapshot:
 
 ```bash
-npm run typecheck    # TypeScript de la interfaz y del simulador histórico
-npm test             # pruebas unitarias y de adaptadores (94 actualmente)
-npm run build        # compilación Next.js y TypeScript del simulador
-npm run test:visual  # compila, abre las rutas actuales y genera capturas locales
+npm run openapi:generate
+npm run openapi:check
 ```
 
-`test:visual` requiere Chromium, Chrome o Edge. Puedes indicar el ejecutable con `VISUAL_BROWSER_PATH`. Escribe las capturas en `screenshots/`, una carpeta ignorada por Git; también admite `VISUAL_SCREENSHOT_DIR` y, para comprobar un servidor ya iniciado, `VISUAL_BASE_URL`.
+Para integrar una nueva versión, exporta primero el YAML en el backend, copia ese archivo a `docs/api/openapi.yaml` y regenera con el mismo origen:
 
-Las pruebas de integración (`npm run test:e2e`) y el piloto (`npm run test:e2e:pilot`) necesitan el backend real y PostgreSQL. No forman parte de `npm test`. Para regenerar los tipos de la API tras un cambio de contrato, coloca el backend como repositorio hermano y ejecuta `npm run openapi:generate`; [`src/contracts/api.ts`](src/contracts/api.ts) es generado y no debe editarse a mano.
-
-**Nota sobre `npm start`:** después de `npm run build`, sirve la interfaz Next.js en `http://127.0.0.1:5173` (loopback). El simulador histórico desde `dist/src/server.js` conserva el script explícito `npm run start:legacy`. Consulta el [runbook del demo](docs/run-demo.md) para configuración y límites del ensayo.
-
-## Estructura
-
-```text
-app/                    Rutas y layouts de Next.js
-src/views/              Pantallas de la interfaz
-src/components/         Componentes compartidos
-src/api.ts              Adaptación entre contratos, vistas y datos demo
-src/contracts/          Tipos OpenAPI generados y cliente HTTP
-src/mockData.ts         Datos para diseño y pruebas en modo demo
-test/                   Pruebas unitarias, de transporte e integración
-scripts/visual-check.mjs  Verificación visual actual
+```bash
+OPENAPI_SPEC=../backend-integ-airi/docs/api/openapi.yaml npm run openapi:generate
+OPENAPI_SPEC=../backend-integ-airi/docs/api/openapi.yaml npm test
 ```
 
-`src/domain/`, `src/simulation/`, `src/server.ts`, `db/`, `docker-compose.yml` y [`docs/run-demo.md`](docs/run-demo.md) pertenecen al simulador anterior. Siguen disponibles como referencia y para sus pruebas, pero no forman parte de la interfaz Next.js. Los informes y capturas de `.audit/` son evidencia histórica; pueden mostrar diseños de versiones anteriores.
+`OPENAPI_SPEC` también funciona con `openapi:check`. Los fixtures AG-UI incluidos se validan con sus esquemas y hashes exportados; `AIRI_CONTRACT_DIR` permite además compararlos byte a byte con `contracts/airi-v10` de un backend local. Una ruta nueva necesita cliente tipado, adaptación real/demo y permiso explícito en el BFF. La integración y las pruebas de navegador con backend/PostgreSQL son una verificación aparte; `npm test` no envía WhatsApp ni requiere backend.
 
-Lee [AGENTS.md](AGENTS.md) antes de cambiar código y [docs/frontend-architecture.md](docs/frontend-architecture.md) para entender la separación entre contratos, adaptadores y vistas.
+Lee [AGENTS.md](AGENTS.md) y [arquitectura frontend](docs/frontend-architecture.md) antes de contribuir. `src/domain`, `src/simulation` y `src/server.ts` son el simulador histórico, no la autoridad de negocio de AIRI.

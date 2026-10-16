@@ -19,6 +19,7 @@ export interface ThreadTurn {
 }
 export interface TraceEntry {
   type: string; runId: string | null; agent: AgentId; timestamp: number | null; message: string | null;
+  cardId?: string;
 }
 export interface RunState {
   threadId: string | null;
@@ -54,9 +55,10 @@ export function createInitialState(): RunState {
   };
 }
 
-function appendTrace(state: RunState, event: { type: string; timestamp?: number; agent?: AgentId }, message: string | null = null): RunState {
+function appendTrace(state: RunState, event: { type: string; timestamp?: number; agent?: AgentId }, message: string | null = null, cardId?: string): RunState {
   return { ...state, trace: [...state.trace, {
     type: event.type, runId: state.run.id, agent: event.agent ?? state.run.agent, timestamp: event.timestamp ?? null, message,
+    ...(cardId ? { cardId } : {}),
   }] };
 }
 
@@ -233,7 +235,7 @@ export function reducer(state: RunState, incoming: { type: string }): RunState {
       next = { ...next, agents,
         run: state.run.status === "waiting" && !needsRun ? { ...state.run, status: "done", what: "Aprobado" } : state.run,
       };
-      return appendTrace(next, event, event.card.result ?? "Aprobado por ti");
+      return appendTrace(next, { ...event, agent: event.card.agent }, event.card.result ?? "Aprobado por ti", event.card.id);
     }
     case "CARD_APPROVAL_FAILED": {
       const entry = state.cards[event.cardId];

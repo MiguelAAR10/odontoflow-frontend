@@ -94,8 +94,9 @@ export function AppSidebar({ mobileOpen, collapsed, onNavigate, onToggleCollapse
     </div>
     <nav className="sidebar-nav">{items.map(item => <SidebarItem key={item.to} item={item} onNavigate={onNavigate} />)}</nav>
     <div className="sidebar-admin">
+      {canOpen(identity, "/inventario") && <Link href="/inventario" title="Inventario" onClick={onNavigate} className="sidebar-item"><span className="shell-clay" aria-hidden="true"><Boxes size={19} /></span><span>Inventario</span></Link>}
       <details className="shell-more"><summary title="Más secciones"><span aria-hidden="true">•••</span><span>Más secciones</span></summary><nav aria-label="Más secciones">{[
-        { to: "/pacientes", label: "Pacientes", icon: Users }, { to: "/inventario", label: "Inventario", icon: Boxes },
+        { to: "/pacientes", label: "Pacientes", icon: Users },
         { to: "/productividad", label: "Productividad", icon: ChartColumn }, { to: "/chat", label: "Chat", icon: MessageCircleMore },
         ...(voiceEnabled ? [{ to: "/asistente", label: "Asistente de voz", icon: Mic }] : []),
       ].filter(item => canOpen(identity, item.to)).map(item => <Link key={item.to} href={item.to} title={item.label} onClick={onNavigate} className="sidebar-item"><span className="shell-clay" aria-hidden="true"><item.icon size={19} /></span><span>{item.label}</span></Link>)}</nav></details>

@@ -4,7 +4,6 @@ import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, use
 import { Archive, Bot, Clock3, EyeOff, Hand, Lock, MessageCircle, RotateCcw, Search, UserRoundCheck } from "lucide-react";
 import {
   beginClaim,
-  appointmentContextForChat,
   canClaimHandoffs,
   claimHandoff,
   CLINIC_TIME_ZONE,
@@ -23,6 +22,7 @@ import { usePersona } from "../components/PersonaContext";
 import { Tabs } from "../components/Tabs";
 import type { ChatConversation, ChatThreadMessage, HandoffEntry, HandoffStatus } from "../types";
 import { createLatestRequest } from "../session";
+import { ConversationCase } from "./ConversationCase";
 
 type ConversationStatus = NonNullable<(typeof CONVERSATION_FILTERS)[number]["status"]>;
 type PanelView = "conversaciones" | "derivaciones";
@@ -56,7 +56,7 @@ function attendant(conversation: ChatConversation): { icon: typeof Bot; label: s
 
 const dateTime = (iso: string) => new Intl.DateTimeFormat("es-PE", { timeZone: CLINIC_TIME_ZONE, day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(iso));
 
-export function ChatPage() {
+export function ChatPage({ conversationId }: { conversationId?: number } = {}) {
   const { identity, loading: identityLoading } = usePersona();
   const human = identity?.principalType === "human";
   const canClaim = canClaimHandoffs(identity);
@@ -66,7 +66,7 @@ export function ChatPage() {
   const [query, setQuery] = useState("");
   const [reloadToken, setReloadToken] = useState(0);
   const [conversations, setConversations] = useState<ListState<ChatConversation>>(emptyList);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<number | null>(conversationId ?? null);
   const [queueStatus, setQueueStatus] = useState<HandoffStatus>("pending");
   const [queue, setQueue] = useState<ListState<HandoffEntry>>(emptyList);
   const [pendingCount, setPendingCount] = useState<{ count: number; more: boolean } | null>(null);
@@ -74,12 +74,16 @@ export function ChatPage() {
   const [notice, setNotice] = useState("");
   const conversationPages = useRef(createLatestRequest());
   const handoffPages = useRef(createLatestRequest());
+  const claimWrites = useRef(createLatestRequest());
+  const searchedCursors = useRef(new Set<string>());
+  useEffect(() => () => claimWrites.current.invalidate(), []);
 
   const reload = () => { setNotice(""); setReloadToken((value) => value + 1); };
 
   useEffect(() => {
     let active = true;
     conversationPages.current.invalidate();
+    searchedCursors.current.clear();
     setConversations(emptyList());
     loadConversations({ status })
       .then((page) => { if (active) setConversations({ items: page.items, nextCursor: page.nextCursor, loading: false, error: null }); })
@@ -136,14 +140,25 @@ export function ChatPage() {
   }, [conversations.items, query]);
 
   const selected = conversations.items.find((item) => item.id === selectedId) ?? (selectedId === null ? visible[0] : undefined);
+  useEffect(() => {
+    if (selectedId === null || selected || conversations.loading || conversations.error) return;
+    if (conversations.nextCursor && !searchedCursors.current.has(`${selectedId}:${conversations.nextCursor}`)) {
+      searchedCursors.current.add(`${selectedId}:${conversations.nextCursor}`);
+      void loadMoreConversations();
+    }
+    else setNotice("La conversación vinculada no está disponible con este filtro o tus permisos.");
+  }, [selectedId, selected, conversations.loading, conversations.error, conversations.nextCursor]);
 
   const claim = async (handoffId: number) => {
+    if (Object.values(claims).some(item => item.busy)) return;
+    const isCurrent = claimWrites.current.begin();
     const previous = claims[handoffId];
     const intent = previous?.error ? previous.intent : beginClaim(handoffId);
     setClaims((state) => ({ ...state, [handoffId]: { intent, busy: true, error: null } }));
     setNotice("");
     try {
       const { handoff, replayed } = await claimHandoff(intent);
+      if (!isCurrent()) return;
       setClaims((state) => ({ ...state, [handoffId]: { intent, busy: false, error: null } }));
       setQueue((state) => ({ ...state, items: state.items.map((item) => (item.id === handoff.id ? handoff : item)) }));
       setConversations((state) => ({
@@ -157,7 +172,9 @@ export function ChatPage() {
       setNotice(handoff.status === "claimed"
         ? `${replayed ? "Ya habías tomado" : "Tomaste"} la conversación con ${handoff.name}: quedó a tu nombre y el agente sigue en pausa con este contacto.`
         : `La derivación de ${handoff.name} ya se resolvió: la conversación volvió al agente.`);
+      setReloadToken(value => value + 1);
     } catch (caught) {
+      if (!isCurrent()) return;
       setClaims((state) => ({ ...state, [handoffId]: { intent, busy: false, error: describeChatError(caught, "tomar") } }));
     }
   };
@@ -177,7 +194,7 @@ export function ChatPage() {
     <section className="page chat-page">
       <div className="page-heading page-heading--with-actions">
         <div><h1>Centro de conversaciones</h1><p>Las conversaciones reales de la clínica con pacientes y leads</p></div>
-        <span className="cash-authority-note"><Lock size={16} aria-hidden="true" />Solo lectura</span>
+        <span className="cash-authority-note"><Lock size={16} aria-hidden="true" />Acciones según permisos</span>
       </div>
       {!identityLoading && !human && <p className="approvals-notice" role="note">Para leer las conversaciones, elige quién eres en el menú de perfil, abajo a la izquierda.</p>}
       {notice && <p className="chat-assignment-notice chat-page__notice" role="status">{notice}</p>}
@@ -226,13 +243,11 @@ export function ChatPage() {
           <h2>Datos de la conversación</h2>
           {selected && <>
             <ConversationFacts conversation={selected} />
-            {identity?.permissions.includes("appointments.create") && <Button compact icon={MessageCircle} onClick={() => window.dispatchEvent(new CustomEvent("open-new-appointment", { detail: appointmentContextForChat(selected) }))}>Crear cita</Button>}
-            <p className="field-note">El chat no incluye el vínculo con un paciente o lead. Para crear una cita, selecciona un registro real en el formulario.</p>
+            <ConversationCase key={selected.id} conversation={selected} reloadToken={reloadToken} onChanged={reload} />
           </>}
           <div className="chat-scope">
             <h3>Qué puedes hacer aquí</h3>
-            <p>Leer cada conversación completa y tomar las que el agente derivó a una persona.</p>
-            <p>Todavía no se puede responder al paciente ni devolver la conversación al agente desde esta pantalla.</p>
+            <p>Consulta el caso y abre sus registros vinculados. Las acciones disponibles dependen de tus permisos y del estado actual.</p>
           </div>
         </aside>
       </div>
@@ -345,7 +360,7 @@ function ThreadPanel({ conversation, canClaim, claim, onClaim, onReload }: { con
       </Fragment>)}
       {loading && messages.length === 0 && <p className="chat-filter-empty" role="status">Cargando mensajes…</p>}
     </div>
-    <p className="chat-readonly-note" role="note"><Lock size={16} aria-hidden="true" />Solo lectura: desde aquí aún no se puede responder ni devolver la conversación al agente.</p>
+    <p className="chat-readonly-note" role="note"><Lock size={16} aria-hidden="true" />Historial persistido. El contexto del caso muestra las acciones autorizadas y el estado de la automatización.</p>
   </section>;
 }
 
@@ -357,7 +372,7 @@ function ConversationFacts({ conversation }: { conversation: ChatConversation })
       <div><dt>Quién atiende</dt><dd>{who.label}</dd></div>
       <div><dt>Último mensaje</dt><dd><time dateTime={conversation.lastMessageAt}>{dateTime(conversation.lastMessageAt)}</time></dd></div>
       <div><dt>Derivación</dt><dd>{conversation.pendingHandoffId !== null ? "Pendiente de tomar" : conversation.status === "human_handoff" && conversation.assignedTo ? "Tomada" : "Ninguna pendiente"}</dd></div>
-      {conversation.maskedPhone && <div><dt>Contacto</dt><dd>Aún no es paciente ni lead registrado</dd></div>}
+      {conversation.maskedPhone && <div><dt>Contacto</dt><dd>Nombre no disponible en el listado</dd></div>}
     </dl>
   </>;
 }

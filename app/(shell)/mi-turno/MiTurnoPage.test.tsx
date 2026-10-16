@@ -1,12 +1,13 @@
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { ClinicInbox } from "../../../src/views/ApprovalsPage";
 import { MiTurnoPage } from "../../../src/views/MiTurnoPage";
 import agenda from "../../../src/agui/sim/fixtures/agenda.json";
 import snapshots from "../../../src/agui/sim/fixtures/state.json";
 import type { ApprovalItem } from "../../../src/types";
 
-const model = vi.hoisted(() => ({ useMocks: false, role: "admin", locationId: "1", version: 1, worldState: {} as unknown, loadAgenda: vi.fn(), loadInbox: vi.fn(), beginDecision: vi.fn(), decideInboxItem: vi.fn() }));
-vi.mock("../../../src/api", () => ({ get useMocks() { return model.useMocks; }, loadAgenda: model.loadAgenda, loadInbox: model.loadInbox, beginDecision: model.beginDecision, decideInboxItem: model.decideInboxItem, describeApprovalError: (error: Error) => ({ message: error.message }), toApiError: (error: Error) => ({ message: error.message }) }));
+const model = vi.hoisted(() => ({ useMocks: false, role: "admin", locationId: "1", version: 1, worldState: {} as unknown, loadAgenda: vi.fn(), loadInbox: vi.fn(), loadInboxRecord: vi.fn(), beginDecision: vi.fn(), decideInboxItem: vi.fn() }));
+vi.mock("../../../src/api", () => ({ get useMocks() { return model.useMocks; }, loadTasks: async () => [], loadAgenda: model.loadAgenda, loadInbox: model.loadInbox, loadInboxRecord: model.loadInboxRecord, beginDecision: model.beginDecision, decideInboxItem: model.decideInboxItem, describeApprovalError: (error: Error) => ({ message: error.message }), toApiError: (error: Error) => ({ message: error.message }) }));
 vi.mock("../../../src/components/shell/ShellContext", () => ({ useShellContext: () => model }));
 vi.mock("../../../src/components/PersonaContext", () => ({ usePersona: () => model }));
 vi.mock("../../../src/agui/useAgent", () => ({ useAgent: () => ({ worldState: model.worldState, cards: {}, working: false }) }));
@@ -37,10 +38,17 @@ describe("Mi turno: fuentes honestas y recarga por ámbito", () => {
     Object.assign(model, { useMocks: false, role: "admin", locationId: "1", version: 1, worldState: {} });
     model.loadAgenda.mockReset().mockResolvedValue([row]);
     model.loadInbox.mockReset().mockResolvedValue({ items: [], nextCursor: null });
+    model.loadInboxRecord.mockReset();
     model.beginDecision.mockReset();
     model.decideInboxItem.mockReset();
   });
   afterEach(() => { if (view) act(() => view.unmount()); vi.useRealTimers(); });
+  it("heads the doctor task view without reception copy", async () => {
+    model.role = "doctor";
+    await mount();
+    expect(view.root.findByType("h1").children.join("")).toBe("Mis tareas");
+    expect(view.root.findByType("header").findByType("p").children.join("")).toBe("Coordinación del equipo");
+  });
   it("sin proyección de llegadas declara indisponibilidad, incluso con agenda vacía", async () => {
     model.loadAgenda.mockResolvedValue([]);
     await mount();
@@ -163,4 +171,39 @@ describe("Mi turno: fuentes honestas y recarga por ámbito", () => {
       expect(content()).toContain("Nuevo ámbito");
     }
   });
+  it("abre la propuesta exacta aunque esté en otra página y comparta número con otro origen", async () => {
+    const target: ApprovalItem = { ...inboxItem, source: "appointment_proposal", key: "appointment_proposal:1", headline: "Cita vinculada exacta" };
+    model.loadInbox.mockResolvedValueOnce({ items: [inboxItem], nextCursor: "page2" }).mockResolvedValueOnce({ items: [target], nextCursor: null });
+    await act(async () => { view = create(<ClinicInbox focusedKey="appointment_proposal:1" />); });
+    expect(model.loadInbox).toHaveBeenCalledWith({ status: "pending", cursor: "page2" });
+    const selected = view.root.findByProps({ id: "bandeja-selected" });
+    expect(selected.findAllByProps({ "data-card": "appointment_proposal:1" }).length).toBeGreaterThan(0);
+    expect(selected.findAllByProps({ "data-card": "agent_proposal:1" })).toHaveLength(0);
+  });
+  it("abre por ID la propuesta aplicada aunque el enlace dijera pendiente", async () => {
+    model.loadInboxRecord.mockResolvedValue({ ...inboxItem, status: "executed", outcome: "Tarea delegada #70" });
+    model.loadInbox.mockResolvedValue({ items: [], nextCursor: null });
+    await act(async () => { view = create(<ClinicInbox focusedKey="agent_proposal:1" focusedStatus="pending" />); });
+    expect(model.loadInboxRecord).toHaveBeenCalledWith(1);
+    expect(model.loadInbox).toHaveBeenCalledWith({ status: "executed" });
+    expect(view.root.findByProps({ id: "bandeja-selected" }).findAllByProps({ "data-card": "agent_proposal:1" }).length).toBeGreaterThan(0);
+    expect(content()).toContain("Tarea delegada #70");
+  });
+  it("descarta el registro canónico pendiente al cambiar de identidad", async () => {
+    const pending = deferred<ApprovalItem>();
+    model.loadInboxRecord.mockReturnValueOnce(pending.promise).mockRejectedValueOnce(new Error("Sin acceso"));
+    await act(async () => { view = create(<ClinicInbox focusedKey="agent_proposal:1" />); });
+    model.version = 2;
+    await act(async () => { view.update(<ClinicInbox focusedKey="agent_proposal:1" />); });
+    await act(async () => pending.resolve({ ...inboxItem, headline: "Caso de la identidad anterior" }));
+    expect(content()).toContain("Sin acceso");
+    expect(content()).not.toContain("Caso de la identidad anterior");
+  });
+  it("no abre otro caso si la propuesta enlazada no está disponible", async () => {
+    model.loadInbox.mockResolvedValue({ items: [inboxItem], nextCursor: null });
+    await act(async () => { view = create(<ClinicInbox focusedKey="appointment_proposal:99" />); });
+    expect(view.root.findAllByProps({ id: "bandeja-selected" })).toHaveLength(0);
+    expect(content()).toContain("La propuesta vinculada no está disponible");
+  });
+
 });

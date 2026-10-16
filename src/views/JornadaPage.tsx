@@ -11,7 +11,7 @@ export function JornadaPage() {
   const pending = data?.rows.filter(row => row.state === "sin cerrar") ?? [];
   return <section className="airi-doctor-view" aria-labelledby="airi-doctor-day-title">
     <DoctorStyles />
-    <header className="airi-doctor-head"><div><h1 id="airi-doctor-day-title">Mi jornada</h1><p className="airi-doctor-meta">{data ? `${data.doctor} · ${limaDate(data.cut)} · corte ${limaTime(data.cut)} (Lima)` : "Tus pacientes y pendientes clínicos"}</p></div>{data ? <span className="airi-doctor-chip">Simulación · {data.rows[0]?.sede ?? "sin citas en esta sede"}</span> : null}</header>
+    <header className="airi-doctor-head"><div><h1 id="airi-doctor-day-title">Mi jornada</h1><p className="airi-doctor-meta">{data ? `${data.doctor} · ${limaDate(data.cut)} · corte ${limaTime(data.cut)} (Lima)` : "Tus pacientes y pendientes clínicos"}</p></div>{data ? <span className="airi-doctor-chip">Simulación · {data.rows[0]?.sede ?? "sin citas en esta sede"}</span> : null}{role === "doctor" ? <Link className="airi-doctor-button" href="/mi-turno">Mis tareas</Link> : null}</header>
     {role !== "doctor" ? <p role="note">Mi jornada está disponible para el doctor. Elige Doctor en «Ver como».</p>
       : !useMocks ? <div className="airi-doctor-card airi-doctor-empty"><p>Tu jornada clínica todavía no está disponible en esta fuente.</p><p>Falta vincular tu identidad con el doctor y recibir su proyección clínica.</p></div>
       : error ? <p role="alert">{error} <button className="airi-doctor-button" onClick={retry}>Reintentar</button></p>

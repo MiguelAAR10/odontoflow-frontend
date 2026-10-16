@@ -130,7 +130,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       const context = (event as CustomEvent<ChatAppointmentContext>).detail;
       setAppointmentContext(context);
       setAppointmentPatient(context.displayName);
-      setLeadId("");
+      setLeadId(context.leadId != null ? String(context.leadId) : "");
       setAppointmentOpen(true);
     };
     window.addEventListener("open-new-appointment", openFromChat);
@@ -314,8 +314,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             </>
           ) : (
             <>
-              {appointmentContext && <p className="field-note field--wide" role="note">Desde la conversación con {appointmentContext.displayName}. El chat no incluye un vínculo patient/lead: selecciona el registro real al que corresponde esta cita. Si no existe un perfil, regístralo antes de continuar.</p>}
-              <label className="field field--wide"><span>Paciente / lead</span><select name="lead_id" required autoFocus value={leadId} onChange={(event) => setLeadId(event.target.value)}><option value="">Selecciona un lead real…</option>{leads.map((lead) => <option key={lead.id} value={lead.id}>{lead.full_name} · Lead #{lead.id}</option>)}</select></label>
+              {appointmentContext && <p className="field-note field--wide" role="note">Desde la conversación con {appointmentContext.displayName}. {appointmentContext.leadId != null ? "Lead vinculado por el backend; verifica servicio, sede y horario." : "Selecciona un registro real: esta conversación no tiene un lead autorizado vinculado."}</p>}
+              <label className="field field--wide"><span>Paciente / lead</span><select name="lead_id" required autoFocus value={leadId} onChange={(event) => setLeadId(event.target.value)}><option value="">Selecciona un lead real…</option>{appointmentContext?.leadId != null && !leads.some(lead => lead.id === appointmentContext.leadId) && <option value={appointmentContext.leadId}>{appointmentContext.displayName} · Lead vinculado</option>}{leads.map((lead) => <option key={lead.id} value={lead.id}>{lead.full_name} · Lead #{lead.id}</option>)}</select></label>
               <label className="field"><span>Servicio</span><select name="service_id" required value={serviceId} onChange={(event) => setServiceId(event.target.value)}><option value="">Selecciona…</option>{services.map((service) => <option key={service.id} value={service.id}>{service.name}</option>)}</select></label>
               <label className="field"><span>Sede</span><select name="location_id" required value={locationId} onChange={(event) => setLocationId(event.target.value)}><option value="">Selecciona…</option>{locations.map((location) => <option key={location.id} value={location.id}>{location.name}</option>)}</select></label>
               <label className="field"><span>Odontólogo</span><select name="practitioner_id" required value={practitionerId} disabled={!serviceId || !locationId || practitioners.length === 0} onChange={(event) => setPractitionerId(event.target.value)}><option value="">{serviceId && locationId ? "Selecciona…" : "Elige servicio y sede"}</option>{practitioners.map((practitioner) => <option key={practitioner.id} value={practitioner.id}>{practitioner.display_name}</option>)}</select></label>
