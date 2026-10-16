@@ -21,6 +21,7 @@ import {
   createAgentRun,
   declineAppointmentProposal,
   declineProposal,
+  getAiriCard,
   listEligiblePractitioners,
   listInbox,
   listLocations,
@@ -102,6 +103,7 @@ export interface InboxCatalogNames {
 }
 
 const CATEGORY: Record<InboxItem["kind"], ApprovalCategory> = {
+  delegation: "tarea",
   appointment_confirm_batch: "cita",
   appointments_reassign: "cita",
   reschedule_reply: "cita",
@@ -115,6 +117,7 @@ const CATEGORY: Record<InboxItem["kind"], ApprovalCategory> = {
 };
 
 export const CATEGORY_LABEL: Record<ApprovalCategory, string> = {
+  tarea: "Tarea delegada",
   cobranza: "Cobranza",
   inventario: "Inventario",
   lista_espera: "Lista de espera",
@@ -251,7 +254,7 @@ export function toUiInboxItem(item: InboxItem, names?: Partial<InboxCatalogNames
   const timeZone = location?.timezone ?? DEFAULT_TIME_ZONE;
   const category = CATEGORY[item.kind];
   const presentation =
-    category === "cobranza" ? collectionPresentation(item)
+    category === "tarea" ? null : category === "cobranza" ? collectionPresentation(item)
       : category === "inventario" ? inventoryPresentation(item)
         : category === "lista_espera" ? waitlistPresentation(item, timeZone)
           : appointmentPresentation(item, names, timeZone, location?.name ?? null);
@@ -314,7 +317,18 @@ export async function loadInbox({ status = "pending", cursor }: { status?: Inbox
   if (USE_MOCKS) return mockLoadInbox(status);
   const page = await listInbox({ status, limit: INBOX_PAGE_SIZE, ...(cursor ? { cursor } : {}) });
   const names = await resolveNames(page.items);
-  return { items: page.items.map((item) => toUiInboxItem(item, names)), nextCursor: page.next_cursor };
+  return { items: await Promise.all(page.items.map(item => presentInboxItem(item, names))), nextCursor: page.next_cursor };
+}
+
+async function presentInboxItem(item: InboxItem, names?: Partial<InboxCatalogNames>): Promise<ApprovalItem> {
+  const view = toUiInboxItem(item, names);
+  if (item.kind !== "delegation") return view;
+  const card = CardSchema.parse(await getAiriCard(item.id));
+  if (card.proposal_id !== item.id || card.payload_hash !== item.payload_hash) {
+    throw new ApiError(409, "PROPOSAL_CHANGED", "La tarea cambió; vuelve a cargar la bandeja.");
+  }
+  return { ...view, card: { ...card, id: view.key }, headline: card.title, detail: card.why ?? item.reason,
+    facts: (card.scope ?? []).map(({ label, value }) => ({ label, value })) };
 }
 
 // --- deciding ------------------------------------------------------------------
@@ -343,10 +357,10 @@ export async function decideInboxItem(item: ApprovalItem, intent: DecisionIntent
   const keep = (next: ApprovalItem): ApprovalItem => ({ ...next, locationName: item.locationName ?? next.locationName, facts: next.facts.length ? next.facts : item.facts });
 
   if (item.source === "agent_proposal") {
-    if (intent.decision === "decline") return { item: keep(toUiInboxItem(await declineProposal(item.id, intent.idempotencyKey))), replayed: false };
+    if (intent.decision === "decline") return { item: keep(await presentInboxItem(await declineProposal(item.id, intent.idempotencyKey))), replayed: false };
     if (!item.payloadHash) throw new ApiError(0, "PROPOSAL_HASH_MISSING", "La propuesta no trae su huella; vuelve a cargar la bandeja.");
     const { data, replayed } = await approveProposal(item.id, item.payloadHash, intent.idempotencyKey);
-    return { item: keep(toUiInboxItem(data)), replayed };
+    return { item: keep(await presentInboxItem(data)), replayed };
   }
 
   if (item.conversationId == null || !item.confirmationToken) {
@@ -458,6 +472,7 @@ export async function runAgentNow(agent: RunnableAgent, idempotencyKey: string):
 // --- mock mode: mirrors the backend rules -------------------------------------------
 
 const KIND_PERMISSION: Record<InboxItem["kind"], string> = {
+  delegation: "proposals.decide",
   appointment_confirm_batch: "deliveries.create",
   appointments_reassign: "appointments.reschedule",
   reschedule_reply: "deliveries.create",
@@ -668,7 +683,8 @@ function mockReminder(candidate: Extract<(typeof MOCK_OVERDUE)[number], { patien
 const LegacyInboxCardSchema = z.strictObject(CardSchema.shape).omit({ version: true });
 const escapeCardText = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 export function toCard(item: ApprovalItem): z.infer<typeof LegacyInboxCardSchema> {
-  const agent = { cobranza: "pasta", inventario: "airi", lista_espera: "cepillo", cita: "cepillo" } as const;
+  if (item.card) return item.card;
+  const agent = { cobranza: "pasta", inventario: "airi", lista_espera: "cepillo", cita: "cepillo", tarea: "airi" } as const;
   return LegacyInboxCardSchema.parse({
     id: item.key, agent: agent[item.category], level: "aprobar",
     state: item.status === "executed" ? "approved" : item.status === "declined" ? "declined" : "ready",

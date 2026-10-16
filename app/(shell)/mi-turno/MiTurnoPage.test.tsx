@@ -74,6 +74,7 @@ describe("Mi turno: fuentes honestas y recarga por ámbito", () => {
   it("abre la cola de la clínica aunque el hilo no tenga propuestas", async () => {
     model.useMocks = true;
     await mount();
+    await act(async () => { await vi.dynamicImportSettled(); });
     expect(content()).toContain("Responder a Daniela Soto");
     expect(content()).toContain("Confirmar ingreso Yape");
     expect(content()).not.toContain("No hay decisiones pendientes en este hilo");

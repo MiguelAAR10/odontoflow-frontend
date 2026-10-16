@@ -32,6 +32,7 @@ with sync_playwright() as p:
         for width, height in [(1440, 1000), (390, 844)]:
             for theme in ['light', 'dark']:
                 context = browser.new_context(viewport={'width': width, 'height': height}, color_scheme=theme, reduced_motion='reduce')
+                context.add_init_script("sessionStorage.setItem('airi.intro.v1','1')")
                 page = context.new_page()
                 errors = []
                 page.on('pageerror', lambda error: errors.append(str(error)))
@@ -41,8 +42,8 @@ with sync_playwright() as p:
                 preview = page.get_by_role('region', name='Corte simulado de caja')
                 verified = preview.locator('[data-cash-verified]')
                 pending = preview.locator('[data-cash-pending]')
-                expect(verified).to_have_text('S/ 6,240.00')
-                expect(pending).to_have_text('S/ 1,180.00')
+                expect(verified).to_have_text('S/ 3,120.00')
+                expect(pending).to_have_text('S/ 420.00')
                 assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), 'Page overflow'
                 font = verified.evaluate('(el) => ({family:getComputedStyle(el).fontFamily, numbers:getComputedStyle(el).fontVariantNumeric})')
                 assert 'Outfit' in font['family'] or 'outfit' in font['family'], font
@@ -62,18 +63,19 @@ with sync_playwright() as p:
                 entry.fill('sí')
                 entry.press('Enter')
                 expect(page.locator('#agent-panel')).to_contain_text('Escribir un asentimiento no aprueba nada')
-                expect(verified).to_have_text('S/ 6,240.00')
+                expect(verified).to_have_text('S/ 3,120.00')
                 page.locator('#agent-panel').get_by_role('button', name='Cerrar asistente', exact=True).click()
                 approve = preview.get_by_role('button', name='Confirmar ingreso', exact=True)
                 approve.focus()
                 page.keyboard.press('Enter')
-                expect(verified).to_have_text('S/ 6,360.00')
-                expect(pending).to_have_text('S/ 1,060.00')
+                expect(verified).to_have_text('S/ 3,240.00')
+                expect(pending).to_have_text('S/ 300.00')
                 expect(approve).to_have_count(0)
                 expect(preview).to_contain_text('Abono verificado')
+                preview.get_by_text('Diferencia por explicar', exact=True).click()
                 preview.get_by_role('button', name='Delegar a Caja', exact=True).click()
                 expect(preview).to_contain_text('Delegado a Rosa')
-                expect(verified).to_have_text('S/ 6,360.00')
+                expect(verified).to_have_text('S/ 3,240.00')
                 page.screenshot(path=str(out / f'{width}-{theme}-aprobado.png'), full_page=True)
                 # Client navigation must retain both decisions without a reversal.
                 if width < 768:
@@ -84,24 +86,26 @@ with sync_playwright() as p:
                     page.get_by_role('button', name='Abrir navegación', exact=True).click()
                 page.get_by_role('link', name='Caja', exact=True).click()
                 expect(page).to_have_url(re.compile(r'/caja$'))
-                expect(verified).to_have_text('S/ 6,360.00')
-                expect(pending).to_have_text('S/ 1,060.00')
+                expect(verified).to_have_text('S/ 3,240.00')
+                expect(pending).to_have_text('S/ 300.00')
                 expect(preview.get_by_role('button', name='Confirmar ingreso', exact=True)).to_have_count(0)
                 expect(preview.get_by_role('button', name='Delegar a Caja', exact=True)).to_have_count(0)
+                preview.get_by_text('Diferencia por explicar', exact=True).click()
                 expect(preview).to_contain_text('Delegado a Rosa')
                 page.screenshot(path=str(out / f'{width}-{theme}-navegacion.png'), full_page=True)
                 # The existing operational view still works.
+                page.get_by_text('Registros de caja', exact=True).click()
                 page.get_by_role('button', name='Conciliación', exact=True).click()
                 expect(page.locator('#cash-panel')).to_contain_text('pagos')
                 expect(page.locator('.cash-page').get_by_role('alert')).to_have_count(0)
                 assert not errors, errors
                 results.append({'width': width, 'theme': theme, 'errors': errors, 'navigation_retained': True, 'font': font, 'contrast_min': min(contrast(c['fg'],c['bg']) for c in colors)})
                 context.close()
-                # Reference uses all-site role so its amounts match the backend cut.
+                # Compare the same Lince cut and administrative role as the product.
                 reference = browser.new_context(viewport={'width': width, 'height': height}, color_scheme=theme, reduced_motion='reduce')
                 mockup = reference.new_page()
-                mockup.goto(args.mockup_url, wait_until='networkidle')
-                mockup.evaluate("""theme => { localStorage.setItem('airi7.role','dueno'); document.documentElement.setAttribute('data-theme',theme); setRole('dueno'); APP.theme=theme; APP.sec='caja'; render(); }""", theme)
+                mockup.goto(args.mockup_url + f'?rol=admin&tema={theme}&intro=0', wait_until='networkidle')
+                mockup.evaluate("APP.sec='caja'; render()")
                 mockup.screenshot(path=str(out / f'{width}-{theme}-mockup.png'), full_page=True)
                 reference.close()
     finally:

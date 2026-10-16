@@ -307,7 +307,7 @@ export function OperationsStyles() {
     .operations-row {display:grid;grid-template-columns:60px 115px minmax(0,1fr) auto auto;gap:16px;align-items:center;padding:16px;border-bottom:1px solid var(--line)}
     .operations-row:last-child {border-bottom:0}
     .operations-row small {display:block;margin-top:4px}
-    .operations-row .catalog-agent {white-space:nowrap}
+    .operations-row .catalog-agent,.operations-agent {white-space:nowrap}.operations-agent{display:flex;align-items:center;gap:6px;font-size:13px}.operations-agent img{flex:none}
     .operations-layout {display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px}
     .operations-panel {border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:18px;min-width:0}
     .operations-panel + .operations-panel {margin-top:18px}
@@ -318,6 +318,8 @@ export function OperationsStyles() {
     @media(max-width:760px) {.airi-operations {padding:22px 16px 110px}.operations-layout {grid-template-columns:1fr}.operations-row {grid-template-columns:48px minmax(0,1fr);gap:6px 12px}.operations-row>div,.operations-row>.operations-meta {grid-column:2}.operations-appointment {grid-template-columns:44px minmax(0,1fr)}.operations-appointment>.operations-meta {grid-column:2}}
   `}</style>;
 }
+
+const trailCharacters = { airi: "01-diente", cepillo: "02-cepillo", pasta: "03-pasta", hilo: "04-hilo", enjuague: "05-enjuague", espejo: "06-espejo", escudo: "07-escudo" } as const;
 
 function SimulatedTrail() {
   const agent = useAgent();
@@ -333,7 +335,7 @@ function SimulatedTrail() {
     return () => { active = false; };
   }, []);
   const live = z.object({ trail: z.array(trailSchema) }).safeParse(agent.worldState);
-  const rows = [...(live.success ? live.data.trail : fixtures ?? [])].sort((a,b) => b.at.localeCompare(a.at));
+  const rows = [...(live.success ? live.data.trail : fixtures ?? [])].sort((a,b) => a.at.localeCompare(b.at));
   const visible = rows.filter(row => !filter || row.agent === filter);
   // Approval evidence comes only from the confirmed card/store, never the chat.
   const completed = Object.values(agent.cards).filter(entry => entry.status === "approved" && (!filter || entry.card.agent === filter));
@@ -345,7 +347,7 @@ function SimulatedTrail() {
     {error ? <p role="alert">{error}</p> : fixtures === null ? <p role="status">Cargando rastro…</p> : <>
       <ol className="operations-rows" aria-label="Hechos registrados">{visible.map((row,index) => <li data-trail-row key={`${row.at}:${row.agent}:${index}`} className="operations-row">
         <time dateTime={row.at} title={shortDateTime(row.at, CLINIC_TIME_ZONE)}>{new Date(row.at).toLocaleTimeString("es-PE", {timeZone:CLINIC_TIME_ZONE,hour:"2-digit",minute:"2-digit",hourCycle:"h23"})}</time>
-        <AgentLabel agent={row.agent} /><div><strong>{row.action}</strong><small>{row.object} · {row.result}</small></div>
+        <span className="operations-agent"><img src={`/personajes/svg/${trailCharacters[row.agent]}-flat.svg`} width={24} height={24} alt="" /><span>{row.agent === "airi" ? "AIRI" : row.agent[0]!.toUpperCase() + row.agent.slice(1)}</span></span><div><strong>{row.action}</strong><small>{row.object} · {row.result}</small></div>
         <span className="operations-meta">{row.approver === "—" ? "Sin aprobador registrado" : `Aprobó ${row.approver}`}</span><span className="operations-meta">{row.reversibility_label === "—" ? "Reversibilidad no informada" : row.reversibility_label}</span>
       </li>)}</ol>{!visible.length && <p role="status">No hay acciones con este filtro.</p>}
     </>}

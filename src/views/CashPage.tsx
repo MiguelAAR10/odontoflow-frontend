@@ -17,6 +17,7 @@ import {
   clinicToday,
   closeFollowUpRecord,
   loadCharges,
+  loadCanonicalLocations,
   loadFollowUps,
   loadReconciliationPayments,
   loadUnchargedExecutions,
@@ -29,6 +30,7 @@ import {
   toApiError,
   verifyPaymentRecord,
 } from "../api";
+import { useShellContext } from "../components/shell/ShellContext";
 import { CardSchema, type Card as CardDto } from "../agui/card";
 import { Card } from "../catalog/Card";
 import { ApiError } from "../contracts/client";
@@ -74,13 +76,14 @@ type CashCut = { cut_at: string; sedes: { name: string; complete: boolean; excep
   collected: { amount_cents: number }; pending_verification: { amount_cents: number } }[] };
 
 /** Simulation-only projection over the immutable backend cut, once per card. */
-export function projectCashCut(snapshot: CashCut, cards: CardDto[]) {
-  let verified = snapshot.sedes.reduce((sum, sede) => sum + sede.collected.amount_cents, 0);
-  let pending = snapshot.sedes.reduce((sum, sede) => sum + sede.pending_verification.amount_cents, 0);
+export function projectCashCut(snapshot: CashCut, cards: CardDto[], locationName?: string) {
+  const sedes = snapshot.sedes.filter(sede => !locationName || sede.name === locationName);
+  let verified = sedes.reduce((sum, sede) => sum + sede.collected.amount_cents, 0);
+  let pending = sedes.reduce((sum, sede) => sum + sede.pending_verification.amount_cents, 0);
   const applied = new Set<string>();
   for (const card of cards) {
     if (card.state !== "approved" || !card.delta || applied.has(card.id)) continue;
-    if (!snapshot.sedes.some(sede => sede.name === card.delta?.sede)) continue;
+    if (!sedes.some(sede => sede.name === card.delta?.sede)) continue;
     applied.add(card.id);
     verified += card.delta.amount_cents;
     pending -= card.delta.amount_cents;
@@ -133,7 +136,7 @@ function getCashPreviewSession() {
   return cashPreviewSession;
 }
 
-function SimulatedCashCut() {
+function SimulatedCashCut({ locationName }: { locationName?: string }) {
   const [session, setSession] = useState<CashPreviewSession | null>(null);
   const [failure, setFailure] = useState("");
   useEffect(() => {
@@ -144,29 +147,32 @@ function SimulatedCashCut() {
   }, []);
   if (failure) return <p role="alert">{failure}</p>;
   if (!session) return <p role="status">Cargando corte de caja…</p>;
-  return <CashCutProjection session={session} />;
+  return <CashCutProjection session={session} locationName={locationName} />;
 }
 
-function CashCutProjection({ session }: { session: CashPreviewSession }) {
+function CashCutProjection({ session, locationName }: { session: CashPreviewSession; locationName?: string }) {
   const entries = useAgentStore(state => state.cards, session.store);
   const preview = { snapshot: session.snapshot, cards: Object.values(entries).map(entry => entry.card) };
-  const totals = projectCashCut(preview.snapshot, preview.cards);
-  const cashAmounts = preview.cards.find(card => card.id === "p-caja")?.amounts?.filter(amount => amount.label !== "Contado por Caja (13:30)") ?? [];
+  const totals = projectCashCut(preview.snapshot, preview.cards, locationName);
+  const sedes = preview.snapshot.sedes.filter(sede => !locationName || sede.name === locationName);
+  if (!sedes.length) return <p role="status">No hay un corte disponible para esta sede.</p>;
+  const cashAmounts = locationName && locationName !== "Lince" ? [] : preview.cards.find(card => card.id === "p-caja")?.amounts?.filter(amount => amount.label !== "Contado por Caja (13:30)") ?? [];
   return <section className="cash-cut" aria-label="Corte simulado de caja">
-    <p className="cash-cut-caption">Corte simulado · {formatInstant(preview.snapshot.cut_at)} · {preview.snapshot.sedes.length} sedes{preview.snapshot.sedes.some(sede => !sede.complete) ? " · parcial" : ""}</p>
+    <p className="cash-cut-caption">Corte simulado · {formatInstant(preview.snapshot.cut_at)} · {locationName ?? `${sedes.length} sedes`}{sedes.some(sede => !sede.complete) ? " · parcial" : ""}</p>
     <p>El cobrado verificado se separa de lo registrado y pendiente. Yape y Plin se cotejan contra la cuenta receptora; la captura sola no basta.</p>
     <div className="cash-cut-figures" aria-live="polite">
       <div><strong data-cash-verified>{money(totals.verified)}</strong><span>Cobrado (verificado)</span></div>
       <div><strong data-cash-pending>{money(totals.pending)}</strong><span>Por verificar</span></div>
       {cashAmounts.map(amount => <div key={amount.label}><strong>{money(amount.amount_cents / 100)}</strong><span>{amount.label} · Lince</span></div>)}
     </div>
-    <p className="cash-cut-caption">{preview.snapshot.sedes.filter(sede => !sede.complete).map(sede => `${sede.name}: ${sede.exception}. `).join("")}Este corte no incluye los registros operativos de abajo.</p>
-    <div className="cash-cut-decisions airi-catalog">{preview.cards.map(card => <section key={card.id}>
-      <h2>{card.id === "p-yape" ? "Por verificar" : "Diferencia por explicar"}</h2>
-      <Card card={card.id === "p-caja" && card.state === "approved" ? { ...card, state: "delegated" } : card}
+    <p className="cash-cut-caption">{sedes.filter(sede => !sede.complete).map(sede => `${sede.name}: ${sede.exception}. `).join("")}</p>
+    <div className="cash-cut-decisions airi-catalog">{preview.cards.filter(card => !locationName || card.delta?.sede === locationName || (card.id === "p-caja" && locationName === "Lince")).map(card => {
+      const decision = <Card card={card.id === "p-caja" && card.state === "approved" ? { ...card, state: "delegated" } : card}
         status={entries[card.id]?.status} error={entries[card.id]?.error}
-        loadingReason={entries[card.id]?.loadingReason} onApprove={() => session.store.approve(card.id)} />
-    </section>)}</div>
+        loadingReason={entries[card.id]?.loadingReason} onApprove={() => session.store.approve(card.id)} />;
+      return card.id === "p-caja" ? <details key={card.id}><summary>Diferencia por explicar</summary>{decision}</details>
+        : <section key={card.id}><h2>Por verificar</h2>{decision}</section>;
+    })}</div>
   </section>;
 }
 
@@ -218,6 +224,40 @@ function intentKey(ref: { current: MutationIntent | null }, signature: string): 
 }
 
 export function CashPage() {
+  return useMocks ? <CashPreviewPage /> : <CashManagement />;
+}
+
+function CashPreviewPage() {
+  const { role, locationId } = useShellContext();
+  const [locations, setLocations] = useState<{ id: number; name: string }[]>([]);
+  const [error, setError] = useState("");
+  const [expanded, setExpanded] = useState(false);
+  useEffect(() => {
+    let active = true;
+    void loadCanonicalLocations().then(rows => { if (active) setLocations(rows); })
+      .catch(caught => { if (active) setError(toApiError(caught).message); });
+    return () => { active = false; };
+  }, []);
+  const locationName = locationId ? locations.find(row => String(row.id) === locationId)?.name : role === "admin" ? "Lince" : undefined;
+  return <section className="page cash-preview">
+    <div className="page-heading"><h1>Caja</h1><p>{locationName ?? (locationId ? "Cargando sede…" : "Todas las sedes")}</p></div>
+    {error ? <p role="alert">{error}</p> : locationId && !locationName ? <p role="status">Cargando corte…</p> : <SimulatedCashCut locationName={locationName} />}
+    <details onToggle={event => setExpanded(event.currentTarget.open)}><summary>Registros de caja</summary>{expanded ? <CashManagement /> : null}</details>
+    <style>{`
+      .cash-preview .cash-cut{margin-bottom:28px}.cash-preview .cash-cut>p{max-width:78ch;line-height:1.6;color:var(--ink-2);font-size:14px}
+      .cash-preview .cash-cut-caption{font-size:13px;color:var(--muted)}
+      .cash-preview .cash-cut-figures{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px;margin:24px 0 28px}
+      .cash-preview .cash-cut-figures>div{display:grid;gap:6px;min-width:0}.cash-preview .cash-cut-figures strong{font:600 32px/1.2 var(--font-display);font-variant-numeric:tabular-nums}
+      .cash-preview [data-cash-verified]{color:var(--green-ink)}.cash-preview .cash-cut-figures span{font-size:13px;color:var(--muted)}
+      .cash-preview .cash-cut-decisions{max-width:720px}.cash-preview .cash-cut-decisions h2{font-size:18px;margin:28px 0 12px}
+      .cash-preview summary{cursor:pointer;min-height:44px;padding-block:12px;color:var(--ink-2);font-size:14px}.cash-preview summary:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+      @media(max-width:900px){.cash-preview .cash-cut-figures{grid-template-columns:repeat(2,minmax(0,1fr))}}
+      @media(max-width:520px){.cash-preview .cash-cut-figures{gap:20px 12px}.cash-preview .cash-cut-figures strong{font-size:26px}}
+    `}</style>
+  </section>;
+}
+
+function CashManagement() {
   const [tab, setTab] = useState<CashTab>("charges");
   const [charges, setCharges] = useState<Charge[]>([]);
   const [uncharged, setUncharged] = useState<UnchargedExecution[]>([]);
@@ -474,7 +514,6 @@ export function CashPage() {
 
   return <section className="page cash-page">
     <div className="page-heading page-heading--with-actions"><div><h1>{heading[0]}</h1><p>{heading[1]}</p></div><span className="cash-authority-note"><WalletCards size={17} aria-hidden="true" /> Saldos y estados vienen del backend</span></div>
-    {useMocks && <SimulatedCashCut />}
     <Tabs items={tabItems} value={tab} onChange={(value) => { setTab(value as CashTab); setError(""); setSuccess(""); }} ariaLabel="Espacios de caja" panelId="cash-panel" />
 
     {tab === "charges" && <div className="kpi-grid cash-kpis"><KpiCard icon={ArrowUpRight} value={loading ? "—" : money(paymentTotals.verified)} label="Cobrado (verificado) · cargos cargados" tone="green" /><KpiCard icon={ShieldCheck} value={loading ? "—" : money(paymentTotals.pending)} label="Por verificar · cargos cargados" tone="amber" /><KpiCard icon={Clock3} value={money(sumOutstanding(charges))} label="Saldo en filas cargadas" tone="amber" /><KpiCard icon={Receipt} value={charges.length} label="Cargos cargados" tone="cyan" /></div>}
@@ -503,6 +542,7 @@ export function CashPage() {
 
     <style>{`
       .cash-page { font-variant-numeric: tabular-nums; }
+      .cash-page .kpi-card{min-width:0;padding:16px;gap:10px}.cash-page .kpi-card__icon{flex:none;width:38px;height:38px}.cash-page .kpi-card__copy{min-width:0}.cash-page .kpi-card__copy strong{font-size:clamp(20px,1.8vw,28px);overflow-wrap:anywhere}.cash-page .kpi-card__copy small{overflow-wrap:anywhere}
       .cash-page .kpi-card__copy strong, .cash-page td, .cash-page .payment-list strong,
       .cash-page .numeric-emphasis, .cash-page .detail-list strong, .cash-page .charge-context strong {
         font-variant-numeric: tabular-nums;

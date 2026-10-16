@@ -59,45 +59,39 @@ interface DayGap { start: string; end: string; doctorId: string; minutes: number
 
 /** Shared presentation only: real appointments keep their backend state and
  * unclassified procedures stay neutral rather than guessing a clinical type. */
-function DoctorDayCalendar({ entries, gaps = [], now, date, onSelect, onOffer, busy = false }: {
-  entries: DayEntry[]; gaps?: DayGap[]; now: string; date: string;
+export function DoctorDayCalendar({ entries, gaps = [], now, date, doctorOrder, onSelect, onOffer, busy = false }: {
+  entries: DayEntry[]; gaps?: DayGap[]; now: string; date: string; doctorOrder?: readonly string[];
   onSelect: (id: string) => void; onOffer?: () => void; busy?: boolean;
 }) {
   const [doctor, setDoctor] = useState("all");
-  const scroll = useRef<HTMLDivElement>(null);
   const doctors = Array.from(new Map(entries.map(row => [row.doctorId, row.doctor])).entries());
-  const [mobile, setMobile] = useState(false);
-  useEffect(() => {
-    const media = window.matchMedia("(max-width: 600px)");
-    const update = () => setMobile(media.matches);
-    update(); media.addEventListener("change", update);
-    return () => media.removeEventListener("change", update);
-  }, []);
+  if (doctorOrder) {
+    const rank = (id: string) => { const index = doctorOrder.indexOf(id); return index < 0 ? doctorOrder.length : index; };
+    doctors.sort(([a], [b]) => rank(a) - rank(b));
+  }
   const chosenDoctor = doctors.some(([id]) => id === doctor) ? doctor : "all";
-  const shown = chosenDoctor === "all" ? (mobile ? doctors.slice(0, 1) : doctors) : doctors.filter(([id]) => id === chosenDoctor);
+  const shown = chosenDoctor === "all" ? doctors : doctors.filter(([id]) => id === chosenDoctor);
   const minute = (instant: string) => {
     const [hour, min] = formatSlotTime(instant, LIMA).split(":").map(Number);
     return hour * 60 + min;
   };
   const start = Math.min(480, ...entries.map(row => minute(row.start)));
   const end = Math.max(1170, ...entries.map(row => minute(row.end)));
-  const px = 1.4;
-  const position = (from: string, to: string) => ({ top: (minute(from) - start) * px + 2, height: Math.max(30, (Date.parse(to) - Date.parse(from)) / 60_000 * px - 4) });
+  const px = 1.05;
+  const position = (from: string, to: string) => ({ top: (minute(from) - start) * px + 1, height: Math.max(28, (Date.parse(to) - Date.parse(from)) / 60_000 * px - 3) });
   const nowMinute = minute(now);
   const showNow = formatDateKey(now, LIMA) === date && nowMinute >= start && nowMinute <= end;
-  const first = entries.length ? Math.min(...entries.map(row => minute(row.start))) : start;
-  useEffect(() => { if (scroll.current) scroll.current.scrollTop = Math.max(0, (first - start - 30) * px); }, [date, first, start]);
   return <div className="airi-day-calendar">
-    {entries.some(row => row.kind) ? <div className="airi-agenda-legend" aria-label="Tipos de atención">
+    {entries.some(row => row.kind) ? <div className="airi-agenda-legend" role="group" aria-label="Tipos de atención">
       {APPOINTMENT_KINDS.map(([kind, label]) => <span key={kind}><i className={`airi-kind-${kind}`} />{label}</span>)}
       {gaps.length ? <span><i className="airi-kind-gap" />Hueco</span> : null}
     </div> : null}
-    <label className="airi-doctor-select">Ver odontólogo<select value={mobile && chosenDoctor === "all" ? doctors[0]?.[0] ?? "all" : chosenDoctor} onChange={event => setDoctor(event.target.value)}>
-      {!mobile ? <option value="all">Todos los odontólogos</option> : null}
+    <label className="airi-doctor-select">Ver odontólogo<select value={chosenDoctor} onChange={event => setDoctor(event.target.value)}>
+      <option value="all">Todos los odontólogos</option>
       {doctors.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
     </select></label>
-    {shown.length ? <div className="airi-agenda-scroll" ref={scroll} role="region" aria-label="Agenda del día por odontólogo" tabIndex={0}>
-      <div className="airi-doctor-grid" style={{ gridTemplateColumns: `58px repeat(${shown.length}, minmax(0, 1fr))` }}>
+    {shown.length ? <div className="airi-agenda-scroll" role="region" aria-label="Agenda del día por odontólogo" tabIndex={0}>
+      <div className="airi-doctor-grid" style={{ gridTemplateColumns: `var(--airi-hour-width) repeat(${shown.length}, minmax(var(--airi-doctor-width), 1fr))` }}>
         <div className="airi-doctor-head airi-doctor-corner" aria-hidden="true" />
         {shown.map(([id, label]) => <h2 className="airi-doctor-head" key={id}>{label}</h2>)}
         <div className="airi-agenda-hours" style={{ height: (end - start) * px }} aria-hidden="true">
@@ -107,16 +101,16 @@ function DoctorDayCalendar({ entries, gaps = [], now, date, onSelect, onOffer, b
         {shown.map(([id, label]) => <section key={id} className="airi-doctor-column" aria-label={label} style={{ height: (end - start) * px }}>
           {Array.from({ length: Math.ceil((end - start) / 60) }, (_, i) => <span key={i} className="airi-hour-rule" style={{ top: i * 60 * px }} />)}
           {entries.filter(row => row.doctorId === id && formatDateKey(row.start, LIMA) === date).map(row => <button type="button" key={row.id} data-appointment={row.id}
-            className={`airi-agenda-appointment airi-kind-${row.kind ?? "unknown"} ${Date.parse(row.end) <= Date.parse(now) ? "airi-appointment-past" : ""}`}
+            className={`airi-agenda-appointment airi-kind-${row.kind ?? "unknown"} ${["cerrada", "Atendida"].includes(row.state) ? "airi-appointment-past" : ""}`}
             style={position(row.start, row.end)} onClick={() => onSelect(row.id)} aria-label={`${formatSlotTime(row.start, LIMA)} ${row.patient}, ${row.procedure}, ${row.state}`}>
             <b>{formatSlotTime(row.start, LIMA)} {row.patient}</b>{Date.parse(row.end) - Date.parse(row.start) >= 45 * 60_000 ? <span>{row.procedure} · {row.state}</span> : null}
           </button>)}
           {gaps.filter(gap => gap.doctorId === id).map(gap => <button type="button" key={gap.start} data-gap={id} style={position(gap.start, gap.end)}
             className="airi-agenda-appointment airi-agenda-gap" disabled={!gap.offerable || busy} onClick={onOffer}
             aria-label={`${formatSlotTime(gap.start, LIMA)} Hueco ${gap.minutes} min, ${label}${gap.offerable ? ", ofrecer a lista de espera" : ", sin propuesta disponible"}`}>
-            <b>{formatSlotTime(gap.start, LIMA)} · Hueco {gap.minutes} min</b><span>{gap.offerable ? "Ofrecer a lista de espera" : "Sin propuesta disponible"}</span>
+            <b>Hueco {gap.minutes} min</b>{gap.minutes >= 45 ? <span>{gap.offerable ? "Ofrecer a lista de espera" : "Sin propuesta disponible"}</span> : null}
           </button>)}
-          {showNow ? <div className="airi-agenda-now" style={{ top: (nowMinute - start) * px }} aria-label={`Hora Lima ${formatSlotTime(now, LIMA)}`} /> : null}
+          {showNow ? <div className="airi-agenda-now" style={{ top: (nowMinute - start) * px }} role="img" aria-label={`Hora Lima ${formatSlotTime(now, LIMA)}`} /> : null}
         </section>)}
       </div>
     </div> : <p role="status" className="airi-agenda-empty">No hay citas para esta fecha y filtros.</p>}
@@ -152,7 +146,7 @@ function DemoAgenda() {
     </header>
     <p className="airi-agenda-note">Demostración · corte del {formatSlotDate(date)} a las {formatSlotTime(data.cutAt, LIMA)}. Los colores indican el tipo de atención; el pasado conserva su estado.</p>
     {error ? <p role="alert">{error}</p> : null}
-    <DoctorDayCalendar entries={rows} gaps={gaps} date={date} now={data.cutAt} onSelect={id => setSelected(rows.find(row => row.id === id) ?? null)} onOffer={offer} busy={agent.working} />
+    <DoctorDayCalendar doctorOrder={["ruiz", "salinas", "leon"]} entries={rows} gaps={gaps} date={date} now={data.cutAt} onSelect={id => setSelected(rows.find(row => row.id === id) ?? null)} onOffer={offer} busy={agent.working} />
     {offers.length ? <section className="airi-agenda-decisions" aria-label="Oferta para el hueco"><h2>La oferta, para tu revisión</h2>{offers.map(entry => {
       const receivedAt = approvalReceipts.get(entry.card);
       return <div key={entry.card.id}>
@@ -174,30 +168,35 @@ function AgendaStyles() {
     .airi-agenda-heading p{margin:0;color:var(--muted);font-size:14px}
     .airi-agenda-ask{display:flex;gap:8px;align-items:center;padding:10px 14px;border:1px solid var(--line-2);border-radius:10px;background:var(--surface);color:var(--ink);font-size:14px;min-height:44px}
     .airi-agenda-note{font-size:13px;color:var(--muted);margin:0 0 20px;max-width:80ch;line-height:1.6}
-    .airi-day-calendar{min-width:0}.airi-agenda-legend{display:flex;flex-wrap:wrap;gap:10px 18px;margin-bottom:12px;font-size:13px;color:var(--ink-2)}
+    .airi-day-calendar{min-width:0;--airi-hour-width:56px;--airi-doctor-width:170px}.airi-agenda-legend{display:flex;flex-wrap:wrap;gap:10px 18px;margin-bottom:12px;font-size:13px;color:var(--ink-2)}
     .airi-agenda-legend span{display:flex;align-items:center;gap:6px}.airi-agenda-legend i{height:10px;width:10px;border-radius:50%}
     .airi-kind-urgencia{background:#F04438;color:#111214}.airi-kind-evaluacion{background:#FFC31F;color:#111214}
     .airi-kind-tratamiento{background:#1F5BFF;color:#fff}.airi-kind-control{background:#22C55E;color:#111214}.airi-kind-ortodoncia{background:#9B5CF6;color:#111214}
     .airi-kind-unknown{background:var(--surface-2);color:var(--ink);border:1px solid var(--line-2)!important}.airi-kind-gap{background:var(--muted)}
     .airi-doctor-select{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink-2);margin-bottom:12px}
     .airi-doctor-select select{background:var(--surface);color:var(--ink);border:1px solid var(--line-2);border-radius:9px;padding:9px;min-height:44px;max-width:100%;min-width:0}
-    .airi-agenda-scroll{border:1px solid var(--line);border-radius:14px;background:var(--surface);overflow:auto;max-height:640px;scroll-padding-top:55px}
-    .airi-doctor-grid{display:grid;position:relative;min-width:0}.airi-doctor-head{position:sticky;top:0;z-index:4;background:var(--surface);padding:14px 10px;border-bottom:1px solid var(--line);font-size:14px;font-weight:500;line-height:1.4;margin:0}
+    .airi-agenda-scroll{border:1px solid var(--line);border-radius:14px;background:var(--surface);overflow:auto;max-height:calc(100vh - 230px);scroll-padding-top:55px}
+    .airi-doctor-grid{display:grid;position:relative;min-width:min-content}.airi-doctor-head{position:sticky;top:0;z-index:4;background:var(--surface);padding:14px 10px;border-bottom:1px solid var(--line);font-size:14px;font-weight:500;line-height:1.4;margin:0}
     .airi-doctor-head:not(.airi-doctor-corner){border-left:1px solid var(--line)}
     .airi-agenda-hours{position:relative}.airi-agenda-hours>span{position:absolute;right:7px;font-size:12px;color:var(--muted);font-family:var(--font-display);font-variant-numeric:tabular-nums}
     .airi-doctor-column{position:relative;border-left:1px solid var(--line);min-width:0}.airi-hour-rule{position:absolute;left:0;right:0;border-top:1px solid var(--line)}
     .airi-agenda-appointment{position:absolute;left:5px;right:5px;text-align:left;border:0;border-radius:9px;padding:5px 8px;font-size:12px;line-height:1.3;overflow:hidden}
     .airi-agenda-appointment b{display:block;font-weight:600;font-size:13px;line-height:1.3;font-variant-numeric:tabular-nums}.airi-agenda-appointment span{display:block;margin-top:2px}
     .airi-agenda-appointment:hover{outline:2px solid var(--ink);outline-offset:1px}.airi-agenda-appointment:focus-visible,.airi-agenda-ask:focus-visible,.airi-doctor-select select:focus-visible{outline:3px solid var(--focus);outline-offset:3px;z-index:5}
-    .airi-appointment-past{background:var(--surface-2);color:var(--ink-2);border-left:4px solid var(--ink-2);filter:saturate(.25)}
-    .airi-appointment-past.airi-kind-control{border-left-color:#0C8137}.airi-appointment-past.airi-kind-tratamiento{border-left-color:#1F5BFF}.airi-appointment-past.airi-kind-evaluacion{border-left-color:#AC7900}
+    /* Closed care retains its clinical color and readable state. Blending only
+       the background avoids the contrast loss of the mockup's opacity:.55. */
+    .airi-appointment-past.airi-kind-control{background:color-mix(in srgb,#22C55E 55%,var(--surface));color:var(--ink)}
+    .airi-appointment-past.airi-kind-tratamiento{background:color-mix(in srgb,#1F5BFF 55%,var(--surface));color:var(--ink)}
+    .airi-appointment-past.airi-kind-evaluacion{background:color-mix(in srgb,#FFC31F 55%,var(--surface));color:var(--ink)}
+    .airi-appointment-past.airi-kind-urgencia{background:color-mix(in srgb,#F04438 55%,var(--surface));color:var(--ink)}
+    .airi-appointment-past.airi-kind-ortodoncia{background:color-mix(in srgb,#9B5CF6 55%,var(--surface));color:var(--ink)}
     .airi-agenda-gap{background:repeating-linear-gradient(135deg,var(--surface) 0 6px,var(--surface-2) 6px 12px);border:1.5px dashed var(--line-2);color:var(--ink-2);padding:3px 7px}
     .airi-agenda-gap b{font-size:12px}.airi-agenda-gap span{font-size:11px;line-height:1.1;margin-top:0}.airi-agenda-gap:disabled{opacity:1;cursor:default}
     .airi-agenda-now{position:absolute;left:0;right:0;border-top:2px solid var(--red-ink);pointer-events:none;z-index:2}
     .airi-now-label{position:absolute;right:2px;transform:translateY(-50%);font-family:var(--font-display);font-size:12px;font-weight:500;background:var(--red-ink);color:var(--surface);border-radius:4px;padding:2px 4px;z-index:3}
     .airi-agenda-decisions{margin-top:26px;max-width:760px}.airi-agenda-decisions>h2{font-size:19px;font-weight:500;margin-bottom:12px}.airi-agenda-receipt{font-size:13px;color:var(--green-ink);line-height:1.6;margin:12px 0 20px}
     .airi-agenda-detail dt{font-size:13px;color:var(--muted);margin-top:16px}.airi-agenda-detail dd{margin:4px 0;font-size:16px}.airi-agenda-empty{padding:40px 12px;text-align:center;color:var(--muted)}
-    @media(max-width:600px){.airi-agenda-view{padding:20px 16px 120px}.airi-agenda-heading{gap:14px;margin-bottom:14px}.airi-agenda-heading h1{font-size:26px}.airi-agenda-legend{gap:8px 12px;font-size:12px}.airi-doctor-select{display:grid;gap:6px}.airi-agenda-scroll{max-height:600px}.airi-agenda-appointment{font-size:12px}.airi-doctor-head{font-size:14px}.airi-agenda-decisions .catalog-card{max-width:100%}}
+    @media(max-width:600px){.airi-agenda-view{padding:20px 16px 120px}.airi-agenda-heading{gap:14px;margin-bottom:14px}.airi-agenda-heading h1{font-size:26px}.airi-agenda-legend{gap:8px 12px;font-size:12px}.airi-doctor-select{display:grid;gap:6px}.airi-day-calendar{--airi-hour-width:44px;--airi-doctor-width:150px}.airi-agenda-scroll{max-height:none}.airi-agenda-appointment{font-size:12px}.airi-doctor-head{font-size:14px}.airi-agenda-decisions .catalog-card{max-width:100%}}
   `}</style>;
 }
 
@@ -633,7 +632,7 @@ function AgendaManagement() {
             {viewMode === "day" ? <DoctorDayCalendar entries={dayAppointments.filter(row => row.startUtc && row.endUtc).map(row => ({
               id: row.id, start: row.startUtc!, end: row.endUtc!, doctorId: String(row.practitionerId ?? row.doctor), doctor: row.doctor,
               patient: row.patient, procedure: row.treatment, state: row.status,
-            }))} date={selectedDate} now={now} onSelect={id => { const row = appointments.find(item => item.id === id); if (row) openDetail(row); }} /> : <div className={`calendar-grid calendar-grid--${viewMode}`} aria-label={viewMode === "week" ? "Agenda semanal" : "Agenda diaria"}>
+            }))} date={selectedDate} now={now} onSelect={id => { const row = appointments.find(item => item.id === id); if (row) openDetail(row); }} /> : <div className={`calendar-grid calendar-grid--${viewMode}`} role="region" aria-label={viewMode === "week" ? "Agenda semanal" : "Agenda diaria"}>
               <div className="calendar-corner" />
               {visibleDayIndexes.map((dayIndex) => <div key={weekDays[dayIndex]} className={`calendar-day ${dayIndex === activeDay ? "calendar-day--today" : ""}`}>{weekDays[dayIndex]}</div>)}
               {HOURS.map((hour) => [

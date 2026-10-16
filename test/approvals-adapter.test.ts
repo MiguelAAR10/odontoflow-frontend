@@ -1,6 +1,10 @@
 /** FE1 Bandeja — real-mode adapter and transport at the axios boundary. */
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { InboxItem } from "../src/contracts/client";
+import { createElement } from "react";
+import { act, create, type ReactTestRenderer } from "react-test-renderer";
+
+vi.mock("../src/components/PersonaContext", () => ({ usePersona: () => ({ identity: null, version: 0 }) }));
 
 const { mockGet, mockPost } = vi.hoisted(() => ({ mockGet: vi.fn(), mockPost: vi.fn() }));
 
@@ -116,6 +120,59 @@ describe("Bandeja real-mode adapter (mocked axios)", () => {
   beforeEach(() => { mockGet.mockReset(); mockPost.mockReset(); });
 
   describe("reading the inbox", () => {
+    it("shows the delegation recipient and task deadline from its canonical card before deciding", async () => {
+      const delegation: InboxItem = { ...reminder, kind: "delegation", summary: "Delegar: Revisar comprobante", facts: null, evidence: null, payload: { assignee_principal_id: 21, due_at: "2026-10-02T18:00:00-05:00" } };
+      const card = {
+        id: "7", proposal_id: 7, version: 1, payload_hash: HASH, agent: "airi", level: "aprobar", state: "pending",
+        title: "Delegar a Lucía: Revisar comprobante", body: "Lucía recibe la tarea en Lince", approve: "Delegar", alt: "Lo veo yo",
+        scope: [{ label: "Para", value: "Lucía" }, { label: "Plazo", value: "02/10 18:00", expires_at: "2026-10-02T18:00:00-05:00" }],
+      };
+      mockGet.mockImplementation(async (url: string, config?: { params?: Record<string, unknown> }) => {
+        if (url === "/agent/inbox") return { data: { items: [delegation], next_cursor: null } };
+        if (url === "/agent/cards/7") return { data: card };
+        return catalogs(url, config);
+      });
+      const page = await api.loadInbox();
+      expect(page.items[0]).toMatchObject({ headline: card.title, facts: card.scope.map(({ label, value }) => ({ label, value })) });
+      const { toCard } = await import("../src/approvals");
+      const { ClinicInbox } = await import("../src/views/ApprovalsPage");
+      let view!: ReactTestRenderer;
+      try {
+        await act(async () => { view = create(createElement(ClinicInbox)); });
+        expect(view.root.findAllByProps({ "aria-controls": "bandeja-selected" })).toHaveLength(1);
+        expect(JSON.stringify(view.toJSON())).toContain("02/10 18:00");
+      } finally { act(() => view?.unmount()); }
+      expect(toCard(page.items[0])).toMatchObject({ ...card, id: "agent_proposal:7" });
+    });
+
+    it("rechaza una tarjeta delegada si cambió la propuesta desde la lectura de la bandeja", async () => {
+      const delegation: InboxItem = { ...reminder, kind: "delegation", facts: null, evidence: null, payload: {} };
+      mockGet.mockImplementation(async (url: string, config?: { params?: Record<string, unknown> }) => {
+        if (url === "/agent/inbox") return { data: { items: [delegation], next_cursor: null } };
+        if (url === "/agent/cards/7") return { data: {
+          id: "7", proposal_id: 7, version: 2, payload_hash: "b".repeat(64), agent: "airi", level: "aprobar", state: "pending",
+          title: "Tarea editada", body: "Otro destinatario y plazo", scope: [],
+        } };
+        return catalogs(url, config);
+      });
+      await expect(api.loadInbox()).rejects.toMatchObject({ code: "PROPOSAL_CHANGED", httpStatus: 409 });
+      expect(mockPost).not.toHaveBeenCalled();
+    });
+
+    it("keeps a delegated task's server text, approval hash and permitted actions", () => {
+      const delegation: InboxItem = {
+        ...reminder, kind: "delegation", agent_key: "airi",
+        summary: "Revisar comprobante de la transferencia", reason: "AIRI solicita revisión humana",
+        payload: {}, facts: null, evidence: null,
+      };
+      const item = api.toUiInboxItem(delegation);
+      expect(item).toMatchObject({
+        category: "tarea", categoryLabel: "Tarea delegada", kind: "delegation",
+        headline: delegation.summary, detail: delegation.reason,
+        payloadHash: HASH, actions: ["approve", "decline"], facts: [],
+      });
+    });
+
     it("asks for one status page and keeps the cursor", async () => {
       mockGet.mockImplementation(async (url: string, config?: { params?: Record<string, unknown> }) => {
         if (url === "/agent/inbox") return { data: { items: [reminder], next_cursor: "abc" } };

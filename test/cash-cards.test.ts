@@ -30,6 +30,12 @@ describe("Caja: cobrado verificado separado", () => {
     expect(projectCashCut(snapshot, [approved, approved])).toEqual({ verified: 6360, pending: 1060 });
     expect(snapshot.sedes[0]!.collected.amount_cents).toBe(312000);
   });
+  it("mantiene el corte y la aprobación dentro de la sede activa", () => {
+    expect(projectCashCut(states[0]!, [yape], "Lince")).toEqual({ verified: 3120, pending: 420 });
+    expect(projectCashCut(states[0]!, [{ ...yape, state: "approved" }], "Lince")).toEqual({ verified: 3240, pending: 300 });
+    expect(projectCashCut(states[0]!, [{ ...yape, state: "approved" }], "Miraflores")).toEqual({ verified: 2410, pending: 640 });
+    expect(projectCashCut(states[0]!, [yape], "Sede sin corte")).toEqual({ verified: 0, pending: 0 });
+  });
   it("delegar caja, rechazar o fallar una propuesta no aumenta cobrado", () => {
     for (const state of ["pending", "declined", "delegated", "undone"] as const) {
       expect(projectCashCut(states[0]!, [{ ...yape, state }])).toEqual({ verified: 6240, pending: 1180 });

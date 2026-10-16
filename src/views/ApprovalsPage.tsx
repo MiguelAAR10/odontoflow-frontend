@@ -275,7 +275,7 @@ function InboxSection({ reloadToken, onSummary }: { reloadToken: number; onSumma
     }
   };
 
-  const presentation = items.map(toCard);
+  const presentation = items.map(item => ({ ...toCard(item), kind: item.kind }));
   const filteredIds = new Set(filterInboxCards(presentation, view, true).map(card => card.id));
   const visible = items.filter(item => filteredIds.has(item.key) && (view !== "mine" || (item.status === "pending" && item.actions.length > 0)) && (view !== "verify" || item.status === "pending"));
   const pendingCount = items.filter(item => item.status === "pending").length;
@@ -345,10 +345,11 @@ function ApprovalCard({ item, now, decision, onDecide, onReload }: {
   </>;
 }
 
-type InboxCard = Omit<Card, "version">;
+type InboxCard = Omit<Card, "version"> & { kind?: ApprovalItem["kind"] };
 const pendingCard = (card: InboxCard) => card.state === "pending" || card.state === "ready";
 const scopeValue = (card: InboxCard, label: string) => card.scope?.find(item => item.label.toLowerCase() === label.toLowerCase())?.value;
-const needsVerification = (card: InboxCard) => pendingCard(card) && /(?:por verificar|confirmar ingreso)/i.test(card.title);
+const needsVerification = (card: InboxCard) => pendingCard(card) && (card.kind !== undefined
+  ? card.kind === "payment_verify" : /(?:por verificar|confirmar ingreso)/i.test(card.title));
 
 export function filterInboxCards<T extends InboxCard>(cards: readonly T[], view: string, canDecide: boolean): T[] {
   return cards.filter(card => {

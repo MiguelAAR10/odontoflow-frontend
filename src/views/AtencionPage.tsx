@@ -1,12 +1,19 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { toApiError, useMocks } from "../api";
 import { useAgent } from "../agui/useAgent";
 import { useDoctorDay } from "../../app/(shell)/atencion/useDoctorDay";
 import { DoctorStyles } from "../../app/(shell)/atencion/DoctorStyles";
 import { briefBlocks, limaDate, limaTime, nextPatient, pendingFields, scenarioDraft, type DoctorAppointment } from "../../app/(shell)/atencion/doctor";
 import { acceptScenarioDraft, cancelSimulatedReview, editSimulatedNote, reviewSimulatedNote, signSimulatedNote, useSimulatedNote } from "../../app/(shell)/atencion/draft";
+
+/** URL selection belongs to the client; clinical data already loads there. */
+export function AtencionFromUrl() {
+  const query = useSearchParams();
+  return <AtencionPage appointmentId={query.get("cita") ?? undefined} />;
+}
 
 export function AtencionPage({ appointmentId }: { appointmentId?: string }) {
   const day = useDoctorDay();

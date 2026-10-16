@@ -3017,7 +3017,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "collection_reminder" | "collection_follow_up" | "inventory_transfer" | "inventory_entry" | "waitlist_offer" | "appointment_confirm_batch" | "appointments_reassign" | "reschedule_reply" | "payment_verify" | "appointment_booking";
+            kind: "collection_reminder" | "collection_follow_up" | "inventory_transfer" | "inventory_entry" | "waitlist_offer" | "appointment_confirm_batch" | "appointments_reassign" | "reschedule_reply" | "payment_verify" | "delegation" | "appointment_booking";
             /** Agent Key */
             agent_key: string | null;
             /**
@@ -13823,7 +13823,7 @@ export interface operations {
             query?: {
                 status?: "pending" | "approved" | "executed" | "failed" | "declined" | "expired" | "superseded";
                 source?: ("agent_proposal" | "appointment_proposal") | null;
-                kind?: ("collection_reminder" | "collection_follow_up" | "inventory_transfer" | "inventory_entry" | "waitlist_offer" | "appointment_confirm_batch" | "appointments_reassign" | "reschedule_reply" | "payment_verify" | "appointment_booking") | null;
+                kind?: ("collection_reminder" | "collection_follow_up" | "inventory_transfer" | "inventory_entry" | "waitlist_offer" | "appointment_confirm_batch" | "appointments_reassign" | "reschedule_reply" | "payment_verify" | "delegation" | "appointment_booking") | null;
                 location_id?: number | null;
                 limit?: number;
                 cursor?: string | null;

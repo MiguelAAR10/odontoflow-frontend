@@ -1,3 +1,4 @@
+import type { Card } from "./agui/card";
 import type {
   ActivityItem,
   AgentRunCounts,
@@ -398,7 +399,7 @@ export interface NewAppointmentInput {
  */
 export type ApprovalSource = InboxItem["source"];
 export type ApprovalStatus = InboxStatus;
-export type ApprovalCategory = "cobranza" | "inventario" | "lista_espera" | "cita";
+export type ApprovalCategory = "cobranza" | "inventario" | "lista_espera" | "cita" | "tarea";
 
 export interface ApprovalFact {
   label: string;
@@ -430,6 +431,8 @@ export interface ApprovalItem {
   decidedBy: string | null;
   outcome: string | null;
   errorCode: string | null;
+  /** Backend presentation for kinds whose decision needs the full AIRI card. */
+  card?: Card;
 }
 
 export type ProposalDecision = "approve" | "decline";

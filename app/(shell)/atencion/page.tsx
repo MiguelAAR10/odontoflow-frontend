@@ -1,6 +1,6 @@
-import { AtencionPage } from "../../../src/views/AtencionPage";
+import { Suspense } from "react";
+import { AtencionFromUrl } from "../../../src/views/AtencionPage";
 
-export default async function AtencionRoute({ searchParams }: { searchParams: Promise<{ cita?: string | string[] }> }) {
-  const { cita } = await searchParams;
-  return <AtencionPage appointmentId={typeof cita === "string" ? cita : undefined} />;
+export default function AtencionRoute() {
+  return <Suspense fallback={<p role="status">Cargando la atención…</p>}><AtencionFromUrl /></Suspense>;
 }

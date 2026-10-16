@@ -7,6 +7,11 @@ const cards = proposals.map(card => CardSchema.parse(card));
 const daniela = cards.find(card => card.id === "p-reprog")!;
 const yape = cards.find(card => card.id === "p-yape")!;
 describe("Bandeja: filtros y contexto trazable", () => {
+  it("clasifica una verificación real por su kind, incluso con el título del backend", () => {
+    const real = { ...yape, title: "Verificar 1 pagos", kind: "payment_verify" as const };
+    expect(filterInboxCards([real], "verify", true)).toEqual([real]);
+    expect(filterInboxCards([{ ...real, kind: "collection_reminder" as const, title: "Por verificar" }], "verify", true)).toEqual([]);
+  });
   it("por verificar contiene el ingreso Yape pendiente, sin mezclar caja ni aprobadas", () => {
     expect(filterInboxCards(cards, "verify", true).map(card => card.id)).toEqual(["p-yape"]);
     expect(filterInboxCards([{ ...yape, state: "approved" }], "verify", true)).toEqual([]);
