@@ -1,3 +1,5 @@
+> HISTÓRICO · Documento anterior a AIRI; se conserva como referencia.
+> Estado y planificación vigentes: odontoflow-planning/PLAN.md.
 # Arquitectura del simulador
 
 ## Alcance y seguridad

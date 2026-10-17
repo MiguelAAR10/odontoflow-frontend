@@ -1,3 +1,5 @@
+> HISTÓRICO · Documento anterior a AIRI; se conserva como referencia.
+> Estado y planificación vigentes: odontoflow-planning/PLAN.md.
 # Ejecutar el demo operativo de OdontoFlow
 
 La aplicación actual es Next.js. `npm start` sirve su compilación en `http://127.0.0.1:5173`; `npm run dev` mantiene el desarrollo en esa dirección. Este runbook no crea ni resetea bases, emite credenciales ni inicia el backend.

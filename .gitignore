@@ -10,3 +10,6 @@ screenshots/
 *.log
 MediStock/
 OdontoFlow/
+src/assets/
+.impeccable/
+**/__pycache__/
