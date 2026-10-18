@@ -36,6 +36,7 @@ export type ServiceExecutionRead = components["schemas"]["ServiceExecutionRead"]
 export type ChargeRead = components["schemas"]["ChargeRead"];
 export type PaymentRead = components["schemas"]["PaymentRead"];
 export type PaymentCreate = components["schemas"]["PaymentCreate"];
+export type PaymentVerificationReviewReceipt = components["schemas"]["PaymentVerificationReviewReceipt"];
 export type PaymentMethod = PaymentCreate["method"];
 export type PaymentVerificationStatus = PaymentRead["verification_status"];
 export type ChargeFollowUpRead = components["schemas"]["ChargeFollowUpRead"];
@@ -526,6 +527,16 @@ export async function verifyPayment(
   const payload: components["schemas"]["PaymentVerify"] = {};
   if (input.reconciliation_note !== undefined) payload.reconciliation_note = input.reconciliation_note;
   const response = await http.post<PaymentRead>(`/payments/${paymentId}/verify`, payload, {
+    headers: { "Idempotency-Key": idempotencyKey },
+  });
+  return response.data;
+}
+
+export async function createPaymentVerificationReview(
+  paymentId: number,
+  idempotencyKey: string,
+): Promise<PaymentVerificationReviewReceipt> {
+  const response = await http.post<PaymentVerificationReviewReceipt>(`/payments/${paymentId}/verification-review`, undefined, {
     headers: { "Idempotency-Key": idempotencyKey },
   });
   return response.data;

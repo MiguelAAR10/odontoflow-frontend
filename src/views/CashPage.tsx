@@ -34,6 +34,7 @@ import { useShellContext } from "../components/shell/ShellContext";
 import { CardSchema, type Card as CardDto } from "../agui/card";
 import { Card } from "../catalog/Card";
 import { ApiError } from "../contracts/client";
+import { preparePaymentVerificationReview } from "../paymentVerification";
 import { createAgentStore, useAgentStore } from "../agui/store";
 import { EventType } from "../agui/events";
 import type { AgentSource } from "../agui/source";
@@ -283,6 +284,8 @@ function CashManagement() {
   const paymentIntent = useRef<MutationIntent | null>(null);
   const followUpIntent = useRef<MutationIntent | null>(null);
   const verificationIntent = useRef<MutationIntent | null>(null);
+  const reviewIntents = useRef(new Map<string, { key: string; pending: boolean }>());
+  const [preparingReviews, setPreparingReviews] = useState<string[]>([]);
   const [success, setSuccess] = useState("");
   const [payError, setPayError] = useState("");
   const [verifyTarget, setVerifyTarget] = useState<Payment | null>(null);
@@ -464,6 +467,25 @@ function CashManagement() {
     }
   };
 
+  const prepareReview = async (payment: Payment) => {
+    if (!payment.reference) return;
+    const intent = reviewIntents.current.get(payment.id) ?? { key: newIdempotencyKey(), pending: false };
+    if (intent.pending) return;
+    intent.pending = true;
+    reviewIntents.current.set(payment.id, intent);
+    setPreparingReviews(current => [...current, payment.id]);
+    setError("");
+    try {
+      const receipt = await preparePaymentVerificationReview(Number(payment.id), intent.key);
+      window.location.assign(`/aprobaciones?proposal=agent_proposal:${receipt.proposal.id}`);
+    } catch (caught) {
+      setError(toApiError(caught).message);
+    } finally {
+      intent.pending = false;
+      setPreparingReviews(current => current.filter(id => id !== payment.id));
+    }
+  };
+
   const collectionsRows = useMemo(() => followUps.map((followUp) => {
     const charge = charges.find((item) => item.id === String(followUp.chargeId));
     return { ...followUp, practitionerId: charge?.practitionerId, practitionerName: charge?.practitionerName };
@@ -505,7 +527,10 @@ function CashManagement() {
     { key: "date", header: "Registrado", render: (payment) => formatInstant(payment.paidAt) },
     { key: "amount", header: "Monto", render: (payment) => money(payment.amount) },
     { key: "state", header: "Estado", render: () => <Badge tone="amber">Sin verificar</Badge> },
-    { key: "actions", header: "", render: (payment) => payment.reference ? <Button compact variant="primary" icon={ShieldCheck} onClick={() => { verificationIntent.current = null; setVerifyTarget(payment); setVerifyNote(""); }}>Verificar</Button> : <span className="text-muted">Histórico · no verificable</span> },
+    { key: "actions", header: "", render: (payment) => payment.reference ? <span className="row-actions">
+      <Button compact variant="primary" icon={ShieldCheck} disabled={preparingReviews.includes(payment.id)} onClick={() => { verificationIntent.current = null; setVerifyTarget(payment); setVerifyNote(""); }}>Verificar</Button>
+      <Button compact disabled={busy || preparingReviews.includes(payment.id)} onClick={() => prepareReview(payment)}>{preparingReviews.includes(payment.id) ? "Preparando…" : "Preparar revisión"}</Button>
+    </span> : <span className="text-muted">Histórico · no verificable</span> },
   ];
 
   const paymentTotals = cashPaymentTotals(charges);

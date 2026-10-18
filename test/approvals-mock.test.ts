@@ -40,6 +40,27 @@ describe("Bandeja mock mode", () => {
     expect(api.describeApprovalError(error).message).toBe("Tu rol no permite esta acción.");
   });
 
+  it("requires payments.manage for payment_verify and rechecks a revoked grant", async () => {
+    const { mockInboxItems, mockStaff } = await import("../src/mockData");
+    const me = mockStaff.find(staff => staff.key === "secretaria")!.me;
+    const permissions = [...me.permissions];
+    const row = { ...mockInboxItems.find(item => item.source === "agent_proposal" && item.status === "pending")!,
+      id: 990, kind: "payment_verify" as const, payload: { payment_ids: [7] } };
+    mockInboxItems.push(row);
+    try {
+      const item = (await pending()).find(item => item.id === row.id)!;
+      expect(item.actions).toEqual(["approve", "decline"]);
+      me.permissions = [...permissions.filter(code => code !== "payments.manage"), "payments.verify"];
+      expect((await pending()).find(item => item.id === row.id)!.actions).toEqual(["decline"]);
+      const error = await failure(api.decideInboxItem(item, api.beginDecision(item, "approve")));
+      expect(error).toMatchObject({ code: "PERMISSION_DENIED", httpStatus: 403 });
+      expect(row.status).toBe("pending");
+    } finally {
+      me.permissions = permissions;
+      mockInboxItems.splice(mockInboxItems.indexOf(row), 1);
+    }
+  });
+
   it("rejects a payload hash that does not match", async () => {
     const reminder = await byCategory("cobranza");
     const tampered = { ...reminder, payloadHash: "0".repeat(64) };

@@ -154,6 +154,7 @@ export const BROWSER_ROUTES: readonly BrowserRoute[] = [
   { method: "POST", path: "charges/:id/follow-ups" },
   { method: "GET", path: "payments" },
   { method: "POST", path: "payments/:id/verify" },
+  { method: "POST", path: "payments/:id/verification-review" },
   { method: "GET", path: "follow-ups" },
   { method: "POST", path: "follow-ups/:id/reschedule" },
   { method: "POST", path: "follow-ups/:id/close" },

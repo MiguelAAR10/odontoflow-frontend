@@ -149,6 +149,7 @@ const STATUS_BADGE: Record<ApprovalStatus, { label: string; tone: Tone }> = {
   declined: { label: "Declinada", tone: "slate" },
   expired: { label: "Vencida", tone: "slate" },
   superseded: { label: "Reemplazada", tone: "slate" },
+  undone: { label: "Revertida", tone: "slate" },
 };
 
 const EMPTY_COPY: Record<ApprovalStatus, string> = {
@@ -159,6 +160,7 @@ const EMPTY_COPY: Record<ApprovalStatus, string> = {
   expired: "No hay propuestas vencidas.",
   failed: "Ninguna propuesta falló al ejecutarse.",
   superseded: "No hay propuestas reemplazadas.",
+  undone: "No hay propuestas revertidas.",
 };
 
 function formatDuration(ms: number): string {

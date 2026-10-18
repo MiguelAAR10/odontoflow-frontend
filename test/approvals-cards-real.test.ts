@@ -3,13 +3,13 @@ import { createElement } from "react";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ApprovalItem } from "../src/types";
 
-const stubs = vi.hoisted(() => ({ load: vi.fn(), decide: vi.fn(), begin: vi.fn() }));
+const stubs = vi.hoisted(() => ({ load: vi.fn(), record: vi.fn(), decide: vi.fn(), begin: vi.fn(), describe: vi.fn() }));
 vi.mock("next/link", () => ({ default: "a" }));
 
 vi.mock("../src/api", () => ({
-  useMocks: false, loadInbox: stubs.load, decideInboxItem: stubs.decide, beginDecision: stubs.begin,
+  useMocks: false, loadInbox: stubs.load, loadInboxRecord: stubs.record, decideInboxItem: stubs.decide, beginDecision: stubs.begin,
   canRunAgent: () => false, RUNNABLE_AGENTS: [], newIdempotencyKey: () => "key",
-  runAgentNow: vi.fn(), describeApprovalError: (error: Error) => ({ message: error.message, reload: false }),
+  runAgentNow: vi.fn(), describeApprovalError: stubs.describe,
 }));
 vi.mock("../src/components/PersonaContext", () => ({ usePersona: () => ({ identity: { principalType: "human", permissions: [] }, loading: false, version: 1 }) }));
 const item: ApprovalItem = {
@@ -18,14 +18,18 @@ const item: ApprovalItem = {
   expiresAt: "2027-01-01T00:00:00Z", createdAt: "2026-10-13T00:00:00Z", actions: ["approve", "decline"], payloadHash: "a".repeat(64), conversationId: 12, confirmationToken: null, decidedBy: null, outcome: null, errorCode: null,
 };
 let Page: typeof import("../src/views/ApprovalsPage").ApprovalsPage;
-beforeAll(async () => { process.env.NEXT_PUBLIC_USE_MOCKS = "false"; Page = (await import("../src/views/ApprovalsPage")).ApprovalsPage; });
-beforeEach(() => { stubs.load.mockReset(); stubs.decide.mockReset(); stubs.begin.mockReset(); });
+beforeAll(async () => {
+  process.env.NEXT_PUBLIC_USE_MOCKS = "false";
+  Page = (await import("../src/views/ApprovalsPage")).ApprovalsPage;
+  stubs.describe.mockImplementation((await import("../src/approvals")).describeApprovalError);
+});
+beforeEach(() => { stubs.load.mockReset(); stubs.record.mockReset(); stubs.decide.mockReset(); stubs.begin.mockReset(); });
 const text = (renderer: ReactTestRenderer) => JSON.stringify(renderer.toJSON());
-const button = (renderer: ReactTestRenderer, label: string) => renderer.root.findAllByType("button").find(node => node.children.join("") === label)!;
-async function render(rows: ApprovalItem[]) {
+const button = (renderer: ReactTestRenderer, label: string) => renderer.root.findAllByType("button").find(node => node.children.includes(label))!;
+async function render(rows: ApprovalItem[], focusedKey?: string) {
   stubs.load.mockResolvedValue({ items: rows, nextCursor: null });
   let renderer!: ReactTestRenderer;
-  await act(async () => { renderer = create(createElement(Page)); });
+  await act(async () => { renderer = create(createElement(Page, focusedKey ? { focusedKey } : {})); });
   return renderer;
 }
 
@@ -65,5 +69,25 @@ describe("Bandeja real uses existing transport", () => {
     expect(text(renderer)).not.toContain("Sin permiso");
     expect(text(renderer)).toContain("Recordar el pago");
     await act(async () => renderer.unmount());
+  });
+  it("explains PROPOSAL_SUPERSEDED and reopens the linked payment as Reemplazada", async () => {
+    const { ApiError } = await import("../src/contracts/client");
+    const payment = { ...item, kind: "payment_verify" as const, headline: "Verificar pago Yape S/ 120" };
+    stubs.record.mockResolvedValue(payment);
+    stubs.begin.mockReturnValue({ decision: "approve", idempotencyKey: "payment-intent" });
+    stubs.decide.mockRejectedValue(new ApiError(409, "PROPOSAL_SUPERSEDED", "The proposal is out of date."));
+    const renderer = await render([], payment.key);
+    await act(async () => { await button(renderer, "Aprobar").props.onClick(); });
+    expect(text(renderer)).toContain("La propuesta cambió, vuelve a cargar la bandeja.");
+    expect(text(renderer)).not.toContain("The proposal is out of date");
+    expect(button(renderer, "Volver a cargar")).toBeDefined();
+    await act(async () => renderer.unmount());
+    stubs.record.mockResolvedValue({ ...payment, status: "superseded", actions: [] });
+    const reopened = await render([], payment.key);
+    expect(reopened.root.findAllByType("span").some(node => node.children.includes("Reemplazada"))).toBe(true);
+    expect(stubs.load).toHaveBeenLastCalledWith({ status: "superseded" });
+    expect(button(reopened, "Aprobar")).toBeUndefined();
+    expect(stubs.decide).toHaveBeenCalledTimes(1);
+    await act(async () => reopened.unmount());
   });
 });
