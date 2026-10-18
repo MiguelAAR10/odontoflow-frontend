@@ -16,10 +16,9 @@ import {
 import {
   clinicToday,
   closeFollowUpRecord,
-  loadCharges,
+  loadCashContext,
   loadCanonicalLocations,
   loadFollowUps,
-  loadReconciliationPayments,
   loadUnchargedExecutions,
   newIdempotencyKey,
   openFollowUpRecord,
@@ -290,45 +289,50 @@ function CashManagement() {
   const [payError, setPayError] = useState("");
   const [verifyTarget, setVerifyTarget] = useState<Payment | null>(null);
   const [verifyNote, setVerifyNote] = useState("");
+  const cashLoaded = useRef(false);
+  const cashRequest = useRef<ReturnType<typeof loadCashContext> | null>(null);
 
-  const refreshCharges = useCallback(async () => {
+  const refreshCash = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      setCharges(await loadCharges());
+      const context = await (cashRequest.current ??= loadCashContext());
+      cashLoaded.current = true;
+      setCharges(context.charges);
+      setReconciliation(context.reconciliation);
     } catch (caught) {
       setError(toApiError(caught).message);
     } finally {
+      cashRequest.current = null;
       setLoading(false);
     }
   }, []);
 
   const refreshTab = useCallback(async (nextTab: CashTab) => {
+    if (nextTab === "charges" || nextTab === "reconciliation") {
+      await refreshCash();
+      return;
+    }
     setLoading(true);
     setError("");
     try {
-      if (nextTab === "charges") {
-        setCharges(await loadCharges());
-      } else if (nextTab === "uncharged") {
+      if (nextTab === "uncharged") {
         setUncharged(await loadUnchargedExecutions());
-      } else if (nextTab === "collections") {
-        const [rows, canonicalCharges] = await Promise.all([loadFollowUps({ active: true }), loadCharges()]);
-        setFollowUps(rows);
-        setCharges(canonicalCharges);
       } else {
-        const [pendingPayments, canonicalCharges] = await Promise.all([loadReconciliationPayments(), loadCharges()]);
-        setReconciliation(pendingPayments);
-        setCharges(canonicalCharges);
+        setFollowUps(await loadFollowUps({ active: true }));
       }
     } catch (caught) {
       setError(toApiError(caught).message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [refreshCash]);
 
-  useEffect(() => { void refreshCharges(); }, [refreshCharges]);
-  useEffect(() => { if (tab !== "charges") void refreshTab(tab); }, [refreshTab, tab]);
+  useEffect(() => {
+    if (tab === "charges" || tab === "reconciliation") {
+      if (!cashLoaded.current) void refreshCash();
+    } else void refreshTab(tab);
+  }, [refreshCash, refreshTab, tab]);
 
   const visibleCharges = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -375,7 +379,7 @@ function CashManagement() {
     try {
       await registerPayment(selected.id, payload, intentKey(paymentIntent, JSON.stringify([selected.id, payload])));
       setSuccess("Pago registrado. La confirmación bancaria sigue pendiente cuando corresponda.");
-      const [nextCharges, nextReconciliation] = await Promise.all([loadCharges(), loadReconciliationPayments()]);
+      const { charges: nextCharges, reconciliation: nextReconciliation } = await loadCashContext();
       setCharges(nextCharges);
       setReconciliation(nextReconciliation);
       const next = nextCharges.find((charge) => charge.id === selected.id);
@@ -430,8 +434,9 @@ function CashManagement() {
       followUpIntent.current = null;
       setFollowUpAction(null);
       setSelectedFollowUp(null);
-      const [nextCharges, nextFollowUps] = await Promise.all([loadCharges(), loadFollowUps({ active: true })]);
-      setCharges(nextCharges);
+      const [context, nextFollowUps] = await Promise.all([loadCashContext(), loadFollowUps({ active: true })]);
+      setCharges(context.charges);
+      setReconciliation(context.reconciliation);
       setFollowUps(nextFollowUps);
       setSuccess(followUpAction === "close" ? "Seguimiento cerrado; el saldo permanece pendiente." : "Seguimiento guardado.");
     } catch (caught) {

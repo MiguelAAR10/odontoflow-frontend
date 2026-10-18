@@ -48,7 +48,7 @@ describe("cash real-mode transport (mocked axios)", () => {
     mockGet.mockImplementation(async (url: string) => {
       if (url === "/charges") return { data: [chargeRead] };
       if (url === "/locations") return { data: [locationRead] };
-      if (url === "/charges/7/payments") return { data: [paymentRead] };
+      if (url === "/payments") return { data: [paymentRead] };
       throw new Error(`unexpected GET ${url}`);
     });
     const rows = await api.loadCharges();
@@ -66,6 +66,48 @@ describe("cash real-mode transport (mocked axios)", () => {
       { amount: 100, method: "yape", reference: "YAPE-001" },
       { headers: { "Idempotency-Key": "intent-digital" } },
     );
+  });
+
+  it("agrupa pagos por cargo, conserva el historial id ASC y la conciliación newest first", async () => {
+    const payments = [
+      { ...paymentRead, id: 9, charge_id: 8, verification_status: "verified", reversed: true },
+      { ...paymentRead, id: 6, charge_id: 99 },
+      { ...paymentRead, id: 4, amount: "20.00", method: "efectivo" },
+      paymentRead,
+    ];
+    mockGet.mockImplementation(async (url: string) => {
+      if (url === "/charges") return { data: [chargeRead, { ...chargeRead, id: 8 }, { ...chargeRead, id: 9 }] };
+      if (url === "/locations") return { data: [locationRead] };
+      if (url === "/payments") return { data: payments };
+      throw new Error(`unexpected GET ${url}`);
+    });
+    const context = await api.loadCashContext({ location_id: 2 });
+    expect(mockGet).toHaveBeenCalledTimes(3);
+    expect(mockGet).toHaveBeenCalledWith("/charges", { params: { location_id: 2 } });
+    expect(mockGet).toHaveBeenCalledWith("/payments", { params: undefined });
+    expect(context.charges.map(charge => charge.payments.map(payment => payment.id)))
+      .toEqual([["1", "4"], ["9"], []]);
+    expect(context.charges[1]!.payments[0]).toMatchObject({ reversed: true, verificationStatus: "verified" });
+    expect(context.charges.map(charge => [charge.paid, charge.outstanding, charge.locationTimeZone]))
+      .toEqual([[100, 150, "America/Lima"], [100, 150, "America/Lima"], [100, 150, "America/Lima"]]);
+    // Preserve the authorized worklist even if a charge is outside the charge filter.
+    expect(context.reconciliation.map(payment => payment.id)).toEqual(["6", "1"]);
+  });
+
+  it("no sustituye un listado vacío por pagos mock y conserva el error canónico del listado", async () => {
+    mockGet.mockImplementation(async (url: string) => {
+      if (url === "/charges") return { data: [chargeRead] };
+      if (url === "/locations") return { data: [locationRead] };
+      if (url === "/payments") return { data: [] };
+      throw new Error(`unexpected GET ${url}`);
+    });
+    expect(await api.loadCashContext()).toMatchObject({ charges: [{ id: "7", payments: [] }], reconciliation: [] });
+    mockGet.mockImplementation(async (url: string) => {
+      if (url === "/payments") throw envelopeError("RATE_LIMITED", "Intenta nuevamente más tarde.", 429);
+      return { data: [] };
+    });
+    const error = await api.loadCashContext().catch(caught => api.toApiError(caught));
+    expect(error).toMatchObject({ code: "RATE_LIMITED", message: "Intenta nuevamente más tarde.", httpStatus: 429 });
   });
 
   it("omits metadata for non-digital payment and preserves the error envelope", async () => {
