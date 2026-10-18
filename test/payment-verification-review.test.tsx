@@ -1,11 +1,18 @@
-import { createElement } from "react";
+import { createElement, type ReactNode } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { AxiosError, AxiosHeaders, type InternalAxiosRequestConfig } from "axios";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import type { PaymentRead, PaymentVerificationReviewReceipt } from "../src/contracts/client";
+import type { ChargeFollowUpRead, PaymentRead, PaymentVerificationReviewReceipt } from "../src/contracts/client";
 import { cardFixture } from "./proposal-card.fixture";
 
 vi.mock("../src/components/useFocusTrap", () => ({ useFocusTrap: () => {} }));
+// Transport/navigation tests run without a DOM; motion is verified in the browser.
+vi.mock("../src/catalog/Layers", () => ({
+  Layers: ({ children }: { children: ReactNode }) => createElement("article", null, children),
+  Layer: ({ children }: { children: ReactNode }) => createElement("div", null, children),
+}));
+const shell = vi.hoisted(() => ({ locationId: "2", setLocationId: vi.fn() }));
+vi.mock("../src/components/shell/ShellContext", () => ({ useShellContext: () => shell }));
 vi.mock("next/link", () => ({ default: "a" }));
 vi.mock("../src/components/PersonaContext", () => ({ usePersona: () => ({
   identity: { principalType: "human", permissions: [] }, loading: false, version: 1,
@@ -60,6 +67,8 @@ describe("Preparar revisión: Caja con adaptador y cliente reales", () => {
   });
   beforeEach(() => {
     navigate.mockReset();
+    shell.locationId = "2";
+    shell.setLocationId.mockReset();
     vi.stubGlobal("window", { location: { assign: navigate } });
   });
   afterEach(async () => {
@@ -70,11 +79,11 @@ describe("Preparar revisión: Caja con adaptador y cliente reales", () => {
   });
   afterAll(() => vi.unstubAllEnvs());
 
-  async function renderCash(post: (config: InternalAxiosRequestConfig) => Promise<unknown>, payments = [payment], postStatus = 201) {
+  async function renderCash(post: (config: InternalAxiosRequestConfig) => Promise<unknown>, payments = [payment], postStatus = 201, chargeRow = charge) {
     client.http.defaults.adapter = async config => {
       let data: unknown;
       if (config.method === "post") data = await post(config);
-      else if (config.url === "/charges") data = [charge];
+      else if (config.url === "/charges") data = [chargeRow];
       else if (config.url === "/locations") data = [{ id: 2, name: "Lince", timezone: "America/Lima", is_active: true }];
       else if (config.url === "/charges/21/payments" || config.url === "/payments") data = payments;
       else throw new Error(`Unexpected endpoint ${config.url}`);
@@ -100,13 +109,13 @@ describe("Preparar revisión: Caja con adaptador y cliente reales", () => {
     expect(buttons("Verificar")[0]!.props.disabled).toBe(true);
     expect(navigate).not.toHaveBeenCalled();
     await act(async () => { release(receipt); await first; });
-    expect(navigate).toHaveBeenCalledExactlyOnceWith("/aprobaciones?proposal=agent_proposal:71");
+    expect(navigate).toHaveBeenCalledExactlyOnceWith("/aprobaciones?proposal=agent_proposal:71&payment=7&location=2");
   });
 
   it("created=false navega a la misma propuesta abierta", async () => {
     await renderCash(vi.fn().mockResolvedValue({ ...receipt, created: false }), [payment], 200);
     await click("Preparar revisión");
-    expect(navigate).toHaveBeenCalledExactlyOnceWith("/aprobaciones?proposal=agent_proposal:71");
+    expect(navigate).toHaveBeenCalledExactlyOnceWith("/aprobaciones?proposal=agent_proposal:71&payment=7&location=2");
   });
 
   it("conserva una clave por pago tras una respuesta perdida y alternar entre pagos", async () => {
@@ -148,7 +157,7 @@ describe("Preparar revisión: Caja con adaptador y cliente reales", () => {
     await renderCash(post, [{ ...payment, reference: null }]);
     expect(buttons("Preparar revisión")).toHaveLength(0);
     expect(buttons("Verificar")).toHaveLength(0);
-    expect(content()).toContain("Histórico · no verificable");
+    expect(content()).toContain("Falta código de operación; pide corregir el registro para cotejar el pago.");
     expect(post).not.toHaveBeenCalled();
   });
 
@@ -157,12 +166,219 @@ describe("Preparar revisión: Caja con adaptador y cliente reales", () => {
     await renderCash(post);
     await click("Verificar");
     expect(post).not.toHaveBeenCalled();
+    const summary = view!.root.findByProps({ className: "detail-list field--wide" }).findAllByType("div").map(node => node.findAllByType("span").map(span => span.children.join(" ")).concat(node.findAllByType("strong").map(strong => strong.children.join(" "))).join(" ")).join(" ");
+    for (const value of ["Referencia", "OP-123", "Monto", "S/ 120.00", "Método", "Yape", "Receptor", "Cuenta Lince", "Sede", "Lince"]) {
+      expect(summary).toContain(value);
+    }
     await act(async () => { await view!.root.findByType("form").props.onSubmit({ preventDefault() {} }); });
     expect(post).toHaveBeenCalledTimes(1);
     expect(post.mock.calls[0]![0].url).toBe("/payments/7/verify");
     expect(post.mock.calls[0]![0].headers.get("Idempotency-Key")).toBeTruthy();
     expect(content()).toContain("Pago marcado como verificado.");
     expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it("filtra por sede de la atención, permite Todas y reutiliza la carga masiva al cambiar de sede", async () => {
+    const otherCharge = { ...charge, id: 22, location_id: 3, location_name: "Miraflores", patient_name: "Paciente Miraflores" };
+    // Receiving accounts intentionally cross sites: they must not determine site.
+    const payments = [{ ...payment, receiver: "Cuenta Miraflores" }, { ...payment, id: 8, charge_id: 22, reference: "OP-MIRAFLORES", receiver: "Cuenta Lince" }];
+    const get = vi.fn(async (config: InternalAxiosRequestConfig) => {
+      const data = config.url === "/charges" ? [charge, otherCharge] : config.url === "/payments" ? payments : [];
+      return { status: 200, statusText: "OK", headers: new AxiosHeaders(), config, data };
+    });
+    client.http.defaults.adapter = get;
+    await act(async () => { view = create(createElement(CashPage)); });
+    await click("Conciliación");
+    const rows = () => view!.root.findByType("tbody").findAllByType("tr");
+    expect(rows()).toHaveLength(1);
+    expect(content()).toContain("OP-123");
+    expect(content()).not.toContain("OP-MIRAFLORES");
+    shell.locationId = "";
+    await act(async () => { view!.update(createElement(CashPage)); });
+    expect(rows()).toHaveLength(2);
+    shell.locationId = "3";
+    await act(async () => { view!.update(createElement(CashPage)); });
+    expect(rows()).toHaveLength(1);
+    expect(content()).toContain("OP-MIRAFLORES");
+    expect(content()).not.toContain("OP-123");
+    expect(get).toHaveBeenCalledTimes(3);
+  });
+
+  it("conserva contexto, historial y acciones de Cobranza de ambas sedes al filtrar Caja", async () => {
+    const charges = [charge, { ...charge, id: 22, location_id: 3, location_name: "Miraflores",
+      patient_name: "Paciente Miraflores", practitioner_id: 2, practitioner_name: "Doctora Miraflores" }];
+    const payments = [payment, { ...payment, id: 8, charge_id: 22, reference: "OP-MIRAFLORES" }];
+    let followUps: ChargeFollowUpRead[] = charges.map(row => ({
+      id: row.id + 100, charge_id: row.id, next_follow_up_on: "2099-01-01", note: "Contactar paciente",
+      state: "open", opened_at: payment.paid_at, closed_at: null, close_reason: null,
+      charge_amount: row.amount, charge_paid: row.paid, charge_outstanding: row.outstanding,
+      is_active_case: true, patient_id: row.patient_id, patient_name: row.patient_name,
+      service_id: row.service_id, service_name: row.service_name,
+      location_id: row.location_id, location_name: row.location_name,
+    }));
+    const post = vi.fn((config: InternalAxiosRequestConfig) => {
+      const current = followUps.find(row => config.url?.startsWith(`/follow-ups/${row.id}/`));
+      if (!current) throw new Error(`Unexpected POST ${config.url}`);
+      const saved: ChargeFollowUpRead = config.url!.endsWith("/reschedule")
+        ? { ...current, ...JSON.parse(config.data) }
+        : { ...current, state: "closed", closed_at: payment.paid_at, close_reason: "closed_by_operator", is_active_case: false };
+      followUps = followUps.map(row => row.id === saved.id ? saved : row);
+      return saved;
+    });
+    const requests: string[] = [];
+    client.http.defaults.adapter = async config => {
+      requests.push(config.url!);
+      let data: unknown;
+      if (config.method === "post") data = post(config);
+      else if (config.url === "/charges") data = charges;
+      else if (config.url === "/payments") data = payments;
+      else if (config.url === "/locations") data = charges.map(row => ({ id: row.location_id, name: row.location_name, timezone: "America/Lima", is_active: true }));
+      else if (config.url === "/follow-ups") data = followUps.filter(row => row.is_active_case);
+      else throw new Error(`Unexpected endpoint ${config.url}`);
+      return { status: 200, statusText: "OK", headers: new AxiosHeaders(), config, data };
+    };
+    await act(async () => { view = create(createElement(CashPage)); });
+    await click("Cobranza");
+    const rows = () => view!.root.findByType("tbody").findAllByType("tr");
+    const assertCollections = () => {
+      expect(rows()).toHaveLength(2);
+      rows().forEach((row, index) => {
+        const cells = row.findAllByType("td");
+        expect(cells[1]!.findByType("strong").children.join("")).toBe(charges[index]!.location_name);
+        expect(cells[1]!.findByType("small").children.join("")).toBe(charges[index]!.practitioner_name);
+        expect(cells[4]!.findAllByType("span").some(node => node.children.includes("Yape") && node.children.includes("S/ 120.00"))).toBe(true);
+        expect(row.findAllByType("button").map(button => button.children.join(""))).toEqual(["Cobrar", "Reprogramar", "Cerrar"]);
+      });
+    };
+    assertCollections();
+    const requestCount = requests.length;
+    for (const locationId of ["", "3", "2"]) {
+      shell.locationId = locationId;
+      await act(async () => { view!.update(createElement(CashPage)); });
+      assertCollections();
+    }
+    expect(requests).toHaveLength(requestCount);
+
+    await click("Cobrar", 1);
+    expect(view!.root.findByProps({ role: "dialog" }).findByType("h2").children.join("")).toBe("Cobrar cargo #22");
+    expect(content()).toContain("OP-MIRAFLORES");
+    expect(view!.root.findByProps({ name: "amount" }).props.value).toBe("130");
+    await click("Cancelar");
+
+    await click("Reprogramar", 1);
+    expect(view!.root.findByProps({ role: "dialog" }).findByType("h2").children.join("")).toBe("Reprogramar seguimiento");
+    await act(async () => { view!.root.findByProps({ type: "date" }).props.onChange({ target: { value: "2099-01-02" } }); });
+    await act(async () => { await view!.root.findByType("form").props.onSubmit({ preventDefault() {} }); });
+    expect(post.mock.calls[0]![0].url).toBe("/follow-ups/122/reschedule");
+    expect(JSON.parse(post.mock.calls[0]![0].data)).toEqual({ next_follow_up_on: "2099-01-02", note: "Contactar paciente" });
+    expect(followUps[1]!.next_follow_up_on).toBe("2099-01-02");
+    await act(async () => { view!.root.findByProps({ "aria-label": "Cerrar modal" }).props.onClick(); });
+
+    await click("Cerrar", 1);
+    expect(view!.root.findByProps({ role: "dialog" }).findByType("h2").children.join("")).toBe("Cerrar seguimiento");
+    await act(async () => { await view!.root.findByType("form").props.onSubmit({ preventDefault() {} }); });
+    expect(post.mock.calls.map(([config]) => config.url)).toEqual(["/follow-ups/122/reschedule", "/follow-ups/122/close"]);
+    expect(JSON.parse(post.mock.calls[1]![0].data)).toEqual({ note: "Contactar paciente" });
+    const keys = post.mock.calls.map(([config]) => config.headers.get("Idempotency-Key"));
+    expect(keys.every(key => typeof key === "string" && key.length > 0)).toBe(true);
+    expect(keys[0]).not.toBe(keys[1]);
+    expect(rows()).toHaveLength(1);
+    expect(content()).toContain("Seguimiento cerrado; el saldo permanece pendiente.");
+  });
+
+  it("explica el pago con tarjeta sin referencia junto a Pagado, sin ofrecer verificarlo", async () => {
+    await renderCash(vi.fn(), [{ ...payment, method: "tarjeta", reference: null }], 201, { ...charge, paid: "250.00", outstanding: "0.00" });
+    await click("Cobros");
+    expect(content()).toContain("Pagado");
+    expect(content()).toContain("Falta código de operación; pide corregir el registro para cotejar el pago.");
+    expect(buttons("Verificar")).toHaveLength(0);
+    expect(buttons("Preparar revisión")).toHaveLength(0);
+  });
+
+  it("coteja manualmente en 3 acciones desde Caja, sin recarga", async () => {
+    const actions = ["Conciliación"];
+    await renderCash(vi.fn().mockResolvedValue({ ...payment, verification_status: "verified" }));
+    actions.push("Verificar");
+    await click("Verificar");
+    actions.push("Marcar verificado");
+    await act(async () => { await view!.root.findByType("form").props.onSubmit({ preventDefault() {} }); });
+    expect(actions).toHaveLength(3);
+    expect(content()).toContain("Pago marcado como verificado.");
+    expect(content()).not.toContain("OP-123");
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it("AIRI requiere 3 acciones, muestra la propuesta antes que la cola y vuelve al pago verificado sin recarga manual", async () => {
+    const actions = ["Conciliación"];
+    await renderCash(vi.fn().mockResolvedValue(receipt));
+    actions.push("Preparar revisión");
+    await click("Preparar revisión");
+    const prepareUrl = new URL(navigate.mock.calls[0]![0], "http://localhost");
+    await act(async () => { view!.unmount(); });
+
+    let releaseQueue!: () => void;
+    const gate = new Promise<void>(resolve => { releaseQueue = resolve; });
+    let executed = false;
+    const post = vi.fn(async (config: InternalAxiosRequestConfig) => {
+      expect(config.url).toBe("/agent/proposals/71/approve");
+      expect(config.headers.get("Idempotency-Key")).toBeTruthy();
+      executed = true;
+      return { ...receipt.proposal, status: "executed", actions: [], decided_by: "Lucía", result_ref: "payment:7" };
+    });
+    client.http.defaults.adapter = async config => {
+      let data: unknown;
+      if (config.method === "post") data = await post(config);
+      else if (config.url === "/agent/proposals/71") data = receipt.proposal;
+      else if (config.url === "/agent/cards/71") data = { ...verificationCard, ...(executed ? { state: "approved" } : {}) };
+      else if (config.url === "/agent/inbox") { await gate; data = { items: [receipt.proposal], next_cursor: null }; }
+      else if (config.url === "/locations") data = [{ id: 2, name: "Lince", timezone: "America/Lima", is_active: true }];
+      else if (config.url === "/charges") data = [charge];
+      else if (config.url === "/payments") data = [{ ...payment, verification_status: executed ? "verified" : "unverified" }];
+      else throw new Error(`Unexpected endpoint ${config.url}`);
+      return { status: 200, statusText: "OK", headers: new AxiosHeaders(), config, data };
+    };
+    const { default: ApprovalsRoute } = await import("../app/(shell)/aprobaciones/page");
+    await act(async () => {
+      view = create(await ApprovalsRoute({ searchParams: Promise.resolve(Object.fromEntries(prepareUrl.searchParams)) }));
+    });
+    expect(content()).toContain("Cargando el resto de la bandeja");
+    expect(buttons("Aprobar")).toHaveLength(1);
+    expect(post).not.toHaveBeenCalled();
+    actions.push("Aprobar");
+    await click("Aprobar");
+    expect(post).toHaveBeenCalledTimes(1);
+    expect(navigate).toHaveBeenLastCalledWith("/caja?payment=7&location=2");
+    // A late queue response cannot put the already executed proposal back.
+    await act(async () => { releaseQueue(); });
+    expect(buttons("Aprobar")).toHaveLength(0);
+    expect(view!.root.findAllByType("a").find(link => link.children.includes("Volver a Conciliación"))!.props.href).toBe("/caja?payment=7&location=2");
+    await act(async () => { view!.unmount(); });
+    const { default: CashRoute } = await import("../app/(shell)/caja/page");
+    await act(async () => {
+      view = create(await CashRoute({ searchParams: Promise.resolve({ payment: "7", location: "2" }) }));
+    });
+    expect(actions).toHaveLength(3);
+    expect(shell.setLocationId).toHaveBeenCalledWith("2");
+    expect(view!.root.findByProps({ "data-focused-payment": "true" })).toBeTruthy();
+    expect(content()).toContain("Pago seleccionado · OP-123 · Verificado");
+    expect(content()).toContain("0 pagos pendientes");
+    expect(buttons("Verificar")).toHaveLength(0);
+    expect(buttons("Preparar revisión")).toHaveLength(0);
+  });
+
+  it("mantiene item.actions como autoridad y no regresa antes de una ejecución confirmada", async () => {
+    client.http.defaults.adapter = async config => {
+      const data = config.url === "/agent/proposals/71" ? { ...receipt.proposal, actions: [] }
+        : config.url === "/agent/cards/71" ? verificationCard
+        : config.url === "/agent/inbox" ? { items: [], next_cursor: null } : [];
+      return { status: 200, statusText: "OK", headers: new AxiosHeaders(), config, data };
+    };
+    const { ApprovalsPage } = await import("../src/views/ApprovalsPage");
+    await act(async () => { view = create(createElement(ApprovalsPage, { focusedKey: "agent_proposal:71", returnToCash: "/caja?payment=7&location=2" })); });
+    expect(content()).toContain("Tu rol no puede decidir esta propuesta.");
+    expect(buttons("Aprobar").every(button => button.props.disabled)).toBe(true);
+    expect(navigate).not.toHaveBeenCalled();
+    expect(content()).not.toContain("Volver a Conciliación");
   });
 
   it("Bandeja abre directamente la propuesta vinculada y pinta la tarjeta canónica", async () => {
