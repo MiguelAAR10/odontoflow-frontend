@@ -3667,6 +3667,16 @@ export interface components {
             /** Min Quantity */
             min_quantity: string;
         };
+        /**
+         * MeLocationPermissions
+         * @description Permission grants scoped to one location, excluding global grants.
+         */
+        MeLocationPermissions: {
+            /** Location Id */
+            location_id: number;
+            /** Permissions */
+            permissions: string[];
+        };
         /** MeOrganization */
         MeOrganization: {
             /** Id */
@@ -3692,12 +3702,7 @@ export interface components {
             /** Permissions */
             permissions: string[];
             /** Location Permissions */
-            location_permissions: {
-                /** Location Id */
-                location_id: number;
-                /** Permissions */
-                permissions: string[];
-            }[];
+            location_permissions: components["schemas"]["MeLocationPermissions"][];
         };
         /** MeRole */
         MeRole: {

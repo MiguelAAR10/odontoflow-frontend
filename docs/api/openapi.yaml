@@ -17922,6 +17922,22 @@ components:
       title: LowStockRead
       description: One product × location whose derived balance is below its reorder
         point.
+    MeLocationPermissions:
+      properties:
+        location_id:
+          type: integer
+          title: Location Id
+        permissions:
+          items:
+            type: string
+          type: array
+          title: Permissions
+      type: object
+      required:
+      - location_id
+      - permissions
+      title: MeLocationPermissions
+      description: Permission grants scoped to one location, excluding global grants.
     MeOrganization:
       properties:
         id:
@@ -17968,12 +17984,18 @@ components:
             type: string
           type: array
           title: Permissions
+        location_permissions:
+          items:
+            $ref: '#/components/schemas/MeLocationPermissions'
+          type: array
+          title: Location Permissions
       type: object
       required:
       - principal
       - organization
       - roles
       - permissions
+      - location_permissions
       title: MeRead
     MeRole:
       properties:
