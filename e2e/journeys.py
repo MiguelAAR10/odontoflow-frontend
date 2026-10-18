@@ -737,9 +737,15 @@ with SessionLocal() as session:
                   proof['payment']['reference'] == fixture['reference'], 'M1 JSON does not match the database')
         name = f'E1 sintético {self.seed["run_id"]} · caja'
         me = self.choose(name)
+        location_permissions = me.get('location_permissions', [])
+        lince_permissions = {code for grant in location_permissions
+                             if grant['location_id'] == self.seed['sedes']['Lince']
+                             for code in grant['permissions']}
         check(me['principal']['id'] == self.seed['personas']['caja'] and
-              'payments.manage' in me['permissions'] and 'proposals.decide' in me['permissions'] and
-              'payments.reverse' not in me['permissions'], 'M1 Caja must approve payments without reversal permission')
+              not me['permissions'] and
+              {'charges.read', 'payments.manage', 'proposals.create', 'proposals.read', 'proposals.decide'} <= lince_permissions and
+              all('payments.reverse' not in grant['permissions'] for grant in location_permissions),
+              'M1 Caja requires location_permissions for Lince, no global grants or reversal permission')
         with self.e1_control_session() as (_, control_me):
             row['actors'] = {'cashier': me, 'reversal_control': control_me}
         before = self.e1_direction()

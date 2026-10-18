@@ -215,7 +215,9 @@ explícitamente. El host debe ser exactamente `127.0.0.1` y el puerto `5434`.
 3. Configurar en el BFF las dos personas humanas que imprime M1:
    `E1 sintético ensayo-01 · caja` y `E1 sintético ensayo-01 · recepcion`, con
    credenciales emitidas para esos IDs. No ampliar sus grants: Caja tiene sus
-   cuatro permisos solo en Lince; Recepción carece de `payments.manage`.
+   cinco permisos solo en Lince: `charges.read`, `payments.manage`,
+   `proposals.read`, `proposals.create` y `proposals.decide`; Recepción carece
+   de `payments.manage`.
 4. Para probar otra organización, provisionar **otra organización sintética en
    la misma base aislada**, ejecutar el mismo seed con su `--org` y otro run-id,
    guardar `e1-other-seed.json` y emitir una credencial humana con permisos de
@@ -230,9 +232,15 @@ explícitamente. El host debe ser exactamente `127.0.0.1` y el puerto `5434`.
    `BACKEND_DEMO_HUMANS` para el selector BFF. Se usa para anular y preparar la
    fixture de otra sede; el recorrido principal y las aprobaciones usan Caja de M1.
 
-Antes de consumir el lote, `/me` debe confirmar que Caja tiene `payments.manage`
-y `proposals.decide` sin `payments.reverse`, y que la persona de control es otro
-humano de la misma organización con `payments.reverse`. Cada anulación cambia
+Antes de consumir el lote, `/me` debe devolver `permissions: []` para Caja y los
+cinco permisos anteriores en `location_permissions: [{location_id, permissions}]`
+para el ID de Lince del seed, sin `payments.reverse` en ninguna sede. Los grants
+de sede corresponden a membresías activas de la organización de la credencial y
+se mantienen separados de los permisos globales. El menú muestra Caja/Bandeja en
+Lince y en «Todas» (alguna sede autorizada), y los oculta al seleccionar Miraflores;
+los botones de cada propuesta siguen las `actions` del backend. La persona de
+control debe ser otro humano de la misma organización con `payments.reverse`.
+Cada anulación cambia
 explícitamente a control y restaura la persona anterior en `finally`. La carrera
 conserva una sesión BFF independiente para control y restaura Caja en el navegador;
 lanza a la vez anulación como control y aprobación como Caja, comprobando ambos

@@ -1,6 +1,6 @@
 /** FE1 Bandeja — real-mode adapter and transport at the axios boundary. */
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import type { InboxItem } from "../src/contracts/client";
+import type { InboxItem, MeRead } from "../src/contracts/client";
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 
@@ -113,10 +113,12 @@ const catalogs = async (url: string, config?: { params?: Record<string, unknown>
 
 describe("Bandeja real-mode adapter (mocked axios)", () => {
   let api: typeof import("../src/api");
+  let session: typeof import("../src/session");
 
   beforeAll(async () => {
     vi.stubEnv("NEXT_PUBLIC_USE_MOCKS", "false");
     api = await import("../src/api");
+    session = await import("../src/session");
   });
   afterAll(() => vi.unstubAllEnvs());
   beforeEach(() => { mockGet.mockReset(); mockPost.mockReset(); });
@@ -438,11 +440,12 @@ describe("Bandeja real-mode adapter (mocked axios)", () => {
   });
 
   describe("who is signed in", () => {
-    const meRead = {
+    const meRead: MeRead = {
       principal: { id: 2, type: "human", display_name: "Lucía Ramos" },
       organization: { id: 1, name: "ODONTO SMART" },
       roles: [{ code: "staff-secretaria", name: "Secretaria" }],
       permissions: ["appointments.read", "charges.read", "deliveries.create", "patients.read", "proposals.decide", "proposals.read", "waitlist.read"],
+      location_permissions: [],
     };
 
     it("maps GET /me", async () => {
@@ -456,7 +459,43 @@ describe("Bandeja real-mode adapter (mocked axios)", () => {
         organizationName: "ODONTO SMART",
         roles: ["Secretaria"],
         permissions: meRead.permissions,
+        locationPermissions: [],
       });
+    });
+
+    it("keeps /me location grants separate and uses the selected site for navigation", async () => {
+      const scopedMe: MeRead = { ...meRead, permissions: [], location_permissions: [
+        { location_id: 1, permissions: ["charges.read", "proposals.read", "payments.manage", "proposals.decide"] },
+      ] };
+      mockGet.mockResolvedValue({ data: scopedMe });
+      const identity = await api.loadIdentity();
+      expect(identity.permissions).toEqual([]);
+      expect(identity.locationPermissions).toEqual([{ locationId: 1, permissions: scopedMe.location_permissions[0]!.permissions }]);
+      expect(session.hasPermissions(identity, ["charges.read"])).toBe(false);
+      for (const path of ["/caja", "/aprobaciones"]) {
+        expect(api.canOpen(identity, path, 1)).toBe(true);
+        expect(api.canOpen(identity, path, 2)).toBe(false);
+        expect(api.canOpen(identity, path)).toBe(true);
+      }
+      expect(api.canRunAgent(identity, "cobranza")).toBe(false);
+      expect(session.hasLocationPermissions(identity, ["payments.reverse"], 1)).toBe(false);
+      identity.locationPermissions[0]!.permissions.push("payments.reverse");
+      expect(scopedMe.location_permissions[0]!.permissions).not.toContain("payments.reverse");
+      expect(identity.permissions).toEqual([]);
+    });
+
+    it("combines global grants with one site's grants, never across sites", () => {
+      const identity = session.toStaffIdentity({ ...meRead, permissions: ["charges.read"], location_permissions: [
+        { location_id: 1, permissions: ["payments.manage"] },
+        { location_id: 2, permissions: ["proposals.decide"] },
+      ] });
+      expect(session.hasLocationPermissions(identity, ["charges.read", "payments.manage"], 1)).toBe(true);
+      expect(session.hasLocationPermissions(identity, ["charges.read", "payments.manage"], 2)).toBe(false);
+      expect(session.hasLocationPermissions(identity, ["charges.read", "payments.manage"])).toBe(true);
+      expect(session.hasLocationPermissions(identity, ["payments.manage", "proposals.decide"])).toBe(false);
+      expect(session.hasLocationPermissions(null, ["charges.read"], 1)).toBe(false);
+      expect(api.canOpen(identity, "/caja", 2)).toBe(true);
+      expect(api.canOpen({ ...identity, permissions: [], locationPermissions: [] }, "/caja")).toBe(false);
     });
 
     it("decides runnable agents and visible modules from permissions only", async () => {
@@ -473,7 +512,7 @@ describe("Bandeja real-mode adapter (mocked axios)", () => {
     });
 
     it("machine callers need proposals.create and never run Confirmaciones", () => {
-      const integration = { principalType: "integration", displayName: "x", organizationName: "y", roles: [], permissions: ["proposals.create", "charges.read", "appointments.read", "deliveries.create"] };
+      const integration = { principalType: "integration", displayName: "x", organizationName: "y", roles: [], permissions: ["proposals.create", "charges.read", "appointments.read", "deliveries.create"], locationPermissions: [] };
       expect(api.canRunAgent(integration, "cobranza")).toBe(true);
       expect(api.canRunAgent(integration, "confirmaciones")).toBe(false);
     });
