@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Local no-mock browser journeys and the E1 measurement gate."""
 import argparse
+from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 import csv
 import hashlib
 import json
@@ -13,6 +15,7 @@ import sys
 from datetime import datetime, timezone
 from decimal import Decimal
 from statistics import median
+from threading import Barrier
 from urllib.parse import parse_qs, quote, urlsplit
 from uuid import UUID, uuid4
 from zoneinfo import ZoneInfo
@@ -550,6 +553,77 @@ with SessionLocal() as session:
             {'path': path, 'method': method, 'body': body, 'key': key, 'response': response})
         return response
 
+    def e1_http_session(self):
+        """Copy the current signed BFF cookie into an independent local client."""
+        import httpx
+        cookies = httpx.Cookies()
+        for cookie in self.page.context.cookies([self.args.base]):
+            cookies.set(cookie['name'], cookie['value'], domain=cookie['domain'], path=cookie['path'])
+        origin = urlsplit(self.args.base)
+        return httpx.Client(base_url=self.args.base.rstrip('/'), cookies=cookies, timeout=30,
+                            headers={'Origin': f'{origin.scheme}://{origin.netloc}'})
+
+    @contextmanager
+    def e1_control_session(self):
+        previous = self.person
+        try:
+            me = self.choose(self.env.get('E1_CONTROL_PERSONA', 'Carlos Vega'))
+            check(me['organization']['id'] == self.seed['organization_id'] and
+                  me['principal']['type'] == 'human' and
+                  me['principal']['id'] != self.seed['personas']['caja'] and
+                  'payments.reverse' in me['permissions'], 'Control human must be authorized to reverse')
+            with self.e1_http_session() as control:
+                identity = control.get('/api/backend/me')
+                check(identity.status_code == 200 and identity.json() == me, 'Control BFF identity differs from /me')
+                yield control, me
+        finally:
+            self.choose(previous)
+
+    def e1_http_post(self, client, request, principal_id):
+        response = client.post('/api/backend' + request['path'],
+                               headers={'Idempotency-Key': request['key']},
+                               **({'json': request['body']} if request.get('body') is not None else {}))
+        return {'status': response.status_code, 'body': response.json(),
+                'replay': response.headers.get('idempotent-replay'), 'principal_id': principal_id}
+
+    def e1_reverse(self, payment_id):
+        request = {'path': f'/payments/{payment_id}/reverse', 'key': str(uuid4()),
+                   'body': {'reason': 'E1 synthetic stale proposal'}}
+        with self.e1_control_session() as (control, me):
+            response = self.e1_http_post(control, request, me['principal']['id'])
+        self.result['journeys'][E1].setdefault('requests', []).append(
+            {**request, 'method': 'POST', 'response': response})
+        return response
+
+    def e1_reversal_race(self, payment_id, proposal):
+        requests = [
+            {'path': f'/payments/{payment_id}/reverse', 'key': str(uuid4()),
+             'body': {'reason': 'E1 synthetic race'}},
+            {'path': f'/agent/proposals/{proposal["id"]}/approve', 'key': str(uuid4()),
+             'body': {'payload_hash': proposal['payload_hash']}}]
+        with self.e1_control_session() as (control, me):
+            self.choose(f'E1 sintético {self.seed["run_id"]} · caja')
+            # Keep the administrator's cookie independent of the browser's switch back to Caja.
+            identity = control.get('/api/backend/me')
+            check(identity.status_code == 200 and identity.json() == me, 'Race lost its independent control identity')
+            with self.e1_http_session() as cashier:
+                identity = cashier.get('/api/backend/me')
+                check(identity.status_code == 200 and
+                      identity.json()['principal']['id'] == self.seed['personas']['caja'], 'Race approver must be M1 Caja')
+                start = Barrier(2)
+
+                def post(client, request, principal_id):
+                    start.wait(timeout=30)
+                    return self.e1_http_post(client, request, principal_id)
+
+                with ThreadPoolExecutor(max_workers=2) as executor:
+                    reversal = executor.submit(post, control, requests[0], me['principal']['id'])
+                    approval = executor.submit(post, cashier, requests[1], self.seed['personas']['caja'])
+                    results = [reversal.result(timeout=35), approval.result(timeout=35)]
+        self.result['journeys'][E1].setdefault('concurrent_requests', []).append(
+            {'requests': requests, 'responses': results})
+        return results
+
     def e1_parallel(self, requests):
         result = self.page.evaluate('''async requests => Promise.all(requests.map(async q => {
           const r = await fetch('/api/backend'+q.path, {method:'POST',
@@ -661,7 +735,11 @@ with SessionLocal() as session:
                   proof['payment']['reference'] == fixture['reference'], 'M1 JSON does not match the database')
         name = f'E1 sintético {self.seed["run_id"]} · caja'
         me = self.choose(name)
-        check(me['principal']['id'] == self.seed['personas']['caja'], 'Wrong M1 Caja principal')
+        check(me['principal']['id'] == self.seed['personas']['caja'] and
+              'payments.manage' in me['permissions'] and 'proposals.decide' in me['permissions'] and
+              'payments.reverse' not in me['permissions'], 'M1 Caja must approve payments without reversal permission')
+        with self.e1_control_session() as (_, control_me):
+            row['actors'] = {'cashier': me, 'reversal_control': control_me}
         before = self.e1_direction()
         self.snap(E1, 'direccion-antes')
         payment_id = regular[0]['payment_id']
@@ -768,8 +846,15 @@ with SessionLocal() as session:
             pending = self.e1_prepare(pid)
             self.go(f'/aprobaciones?proposal=agent_proposal%3A{pending["id"]}')
             expect(self.page.locator('#bandeja-selected')).to_contain_text(fixture['reference'])
-            changed = self.e1_request(f'/payments/{pid}/{action}', {} if action == 'verify' else
-                                      {'reason': 'E1 synthetic stale proposal'})
+            if action == 'reverse':
+                before_denied = self.e1_proof(pid)
+                denied = self.e1_request(f'/payments/{pid}/reverse', {'reason': 'E1 cashier cannot reverse'})
+                self.e1_rejected(denied, (403,), 'PERMISSION_DENIED')
+                check(before_denied == self.e1_proof(pid), 'Denied cashier reversal changed payment/events')
+                row['cashier_reverse_denied'] = denied
+                changed = self.e1_reverse(pid)
+            else:
+                changed = self.e1_request(f'/payments/{pid}/verify', {})
             check(changed['status'] == 200, f'Stale fixture failed: {changed}')
             before_stale = self.e1_proof(pid)
             rejected = self.e1_request(f'/agent/proposals/{pending["id"]}/approve',
@@ -787,10 +872,7 @@ with SessionLocal() as session:
             stale.append({'payment_id': pid, 'action': action, 'rejection': rejected, 'proof': before_stale})
         pid = regular[4]['payment_id']
         pending = self.e1_prepare(pid)
-        race = self.e1_parallel([
-            {'path': f'/payments/{pid}/reverse', 'key': str(uuid4()), 'body': {'reason': 'E1 synthetic race'}},
-            {'path': f'/agent/proposals/{pending["id"]}/approve', 'key': str(uuid4()),
-             'body': {'payload_hash': pending['payload_hash']}}])
+        race = self.e1_reversal_race(pid, pending)
         check(race[0]['status'] == 200 and race[1]['status'] in (200, 409), f'Unexpected race response: {race}')
         proof = self.e1_proof(pid)
         events = [e for e in proof['events'] if e['action'] == 'payment.verified']

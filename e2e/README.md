@@ -216,9 +216,20 @@ El runner no crea bases, migra, siembra ni arranca servicios.
 5. Añadir al env 0600 `E1_OTHER_HUMAN_CREDENTIAL`, `SALES_AGENT_V0_CREDENTIAL`
    (principal agente real), `E1_BACKEND_DIR=/ruta/absoluta/backend` y, si su venv
    no está allí, `E1_BACKEND_PYTHON=/ruta/absoluta/al/python`. Mantener una persona
-   de control del seed base con acceso a Miraflores: `Carlos Vega` por defecto,
-   configurable con `E1_CONTROL_PERSONA`. Se usa solo para preparar la fixture de
-   otra sede; el recorrido principal y las decisiones usan Caja de M1.
+   administradora/propietaria de control del seed base, con `payments.reverse`
+   y acceso a Miraflores: `Carlos Vega` por defecto, configurable con
+   `E1_CONTROL_PERSONA`. Su credencial debe estar configurada en
+   `BACKEND_DEMO_HUMANS` para el selector BFF. Se usa para anular y preparar la
+   fixture de otra sede; el recorrido principal y las aprobaciones usan Caja de M1.
+
+Antes de consumir el lote, `/me` debe confirmar que Caja tiene `payments.manage`
+y `proposals.decide` sin `payments.reverse`, y que la persona de control es otro
+humano de la misma organización con `payments.reverse`. Cada anulación cambia
+explícitamente a control y restaura la persona anterior en `finally`. La carrera
+conserva una sesión BFF independiente para control y restaura Caja en el navegador;
+lanza a la vez anulación como control y aprobación como Caja, comprobando ambos
+actores y guardando sus IDs. Las cookies permanecen en memoria y no se escriben
+en la evidencia. También exige 403 y pago intacto si Caja intenta anular.
 
 El caso 8 desactiva la membresía de Caja **después** de preparar una propuesta,
 exige 403 al aprobar y restaura la membresía en `finally`. Usa el servicio público
@@ -243,7 +254,7 @@ M1 seleccionan los pagos: no se escoge el primer pendiente global de la UI.
 | 1–3 | Doble clic en Preparar revisión, URL enfocada en `agent_proposal:ID`, tarjeta con alcance/efecto, recarga, doble clic en Aprobar y estado SQL `verified`; Dirección Lince, mismo día Lima, pendiente −X, verificado +X, total igual; `/activity` y DOM de Rastro con AIRI, Caja y hora. |
 | 4–5 | Dos preparaciones concurrentes con claves distintas → una propuesta abierta en SQL; cada clave repite su cuerpo original incluido `created`. Reintento de la aprobación capturada tras ejecutar/recargar → mismo cuerpo, `Idempotent-Replay: true`, un solo `payment.verified` en `audit_events`. |
 | 6 | Tarjeta sin referencia de M1: preparar y verificar manual devuelven 422 `INVALID_INPUT / missing_reference`; pago y eventos intactos. |
-| 7 | Tarjeta abierta, verificar manualmente o anular y luego aprobar → `PROPOSAL_SUPERSEDED` o estado `failed`, sin otro efecto. Carrera anular/aprobar: registra ganador; si ganó anular no hay `payment.verified`, si ganó aprobar hay uno anterior a la anulación. Verificar un anulado devuelve 422 `reversed`. |
+| 7 | Tarjeta abierta, verificar manualmente como Caja o anular como control autorizado y luego aprobar como Caja → `PROPOSAL_SUPERSEDED` o estado `failed`, sin otro efecto. Caja no puede anular (403). Carrera con sesiones independientes: control anula, Caja aprueba; registra ganador e IDs de ambos actores. Si ganó anular no hay `payment.verified`, si ganó aprobar hay uno anterior a la anulación. Verificar un anulado devuelve 422 `reversed`. |
 | 8 | Recepción y agente reciben 403 al verificar/aprobar/reintentar; agente también al preparar. Revocación de la membresía entre preparar y aprobar → 403 y pago intacto. |
 | 9 | Otra sede y otra organización: leer cargo/pagos/propuesta, preparar, verificar, aprobar y reintentar → 403/404, sin filtración en la lista de pagos ni cambios financieros. |
 
