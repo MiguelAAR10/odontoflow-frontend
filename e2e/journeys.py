@@ -743,9 +743,10 @@ with SessionLocal() as session:
                              for code in grant['permissions']}
         check(me['principal']['id'] == self.seed['personas']['caja'] and
               not me['permissions'] and
-              {'charges.read', 'payments.manage', 'proposals.create', 'proposals.read', 'proposals.decide'} <= lince_permissions and
+              lince_permissions == {'charges.read', 'payments.read', 'payments.manage',
+                                    'proposals.read', 'proposals.decide'} and
               all('payments.reverse' not in grant['permissions'] for grant in location_permissions),
-              'M1 Caja requires location_permissions for Lince, no global grants or reversal permission')
+              'M1 Caja requires exactly the Lince endpoint permissions, no global grants or reversal permission')
         with self.e1_control_session() as (_, control_me):
             row['actors'] = {'cashier': me, 'reversal_control': control_me}
         before = self.e1_direction()
