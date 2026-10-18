@@ -215,8 +215,8 @@ explícitamente. El host debe ser exactamente `127.0.0.1` y el puerto `5434`.
 3. Configurar en el BFF las dos personas humanas que imprime M1:
    `E1 sintético ensayo-01 · caja` y `E1 sintético ensayo-01 · recepcion`, con
    credenciales emitidas para esos IDs. No ampliar sus grants: Caja tiene sus
-   cinco permisos solo en Lince: `charges.read`, `payments.manage`,
-   `proposals.read`, `proposals.create` y `proposals.decide`; Recepción carece
+   cinco permisos solo en Lince: `charges.read`, `payments.read`, `payments.manage`,
+   `proposals.read` y `proposals.decide`; Recepción carece
    de `payments.manage`.
 4. Para probar otra organización, provisionar **otra organización sintética en
    la misma base aislada**, ejecutar el mismo seed con su `--org` y otro run-id,
@@ -226,11 +226,13 @@ explícitamente. El host debe ser exactamente `127.0.0.1` y el puerto `5434`.
 5. Añadir al env 0600 `E1_OTHER_HUMAN_CREDENTIAL`, `SALES_AGENT_V0_CREDENTIAL`
    (principal agente real), `E1_BACKEND_DIR=/ruta/absoluta/backend` y, si su venv
    no está allí, `E1_BACKEND_PYTHON=/ruta/absoluta/al/python`. Mantener una persona
-   administradora/propietaria de control del seed base, con `payments.reverse`
-   y acceso a Miraflores: `Carlos Vega` por defecto, configurable con
+   administradora/propietaria de control del seed base, con `payments.reverse`,
+   `locations.read`, `payments.read` y `proposals.read` globales y acceso a
+   Miraflores: `Carlos Vega` por defecto, configurable con
    `E1_CONTROL_PERSONA`. Su credencial debe estar configurada en
-   `BACKEND_DEMO_HUMANS` para el selector BFF. Se usa para anular y preparar la
-   fixture de otra sede; el recorrido principal y las aprobaciones usan Caja de M1.
+   `BACKEND_DEMO_HUMANS` para el selector BFF. Se usa para leer Dirección/Rastro,
+   anular y preparar la fixture de otra sede; preparar/aprobar en Caja/Bandeja
+   corresponde a Caja de M1.
 
 Antes de consumir el lote, `/me` debe devolver `permissions: []` para Caja y los
 cinco permisos anteriores en `location_permissions: [{location_id, permissions}]`
@@ -239,13 +241,34 @@ de sede corresponden a membresías activas de la organización de la credencial 
 se mantienen separados de los permisos globales. El menú muestra Caja/Bandeja en
 Lince y en «Todas» (alguna sede autorizada), y los oculta al seleccionar Miraflores;
 los botones de cada propuesta siguen las `actions` del backend. La persona de
-control debe ser otro humano de la misma organización con `payments.reverse`.
-Cada anulación cambia
-explícitamente a control y restaura la persona anterior en `finally`. La carrera
+control debe ser otro humano de la misma organización con los permisos globales
+anteriores; el preflight los comprueba antes de leer Dirección.
+El recorrido empieza en Bandeja. Dirección (antes/después), Rastro y sus capturas
+se leen como control; antes de restaurar Caja vuelve a `/aprobaciones`, porque
+cambiar de persona remonta la página y repite sus lecturas. Las anulaciones y
+la preparación en Miraflores también cambian explícitamente a control y restauran
+la persona anterior en `finally`. Recepción solo se selecciona para los rechazos
+y restaura Caja aun si fallan. Las sondas con bearer comprueban `/me`: agente de
+la organización principal, humano de la otra organización. La carrera
 conserva una sesión BFF independiente para control y restaura Caja en el navegador;
 lanza a la vez anulación como control y aprobación como Caja, comprobando ambos
 actores y guardando sus IDs. Las cookies permanecen en memoria y no se escriben
 en la evidencia. También exige 403 y pago intacto si Caja intenta anular.
+
+**Bloqueo de producto detectado en FE3fix4:** Caja de M1 aún no puede cargar
+Conciliación. `loadCharges()` espera conjuntamente `/charges` y `/locations`, y
+después lee `/charges/{id}/payments`
+([adaptador:636](/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/fe-e1-FE3fix4/src/api.ts:636)).
+Los dos últimos endpoints exigen `locations.read` y `payments.read` globales,
+respectivamente ([catálogo:139](/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/backend--integracion--e1/app/organization/service.py:139),
+[pagos:947](/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/backend--integracion--e1/app/economics/service.py:947));
+M1 asigna sus cinco grants solo en Lince
+([semilla:184](/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/backend--integracion--e1/scripts/seed_e1_cobro.py:184)).
+El catálogo también lo consulta la barra de sede y Bandeja. El recorrido conserva
+el rol Caja y las aserciones: no ampliar grants, sustituir Caja por control ni
+aceptar estos 403 como éxito. Se requiere resolver este contrato de producto
+antes de certificar los casos 1–9; la tabla completa y el bloqueo constan en
+[FE3fix4](/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.coordinacion/e1-cobro-verificado/informes/FE3fix4.md).
 
 El caso 8 desactiva la membresía de Caja **después** de preparar una propuesta,
 exige 403 al aprobar y restaura la membresía en `finally`. Usa el servicio público
@@ -269,7 +292,7 @@ arriba en `/tmp/e1-fe3-demo-ensayo-01`; su `DATABASE_URL` debe ser
 Ejecutar exactamente:
 
 ```bash
-npm --prefix /home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/fe-e1-FE3fix run e2e:journeys -- \
+npm --prefix /home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/fe-e1-FE3fix4 run e2e:journeys -- \
   --base http://127.0.0.1:3110 --api http://127.0.0.1:8110 \
   --run-dir /tmp/e1-fe3-demo-ensayo-01 --journeys cobro-verificado \
   --e1-db odontoflow_e1_demo --replay
@@ -286,7 +309,7 @@ M1 seleccionan los pagos: no se escoge el primer pendiente global de la UI.
 
 | Caso | Aserción y evidencia |
 | --- | --- |
-| 1–3 | Doble clic en Preparar revisión, URL enfocada en `agent_proposal:ID`, tarjeta con alcance/efecto, recarga, doble clic en Aprobar y estado SQL `verified`; Dirección Lince, mismo día Lima, pendiente −X, verificado +X, total igual; `/activity` y DOM de Rastro con AIRI, Caja y hora. |
+| 1–3 | Como Caja: doble clic en Preparar revisión, URL enfocada en `agent_proposal:ID`, tarjeta con alcance/efecto, recarga, doble clic en Aprobar y estado SQL `verified`. Como control: Dirección Lince, mismo día Lima, pendiente −X, verificado +X, total igual; `/activity` y DOM de Rastro con AIRI, Caja y hora; restaurar Caja. |
 | 4–5 | Dos preparaciones concurrentes con claves distintas → una propuesta abierta en SQL; cada clave repite su cuerpo original incluido `created`. Reintento de la aprobación capturada tras ejecutar/recargar → mismo cuerpo, `Idempotent-Replay: true`, un solo `payment.verified` en `audit_events`. |
 | 6 | Tarjeta sin referencia de M1: preparar y verificar manual devuelven 422 `INVALID_INPUT / missing_reference`; pago y eventos intactos. |
 | 7 | Tarjeta abierta, verificar manualmente como Caja o anular como control autorizado y luego aprobar como Caja → `PROPOSAL_SUPERSEDED` o estado `failed`, sin otro efecto. Caja no puede anular (403). Carrera con sesiones independientes: control anula, Caja aprueba; registra ganador e IDs de ambos actores. Si ganó anular no hay `payment.verified`, si ganó aprobar hay uno anterior a la anulación. Verificar un anulado devuelve 422 `reversed`. |

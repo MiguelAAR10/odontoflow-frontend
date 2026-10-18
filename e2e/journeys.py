@@ -552,7 +552,8 @@ with SessionLocal() as session:
         key = key or (str(uuid4()) if method == 'POST' else None)
         response = self.api(path, method, body, key)
         self.result['journeys'][E1].setdefault('requests', []).append(
-            {'path': path, 'method': method, 'body': body, 'key': key, 'response': response})
+            {'path': path, 'method': method, 'body': body, 'key': key,
+             'person': self.person, 'response': response})
         return response
 
     def e1_http_session(self):
@@ -566,7 +567,7 @@ with SessionLocal() as session:
                             headers={'Origin': f'{origin.scheme}://{origin.netloc}'})
 
     @contextmanager
-    def e1_control_session(self):
+    def e1_control_session(self, *, permissions=(), restore_path=None):
         previous = self.person
         try:
             me = self.choose(self.env.get('E1_CONTROL_PERSONA', 'Carlos Vega'))
@@ -574,12 +575,20 @@ with SessionLocal() as session:
                   me['principal']['type'] == 'human' and
                   me['principal']['id'] != self.seed['personas']['caja'] and
                   'payments.reverse' in me['permissions'], 'Control human must be authorized to reverse')
+            check(set(permissions) <= set(me['permissions']),
+                  'Control human lacks the required organization-wide read permissions')
             with self.e1_http_session() as control:
                 identity = control.get('/api/backend/me')
                 check(identity.status_code == 200 and identity.json() == me, 'Control BFF identity differs from /me')
                 yield control, me
         finally:
-            self.choose(previous)
+            try:
+                # Leave Dirección/Rastro before restoring a location-only identity:
+                # switching personas remounts the current page and repeats its reads.
+                if restore_path:
+                    self.go(restore_path)
+            finally:
+                self.choose(previous)
 
     def e1_http_post(self, client, request, principal_id):
         response = client.post('/api/backend' + request['path'],
@@ -747,10 +756,11 @@ with SessionLocal() as session:
                                     'proposals.read', 'proposals.decide'} and
               all('payments.reverse' not in grant['permissions'] for grant in location_permissions),
               'M1 Caja requires exactly the Lince endpoint permissions, no global grants or reversal permission')
-        with self.e1_control_session() as (_, control_me):
+        control_reads = ('locations.read', 'payments.read', 'proposals.read')
+        with self.e1_control_session(permissions=control_reads, restore_path='/aprobaciones') as (_, control_me):
             row['actors'] = {'cashier': me, 'reversal_control': control_me}
-        before = self.e1_direction()
-        self.snap(E1, 'direccion-antes')
+            before = self.e1_direction()
+            self.snap(E1, 'direccion-antes')
         payment_id = regular[0]['payment_id']
         self.go('/caja')
         self.page.get_by_role('tab', name='Conciliación', exact=True).click()
@@ -798,16 +808,17 @@ with SessionLocal() as session:
         verified = [e for e in proof['events'] if e['action'] == 'payment.verified']
         check(proof['payment']['verification_status'] == 'verified' and len(verified) == 1,
               'UI double approval did not verify exactly once')
-        after = self.e1_direction()
-        amount = int(Decimal(proof['payment']['amount']) * 100)
-        check(after['verified'] == before['verified'] + amount and
-              after['pending'] == before['pending'] - amount and
-              before['verified'] + before['pending'] == after['verified'] + after['pending'],
-              'Direction must move -X/+X while preserving total received')
-        cases['1-2'] = {'before': before, 'after': after, 'proof': proof}
-        self.snap(E1, 'direccion-despues')
-        cases['3'] = self.e1_trail(proposal['id'], payment_id)
-        self.snap(E1, 'rastro')
+        with self.e1_control_session(permissions=control_reads, restore_path='/aprobaciones'):
+            after = self.e1_direction()
+            self.snap(E1, 'direccion-despues')
+            amount = int(Decimal(proof['payment']['amount']) * 100)
+            check(after['verified'] == before['verified'] + amount and
+                  after['pending'] == before['pending'] - amount and
+                  before['verified'] + before['pending'] == after['verified'] + after['pending'],
+                  'Direction must move -X/+X while preserving total received')
+            cases['1-2'] = {'before': before, 'after': after, 'proof': proof}
+            cases['3'] = self.e1_trail(proposal['id'], payment_id)
+            self.snap(E1, 'rastro')
 
         # Two simultaneous preparations with different keys must share one open proposal.
         pid = regular[1]['payment_id']
@@ -899,16 +910,25 @@ with SessionLocal() as session:
         pid = regular[5]['payment_id']
         pending = self.e1_prepare(pid)
         before_denied = self.e1_proof(pid)
-        self.choose(f'E1 sintético {self.seed["run_id"]} · recepcion')
         paths = [(f'/payments/{pid}/verify', {}),
                  (f'/agent/proposals/{pending["id"]}/approve', {'payload_hash': pending['payload_hash']}),
                  (f'/agent/proposals/{pending["id"]}/retry', None)]
-        for path, body in paths:
-            self.e1_rejected(self.e1_request(path, body))
+        try:
+            reception = self.choose(f'E1 sintético {self.seed["run_id"]} · recepcion')
+            check(reception['principal']['id'] == self.seed['personas']['recepcion'] and
+                  reception['organization']['id'] == self.seed['organization_id'], 'Wrong M1 Reception identity')
+            for path, body in paths:
+                self.e1_rejected(self.e1_request(path, body))
+        finally:
+            self.choose(name)
         check(before_denied == self.e1_proof(pid), 'Reception changed the payment')
         # Server-side identity probes keep bearer credentials outside the browser and evidence.
         import httpx
         token = self.env['SALES_AGENT_V0_CREDENTIAL']
+        identity = httpx.get(self.args.api.rstrip('/') + '/me',
+                             headers={'Authorization': 'Bearer ' + token}, timeout=30)
+        check(identity.status_code == 200 and identity.json()['principal']['type'] == 'agent' and
+              identity.json()['organization']['id'] == self.seed['organization_id'], 'Wrong denial agent identity')
         for path, body in [(f'/payments/{pid}/verification-review', None), *paths]:
             response = httpx.post(self.args.api.rstrip('/') + path, headers={
                 'Authorization': 'Bearer ' + token, 'Idempotency-Key': str(uuid4())},
@@ -916,18 +936,20 @@ with SessionLocal() as session:
             check(response.status_code == 403, f'Agent principal must receive 403: {path} HTTP {response.status_code}')
         check(before_denied == self.e1_proof(pid), 'Agent rejection changed the payment')
         cases['8'] = {'payment_id': pid, 'reception_and_agent': '403', 'unchanged': True}
-        self.choose(name)
 
         # The control human prepares the Miraflores fixture; Caja must not read or execute it.
         foreign = next(p for p in fixtures if p['ruta'] == 'otra_sede')
-        self.choose(self.env.get('E1_CONTROL_PERSONA', 'Carlos Vega'))
-        other_location = self.e1_prepare(foreign['payment_id'])
-        self.choose(name)
+        with self.e1_control_session(permissions=('payments.read', 'proposals.read')):
+            other_location = self.e1_prepare(foreign['payment_id'])
         cases['9'] = {'other_location': self.e1_isolation(foreign, other_location)}
         other = e1_seed(self.args.other_seed_summary or self.root / 'e1-other-seed.json')
         check(other['organization_id'] != self.seed['organization_id'], 'Other-organization fixture is the same tenant')
         foreign = other['lotes']['pruebas'][0]
         token = self.env['E1_OTHER_HUMAN_CREDENTIAL']
+        identity = httpx.get(self.args.api.rstrip('/') + '/me',
+                             headers={'Authorization': 'Bearer ' + token}, timeout=30)
+        check(identity.status_code == 200 and identity.json()['principal']['type'] == 'human' and
+              identity.json()['organization']['id'] == other['organization_id'], 'Wrong other-organization human identity')
         response = httpx.post(self.args.api.rstrip('/') + f'/payments/{foreign["payment_id"]}/verification-review',
                               headers={'Authorization': 'Bearer ' + token, 'Idempotency-Key': str(uuid4())}, timeout=30)
         check(response.status_code in (200, 201), 'Other-organization fixture preparation failed')
@@ -1051,7 +1073,7 @@ with SessionLocal() as session:
                 self.page.on('request', self.on_request)
                 self.page.on('response', self.on_response)
                 self.page.on('pageerror', lambda error: self.page_errors.append(str(error)))
-                self.go('/agenda')
+                self.go('/aprobaciones' if self.e1 else '/agenda')
                 self.result['initial_sql'] = self.snapshot()
                 for journey in selected:
                     self.result['journeys'][journey] = {'result': 'FAIL', 'shots': []}
