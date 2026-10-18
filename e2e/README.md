@@ -1,4 +1,4 @@
-# Journeys de navegador I0
+# Journeys de navegador I0 y E1
 
 Ejecutar contra un stack **local, aislado, en development y sin mocks**. Cada ensayo
 consume datos del seed: usar un RUN_ID y una base nuevos; no reutilizar una demo
@@ -158,6 +158,7 @@ Detener únicamente los procesos creados por el ensayo al terminar.
 | J3 | Propuesta de traspaso → Carlos aprueba → dos movimientos, origen antes − cantidad y destino antes + cantidad, sin balances hardcodeados. |
 | J4 | Cita de Fiorella del seed I0 cancelada desde Agenda a menos de 48 h → Backfill → aprobación → ofertas entregadas. El ID y horario se descubren en SQL. |
 | J5 | Actividad correlaciona creación por agente y aprobación humana; chat y cola de derivaciones → Tomar → asignación persistida al humano. Fixture adicional rotulada `[DEMO E2E1]` cuando hace falta. |
+| cobro-verificado | E1: Caja de M1 → Conciliación → Preparar revisión → Bandeja enfocada → aprobar → recargar Dirección y Rastro; concurrencia, replay, referencia ausente, versión vencida, anulación y permisos/sede/organización. Se selecciona por separado. |
 
 `--replay` repite cada aprobación y claim con el humano, cuerpo y UUIDv4 capturados
 en el clic: exige 200, `Idempotent-Replay: true` y resultado idéntico; con UUID nuevo
@@ -167,11 +168,139 @@ conversaciones y citas). No suavizar una discrepancia del backend a PASS.
 
 ## Límites
 
-No demuestra WhatsApp, aceptación del paciente, silla reservada ni cobro de un pago:
-Cobranza envía un recordatorio y Backfill entrega una oferta. No certifica todas las
+J1–J6 no demuestran WhatsApp, aceptación del paciente, silla reservada ni cobro de un pago:
+Cobranza envía un recordatorio y Backfill entrega una oferta. E1 verifica un pago
+digital ya registrado; no registra un pago nuevo. No certifica todas las
 combinaciones de roles/tenants ni fuerza artificialmente una respuesta de red tardía.
 Los snapshots solo leen SQL; las mutaciones pasan por UI/BFF o herramientas sandbox.
+E1 añade sondas HTTP de identidades desde Python y una fixture IAM local mediante
+el servicio público `set_membership_active`; las credenciales nunca pasan al navegador.
 La suite se detiene ante el primer fallo y conserva la evidencia disponible.
+
+## E1 · Ejecución de cobro verificado
+
+La escritura de FE3 corresponde a O2. La corrida real corresponde a O3, tras
+integrar BE1a, BE1b, BE2, M1 y FE2. Un dry run no acredita los casos reales ni
+cierra E1. No usar el dispatcher ni ejecutar J1–J6 en la misma corrida.
+
+En este worktree, usar exclusivamente PostgreSQL `127.0.0.1:5434`, usuario y
+contraseña `odontoflow`, base nueva `odontoflow_test_fe_e1_fe3`. Crearla antes de
+migrar; abortar si existe. El dueño del ensayo la elimina al terminar, después de
+archivar la evidencia. No arrancar/detener contenedores ni usar una base compartida.
+El runner no crea bases, migra, siembra ni arranca servicios.
+
+1. Preparar el stack aislado y el env privado como arriba, con
+   `DATABASE_URL=postgresql+psycopg://odontoflow:odontoflow@127.0.0.1:5434/odontoflow_test_fe_e1_fe3`,
+   `NEXT_PUBLIC_USE_MOCKS=false` también al construir el frontend, y puertos 3120/8120.
+2. Ejecutar el seed de M1 con un `--run-id` nuevo y conservar **su JSON de salida**
+   como `<run-dir>/e1-seed.json`; `--emit-csv` escribe la plantilla de medición.
+   El seed usa el día Lima, se niega a empezar en los últimos 30 minutos del día y
+   repetir un run-id no restablece pagos. Ejemplo con rutas absolutas (inyectar el
+   env del ensayo en el proceso, sin cargar otro `.env.local`):
+
+   ```bash
+   /ruta/absoluta/backend/.venv/bin/python /ruta/absoluta/backend/scripts/seed_e1_cobro.py \
+     --org 1 --run-id ensayo-01 --emit-csv /ruta/absoluta/ensayo-01/medicion.csv \
+     > /ruta/absoluta/ensayo-01/e1-seed.json
+   ```
+
+3. Configurar en el BFF las dos personas humanas que imprime M1:
+   `E1 sintético ensayo-01 · caja` y `E1 sintético ensayo-01 · recepcion`, con
+   credenciales emitidas para esos IDs. No ampliar sus grants: Caja tiene sus
+   cuatro permisos solo en Lince; Recepción carece de `payments.manage`.
+4. Para probar otra organización, provisionar **otra organización sintética en
+   la misma base aislada**, ejecutar el mismo seed con su `--org` y otro run-id,
+   guardar `e1-other-seed.json` y emitir una credencial humana con permisos de
+   pagos/propuestas solo en esa organización. No inventar IDs inexistentes: el
+   runner debe demostrar el rechazo sobre recursos que sí existen.
+5. Añadir al env 0600 `E1_OTHER_HUMAN_CREDENTIAL`, `SALES_AGENT_V0_CREDENTIAL`
+   (principal agente real), `E1_BACKEND_DIR=/ruta/absoluta/backend` y, si su venv
+   no está allí, `E1_BACKEND_PYTHON=/ruta/absoluta/al/python`. Mantener una persona
+   de control del seed base con acceso a Miraflores: `Carlos Vega` por defecto,
+   configurable con `E1_CONTROL_PERSONA`. Se usa solo para preparar la fixture de
+   otra sede; el recorrido principal y las decisiones usan Caja de M1.
+
+El caso 8 desactiva la membresía de Caja **después** de preparar una propuesta,
+exige 403 al aprobar y restaura la membresía en `finally`. Usa el servicio público
+IAM en un subproceso con el mismo env y base; no escribe SQL directamente. Si se
+mata el proceso a la fuerza, comprobar/restaurar esa membresía antes de continuar.
+
+Desde cualquier directorio, ejecutar:
+
+```bash
+npm --prefix /ruta/absoluta/frontend run e2e:journeys -- \
+  --base http://127.0.0.1:3120 --api http://127.0.0.1:8120 \
+  --run-dir /ruta/absoluta/ensayo-01 --journeys cobro-verificado --replay
+```
+
+Los JSON se pueden ubicar con `--seed-summary /ruta/absoluta/e1-seed.json` y
+`--other-seed-summary /ruta/absoluta/e1-other-seed.json`. El journey solo consume
+`lotes.pruebas`; comprueba que `medicion` permanezca intacto. Los números del JSON
+M1 seleccionan los pagos: no se escoge el primer pendiente global de la UI.
+
+| Caso | Aserción y evidencia |
+| --- | --- |
+| 1–3 | Doble clic en Preparar revisión, URL enfocada en `agent_proposal:ID`, tarjeta con alcance/efecto, recarga, doble clic en Aprobar y estado SQL `verified`; Dirección Lince, mismo día Lima, pendiente −X, verificado +X, total igual; `/activity` y DOM de Rastro con AIRI, Caja y hora. |
+| 4–5 | Dos preparaciones concurrentes con claves distintas → una propuesta abierta en SQL; cada clave repite su cuerpo original incluido `created`. Reintento de la aprobación capturada tras ejecutar/recargar → mismo cuerpo, `Idempotent-Replay: true`, un solo `payment.verified` en `audit_events`. |
+| 6 | Tarjeta sin referencia de M1: preparar y verificar manual devuelven 422 `INVALID_INPUT / missing_reference`; pago y eventos intactos. |
+| 7 | Tarjeta abierta, verificar manualmente o anular y luego aprobar → `PROPOSAL_SUPERSEDED` o estado `failed`, sin otro efecto. Carrera anular/aprobar: registra ganador; si ganó anular no hay `payment.verified`, si ganó aprobar hay uno anterior a la anulación. Verificar un anulado devuelve 422 `reversed`. |
+| 8 | Recepción y agente reciben 403 al verificar/aprobar/reintentar; agente también al preparar. Revocación de la membresía entre preparar y aprobar → 403 y pago intacto. |
+| 9 | Otra sede y otra organización: leer cargo/pagos/propuesta, preparar, verificar, aprobar y reintentar → 403/404, sin filtración en la lista de pagos ni cambios financieros. |
+
+`--replay` vuelve a intentar las intenciones capturadas en los clics con las claves
+UUIDv4 originales y compara snapshots SQL completos. Una clave nueva para aprobar
+una propuesta ejecutada exige 409; para preparar un pago ya verificado exige 422
+`already_verified`. Ningún rechazo se convierte en PASS por tolerancia al backend.
+La carrera registra qué operación ganó; un solo ensayo no certifica todos los
+órdenes posibles del planificador de PostgreSQL.
+
+Para validar selección y forma del JSON sin servicios ni mutaciones:
+
+```bash
+python3 /ruta/absoluta/frontend/e2e/journeys.py \
+  --run-dir /ruta/absoluta/ensayo-01 --journeys cobro-verificado --dry-run
+```
+
+La salida rotula `DRY_RUN`, casos 1–9 `NOT_RUN` y caso 10 `PENDIENTE`.
+
+## E1 · Medición 10 manual + 10 AIRI
+
+La comparación usa exclusivamente las 20 filas `medicion` del CSV de M1, con el
+mismo `run_id`, operador, sede Lince y día Lima. Reservar `pruebas` para H1/FE3.
+Antes de medir comprobar los 20 pagos pendientes; medir los 10 manuales tras
+M1 + BE1b y los 10 AIRI después de H1. Alternar pares cuando ambas rutas estén
+disponibles. Conservar el JSON y CSV originales, sin reemplazar tiempos por los
+del robot ni completar huecos con estimaciones.
+
+Cronómetro: empezar cuando el pago aparece en Caja → Conciliación; detener al ver
+`verified` persistido después de recargar. Contar todas las acciones del recorrido,
+incluida la recarga. Registrar `segundos`, `acciones` y `total_antes/total_despues`
+en soles; ambas cifras de Dirección deben conservar sede/día y ser iguales.
+M1 aporta los IDs, lotes y rutas; no renombrar sus columnas. `--operator` declara
+quién hizo ambas rutas: el CSV de M1 no contiene esa identidad y el runner no
+puede comprobarla por sí solo.
+
+Después de registrar las 20 observaciones, evaluar sin iniciar navegador:
+
+```bash
+npm --prefix /ruta/absoluta/frontend run e2e:journeys -- \
+  --run-dir /ruta/absoluta/ensayo-01 \
+  --measure-csv /ruta/absoluta/ensayo-01/medicion.csv --operator 'Nombre del operador'
+```
+
+Guarda `e1-medicion.json` sin sobrescribir evidencia previa; permite usar el
+run-dir que ya tiene `journeys.json`. Lee SQL sin mutarlo y exige 20 IDs únicos
+exactos, 10 por ruta, medidas completas/finitas, acciones enteras, pagos equivalentes
+por importe/método/receptor, misma sede/día y todos verificados sin anulación.
+Publica medianas de segundos y acciones, suma de acciones por ruta, reducción
+`1 − mediana_AIRI / mediana_manual`, hashes del CSV/seed y conteos SQL de eventos.
+
+**Cumple** solo con reducción ≥20 %, mediana y suma de acciones AIRI no superiores,
+total recibido igual antes/después y exactamente un `payment.verified` por pago.
+Si falla una meta escribe `estado_e1=PENDIENTE`, `cumple=false` y sale 1. Un CSV
+incompleto, otra corrida, pruebas mezcladas o una fixture inválida también salen 1;
+no producen una certificación. Sin CSV real o sin corrida O3, el cierre de E1
+permanece pendiente aunque el dry run y los tests unitarios pasen.
 
 ## Verificaciones complementarias
 

@@ -1,17 +1,85 @@
 #!/usr/bin/env python3
-"""I0 browser journeys. Only the local sandbox dispatcher bypasses the BFF."""
+"""Local no-mock browser journeys and the E1 measurement gate."""
 import argparse
+import csv
 import hashlib
 import json
 import os
 from pathlib import Path
 import re
 import shlex
+import subprocess
 import sys
 from datetime import datetime, timezone
 from decimal import Decimal
-from urllib.parse import urlsplit
+from statistics import median
+from urllib.parse import parse_qs, quote, urlsplit
 from uuid import UUID, uuid4
+from zoneinfo import ZoneInfo
+
+
+E1 = 'cobro-verificado'
+JOURNEYS = ('J1', 'J2', 'J3', 'J4', 'J5', 'J6', E1)
+
+
+def e1_seed(path):
+    seed = json.loads(path.read_text())
+    check(re.fullmatch(r'[A-Za-z0-9_-]{1,32}', seed['run_id']), 'Invalid M1 run_id')
+    check(seed['sedes']['Lince'] != seed['sedes']['Miraflores'], 'M1 locations must differ')
+    check(set(seed['personas']) == {'caja', 'recepcion'}, 'Missing M1 people')
+    rows = seed['lotes']['pruebas'] + seed['lotes']['medicion']
+    ids = [row['payment_id'] for row in rows]
+    check(len(ids) == 30 and len(set(ids)) == 30 and
+          all(type(pid) is int and pid > 0 for pid in ids), 'M1 needs 30 distinct payment IDs')
+    tests = seed['lotes']['pruebas']
+    check(len([r for r in tests if r['ruta'] == 'h1-fe3']) == 8 and
+          len([r for r in tests if r['ruta'] == 'sin_referencia']) == 1 and
+          len([r for r in tests if r['ruta'] == 'otra_sede']) == 1, 'Unexpected M1 pruebas batch')
+    for row in rows:
+        expected = seed['sedes']['Miraflores' if row['ruta'] == 'otra_sede' else 'Lince']
+        check(row['location_id'] == expected, 'M1 payment in unexpected location')
+    for route in ('manual', 'airi'):
+        check(len([r for r in seed['lotes']['medicion'] if r['ruta'] == route]) == 10,
+              'M1 needs 10 manual and 10 AIRI measurement payments')
+    return seed
+
+
+def measure_csv(path, seed):
+    """Validate the unmodified M1 template; never fill missing human measurements."""
+    with path.open(newline='', encoding='utf-8-sig') as source:
+        reader = csv.DictReader(source)
+        required = {'run_id', 'lote', 'payment_id', 'ruta', 'segundos', 'acciones',
+                    'total_antes', 'total_despues'}
+        check(required <= set(reader.fieldnames or []), 'Missing M1 CSV columns')
+        rows = list(reader)
+    expected = {str(r['payment_id']): r['ruta'] for r in seed['lotes']['medicion']}
+    measured = [r for r in rows if r['lote'] == 'medicion']
+    check(len(measured) == 20, 'Measurement requires exactly 20 medicion rows')
+    check(all(r['lote'] in ('medicion', 'pruebas') for r in rows), 'Unknown M1 batch')
+    check(len({r['payment_id'] for r in measured}) == 20, 'Duplicate measured payment')
+    check({r['payment_id']: r['ruta'] for r in measured} == expected,
+          'CSV must match the M1 medicion IDs/routes exactly; pruebas are excluded')
+    for row in measured:
+        check(row['run_id'] == seed['run_id'], 'Mixed measurement run_id')
+        for column in ('segundos', 'acciones', 'total_antes', 'total_despues'):
+            value = Decimal(row[column])
+            check(value.is_finite() and value >= 0, f'Invalid {column}')
+            row[column] = value
+        check(row['segundos'] > 0 and row['acciones'] >= 1 and
+              row['acciones'] == row['acciones'].to_integral_value(), 'Invalid time/action count')
+    groups = {route: [r for r in measured if r['ruta'] == route] for route in ('manual', 'airi')}
+    stats = {route: {'n': len(items), 'mediana_segundos': median(r['segundos'] for r in items),
+                     'mediana_acciones': median(r['acciones'] for r in items),
+                     'acciones_totales': sum(r['acciones'] for r in items)}
+             for route, items in groups.items()}
+    saving = 1 - stats['airi']['mediana_segundos'] / stats['manual']['mediana_segundos']
+    checks = {'tiempo': saving >= Decimal('0.20'),
+              'acciones': stats['airi']['mediana_acciones'] <= stats['manual']['mediana_acciones'] and
+                          stats['airi']['acciones_totales'] <= stats['manual']['acciones_totales'],
+              'total_recibido': all(r['total_antes'] == r['total_despues'] for r in measured)}
+    return {'run_id': seed['run_id'], 'csv_sha256': hashlib.sha256(path.read_bytes()).hexdigest(),
+            'rutas': stats, 'reduccion_tiempo': saving, 'checks': checks,
+            'payment_ids': sorted(int(pid) for pid in expected)}
 
 
 def envfile(path):
@@ -57,7 +125,23 @@ class Journeys:
             check(parsed.hostname in ('localhost', '127.0.0.1', '::1') and
                   parsed.scheme == 'http' and not parsed.username, 'Only local HTTP origins allowed')
         check((self.root / 'env').stat().st_mode & 0o077 == 0, 'env must be private (chmod 600)')
-        check(not (self.root / 'journeys.json').exists(), 'Use a new RUN_ID, not an existing journey run')
+        check(args.measure_csv is not None or not (self.root / 'journeys.json').exists(),
+              'Use a new RUN_ID, not an existing journey run')
+        self.e1 = E1 in args.journeys.split(',') or args.measure_csv is not None
+        self.TABLES = dict(self.TABLES)
+        if self.e1:
+            from sqlalchemy.engine import make_url
+            database = make_url(self.env['DATABASE_URL'])
+            check(database.host in ('localhost', '127.0.0.1', '::1') and database.port == 5434 and
+                  database.database == 'odontoflow_test_fe_e1_fe3', 'E1 requires its isolated :5434 FE3 database')
+            check(self.env.get('NEXT_PUBLIC_USE_MOCKS') == 'false', 'E1 requires NEXT_PUBLIC_USE_MOCKS=false')
+            self.seed = e1_seed(args.seed_summary or self.root / 'e1-seed.json')
+            self.TABLES.update(payments='payments', reversals='payment_reversals', audit='audit_events')
+            if not args.measure_csv:
+                for key in ('BFF_ACCESS_CODE', 'SALES_AGENT_V0_CREDENTIAL', 'E1_OTHER_HUMAN_CREDENTIAL', 'E1_BACKEND_DIR'):
+                    check(self.env.get(key), f'Missing E1 fixture setting: {key}')
+                other = e1_seed(args.other_seed_summary or self.root / 'e1-other-seed.json')
+                check(other['organization_id'] != self.seed['organization_id'], 'Other-organization fixture is the same tenant')
         self.engine = create_engine(self.env['DATABASE_URL'])
         self.shots = self.root / 'shots'
         self.shots.mkdir(exist_ok=True)
@@ -68,6 +152,7 @@ class Journeys:
         self.requests = {}
         self.inventory = None
         self.page_errors = []
+        self.capture_intents = not self.e1
 
     def redact(self, value):
         value = str(value)
@@ -76,11 +161,11 @@ class Journeys:
                 value = value.replace(secret, '[REDACTED]')
         return re.sub(r'postgres(?:ql)?(?:\+\w+)?://\S+', '[REDACTED_DSN]', value)
 
-    def sql(self, query):
+    def sql(self, query, params=None):
         from sqlalchemy import text
         with self.engine.connect() as connection:
             connection.exec_driver_sql('SET TRANSACTION READ ONLY')
-            return [dict(row) for row in connection.execute(text(query)).mappings()]
+            return [dict(row) for row in connection.execute(text(query), params or {}).mappings()]
 
     def snapshot(self):
         # Full persisted rows, including receipts and assignment, in a single consistent transaction.
@@ -105,7 +190,7 @@ class Journeys:
                'requested_as': requested_as, 'received_as': self.person,
                'requested_epoch': requested_epoch, 'received_epoch': self.session_epoch}
         self.result['responses'].append(row)
-        if request.method == 'POST' and re.search(r'/(approve|claim)$', row['path']) and response.status == 200:
+        if self.capture_intents and request.method == 'POST' and re.search(r'/(approve|claim|verification-review)$', row['path']) and response.status in (200, 201):
             if response.headers.get('idempotent-replay') != 'true':
                 key = request.headers.get('idempotency-key')
                 check(key and UUID(key).version == 4, 'Mutation must use UUIDv4')
@@ -424,6 +509,412 @@ class Journeys:
         self.result['journeys']['J6']['routes'] = routes
         check(all(row['result'] == 'PASS' for row in routes), f'J6 route failures: {routes}')
 
+    def e1_proof(self, payment_id):
+        state = self.snapshot()
+        payment = [p for p in state['payments'] if p['id'] == payment_id]
+        check(len(payment) == 1, f'Missing seeded payment {payment_id}')
+        reversals = [r for r in state['reversals'] if r['payment_id'] == payment_id]
+        payment[0]['reversed_at'] = reversals[0]['reversed_at'] if reversals else None
+        events = [e for e in state['audit'] if e['entity_type'] == 'payment' and
+                  e['entity_id'] == str(payment_id)]
+        return {'payment': payment[0], 'events': events, 'reversals': reversals}
+
+    def e1_membership(self, active):
+        """Local IAM fixture through its public service, never direct SQL writes."""
+        backend = Path(self.env['E1_BACKEND_DIR'])
+        python = Path(self.env.get('E1_BACKEND_PYTHON', str(backend / '.venv/bin/python')))
+        check(backend.is_absolute() and python.is_absolute(), 'IAM fixture paths must be absolute')
+        script = '''import sys
+from sqlalchemy import select
+from app.db import SessionLocal
+from app.iam.models import Membership
+from app.iam.service import set_membership_active
+with SessionLocal() as session:
+    membership = session.scalar(select(Membership).where(
+        Membership.organization_id == int(sys.argv[1]), Membership.principal_id == int(sys.argv[2])))
+    active = sys.argv[3] == 'true'
+    assert membership is not None and (active or membership.is_active), 'Unexpected membership fixture state'
+    if membership.is_active != active:
+        set_membership_active(session, membership.id, active)
+'''
+        completed = subprocess.run([str(python), '-c', script, str(self.seed['organization_id']),
+                                    str(self.seed['personas']['caja']), str(active).lower()], cwd=backend,
+                                   env={**os.environ, **self.env, 'PYTHONDONTWRITEBYTECODE': '1'},
+                                   capture_output=True, text=True, timeout=30)
+        check(completed.returncode == 0, 'IAM fixture failed: ' + self.redact(completed.stderr))
+
+    def e1_request(self, path, body=None, key=None, method='POST'):
+        key = key or (str(uuid4()) if method == 'POST' else None)
+        response = self.api(path, method, body, key)
+        self.result['journeys'][E1].setdefault('requests', []).append(
+            {'path': path, 'method': method, 'body': body, 'key': key, 'response': response})
+        return response
+
+    def e1_parallel(self, requests):
+        result = self.page.evaluate('''async requests => Promise.all(requests.map(async q => {
+          const r = await fetch('/api/backend'+q.path, {method:'POST',
+            headers:{'Content-Type':'application/json','Idempotency-Key':q.key},
+            ...(q.body == null ? {} : {body:JSON.stringify(q.body)})});
+          return {status:r.status, body:await r.json(), replay:r.headers.get('idempotent-replay')};
+        }))''', requests)
+        self.result['journeys'][E1].setdefault('concurrent_requests', []).append(
+            {'requests': requests, 'responses': result})
+        return result
+
+    def e1_prepare(self, payment_id):
+        response = self.e1_request(f'/payments/{payment_id}/verification-review')
+        check(response['status'] in (200, 201), f'Prepare rejected: {response}')
+        proposal = response['body']['proposal']
+        check(proposal['kind'] == 'payment_verify' and
+              proposal['payload']['payment_ids'] == [payment_id], 'Wrong payment proposal')
+        return proposal
+
+    def e1_rejected(self, response, statuses=(403,), code=None, reason=None):
+        check(response['status'] in statuses, f'Expected rejection {statuses}: {response}')
+        error = response['body'].get('error', {})
+        if code:
+            check(error.get('code') == code, f'Wrong error code: {response}')
+        if reason:
+            check(error.get('details', {}).get('reason') == reason, f'Wrong error reason: {response}')
+
+    def e1_direction(self):
+        from playwright.sync_api import expect
+        self.go('/direccion')
+        self.page.reload(wait_until='networkidle')
+        row = self.page.locator('tr[data-sede="Lince"]')
+        expect(row).to_be_visible()
+        state = self.get('/state')
+        check(datetime.fromisoformat(state['cut_at']).astimezone(ZoneInfo('America/Lima')).date().isoformat()
+              == self.seed['dia_lima'], 'Direction and M1 must use the same Lima day')
+        sede = next(s for s in state['sedes'] if s['name'] == 'Lince')
+        check(sede['complete'], 'Direction has an incomplete Lince cash projection')
+        # Check rendered amounts against the real projection, rather than accepting API-only evidence.
+        for label, value in (('Cobrado verificado', sede['collected']['amount_cents']),
+                             ('Por verificar', sede['pending_verification']['amount_cents'])):
+            rendered = row.locator(f'[data-label="{label}"]').inner_text().replace('\xa0', ' ')
+            amount = re.search(r'([\d,]+\.\d{2})', rendered)
+            check(amount and Decimal(amount[1].replace(',', '')) * 100 == value,
+                  f'Direction UI differs from its projection: {label} {rendered}')
+        return {'location_id': self.seed['sedes']['Lince'], 'dia_lima': self.seed['dia_lima'],
+                'cut_at': state['cut_at'], 'verified': sede['collected']['amount_cents'],
+                'pending': sede['pending_verification']['amount_cents']}
+
+    def e1_trail(self, proposal_id, payment_id):
+        from playwright.sync_api import expect
+        self.go('/agente')
+        self.page.reload(wait_until='networkidle')
+        items, cursor = [], None
+        for _ in range(100):
+            page = self.get('/activity?limit=100' + ('&cursor=' + quote(cursor, safe='') if cursor else ''))
+            items.extend(page['items'])
+            cursor = page['next_cursor']
+            if not cursor:
+                break
+        expected = [('agent_proposal.created', proposal_id, 'agent'),
+                    ('agent_proposal.approved', proposal_id, 'human'),
+                    ('payment.verified', payment_id, 'human')]
+        evidence = []
+        for action, entity_id, actor in expected:
+            matches = [i for i in items if i['action'] == action and str(i['entity_id']) == str(entity_id)]
+            check(len(matches) == 1, f'Activity missing/duplicated {action} {entity_id}')
+            event = matches[0]
+            check(event['actor_kind'] == actor and event['location_id'] == self.seed['sedes']['Lince'] and
+                  event['occurred_at'], f'Wrong activity attribution: {event}')
+            if actor == 'human':
+                check(event['actor_principal_id'] == self.seed['personas']['caja'], 'Wrong approving cashier')
+            else:
+                check(event['agent_key'] == 'airi', 'Proposal not attributed to AIRI')
+            datetime.fromisoformat(event['occurred_at'])
+            evidence.append(event)
+        for _ in range(100):
+            if all(self.page.locator('.activity-entry').filter(has_text=e['actor_display_name'])
+                   .filter(has=self.page.locator(f'time[datetime="{e["occurred_at"]}"]')).count()
+                   for e in evidence):
+                break
+            more = self.page.get_by_role('button', name='Cargar más', exact=True).first
+            check(more.count(), 'Activity events are absent from the rendered trail')
+            more.click()
+            self.page.wait_for_load_state('networkidle')
+        for event in evidence:
+            expect(self.page.locator('.activity-entry').filter(has_text=event['actor_display_name'])
+                   .filter(has=self.page.locator(f'time[datetime="{event["occurred_at"]}"]'))).not_to_have_count(0)
+        expect(self.page.locator('main')).to_contain_text('verificó un pago')
+        return evidence
+
+    def cobro_verificado(self):
+        from playwright.sync_api import expect
+        row = self.result['journeys'][E1]
+        row.update(run_id=self.seed['run_id'], cases={})
+        cases = row['cases']
+        fixtures = self.seed['lotes']['pruebas']
+        regular = [p for p in fixtures if p['ruta'] == 'h1-fe3']
+        medicion_ids = {p['payment_id'] for p in self.seed['lotes']['medicion']}
+        initial = [p for p in self.snapshot()['payments'] if p['id'] in medicion_ids]
+        for fixture in fixtures:
+            proof = self.e1_proof(fixture['payment_id'])
+            check(proof['payment']['verification_status'] == 'unverified' and
+                  proof['payment']['reversed_at'] is None and
+                  not any(e['action'] == 'payment.verified' for e in proof['events']),
+                  'Use a fresh M1 run; pruebas was already consumed')
+            check(proof['payment']['organization_id'] == self.seed['organization_id'] and
+                  proof['payment']['charge_id'] == fixture['charge_id'] and
+                  proof['payment']['reference'] == fixture['reference'], 'M1 JSON does not match the database')
+        name = f'E1 sintético {self.seed["run_id"]} · caja'
+        me = self.choose(name)
+        check(me['principal']['id'] == self.seed['personas']['caja'], 'Wrong M1 Caja principal')
+        before = self.e1_direction()
+        self.snap(E1, 'direccion-antes')
+        payment_id = regular[0]['payment_id']
+        self.go('/caja')
+        self.page.get_by_role('tab', name='Conciliación', exact=True).click()
+        payment_row = self.page.get_by_role('row').filter(has_text=regular[0]['reference'])
+        expect(payment_row).to_be_visible()
+        self.snap(E1, 'conciliacion')
+        path = f'/payments/{payment_id}/verification-review'
+        self.capture_intents = True
+        try:
+            with self.page.expect_response(lambda r: r.request.method == 'POST' and r.url.endswith(path)) as received:
+                payment_row.get_by_role('button', name='Preparar revisión', exact=True).click(click_count=2)
+            response = received.value
+            check(response.status in (200, 201), f'UI preparation failed: {response.status}')
+            receipt = response.json()
+            proposal = receipt['proposal']
+            expect(self.page).to_have_url(re.compile(r'/aprobaciones\?'))
+            query = parse_qs(urlsplit(self.page.url).query)
+            check(query.get('proposal') == [f'agent_proposal:{proposal["id"]}'], 'Bandeja did not focus the proposal')
+            selected = self.page.locator('#bandeja-selected')
+            expect(selected).to_contain_text(regular[0]['reference'])
+            for text in ('Monto', 'Referencia', 'Método', 'Receptor', 'Sede', 'Lince',
+                         'cobrado verificado', 'total recibido no cambia'):
+                expect(selected).to_contain_text(text)
+            check(receipt['payment']['id'] == payment_id and proposal['kind'] == 'payment_verify' and
+                  'approve' in proposal['actions'], 'Wrong prepared review or actions')
+            expect(selected).to_contain_text(receipt['payment']['receiver'])
+            expect(selected).to_contain_text(re.compile(re.escape(receipt['payment']['method']), re.I))
+            expect(selected).to_contain_text(f'{Decimal(str(receipt["payment"]["amount"])):,.2f}')
+            self.page.reload(wait_until='networkidle')
+            expect(selected).to_contain_text(regular[0]['reference'])
+            self.snap(E1, 'tarjeta-enfocada')
+            with self.page.expect_response(lambda r: r.request.method == 'POST' and
+                                           r.url.endswith(f'/proposals/{proposal["id"]}/approve')) as approved:
+                selected.get_by_role('button', name='Aprobar', exact=True).click(click_count=2)
+            check(approved.value.status == 200 and approved.value.json()['status'] == 'executed',
+                  'UI approval did not execute')
+            expect(self.page.locator('.success-banner')).to_be_visible()
+        finally:
+            self.capture_intents = False
+        row.update(payment_id=payment_id, proposal_id=proposal['id'])
+        check(any(i['path'].endswith('/approve') for i in self.result['intents']) and
+              any(i['path'].endswith('/verification-review') for i in self.result['intents']),
+              'Missing UI mutation intents; retries must reuse the captured keys')
+        proof = self.e1_proof(payment_id)
+        verified = [e for e in proof['events'] if e['action'] == 'payment.verified']
+        check(proof['payment']['verification_status'] == 'verified' and len(verified) == 1,
+              'UI double approval did not verify exactly once')
+        after = self.e1_direction()
+        amount = int(Decimal(proof['payment']['amount']) * 100)
+        check(after['verified'] == before['verified'] + amount and
+              after['pending'] == before['pending'] - amount and
+              before['verified'] + before['pending'] == after['verified'] + after['pending'],
+              'Direction must move -X/+X while preserving total received')
+        cases['1-2'] = {'before': before, 'after': after, 'proof': proof}
+        self.snap(E1, 'direccion-despues')
+        cases['3'] = self.e1_trail(proposal['id'], payment_id)
+        self.snap(E1, 'rastro')
+
+        # Two simultaneous preparations with different keys must share one open proposal.
+        pid = regular[1]['payment_id']
+        path = f'/payments/{pid}/verification-review'
+        requests = [{'path': path, 'key': str(uuid4())} for _ in range(2)]
+        prepared = self.e1_parallel(requests)
+        check(sorted(r['status'] for r in prepared) == [200, 201] and
+              sorted(r['body']['created'] for r in prepared) == [False, True] and
+              len({r['body']['proposal']['id'] for r in prepared}) == 1, 'Concurrent preparation duplicated a proposal')
+        open_id = prepared[0]['body']['proposal']['id']
+        self.go(f'/aprobaciones?proposal=agent_proposal%3A{open_id}')
+        self.page.reload(wait_until='networkidle')
+        expect(self.page.locator('#bandeja-selected')).to_contain_text(regular[1]['reference'])
+        proposals = self.sql("SELECT * FROM agent_proposals WHERE kind='payment_verify' AND status='pending'")
+        matching = [p for p in proposals if p['payload']['payment_ids'] == [pid]]
+        check(len(matching) == 1, 'SQL found duplicate open payment proposals')
+        # Both responses must replay their own original body (including created).
+        for request, original in zip(requests, prepared):
+            replay = self.e1_request(path, key=request['key'])
+            check(replay['status'] in (200, 201) and replay['replay'] == 'true' and
+                  replay['body'] == original['body'], 'Preparation replay changed its body')
+        cases['4'] = {'proposal_id': open_id, 'responses': prepared, 'open_proposals': len(matching)}
+        # Same-key approval retry, including after reload/execution, is mandatory even without --replay.
+        before_retry = self.snapshot()
+        for intent in self.result['intents']:
+            if not intent['path'].endswith('/approve'):
+                continue
+            replay = self.e1_request(intent['path'], intent['body'], intent['key'])
+            check(replay['status'] == 200 and replay['replay'] == 'true' and replay['body'] == intent['result'],
+                  'Approval replay changed its result')
+        check(before_retry == self.snapshot(), 'Approval retry mutated persisted rows')
+        cases['5'] = {'payment_verified_count': len(verified), 'identical_sql_after_retry': True}
+
+        missing = next(p for p in fixtures if p['ruta'] == 'sin_referencia')['payment_id']
+        before_missing = self.e1_proof(missing)
+        for suffix, body in (('verification-review', None), ('verify', {})):
+            self.e1_rejected(self.e1_request(f'/payments/{missing}/{suffix}', body), (422,),
+                             'INVALID_INPUT', 'missing_reference')
+        check(before_missing == self.e1_proof(missing), 'Missing-reference rejection changed payment')
+        cases['6'] = {'payment_id': missing, 'unchanged': True}
+
+        stale = []
+        for fixture, action in zip(regular[2:4], ('verify', 'reverse')):
+            pid = fixture['payment_id']
+            pending = self.e1_prepare(pid)
+            self.go(f'/aprobaciones?proposal=agent_proposal%3A{pending["id"]}')
+            expect(self.page.locator('#bandeja-selected')).to_contain_text(fixture['reference'])
+            changed = self.e1_request(f'/payments/{pid}/{action}', {} if action == 'verify' else
+                                      {'reason': 'E1 synthetic stale proposal'})
+            check(changed['status'] == 200, f'Stale fixture failed: {changed}')
+            before_stale = self.e1_proof(pid)
+            rejected = self.e1_request(f'/agent/proposals/{pending["id"]}/approve',
+                                       {'payload_hash': pending['payload_hash']})
+            if rejected['status'] == 409:
+                self.e1_rejected(rejected, (409,), 'PROPOSAL_SUPERSEDED')
+            else:
+                check(rejected['status'] == 200 and rejected['body']['status'] == 'failed',
+                      f'Stale proposal was executable: {rejected}')
+            check(before_stale == self.e1_proof(pid), 'Stale approval changed payment/events')
+            if action == 'reverse':
+                check(not any(e['action'] == 'payment.verified' for e in before_stale['events']),
+                      'Reversed payment was verified')
+                self.e1_rejected(self.e1_request(f'/payments/{pid}/verify', {}), (422,), 'INVALID_INPUT', 'reversed')
+            stale.append({'payment_id': pid, 'action': action, 'rejection': rejected, 'proof': before_stale})
+        pid = regular[4]['payment_id']
+        pending = self.e1_prepare(pid)
+        race = self.e1_parallel([
+            {'path': f'/payments/{pid}/reverse', 'key': str(uuid4()), 'body': {'reason': 'E1 synthetic race'}},
+            {'path': f'/agent/proposals/{pending["id"]}/approve', 'key': str(uuid4()),
+             'body': {'payload_hash': pending['payload_hash']}}])
+        check(race[0]['status'] == 200 and race[1]['status'] in (200, 409), f'Unexpected race response: {race}')
+        proof = self.e1_proof(pid)
+        events = [e for e in proof['events'] if e['action'] == 'payment.verified']
+        executed = race[1]['status'] == 200 and race[1]['body']['status'] == 'executed'
+        check(len(events) == int(executed), 'Race produced an unexpected verification event')
+        check(proof['payment']['reversed_at'], 'Race reversal not persisted')
+        if events:
+            reversal_events = [e for e in proof['events'] if e['action'] == 'payment.reversed']
+            # Database now() can predate a row-lock wait. Audit IDs are assigned
+            # inside the serialized mutations and establish their actual order.
+            check(len(reversal_events) == 1 and events[0]['id'] < reversal_events[0]['id'],
+                  'Verification happened after reversal won')
+        cases['7'] = {'stale': stale, 'race': race, 'race_proof': proof, 'winner': 'approve' if executed else 'reverse'}
+
+        pid = regular[5]['payment_id']
+        pending = self.e1_prepare(pid)
+        before_denied = self.e1_proof(pid)
+        self.choose(f'E1 sintético {self.seed["run_id"]} · recepcion')
+        paths = [(f'/payments/{pid}/verify', {}),
+                 (f'/agent/proposals/{pending["id"]}/approve', {'payload_hash': pending['payload_hash']}),
+                 (f'/agent/proposals/{pending["id"]}/retry', None)]
+        for path, body in paths:
+            self.e1_rejected(self.e1_request(path, body))
+        check(before_denied == self.e1_proof(pid), 'Reception changed the payment')
+        # Server-side identity probes keep bearer credentials outside the browser and evidence.
+        import httpx
+        token = self.env['SALES_AGENT_V0_CREDENTIAL']
+        for path, body in [(f'/payments/{pid}/verification-review', None), *paths]:
+            response = httpx.post(self.args.api.rstrip('/') + path, headers={
+                'Authorization': 'Bearer ' + token, 'Idempotency-Key': str(uuid4())},
+                **({'json': body} if body is not None else {}), timeout=30)
+            check(response.status_code == 403, f'Agent principal must receive 403: {path} HTTP {response.status_code}')
+        check(before_denied == self.e1_proof(pid), 'Agent rejection changed the payment')
+        cases['8'] = {'payment_id': pid, 'reception_and_agent': '403', 'unchanged': True}
+        self.choose(name)
+
+        # The control human prepares the Miraflores fixture; Caja must not read or execute it.
+        foreign = next(p for p in fixtures if p['ruta'] == 'otra_sede')
+        self.choose(self.env.get('E1_CONTROL_PERSONA', 'Carlos Vega'))
+        other_location = self.e1_prepare(foreign['payment_id'])
+        self.choose(name)
+        cases['9'] = {'other_location': self.e1_isolation(foreign, other_location)}
+        other = e1_seed(self.args.other_seed_summary or self.root / 'e1-other-seed.json')
+        check(other['organization_id'] != self.seed['organization_id'], 'Other-organization fixture is the same tenant')
+        foreign = other['lotes']['pruebas'][0]
+        token = self.env['E1_OTHER_HUMAN_CREDENTIAL']
+        response = httpx.post(self.args.api.rstrip('/') + f'/payments/{foreign["payment_id"]}/verification-review',
+                              headers={'Authorization': 'Bearer ' + token, 'Idempotency-Key': str(uuid4())}, timeout=30)
+        check(response.status_code in (200, 201), 'Other-organization fixture preparation failed')
+        cases['9']['other_organization'] = self.e1_isolation(foreign, response.json()['proposal'])
+        pid = regular[6]['payment_id']
+        pending = self.e1_prepare(pid)
+        before_revoked = self.e1_proof(pid)
+        try:
+            self.e1_membership(False)
+            denied = self.e1_request(f'/agent/proposals/{pending["id"]}/approve',
+                                     {'payload_hash': pending['payload_hash']})
+            self.e1_rejected(denied)
+            check(before_revoked == self.e1_proof(pid), 'Revoked membership executed a payment')
+            cases['8']['revocation'] = {'payment_id': pid, 'denied': denied, 'unchanged': True}
+        finally:
+            self.e1_membership(True)
+        check(self.get('/me')['principal']['id'] == self.seed['personas']['caja'], 'Caja membership was not restored')
+        check(initial == [p for p in self.snapshot()['payments'] if p['id'] in medicion_ids],
+              'Journey consumed measurement payments')
+        row['medicion_unchanged'] = True
+        self.snap(E1, 'rechazos')
+
+    def e1_isolation(self, fixture, proposal):
+        pid = fixture['payment_id']
+        before = self.e1_proof(pid)
+        for path in (f'/charges/{fixture["charge_id"]}', f'/charges/{fixture["charge_id"]}/payments',
+                     f'/agent/proposals/{proposal["id"]}'):
+            self.e1_rejected(self.e1_request(path, method='GET'), (403, 404))
+        for path, body in ((f'/payments/{pid}/verification-review', None),
+                           (f'/payments/{pid}/verify', {}),
+                           (f'/agent/proposals/{proposal["id"]}/approve', {'payload_hash': proposal['payload_hash']}),
+                           (f'/agent/proposals/{proposal["id"]}/retry', None)):
+            self.e1_rejected(self.e1_request(path, body), (403, 404))
+        visible = self.get('/payments')
+        check(pid not in {p['id'] for p in visible}, 'Payment list leaked an out-of-scope payment')
+        inbox = self.get('/agent/inbox?status=pending')['items']
+        check(proposal['id'] not in {p['id'] for p in inbox if p['source'] == 'agent_proposal'},
+              'Inbox leaked an out-of-scope proposal')
+        check(before == self.e1_proof(pid), 'Out-of-scope rejection changed payment/events')
+        return {'payment_id': pid, 'proposal_id': proposal['id'], 'denied': True, 'unchanged': True}
+
+    def measurement(self):
+        check(self.args.operator and self.args.operator.strip(), '--operator must identify the same human for both routes')
+        result = measure_csv(self.args.measure_csv, self.seed)
+        state = self.snapshot()
+        pairs = {}
+        for fixture in self.seed['lotes']['medicion']:
+            proof = self.e1_proof(fixture['payment_id'])
+            payment = proof['payment']
+            check(payment['organization_id'] == self.seed['organization_id'] and
+                  payment['charge_id'] == fixture['charge_id'] and payment['reference'] == fixture['reference'],
+                  'Measurement seed does not match the database')
+            count = sum(e['action'] == 'payment.verified' for e in proof['events'])
+            check(payment['verification_status'] == 'verified' and payment['reversed_at'] is None,
+                  'Measurement has an unverified/reversed payment')
+            check(datetime.fromisoformat(payment['paid_at']).astimezone(ZoneInfo('America/Lima')).date().isoformat()
+                  == self.seed['dia_lima'], 'Measurement crosses Lima days')
+            visit = self.sql('SELECT v.location_id FROM charges c JOIN service_executions s ON s.id=c.service_execution_id '
+                             'JOIN visits v ON v.id=s.visit_id WHERE c.id=:id', {'id': payment['charge_id']})
+            check(visit[0]['location_id'] == self.seed['sedes']['Lince'], 'Measurement crosses locations')
+            pairs.setdefault(fixture['ruta'], []).append((Decimal(payment['amount']), payment['method'], payment['receiver']))
+            result.setdefault('verification_counts', {})[payment['id']] = count
+        check(sorted(pairs['manual']) == sorted(pairs['airi']), 'Manual/AIRI payments are not equivalent')
+        result['checks']['cero_duplicados'] = all(n == 1 for n in result['verification_counts'].values())
+        result.update(operator=self.args.operator, dia_lima=self.seed['dia_lima'],
+                      location_id=self.seed['sedes']['Lince'],
+                      evaluated_at=datetime.now(timezone.utc).isoformat(),
+                      seed_sha256=hashlib.sha256((self.args.seed_summary or self.root / 'e1-seed.json').read_bytes()).hexdigest())
+        result['cumple'] = all(result['checks'].values())
+        result['estado_e1'] = 'CUMPLE' if result['cumple'] else 'PENDIENTE'
+        check(state == self.snapshot(), 'Measurement must be read only')
+        destination = self.root / 'e1-medicion.json'
+        check(not destination.exists(), 'Preserve existing measurement evidence; use another run-dir')
+        write_json(destination, result)
+        print(json.dumps(result, ensure_ascii=False, indent=2, default=str))
+        self.engine.dispose()
+        return int(not result['cumple'])
+
     def replay(self):
         before = self.snapshot()
         results = []
@@ -431,16 +922,19 @@ class Journeys:
         for intent in list(self.result['intents']):
             self.choose(intent['person'])
             same = self.api(intent['path'], 'POST', intent['body'], intent['key'])
-            check(same['status'] == 200 and same['replay'] == 'true', f'Replay failed: {same}')
+            check(same['status'] in (200, 201) and same['replay'] == 'true', f'Replay failed: {same}')
             check(same['body'] == intent['result'], 'Replay result changed')
             other_key = str(uuid4())
             other = self.api(intent['path'], 'POST', intent['body'], other_key)
             results.append({'path': intent['path'], 'same_key': intent['key'], 'same': same,
                             'new_key': other_key, 'new': other})
             self.result['replay']['requests'] = results
-            if other['status'] != 409:
-                failure = f"New key must return 409: {other}"
+            expected_status = 422 if intent['path'].endswith('/verification-review') else 409
+            if other['status'] != expected_status:
+                failure = f"New key must return {expected_status}: {other}"
                 break
+            if expected_status == 422:
+                self.e1_rejected(other, (422,), 'INVALID_INPUT', 'already_verified')
         after = self.snapshot()
         self.result['replay'].update(before=before, after=after, identical=before == after,
                                      counts_before={k: len(v) for k, v in before.items()},
@@ -453,7 +947,8 @@ class Journeys:
     def run(self):
         from playwright.sync_api import sync_playwright
         selected = self.args.journeys.split(',')
-        check(all(x in ('J1', 'J2', 'J3', 'J4', 'J5', 'J6') for x in selected), 'Unknown journey')
+        check(all(x in JOURNEYS for x in selected), 'Unknown journey')
+        check(E1 not in selected or selected == [E1], 'Run E1 alone with its fresh M1 pruebas batch')
         if 'J3' in selected and 'J1' not in selected:
             selected.append('J1')
         selected = sorted(set(selected))
@@ -470,7 +965,7 @@ class Journeys:
                 for journey in selected:
                     self.result['journeys'][journey] = {'result': 'FAIL', 'shots': []}
                     try:
-                        getattr(self, journey)()
+                        getattr(self, journey.replace('-', '_'))()
                         check(not self.page_errors, f'Browser errors: {self.page_errors}')
                         self.result['journeys'][journey]['sql_counts'] = {k: len(v) for k, v in self.snapshot().items()}
                         self.result['journeys'][journey]['result'] = 'PASS'
@@ -507,7 +1002,7 @@ class Journeys:
                 ids['handoff_id'] = row['handoff']['id']
             print(f"{journey} | {row['result']} | {json.dumps(ids)} {row.get('error', '')}")
         if self.args.replay:
-            print('REPLAY | FAIL | ' + self.result['replay'].get('error', 'Not run') if failed else 'REPLAY | PASS (200 true; nueva clave 409; SQL idéntico)')
+            print('REPLAY | FAIL | ' + self.result['replay'].get('error', 'Not run') if failed else 'REPLAY | PASS (misma clave/cuerpo; nueva clave rechazada; SQL idéntico)')
         self.engine.dispose()
         return int(failed)
 
@@ -521,11 +1016,28 @@ def main():
     parser.add_argument('--run-dir', type=Path, required=True)
     parser.add_argument('--journeys', default='J1,J2,J3,J4,J5,J6')
     parser.add_argument('--replay', action='store_true')
+    parser.add_argument('--seed-summary', type=Path, help='M1 JSON; default: <run-dir>/e1-seed.json')
+    parser.add_argument('--other-seed-summary', type=Path, help='M1 JSON for another organization; default: <run-dir>/e1-other-seed.json')
+    parser.add_argument('--dry-run', action='store_true', help='Validate E1 selection and M1 IDs without DB/browser/mutations')
+    parser.add_argument('--measure-csv', type=Path, help='Evaluate the measured M1 CSV using read-only SQL; does not run journeys')
+    parser.add_argument('--operator', help='Same human operator for the manual and AIRI measurement')
     args = parser.parse_args()
     runner = None
     try:
+        check(all(x in JOURNEYS for x in args.journeys.split(',')), 'Unknown journey')
+        check(args.run_dir.is_absolute(), '--run-dir must be absolute')
+        for path in (args.seed_summary, args.other_seed_summary, args.measure_csv):
+            check(path is None or path.is_absolute(), 'E1 input paths must be absolute')
+        if args.dry_run:
+            check(args.journeys == E1 and not args.measure_csv, '--dry-run selects cobro-verificado alone')
+            seed = e1_seed(args.seed_summary or args.run_dir / 'e1-seed.json')
+            print(json.dumps({'mode': 'DRY_RUN', 'journey': E1, 'run_id': seed['run_id'],
+                              'pruebas_ids': [r['payment_id'] for r in seed['lotes']['pruebas']],
+                              'medicion_ids_excluded': [r['payment_id'] for r in seed['lotes']['medicion']],
+                              'real_cases_1_9': 'NOT_RUN', 'measurement_case_10': 'PENDIENTE'}, indent=2))
+            return 0
         runner = Journeys(args)
-        return runner.run()
+        return runner.measurement() if args.measure_csv else runner.run()
     except Exception as error:
         print('FAIL: ' + (runner.redact(error) if runner else type(error).__name__ + ': check private env and prerequisites'), file=sys.stderr)
         return 1
