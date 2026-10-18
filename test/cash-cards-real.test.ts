@@ -4,6 +4,7 @@ import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { AxiosError, AxiosHeaders, type InternalAxiosRequestConfig } from "axios";
 
 vi.mock("../src/components/useFocusTrap", () => ({ useFocusTrap: () => {} }));
+vi.mock("../src/components/shell/ShellContext", () => ({ useShellContext: () => ({ locationId: "", setLocationId() {} }) }));
 const charge = {
   id: 7, service_execution_id: 42, amount: "250.00", paid: "120.00", outstanding: "130.00",
   created_at: "2026-10-13T14:15:00Z", visit_id: 5, patient_id: 9, patient_name: "Paciente real",

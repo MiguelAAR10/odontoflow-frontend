@@ -90,8 +90,8 @@ describe("cash real-mode transport (mocked axios)", () => {
     expect(context.charges[1]!.payments[0]).toMatchObject({ reversed: true, verificationStatus: "verified" });
     expect(context.charges.map(charge => [charge.paid, charge.outstanding, charge.locationTimeZone]))
       .toEqual([[100, 150, "America/Lima"], [100, 150, "America/Lima"], [100, 150, "America/Lima"]]);
-    // Preserve the authorized worklist even if a charge is outside the charge filter.
-    expect(context.reconciliation.map(payment => payment.id)).toEqual(["6", "1"]);
+    // A selected site only includes payments linked to its authorized charges.
+    expect(context.reconciliation.map(payment => payment.id)).toEqual(["1"]);
   });
 
   it("no sustituye un listado vacío por pagos mock y conserva el error canónico del listado", async () => {

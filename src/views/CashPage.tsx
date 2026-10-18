@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import {
   clinicToday,
+  cashContextForLocation,
   closeFollowUpRecord,
   loadCashContext,
   loadCanonicalLocations,
@@ -223,8 +224,10 @@ function intentKey(ref: { current: MutationIntent | null }, signature: string): 
   return ref.current.key;
 }
 
-export function CashPage() {
-  return useMocks ? <CashPreviewPage /> : <CashManagement />;
+type CashFocus = { focusedPaymentId?: string; initialLocationId?: string };
+
+export function CashPage(focus: CashFocus = {}) {
+  return useMocks ? <CashPreviewPage /> : <CashManagement {...focus} />;
 }
 
 function CashPreviewPage() {
@@ -257,12 +260,20 @@ function CashPreviewPage() {
   </section>;
 }
 
-function CashManagement() {
-  const [tab, setTab] = useState<CashTab>("charges");
-  const [charges, setCharges] = useState<Charge[]>([]);
+function CashManagement({ focusedPaymentId, initialLocationId }: CashFocus = {}) {
+  const { locationId, setLocationId } = useShellContext();
+  const [tab, setTab] = useState<CashTab>(focusedPaymentId ? "reconciliation" : "charges");
+  const [loadedCharges, setCharges] = useState<Charge[]>([]);
   const [uncharged, setUncharged] = useState<UnchargedExecution[]>([]);
   const [followUps, setFollowUps] = useState<ChargeFollowUp[]>([]);
-  const [reconciliation, setReconciliation] = useState<Payment[]>([]);
+  const [loadedReconciliation, setReconciliation] = useState<Payment[]>([]);
+  const { charges, reconciliation } = useMemo(() => cashContextForLocation({
+    charges: loadedCharges, reconciliation: loadedReconciliation,
+  }, locationId), [loadedCharges, loadedReconciliation, locationId]);
+  useEffect(() => {
+    if (initialLocationId !== undefined) setLocationId(initialLocationId);
+  }, [initialLocationId, setLocationId]);
+  useEffect(() => { setVerifyTarget(null); setSelected(null); }, [locationId]);
   const [query, setQuery] = useState("");
   const [method, setMethod] = useState<PaymentMethod | "Todos">("Todos");
   const [loading, setLoading] = useState(true);
@@ -482,7 +493,7 @@ function CashManagement() {
     setError("");
     try {
       const receipt = await preparePaymentVerificationReview(Number(payment.id), intent.key);
-      window.location.assign(`/aprobaciones?proposal=agent_proposal:${receipt.proposal.id}`);
+      window.location.assign(`/aprobaciones?proposal=agent_proposal:${receipt.proposal.id}&payment=${payment.id}&location=${locationId}`);
     } catch (caught) {
       setError(toApiError(caught).message);
     } finally {
@@ -504,7 +515,7 @@ function CashManagement() {
     { key: "paid", header: "Pagado", render: (charge) => money(charge.paid) },
     { key: "outstanding", header: "Saldo", render: (charge) => <strong className="numeric-emphasis">{money(charge.outstanding)}</strong> },
     { key: "methods", header: "Medios", render: (charge) => charge.payments.length ? <span className="badge-stack">{[...new Set(charge.payments.map((payment) => payment.method))].map((item) => <Badge key={item} tone={methodTone(item)}>{PAYMENT_METHOD_LABEL[item]}</Badge>)}</span> : <span className="text-muted">—</span> },
-    { key: "status", header: "Estado", render: (charge) => <Badge tone={statusTone(charge.status)}>{charge.status}</Badge> },
+    { key: "status", header: "Estado", render: (charge) => <span className="table-context"><Badge tone={statusTone(charge.status)}>{charge.status}</Badge>{charge.payments.some(payment => payment.method !== "efectivo" && !payment.reversed && payment.verificationStatus !== "verified" && !payment.reference?.trim()) && <small className="cash-missing-reference">Falta código de operación; pide corregir el registro para cotejar el pago.</small>}</span> },
     { key: "actions", header: "", render: (charge) => <span className="row-actions"><Button compact variant="primary" onClick={() => openCharge(charge)} disabled={charge.outstanding <= 0}>Cobrar</Button>{charge.outstanding > 0 && <Button compact onClick={() => openFollowUpModal(charge)}>Seguimiento</Button>}</span> },
   ];
 
@@ -526,17 +537,21 @@ function CashManagement() {
   ];
 
   const reconciliationColumns: Column<Payment>[] = [
-    { key: "payment", header: "Pago", width: "20%", render: (payment) => <span className="person-cell"><span><strong>{PAYMENT_METHOD_LABEL[payment.method]}</strong><small>{payment.reference ?? "Sin código de operación · registro anterior"}</small></span></span> },
+    { key: "payment", header: "Pago", width: "20%", render: (payment) => <span className="person-cell" data-focused-payment={payment.id === focusedPaymentId ? "true" : undefined}><span><strong>{PAYMENT_METHOD_LABEL[payment.method]}</strong><small>{payment.reference ?? "Sin código de operación · registro anterior"}</small>{payment.id === focusedPaymentId && <small>Pago seleccionado</small>}</span></span> },
     { key: "charge", header: "Cargo", render: (payment) => { const charge = charges.find((item) => item.id === String(payment.chargeId)); return charge ? <span className="table-context"><strong>{charge.patientName}</strong><small>{charge.serviceName} · #{charge.id}</small></span> : `#${payment.chargeId ?? "—"}`; } },
     { key: "receiver", header: "Receptor", render: (payment) => payment.receiver ?? "—" },
     { key: "date", header: "Registrado", render: (payment) => formatInstant(payment.paidAt) },
     { key: "amount", header: "Monto", render: (payment) => money(payment.amount) },
-    { key: "state", header: "Estado", render: () => <Badge tone="amber">Sin verificar</Badge> },
-    { key: "actions", header: "", render: (payment) => payment.reference ? <span className="row-actions">
+    { key: "state", header: "Estado", render: (payment) => <Badge tone={payment.verificationStatus === "verified" ? "green" : "amber"}>{paymentState(payment)}</Badge> },
+    { key: "actions", header: "", render: (payment) => payment.verificationStatus === "verified" ? <span>Verificación registrada</span> : payment.reference ? <span className="row-actions">
       <Button compact variant="primary" icon={ShieldCheck} disabled={preparingReviews.includes(payment.id)} onClick={() => { verificationIntent.current = null; setVerifyTarget(payment); setVerifyNote(""); }}>Verificar</Button>
       <Button compact disabled={busy || preparingReviews.includes(payment.id)} onClick={() => prepareReview(payment)}>{preparingReviews.includes(payment.id) ? "Preparando…" : "Preparar revisión"}</Button>
-    </span> : <span className="text-muted">Histórico · no verificable</span> },
+    </span> : <span className="text-muted">Falta código de operación; pide corregir el registro para cotejar el pago.</span> },
   ];
+
+  const focusedPayment = focusedPaymentId ? charges.flatMap(charge => charge.payments).find(payment => payment.id === focusedPaymentId) : undefined;
+  const reconciliationRows = focusedPayment
+    ? [focusedPayment, ...reconciliation.filter(payment => payment.id !== focusedPayment.id)] : reconciliation;
 
   const paymentTotals = cashPaymentTotals(charges);
 
@@ -564,14 +579,18 @@ function CashManagement() {
         {loading ? <div className="table-loading" role="status">Cargando cobranza…</div> : <DataTable columns={collectionColumns} rows={collectionsRows} rowKey={(row) => row.id} emptyMessage="No hay seguimientos activos" />}
       </>}
       {tab === "reconciliation" && <>
-        <div className="table-toolbar cash-toolbar"><span className="toolbar-leading"><ShieldCheck size={18} /> Solo yape, plin y transferencia sin verificar</span><span className="result-count">{reconciliation.length} pagos</span></div>
-        {loading ? <div className="table-loading" role="status">Cargando conciliación…</div> : <DataTable columns={reconciliationColumns} rows={reconciliation} rowKey={(payment) => payment.id} emptyMessage="No hay pagos digitales pendientes" />}
+        <div className="table-toolbar cash-toolbar"><span className="toolbar-leading"><ShieldCheck size={18} /> Yape, Plin y transferencia por verificar</span><span className="result-count">{reconciliation.length} pagos pendientes</span></div>
+        {!loading && focusedPaymentId && <p className="cash-focus-status" role="status">{focusedPayment ? `Pago seleccionado · ${focusedPayment.reference ?? focusedPayment.id} · ${paymentState(focusedPayment)}` : "El pago seleccionado no está disponible en esta sede o con tus permisos."}</p>}
+        {loading ? <div className="table-loading" role="status">Cargando conciliación…</div> : <DataTable className="reconciliation-table" columns={reconciliationColumns} rows={reconciliationRows} rowKey={(payment) => payment.id} emptyMessage="No hay pagos digitales pendientes" />}
       </>}
       <div className="pagination"><span>{tab === "charges" ? `${visibleCharges.length} cargos registrados` : tab === "uncharged" ? `${uncharged.length} atenciones` : tab === "collections" ? `${collectionsRows.length} seguimientos activos` : `${reconciliation.length} pagos pendientes`}</span><div /><span className="text-muted">Vista completa</span></div>
     </section>
 
     <style>{`
       .cash-page { font-variant-numeric: tabular-nums; }
+      .cash-missing-reference{max-width:28ch;white-space:normal;line-height:1.5}
+      .cash-focus-status{padding:0 16px;color:var(--ink-2);font-size:14px}
+      .reconciliation-table tr:has([data-focused-payment=true]){background:var(--blue-soft);outline:2px solid var(--focus);outline-offset:-2px}
       .cash-page .kpi-card{min-width:0;padding:16px;gap:10px}.cash-page .kpi-card__icon{flex:none;width:38px;height:38px}.cash-page .kpi-card__copy{min-width:0}.cash-page .kpi-card__copy strong{font-size:clamp(20px,1.8vw,28px);overflow-wrap:anywhere}.cash-page .kpi-card__copy small{overflow-wrap:anywhere}
       .cash-page .kpi-card__copy strong, .cash-page td, .cash-page .payment-list strong,
       .cash-page .numeric-emphasis, .cash-page .detail-list strong, .cash-page .charge-context strong {
@@ -592,6 +611,15 @@ function CashManagement() {
       .cash-cut-decisions h2 { margin: 0 0 12px; font-size: 18px; }
       @media (max-width: 900px) { .cash-page .cash-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
       @media (max-width: 520px) {
+        .cash-page .reconciliation-table .data-table{display:block;min-width:0}
+        .reconciliation-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+        .reconciliation-table tbody{display:block}
+        .reconciliation-table tr{display:grid;grid-template-columns:minmax(0,1fr);padding:12px 0;border-top:1px solid var(--line)}
+        .cash-page .reconciliation-table td{display:flex;align-items:start;gap:12px;min-width:0;height:auto;border:0;padding:6px 16px;white-space:normal;overflow-wrap:anywhere;font-family:var(--font-text)}
+        .reconciliation-table td:before{flex:0 0 70px;color:var(--muted);font-size:12px}
+        .reconciliation-table td:nth-child(1):before{content:"Pago"}.reconciliation-table td:nth-child(2):before{content:"Cargo"}.reconciliation-table td:nth-child(3):before{content:"Receptor"}.reconciliation-table td:nth-child(4):before{content:"Registrado"}.reconciliation-table td:nth-child(5):before{content:"Monto"}.reconciliation-table td:nth-child(6):before{content:"Estado"}
+        .reconciliation-table .person-cell,.reconciliation-table .table-context{min-width:0}
+        .reconciliation-table .row-actions{flex-wrap:wrap;width:100%}.reconciliation-table .button{min-height:44px}
         .cash-page .cash-kpis { grid-template-columns: 1fr; }
         .cash-cut-figures { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 12px; }
         .cash-cut-figures strong { font-size: 26px; }
@@ -617,7 +645,7 @@ function CashManagement() {
     </Modal>
 
     <Modal title="Verificar pago digital" open={Boolean(verifyTarget)} onClose={() => !busy && setVerifyTarget(null)} size="small">
-      {verifyTarget && <form className="form-grid" onSubmit={submitVerification}><div className="detail-list field--wide"><div><span>Referencia</span><strong>{verifyTarget.reference}</strong></div><div><span>Monto</span><strong>{money(verifyTarget.amount)}</strong></div><div><span>Estado</span><Badge tone="amber">Sin verificar</Badge></div></div><label className="field field--wide"><span>Nota de conciliación (opcional)</span><textarea rows={3} value={verifyNote} onChange={(event) => setVerifyNote(event.target.value)} disabled={busy} /></label><div className="form-actions field--wide"><Button type="button" onClick={() => setVerifyTarget(null)} disabled={busy}>Cancelar</Button><Button type="submit" variant="primary" icon={ShieldCheck} disabled={busy}>{busy ? "Verificando…" : "Marcar verificado"}</Button></div></form>}
+      {verifyTarget && <form className="form-grid" onSubmit={submitVerification}><div className="detail-list field--wide"><div><span>Referencia</span><strong>{verifyTarget.reference}</strong></div><div><span>Monto</span><strong>{money(verifyTarget.amount)}</strong></div><div><span>Método</span><strong>{PAYMENT_METHOD_LABEL[verifyTarget.method]}</strong></div><div><span>Receptor</span><strong>{verifyTarget.receiver ?? "No consta"}</strong></div><div><span>Sede</span><strong>{charges.find(charge => charge.id === String(verifyTarget.chargeId))?.locationName ?? "No consta"}</strong></div><div><span>Estado</span><Badge tone="amber">Sin verificar</Badge></div></div><label className="field field--wide"><span>Nota de conciliación (opcional)</span><textarea rows={3} value={verifyNote} onChange={(event) => setVerifyNote(event.target.value)} disabled={busy} /></label><div className="form-actions field--wide"><Button type="button" onClick={() => setVerifyTarget(null)} disabled={busy}>Cancelar</Button><Button type="submit" variant="primary" icon={ShieldCheck} disabled={busy}>{busy ? "Verificando…" : "Marcar verificado"}</Button></div></form>}
     </Modal>
   </section>;
 }

@@ -5,6 +5,7 @@ import { AxiosError, AxiosHeaders, type AxiosAdapter, type InternalAxiosRequestC
 
 // react-test-renderer has no DOM; focus management is outside these transport tests.
 vi.mock("../src/components/useFocusTrap", () => ({ useFocusTrap: () => {} }));
+vi.mock("../src/components/shell/ShellContext", () => ({ useShellContext: () => ({ locationId: "", setLocationId() {} }) }));
 
 const initialCharge = {
   id: 7, service_execution_id: 42, amount: "250.00", paid: "100.00", outstanding: "150.00",

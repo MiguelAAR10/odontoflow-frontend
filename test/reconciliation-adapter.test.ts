@@ -1,12 +1,21 @@
 /** FE3A digital reconciliation state and metadata coverage. */
 import { beforeEach, describe, expect, it } from "vitest";
-import { loadReconciliationPayments, registerPayment, toUiPayment, verifyPaymentRecord, newIdempotencyKey } from "../src/api";
+import { cashContextForLocation, loadCashContext, loadReconciliationPayments, registerPayment, toUiPayment, verifyPaymentRecord, newIdempotencyKey } from "../src/api";
 import { mockCharges } from "../src/mockData";
 
 const seed = structuredClone(mockCharges);
 beforeEach(() => mockCharges.splice(0, mockCharges.length, ...structuredClone(seed)));
 
 describe("digital payment reconciliation", () => {
+  it("applies the same selected-site filter to mock history and the shared snapshot", async () => {
+    const all = await loadCashContext();
+    const lince = await loadCashContext({ location_id: 1 });
+    expect(lince.charges.map(charge => charge.id)).toEqual(["1", "4"]);
+    expect(lince.reconciliation.map(payment => payment.id)).toEqual(["p1"]);
+    expect(cashContextForLocation(all, "1")).toEqual(lince);
+    expect(cashContextForLocation(all, "")).toBe(all);
+    expect(all.reconciliation.map(payment => payment.id)).toEqual(["p1", "p2"]);
+  });
   it("reveals only digital unverified payments and labels grandfathered references", async () => {
     const payments = await loadReconciliationPayments();
     expect(payments.every((payment) => ["yape", "plin", "transferencia"].includes(payment.method))).toBe(true);

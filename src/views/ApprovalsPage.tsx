@@ -35,7 +35,7 @@ import { getSessionVersion } from "../contracts/client";
  * Nothing runs until a person approves it; the backend decides who may
  * (`actions` per item) and re-checks every decision.
  */
-export function ApprovalsPage({ focusedKey, focusedStatus, conversationId }: { focusedKey?: string; focusedStatus?: string; conversationId?: number } = {}) {
+export function ApprovalsPage({ focusedKey, focusedStatus, conversationId, returnToCash }: { focusedKey?: string; focusedStatus?: string; conversationId?: number; returnToCash?: string } = {}) {
   const { identity, loading, version } = usePersona();
   const [reloadToken, setReloadToken] = useState(0);
   const human = identity?.principalType === "human";
@@ -47,17 +47,17 @@ export function ApprovalsPage({ focusedKey, focusedStatus, conversationId }: { f
     {!loading && !human && <p className="approvals-notice" role="note">Para aprobar o declinar, elige quién eres en el menú de perfil, abajo a la izquierda.</p>}
     {conversationId && <Link href={`/chat?conversation=${conversationId}`}>Volver a la conversación de origen</Link>}
     <BandejaStyles />
-    <ClinicInbox key={`${version}:${focusedKey}:${focusedStatus}`} reloadToken={reloadToken} focusedKey={focusedKey} focusedStatus={focusedStatus} />
+    <ClinicInbox key={`${version}:${focusedKey}:${focusedStatus}`} reloadToken={reloadToken} focusedKey={focusedKey} focusedStatus={focusedStatus} returnToCash={returnToCash} />
     {!useMocks && <AgentRunsPanel identity={identity} onRan={() => setReloadToken((value) => value + 1)} />}
   </section>;
 }
 
 export interface InboxSummary { pending: number; pendingPartial: boolean; verification: number | null }
 /** Same clinic queue in Bandeja and Mi turno, independent of an agent thread. */
-export function ClinicInbox({ reloadToken = 0, onSummary, focusedKey, focusedStatus }: { reloadToken?: number; onSummary?: (summary: InboxSummary) => void; focusedKey?: string; focusedStatus?: string }) {
+export function ClinicInbox({ reloadToken = 0, onSummary, focusedKey, focusedStatus, returnToCash }: { reloadToken?: number; onSummary?: (summary: InboxSummary) => void; focusedKey?: string; focusedStatus?: string; returnToCash?: string }) {
   const { identity, version } = usePersona();
   return <div className="clinic-inbox airi-catalog"><BandejaStyles />
-    {useMocks ? <FixtureInbox key={version} identity={identity} onSummary={onSummary} /> : <InboxSection key={version} reloadToken={reloadToken} onSummary={onSummary} focusedKey={focusedKey} focusedStatus={focusedStatus} />}
+    {useMocks ? <FixtureInbox key={version} identity={identity} onSummary={onSummary} /> : <InboxSection key={version} reloadToken={reloadToken} onSummary={onSummary} focusedKey={focusedKey} focusedStatus={focusedStatus} returnToCash={returnToCash} />}
   </div>;
 }
 
@@ -187,7 +187,7 @@ interface DecisionState {
   error: ActionableError | null;
 }
 
-function InboxSection({ reloadToken, onSummary, focusedKey, focusedStatus }: { reloadToken: number; onSummary?: (summary: InboxSummary) => void; focusedKey?: string; focusedStatus?: string }) {
+function InboxSection({ reloadToken, onSummary, focusedKey, focusedStatus, returnToCash }: { reloadToken: number; onSummary?: (summary: InboxSummary) => void; focusedKey?: string; focusedStatus?: string; returnToCash?: string }) {
   const [view, setView] = useState("all");
   const [selected, setSelected] = useState<string | null>(focusedKey ?? null);
   const [status, setStatus] = useState<ApprovalStatus>(() => STATUS_TABS.find(tab => tab.id === focusedStatus)?.id as ApprovalStatus ?? "pending");
@@ -198,12 +198,14 @@ function InboxSection({ reloadToken, onSummary, focusedKey, focusedStatus }: { r
   const [error, setError] = useState("");
   const [decisions, setDecisions] = useState<Record<string, DecisionState>>({});
   const [announcement, setAnnouncement] = useState("");
+  const [paymentReviewExecuted, setPaymentReviewExecuted] = useState(false);
   // A decided card leaves the pending list, so focus lands on the stable
   // section heading instead of falling to <body>.
   const headingRef = useRef<HTMLHeadingElement>(null);
   const reads = useRef(createLatestRequest());
   const currentStatus = useRef(status);
   const focusStatusResolved = useRef(false);
+  const settledDuringRead = useRef(new Map<string, ApprovalItem>());
   const now = useNow();
 
   const refresh = useCallback(async () => {
@@ -213,15 +215,25 @@ function InboxSection({ reloadToken, onSummary, focusedKey, focusedStatus }: { r
     setNextCursor(null);
     setError("");
     setDecisions({});
+    settledDuringRead.current.clear();
+    let linked: ApprovalItem | null = null;
+    // Start both reads together. Handle rejection immediately while the focused
+    // card loads; an unrelated queue failure must not hide that card.
+    const queue = loadInbox({ status }).then(page => ({ page }), error => ({ error }));
     try {
-      const linked = focusedKey?.startsWith("agent_proposal:") ? await loadInboxRecord(Number(focusedKey.split(":")[1])) : null;
+      linked = focusedKey?.startsWith("agent_proposal:") ? await loadInboxRecord(Number(focusedKey.split(":")[1])) : null;
       if (!isCurrent()) return;
+      if (linked) setPaymentReviewExecuted(linked.kind === "payment_verify" && linked.status === "executed");
       if (linked && !focusStatusResolved.current) {
         focusStatusResolved.current = true;
         if (linked.status !== status) { currentStatus.current = linked.status; setStatus(linked.status); return; }
       }
-      let page = await loadInbox({ status });
-      if (linked?.status === status) page = { ...page, items: [...page.items.filter(item => item.key !== linked.key), linked] };
+      if (linked?.status === status) setItems([linked]);
+      const result = await queue;
+      if ("error" in result) throw result.error;
+      let page = result.page;
+      const linkedKey = linked?.key;
+      if (linked?.status === status) page = { ...page, items: [...page.items.filter(item => item.key !== linkedKey), linked] };
       const visited = new Set<string>();
       while (!linked && focusedKey && !page.items.some(item => item.key === focusedKey) && page.nextCursor && !visited.has(page.nextCursor) && isCurrent()) {
         visited.add(page.nextCursor);
@@ -229,12 +241,12 @@ function InboxSection({ reloadToken, onSummary, focusedKey, focusedStatus }: { r
         page = { items: [...page.items, ...next.items], nextCursor: next.nextCursor };
       }
       if (!isCurrent()) return;
-      setItems(page.items);
+      setItems(page.items.map(item => settledDuringRead.current.get(item.key) ?? item).filter(item => item.status === status));
       setNextCursor(page.nextCursor);
       if (focusedKey && !page.items.some(item => item.key === focusedKey)) setAnnouncement("La propuesta vinculada no está disponible en este estado o con tus permisos.");
     } catch (caught) {
       if (!isCurrent()) return;
-      setItems([]);
+      if (!linked || linked.status !== status) setItems([]);
       setNextCursor(null);
       setError(describeApprovalError(caught).message);
     } finally {
@@ -274,12 +286,17 @@ function InboxSection({ reloadToken, onSummary, focusedKey, focusedStatus }: { r
     try {
       const { item: settled, replayed } = await decideInboxItem(item, intent);
       if (!isCurrent()) return;
+      settledDuringRead.current.set(item.key, settled);
       setDecisions((state) => {
         const next = { ...state };
         delete next[item.key];
         return next;
       });
       setAnnouncement(decisionAnnouncement(settled, decision, replayed));
+      if (item.key === focusedKey && item.kind === "payment_verify" && decision === "approve") {
+        setPaymentReviewExecuted(settled.status === "executed");
+        if (settled.status === "executed" && returnToCash) window.location.assign(returnToCash);
+      }
       if (settled.status !== status) {
         setItems((rows) => rows.filter((row) => row.key !== item.key));
         headingRef.current?.focus();
@@ -306,8 +323,9 @@ function InboxSection({ reloadToken, onSummary, focusedKey, focusedStatus }: { r
     <div className="approvals-live" aria-live="polite" role="status">
       {announcement && <div className="success-banner"><Check size={18} aria-hidden="true" />{announcement}</div>}
     </div>
+    {paymentReviewExecuted && returnToCash && <p><Link className="button button--primary" href={returnToCash}>Volver a Conciliación</Link></p>}
 
-    <section className="approvals-section" aria-labelledby="inbox-title" aria-busy={loading}>
+    <section className="approvals-section" aria-labelledby="inbox-title" aria-busy={loading && !active}>
       <header className="approvals-section__header approvals-section__header--inbox">
         <h2 id="inbox-title" ref={headingRef} tabIndex={-1}><ClipboardCheck size={19} aria-hidden="true" /> Propuestas {tabLabel.toLowerCase()}</h2>
         {!loading && !error && <span className="approvals-count" aria-label={`${items.length}${nextCursor ? " o más" : ""} propuestas`}>{items.length}{nextCursor ? "+" : ""}</span>}
@@ -316,9 +334,10 @@ function InboxSection({ reloadToken, onSummary, focusedKey, focusedStatus }: { r
       {error && <div className="form-error approvals-error" role="alert">{error}<Button compact icon={RotateCcw} onClick={() => void refresh()}>Reintentar</Button></div>}
       <InboxViews value={view} onChange={setView} cards={presentation} canDecide mine={items.filter(item => item.status === "pending" && item.actions.length > 0).length} />
       <div id="inbox-list">
-        {loading ? <p className="table-loading" role="status">Cargando propuestas…</p>
+        {loading && !active ? <InboxSkeleton />
           : !error && visible.length === 0 ? <p className="empty-state approvals-empty">{view === "all" || view === "mine" ? EMPTY_COPY[status] : "No hay casos con este filtro en los datos disponibles."}</p>
           : <div className="bandeja-layout">
+            {loading && <InboxSkeleton compact />}
             <CaseList cards={visible.map(toCard)} selected={active?.key ?? null} onSelect={setSelected} states={Object.fromEntries(visible.map(item => [item.key, STATUS_BADGE[item.status].label]))} />
             {active && <div id="bandeja-selected" className="bandeja-detail"><ConversationContext card={toCard(active)} conversationId={active.conversationId} /><div className="bandeja-proposal"><ApprovalCard key={active.key} item={active} now={now} decision={decisions[active.key]} onDecide={decide} onReload={() => void refresh()} /></div></div>}
           </div>}
@@ -326,6 +345,13 @@ function InboxSection({ reloadToken, onSummary, focusedKey, focusedStatus }: { r
       </div>
     </section>
   </>;
+}
+
+function InboxSkeleton({ compact = false }: { compact?: boolean }) {
+  return <div className={`inbox-skeleton${compact ? " inbox-skeleton--compact" : ""}`} role="status">
+    <p>{compact ? "Propuesta seleccionada lista. Cargando el resto de la bandeja…" : "Cargando propuestas…"}</p>
+    <div aria-hidden="true"><span className="skeleton" /><span className="skeleton" />{!compact && <span className="skeleton inbox-skeleton__detail" />}</div>
+  </div>;
 }
 
 function decisionAnnouncement(item: ApprovalItem, decision: ProposalDecision, replayed: boolean): string {
@@ -497,7 +523,7 @@ function FixtureInbox({ identity, onSummary }: { identity: StaffIdentity | null;
     <InboxViews value={view} onChange={value => { setView(value); setEditing(false); setError(""); }} mine={mine.length} cards={cards} canDecide={canDecide === true} />
     <p className="bandeja-announcement" role="status">{announcement}</p>
     {error && <p className="form-error" role="alert">{error}</p>}
-    {!loaded ? <p role="status">Cargando propuestas…</p> : !visible.length ? <p className="empty-state">No hay casos con este filtro en los datos disponibles. Revisa Todas para consultar la evidencia.</p> : <div className="bandeja-layout">
+    {!loaded ? <InboxSkeleton /> : !visible.length ? <p className="empty-state">No hay casos con este filtro en los datos disponibles. Revisa Todas para consultar la evidencia.</p> : <div className="bandeja-layout">
       <CaseList cards={visible.map(row => row.card)} selected={active?.card.id ?? null} onSelect={select} />
       {active && <div id="bandeja-selected" className="bandeja-detail">
         <ConversationContext card={active.card} /><div className="bandeja-proposal">
@@ -522,6 +548,7 @@ function BandejaStyles() {
   return <style>{`
     .approvals-page{max-width:1200px;margin:0 auto;color:var(--ink)}
     .clinic-inbox{min-width:0;color:var(--ink)}
+    .inbox-skeleton{padding:16px;color:var(--muted);font-size:14px}.inbox-skeleton>div{display:grid;gap:12px}.inbox-skeleton .skeleton{display:block;height:54px}.inbox-skeleton .inbox-skeleton__detail{height:200px}.inbox-skeleton--compact{padding:0}.inbox-skeleton--compact .skeleton{height:12px}
     .bandeja-section-head,.bandeja-detail-meta{display:flex;align-items:center;gap:12px;margin:12px 0}
     .bandeja-section-head h2{font:500 19px var(--font-display);margin:0}
     .bandeja-section-head>span,.bandeja-detail-meta>span{font-size:13px;color:var(--muted)}

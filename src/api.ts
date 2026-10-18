@@ -631,15 +631,25 @@ export async function loadCharges(params?: Parameters<typeof listChargesReal>[0]
 }
 
 /** One screen snapshot: reuse the authorized bulk payment list for both tabs. */
-export async function loadCashContext(params?: Parameters<typeof listChargesReal>[0]): Promise<{
+export type CashContext = {
   charges: Charge[];
   reconciliation: Payment[];
-}> {
+};
+
+/** Site belongs to the visit/charge, never to the receiving account. */
+export function cashContextForLocation(context: CashContext, locationId: string): CashContext {
+  if (!locationId) return context; // The backend already limits all rows to authorized sites.
+  const charges = context.charges.filter(charge => String(charge.locationId) === locationId);
+  const paymentIds = new Set(charges.flatMap(charge => charge.payments.map(payment => payment.id)));
+  return { charges, reconciliation: context.reconciliation.filter(payment => paymentIds.has(payment.id)) };
+}
+
+export async function loadCashContext(params?: Parameters<typeof listChargesReal>[0]): Promise<CashContext> {
   if (useMocks) {
     const rows = params?.execution_id == null
       ? mockCharges
       : mockCharges.filter((charge) => charge.serviceExecutionId === Number(params.execution_id));
-    return copy({ charges: rows, reconciliation: pendingDigitalPayments(mockCharges.flatMap(charge => charge.payments)) });
+    return copy(cashContextForLocation({ charges: rows, reconciliation: pendingDigitalPayments(mockCharges.flatMap(charge => charge.payments)) }, String(params?.location_id ?? "")));
   }
   // GET /payments is tenant/site-scoped by the backend and currently unpaginated.
   const [rows, locations, payments] = await Promise.all([
@@ -654,10 +664,10 @@ export async function loadCashContext(params?: Parameters<typeof listChargesReal
   }
   // Bulk results are newest first; per-charge history has always used id ASC.
   for (const group of paymentsByCharge.values()) group.sort((a, b) => a.id - b.id);
-  return {
+  return cashContextForLocation({
     charges: rows.map(charge => toUiCharge(charge, paymentsByCharge.get(charge.id), timeZoneByLocation.get(charge.location_id))),
     reconciliation: pendingDigitalPayments(payments.map(toUiPayment)),
-  };
+  }, String(params?.location_id ?? ""));
 }
 
 export async function loadVisit(visitId: string | number): Promise<Visit> {
