@@ -179,9 +179,10 @@ J1–J6 no demuestran WhatsApp, aceptación del paciente, silla reservada ni cob
 Cobranza envía un recordatorio y Backfill entrega una oferta. E1 verifica un pago
 digital ya registrado; no registra un pago nuevo. No certifica todas las
 combinaciones de roles/tenants ni fuerza artificialmente una respuesta de red tardía.
-Los snapshots solo leen SQL; las mutaciones pasan por UI/BFF o herramientas sandbox.
-E1 añade sondas HTTP de identidades desde Python y una fixture IAM local mediante
-el servicio público `set_membership_active`; las credenciales nunca pasan al navegador.
+Los snapshots solo leen SQL. El runner usa UI/BFF y herramientas sandbox.
+E1 añade sondas HTTP y anulaciones por la API real desde Python, con humanos
+autenticados, y una fixture IAM local mediante el servicio público
+`set_membership_active`; las credenciales nunca pasan al navegador.
 La suite se detiene ante el primer fallo y conserva la evidencia disponible.
 
 ## E1 · Ejecución de cobro verificado
@@ -230,7 +231,8 @@ explícitamente. El host debe ser exactamente `127.0.0.1` y el puerto `5434`.
    guardar `e1-other-seed.json` y emitir una credencial humana con permisos de
    pagos/propuestas solo en esa organización. No inventar IDs inexistentes: el
    runner debe demostrar el rechazo sobre recursos que sí existen.
-5. Añadir al env 0600 `E1_OTHER_HUMAN_CREDENTIAL`, `SALES_AGENT_V0_CREDENTIAL`
+5. Añadir al env 0600 `E1_OTHER_HUMAN_CREDENTIAL`, `E1_CASHIER_HUMAN_CREDENTIAL`
+   (Caja de M1), `E1_CONTROL_HUMAN_CREDENTIAL` (humano de control) y `SALES_AGENT_V0_CREDENTIAL`
    (principal agente real), `E1_BACKEND_DIR=/ruta/absoluta/backend` y, si su venv
    no está allí, `E1_BACKEND_PYTHON=/ruta/absoluta/al/python`. Mantener una persona
    administradora/propietaria de control del seed base, con `payments.reverse`,
@@ -258,17 +260,23 @@ cambiar de persona remonta la página y repite sus lecturas. Las anulaciones y
 la preparación en Miraflores también cambian explícitamente a control y restauran
 la persona anterior en `finally`. Recepción solo se selecciona para los rechazos
 y restaura Caja aun si fallan. Las sondas con bearer comprueban `/me`: agente de
-la organización principal, humano de la otra organización. La carrera
-conserva una sesión BFF independiente para control y restaura Caja en el navegador;
-lanza a la vez anulación como control y aprobación como Caja, comprobando ambos
-actores y guardando sus IDs. Las cookies permanecen en memoria y no se escriben
-en la evidencia. También exige 403 y pago intacto si Caja intenta anular.
+la organización principal, humano de la otra organización. La ruta de anulación
+no está expuesta por el BFF (`src/bff/proxy.ts`); las sondas de Caja y las anulaciones
+de control llaman a la API real desde Python con sus respectivas credenciales.
+Cada cliente directo exige un `/me` idéntico al humano seleccionado en el BFF.
+La carrera conserva el cliente API de control independiente, restaura Caja en el
+navegador y lanza a la vez anulación por API y aprobación por la sesión BFF de Caja,
+comprobando ambos actores y guardando sus IDs/transporte. Las credenciales y cookies
+no se incluyen en la evidencia ni pasan al navegador. La denegación de Caja debe ser
+403 `PERMISSION_DENIED` del backend, con pago y eventos intactos.
 Tras cada navegación, el cambio de persona espera `aria-busy=false` en la pantalla
 de selección o el selector lateral antes de decidir cuál usar: «Elige quién eres»
 también aparece mientras carga una sesión ya autenticada. Si usa el menú lateral,
 espera su apertura visible. Tras cargar la identidad espera también que terminen
 las solicitudes del BFF (completadas o fallidas, con 500 ms sin pendientes y límite
-de 30 s) antes de iniciar el cambio. Mantiene las aserciones de `/me` y de ausencia
+de 30 s) antes de iniciar el cambio. Sus eventos de finalización se observan en
+`BrowserContext` para conservarlos tras navegar; un timeout guarda rutas y tiempos
+de las solicitudes aún pendientes. Mantiene las aserciones de `/me` y de ausencia
 de respuestas tardías de la sesión anterior.
 En Caja, «Conciliación» es un botón del grupo «Espacios de caja» (`aria-pressed`),
 de acuerdo con el componente `Tabs`; el journey lo selecciona con esos roles.

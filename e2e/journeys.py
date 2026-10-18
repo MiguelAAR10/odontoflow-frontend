@@ -144,7 +144,8 @@ class Journeys:
             self.seed = e1_seed(args.seed_summary or self.root / 'e1-seed.json')
             self.TABLES.update(payments='payments', reversals='payment_reversals', audit='audit_events')
             if not args.measure_csv:
-                for key in ('BFF_ACCESS_CODE', 'SALES_AGENT_V0_CREDENTIAL', 'E1_OTHER_HUMAN_CREDENTIAL', 'E1_BACKEND_DIR'):
+                for key in ('BFF_ACCESS_CODE', 'SALES_AGENT_V0_CREDENTIAL', 'E1_OTHER_HUMAN_CREDENTIAL',
+                            'E1_CASHIER_HUMAN_CREDENTIAL', 'E1_CONTROL_HUMAN_CREDENTIAL', 'E1_BACKEND_DIR'):
                     check(self.env.get(key), f'Missing E1 fixture setting: {key}')
                 other = e1_seed(args.other_seed_summary or self.root / 'e1-other-seed.json')
                 check(other['organization_id'] != self.seed['organization_id'], 'Other-organization fixture is the same tenant')
@@ -202,6 +203,9 @@ class Journeys:
                 quiet_since = time.monotonic()
             elif time.monotonic() - quiet_since >= 0.5:
                 return
+        self.result.setdefault('backend_idle_timeouts', []).append({
+            'pending': [{'path': urlsplit(request.url).path, 'timing': request.timing,
+                         'failure': request.failure} for request in self.pending_backend]})
         check(False, 'Backend reads did not settle before switching persona')
 
     def on_response(self, response):
@@ -638,21 +642,39 @@ with SessionLocal() as session:
             finally:
                 self.choose(previous)
 
-    def e1_http_post(self, client, request, principal_id):
-        response = client.post('/api/backend' + request['path'],
+    @contextmanager
+    def e1_backend_session(self, credential_key, expected_me):
+        """Server-side human fixture/probe; verify the same real identity as BFF."""
+        import httpx
+        check(expected_me['principal']['type'] == 'human', 'Backend fixture must use a human')
+        with httpx.Client(base_url=self.args.api.rstrip('/'), timeout=30,
+                          headers={'Authorization': 'Bearer ' + self.env[credential_key]}) as client:
+            identity = client.get('/me')
+            check(identity.status_code == 200 and identity.json() == expected_me,
+                  f'Backend human identity differs from BFF: {credential_key}')
+            yield client
+
+    def e1_http_post(self, client, request, principal_id, prefix='/api/backend'):
+        response = client.post(prefix + request['path'],
                                headers={'Idempotency-Key': request['key']},
                                **({'json': request['body']} if request.get('body') is not None else {}))
         return {'status': response.status_code, 'body': response.json(),
-                'replay': response.headers.get('idempotent-replay'), 'principal_id': principal_id}
+                'replay': response.headers.get('idempotent-replay'), 'principal_id': principal_id,
+                'transport': 'bff' if prefix else 'api'}
+
+    def e1_direct_request(self, path, body, credential_key, expected_me):
+        request = {'path': path, 'key': str(uuid4()), 'body': body}
+        with self.e1_backend_session(credential_key, expected_me) as client:
+            response = self.e1_http_post(client, request, expected_me['principal']['id'], prefix='')
+        self.result['journeys'][E1].setdefault('requests', []).append(
+            {**request, 'method': 'POST', 'person': expected_me['principal']['display_name'], 'response': response})
+        return response
 
     def e1_reverse(self, payment_id):
-        request = {'path': f'/payments/{payment_id}/reverse', 'key': str(uuid4()),
-                   'body': {'reason': 'E1 synthetic stale proposal'}}
-        with self.e1_control_session() as (control, me):
-            response = self.e1_http_post(control, request, me['principal']['id'])
-        self.result['journeys'][E1].setdefault('requests', []).append(
-            {**request, 'method': 'POST', 'response': response})
-        return response
+        with self.e1_control_session() as (_, me):
+            return self.e1_direct_request(f'/payments/{payment_id}/reverse',
+                                          {'reason': 'E1 synthetic stale proposal'},
+                                          'E1_CONTROL_HUMAN_CREDENTIAL', me)
 
     def e1_reversal_race(self, payment_id, proposal):
         requests = [
@@ -660,25 +682,26 @@ with SessionLocal() as session:
              'body': {'reason': 'E1 synthetic race'}},
             {'path': f'/agent/proposals/{proposal["id"]}/approve', 'key': str(uuid4()),
              'body': {'payload_hash': proposal['payload_hash']}}]
-        with self.e1_control_session() as (control, me):
-            self.choose(f'E1 sintético {self.seed["run_id"]} · caja')
-            # Keep the administrator's cookie independent of the browser's switch back to Caja.
-            identity = control.get('/api/backend/me')
-            check(identity.status_code == 200 and identity.json() == me, 'Race lost its independent control identity')
-            with self.e1_http_session() as cashier:
-                identity = cashier.get('/api/backend/me')
-                check(identity.status_code == 200 and
-                      identity.json()['principal']['id'] == self.seed['personas']['caja'], 'Race approver must be M1 Caja')
-                start = Barrier(2)
+        with self.e1_control_session() as (_, me):
+            with self.e1_backend_session('E1_CONTROL_HUMAN_CREDENTIAL', me) as control:
+                self.choose(f'E1 sintético {self.seed["run_id"]} · caja')
+                # The reversal API client keeps its own verified control identity.
+                identity = control.get('/me')
+                check(identity.status_code == 200 and identity.json() == me, 'Race lost its independent control identity')
+                with self.e1_http_session() as cashier:
+                    identity = cashier.get('/api/backend/me')
+                    check(identity.status_code == 200 and
+                          identity.json()['principal']['id'] == self.seed['personas']['caja'], 'Race approver must be M1 Caja')
+                    start = Barrier(2)
 
-                def post(client, request, principal_id):
-                    start.wait(timeout=30)
-                    return self.e1_http_post(client, request, principal_id)
+                    def post(client, request, principal_id, prefix):
+                        start.wait(timeout=30)
+                        return self.e1_http_post(client, request, principal_id, prefix)
 
-                with ThreadPoolExecutor(max_workers=2) as executor:
-                    reversal = executor.submit(post, control, requests[0], me['principal']['id'])
-                    approval = executor.submit(post, cashier, requests[1], self.seed['personas']['caja'])
-                    results = [reversal.result(timeout=35), approval.result(timeout=35)]
+                    with ThreadPoolExecutor(max_workers=2) as executor:
+                        reversal = executor.submit(post, control, requests[0], me['principal']['id'], '')
+                        approval = executor.submit(post, cashier, requests[1], self.seed['personas']['caja'], '/api/backend')
+                        results = [reversal.result(timeout=35), approval.result(timeout=35)]
         self.result['journeys'][E1].setdefault('concurrent_requests', []).append(
             {'requests': requests, 'responses': results})
         return results
@@ -922,7 +945,9 @@ with SessionLocal() as session:
             expect(self.page.locator('#bandeja-selected')).to_contain_text(fixture['reference'])
             if action == 'reverse':
                 before_denied = self.e1_proof(pid)
-                denied = self.e1_request(f'/payments/{pid}/reverse', {'reason': 'E1 cashier cannot reverse'})
+                denied = self.e1_direct_request(f'/payments/{pid}/reverse',
+                                                {'reason': 'E1 cashier cannot reverse'},
+                                                'E1_CASHIER_HUMAN_CREDENTIAL', self.get('/me'))
                 self.e1_rejected(denied, (403,), 'PERMISSION_DENIED')
                 check(before_denied == self.e1_proof(pid), 'Denied cashier reversal changed payment/events')
                 row['cashier_reverse_denied'] = denied
@@ -1126,8 +1151,9 @@ with SessionLocal() as session:
                 self.page = browser.new_page(viewport={'width': 1440, 'height': 1100}, timezone_id='America/Lima')
                 self.page.on('request', self.on_request)
                 self.page.on('response', self.on_response)
-                self.page.on('requestfinished', self.on_request_done)
-                self.page.on('requestfailed', self.on_request_done)
+                # Completion can outlive its Page association during navigation.
+                self.page.context.on('requestfinished', self.on_request_done)
+                self.page.context.on('requestfailed', self.on_request_done)
                 self.page.route(re.compile(r'/api/backend/.+/(approve|claim|verification-review)$'),
                                 self.on_intent_route)
                 self.page.on('pageerror', lambda error: self.page_errors.append(str(error)))
