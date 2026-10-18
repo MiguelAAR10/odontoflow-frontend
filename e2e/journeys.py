@@ -839,6 +839,8 @@ with SessionLocal() as session:
             self.snap(E1, 'direccion-antes')
         payment_id = regular[0]['payment_id']
         self.go('/caja')
+        # OBSOLETE-TEST: FE-UX keeps the selected site through the review round trip.
+        self.page.get_by_label('Sede', exact=True).select_option(str(self.seed['sedes']['Lince']))
         self.page.get_by_role('group', name='Espacios de caja', exact=True).get_by_role(
             'button', name='Conciliación', exact=True).click()
         payment_row = self.page.get_by_role('row').filter(has_text=regular[0]['reference'])
@@ -854,6 +856,8 @@ with SessionLocal() as session:
             receipt = self.captured_result(response)
             proposal = receipt['proposal']
             expect(self.page).to_have_url(re.compile(r'/aprobaciones\?'))
+            # FE-UX navigates the document; wait for hydration and its real reads.
+            self.page.wait_for_load_state('networkidle')
             query = parse_qs(urlsplit(self.page.url).query)
             check(query.get('proposal') == [f'agent_proposal:{proposal["id"]}'], 'Bandeja did not focus the proposal')
             selected = self.page.locator('#bandeja-selected')
@@ -874,7 +878,22 @@ with SessionLocal() as session:
                 selected.get_by_role('button', name='Aprobar', exact=True).click(click_count=2)
             check(approved.value.status == 200 and self.captured_result(approved.value)['status'] == 'executed',
                   'UI approval did not execute')
-            expect(self.page.locator('.success-banner')).to_be_visible()
+            # OBSOLETE-TEST: approval now returns automatically to Conciliación.
+            expect(self.page).to_have_url(re.compile(r'/caja\?'))
+            self.page.wait_for_load_state('networkidle')
+            query = parse_qs(urlsplit(self.page.url).query)
+            check(query.get('payment') == [str(payment_id)] and
+                  query.get('location') == [str(self.seed['sedes']['Lince'])],
+                  'Conciliación did not retain the selected payment and site')
+            expect(self.page.get_by_label('Sede', exact=True)).to_have_value(str(self.seed['sedes']['Lince']))
+            expect(self.page.get_by_role('group', name='Espacios de caja', exact=True).get_by_role(
+                'button', name='Conciliación', exact=True)).to_have_attribute('aria-pressed', 'true')
+            confirmation = self.page.get_by_text(
+                f'Pago seleccionado · {regular[0]["reference"]} · Verificado', exact=True)
+            expect(confirmation).to_be_visible()
+            self.page.reload(wait_until='networkidle')
+            expect(confirmation).to_be_visible()
+            self.snap(E1, 'conciliacion-verificado')
         finally:
             self.capture_intents = False
         row.update(payment_id=payment_id, proposal_id=proposal['id'])
