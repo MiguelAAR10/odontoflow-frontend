@@ -12,6 +12,7 @@ import re
 import shlex
 import subprocess
 import sys
+import time
 from datetime import datetime, timezone
 from decimal import Decimal
 from statistics import median
@@ -143,7 +144,8 @@ class Journeys:
             self.seed = e1_seed(args.seed_summary or self.root / 'e1-seed.json')
             self.TABLES.update(payments='payments', reversals='payment_reversals', audit='audit_events')
             if not args.measure_csv:
-                for key in ('BFF_ACCESS_CODE', 'SALES_AGENT_V0_CREDENTIAL', 'E1_OTHER_HUMAN_CREDENTIAL', 'E1_BACKEND_DIR'):
+                for key in ('BFF_ACCESS_CODE', 'SALES_AGENT_V0_CREDENTIAL', 'E1_OTHER_HUMAN_CREDENTIAL',
+                            'E1_CASHIER_HUMAN_CREDENTIAL', 'E1_CONTROL_HUMAN_CREDENTIAL', 'E1_BACKEND_DIR'):
                     check(self.env.get(key), f'Missing E1 fixture setting: {key}')
                 other = e1_seed(args.other_seed_summary or self.root / 'e1-other-seed.json')
                 check(other['organization_id'] != self.seed['organization_id'], 'Other-organization fixture is the same tenant')
@@ -155,6 +157,7 @@ class Journeys:
         self.person = None
         self.session_epoch = 0
         self.requests = {}
+        self.pending_backend = set()
         self.inventory = None
         self.page_errors = []
         self.capture_intents = not self.e1
@@ -184,6 +187,26 @@ class Journeys:
     def on_request(self, request):
         if '/api/backend/' in request.url:
             self.requests[request] = (self.person, self.session_epoch)
+            self.pending_backend.add(request)
+
+    def on_request_done(self, request):
+        self.pending_backend.discard(request)
+
+    def wait_backend_idle(self):
+        deadline = time.monotonic() + 30
+        quiet_since = None
+        while time.monotonic() < deadline:
+            self.page.wait_for_timeout(50)
+            if self.pending_backend:
+                quiet_since = None
+            elif quiet_since is None:
+                quiet_since = time.monotonic()
+            elif time.monotonic() - quiet_since >= 0.5:
+                return
+        self.result.setdefault('backend_idle_timeouts', []).append({
+            'pending': [{'path': urlsplit(request.url).path, 'timing': request.timing,
+                         'failure': request.failure} for request in self.pending_backend]})
+        check(False, 'Backend reads did not settle before switching persona')
 
     def on_response(self, response):
         if '/api/backend/' not in response.url:
@@ -195,14 +218,33 @@ class Journeys:
                'requested_as': requested_as, 'received_as': self.person,
                'requested_epoch': requested_epoch, 'received_epoch': self.session_epoch}
         self.result['responses'].append(row)
-        if self.capture_intents and request.method == 'POST' and re.search(r'/(approve|claim|verification-review)$', row['path']) and response.status in (200, 201):
-            if response.headers.get('idempotent-replay') != 'true':
+
+    def on_intent_route(self, route):
+        request = route.request
+        if not self.capture_intents or request.method != 'POST':
+            route.continue_()
+            return
+        # Fetch the real BFF response once and preserve its body before the UI
+        # can navigate. A synchronous response listener can lose the body or
+        # block expect_response while waiting for its own response to finish.
+        response = route.fetch(max_retries=0)
+        try:
+            if response.status in (200, 201) and response.headers.get('idempotent-replay') != 'true':
                 key = request.headers.get('idempotency-key')
                 check(key and UUID(key).version == 4, 'Mutation must use UUIDv4')
                 if not any(x['key'] == key for x in self.result['intents']):
-                    self.result['intents'].append({'path': row['path'].removeprefix('/api/backend'),
+                    self.result['intents'].append({'path': urlsplit(request.url).path.removeprefix('/api/backend'),
                                                    'body': request.post_data_json, 'key': key,
                                                    'person': self.person, 'result': response.json()})
+        finally:
+            route.fulfill(response=response)
+
+    def captured_result(self, response):
+        key = response.request.headers.get('idempotency-key')
+        intent = next((item for item in self.result['intents'] if item['key'] == key), None)
+        check(intent is not None and intent['path'] == urlsplit(response.url).path.removeprefix('/api/backend'),
+              'Missing original UI mutation response')
+        return intent['result']
 
     def api(self, path, method='GET', body=None, key=None):
         return self.page.evaluate('''async ({path,method,body,key}) => {
@@ -225,14 +267,24 @@ class Journeys:
         if self.person == person:
             return self.get('/me')
         previous = self.person
-        start = len(self.result['responses'])
-        # Observe before the first action that invalidates the old session.
-        # Epochs also distinguish logout/login of the same named person.
+        # The gate also renders while an existing signed-in session hydrates.
+        # Decide which picker to use only after /me finishes loading.
+        expect(self.page.locator('.persona-menu[aria-busy="false"], '
+                                 '.persona-switcher__trigger[aria-busy="false"]')).to_be_visible()
+        # Identity readiness mounts the page and starts its own reads afterwards.
+        self.wait_backend_idle()
         if self.page.get_by_role('heading', name='Elige quién eres', exact=True).count() == 0:
-            self.page.get_by_role('button', name=re.compile('Cambiar de persona')).click()
+            trigger = self.page.get_by_role('button', name=re.compile('Cambiar de persona'))
+            expect(trigger).to_have_attribute('aria-busy', 'false')
+            trigger.click()
+            expect(self.page.get_by_role('group', name='Cambiar de persona', exact=True)).to_be_visible()
         code = self.page.get_by_label('Código de acceso')
         if code.count():
             code.fill(self.env['BFF_ACCESS_CODE'])
+        # Observe before the first action that invalidates the old session.
+        # Completed hydration reads precede the switch; in-flight reads retain
+        # their original epoch and are still rejected if they finish afterwards.
+        start = len(self.result['responses'])
         self.session_epoch += 1
         self.person = person
         self.page.get_by_role('button', name=re.compile(person)).last.click()
@@ -590,21 +642,39 @@ with SessionLocal() as session:
             finally:
                 self.choose(previous)
 
-    def e1_http_post(self, client, request, principal_id):
-        response = client.post('/api/backend' + request['path'],
+    @contextmanager
+    def e1_backend_session(self, credential_key, expected_me):
+        """Server-side human fixture/probe; verify the same real identity as BFF."""
+        import httpx
+        check(expected_me['principal']['type'] == 'human', 'Backend fixture must use a human')
+        with httpx.Client(base_url=self.args.api.rstrip('/'), timeout=30,
+                          headers={'Authorization': 'Bearer ' + self.env[credential_key]}) as client:
+            identity = client.get('/me')
+            check(identity.status_code == 200 and identity.json() == expected_me,
+                  f'Backend human identity differs from BFF: {credential_key}')
+            yield client
+
+    def e1_http_post(self, client, request, principal_id, prefix='/api/backend'):
+        response = client.post(prefix + request['path'],
                                headers={'Idempotency-Key': request['key']},
                                **({'json': request['body']} if request.get('body') is not None else {}))
         return {'status': response.status_code, 'body': response.json(),
-                'replay': response.headers.get('idempotent-replay'), 'principal_id': principal_id}
+                'replay': response.headers.get('idempotent-replay'), 'principal_id': principal_id,
+                'transport': 'bff' if prefix else 'api'}
+
+    def e1_direct_request(self, path, body, credential_key, expected_me):
+        request = {'path': path, 'key': str(uuid4()), 'body': body}
+        with self.e1_backend_session(credential_key, expected_me) as client:
+            response = self.e1_http_post(client, request, expected_me['principal']['id'], prefix='')
+        self.result['journeys'][E1].setdefault('requests', []).append(
+            {**request, 'method': 'POST', 'person': expected_me['principal']['display_name'], 'response': response})
+        return response
 
     def e1_reverse(self, payment_id):
-        request = {'path': f'/payments/{payment_id}/reverse', 'key': str(uuid4()),
-                   'body': {'reason': 'E1 synthetic stale proposal'}}
-        with self.e1_control_session() as (control, me):
-            response = self.e1_http_post(control, request, me['principal']['id'])
-        self.result['journeys'][E1].setdefault('requests', []).append(
-            {**request, 'method': 'POST', 'response': response})
-        return response
+        with self.e1_control_session() as (_, me):
+            return self.e1_direct_request(f'/payments/{payment_id}/reverse',
+                                          {'reason': 'E1 synthetic stale proposal'},
+                                          'E1_CONTROL_HUMAN_CREDENTIAL', me)
 
     def e1_reversal_race(self, payment_id, proposal):
         requests = [
@@ -612,25 +682,26 @@ with SessionLocal() as session:
              'body': {'reason': 'E1 synthetic race'}},
             {'path': f'/agent/proposals/{proposal["id"]}/approve', 'key': str(uuid4()),
              'body': {'payload_hash': proposal['payload_hash']}}]
-        with self.e1_control_session() as (control, me):
-            self.choose(f'E1 sintético {self.seed["run_id"]} · caja')
-            # Keep the administrator's cookie independent of the browser's switch back to Caja.
-            identity = control.get('/api/backend/me')
-            check(identity.status_code == 200 and identity.json() == me, 'Race lost its independent control identity')
-            with self.e1_http_session() as cashier:
-                identity = cashier.get('/api/backend/me')
-                check(identity.status_code == 200 and
-                      identity.json()['principal']['id'] == self.seed['personas']['caja'], 'Race approver must be M1 Caja')
-                start = Barrier(2)
+        with self.e1_control_session() as (_, me):
+            with self.e1_backend_session('E1_CONTROL_HUMAN_CREDENTIAL', me) as control:
+                self.choose(f'E1 sintético {self.seed["run_id"]} · caja')
+                # The reversal API client keeps its own verified control identity.
+                identity = control.get('/me')
+                check(identity.status_code == 200 and identity.json() == me, 'Race lost its independent control identity')
+                with self.e1_http_session() as cashier:
+                    identity = cashier.get('/api/backend/me')
+                    check(identity.status_code == 200 and
+                          identity.json()['principal']['id'] == self.seed['personas']['caja'], 'Race approver must be M1 Caja')
+                    start = Barrier(2)
 
-                def post(client, request, principal_id):
-                    start.wait(timeout=30)
-                    return self.e1_http_post(client, request, principal_id)
+                    def post(client, request, principal_id, prefix):
+                        start.wait(timeout=30)
+                        return self.e1_http_post(client, request, principal_id, prefix)
 
-                with ThreadPoolExecutor(max_workers=2) as executor:
-                    reversal = executor.submit(post, control, requests[0], me['principal']['id'])
-                    approval = executor.submit(post, cashier, requests[1], self.seed['personas']['caja'])
-                    results = [reversal.result(timeout=35), approval.result(timeout=35)]
+                    with ThreadPoolExecutor(max_workers=2) as executor:
+                        reversal = executor.submit(post, control, requests[0], me['principal']['id'], '')
+                        approval = executor.submit(post, cashier, requests[1], self.seed['personas']['caja'], '/api/backend')
+                        results = [reversal.result(timeout=35), approval.result(timeout=35)]
         self.result['journeys'][E1].setdefault('concurrent_requests', []).append(
             {'requests': requests, 'responses': results})
         return results
@@ -768,7 +839,8 @@ with SessionLocal() as session:
             self.snap(E1, 'direccion-antes')
         payment_id = regular[0]['payment_id']
         self.go('/caja')
-        self.page.get_by_role('tab', name='Conciliación', exact=True).click()
+        self.page.get_by_role('group', name='Espacios de caja', exact=True).get_by_role(
+            'button', name='Conciliación', exact=True).click()
         payment_row = self.page.get_by_role('row').filter(has_text=regular[0]['reference'])
         expect(payment_row).to_be_visible()
         self.snap(E1, 'conciliacion')
@@ -779,7 +851,7 @@ with SessionLocal() as session:
                 payment_row.get_by_role('button', name='Preparar revisión', exact=True).click(click_count=2)
             response = received.value
             check(response.status in (200, 201), f'UI preparation failed: {response.status}')
-            receipt = response.json()
+            receipt = self.captured_result(response)
             proposal = receipt['proposal']
             expect(self.page).to_have_url(re.compile(r'/aprobaciones\?'))
             query = parse_qs(urlsplit(self.page.url).query)
@@ -800,7 +872,7 @@ with SessionLocal() as session:
             with self.page.expect_response(lambda r: r.request.method == 'POST' and
                                            r.url.endswith(f'/proposals/{proposal["id"]}/approve')) as approved:
                 selected.get_by_role('button', name='Aprobar', exact=True).click(click_count=2)
-            check(approved.value.status == 200 and approved.value.json()['status'] == 'executed',
+            check(approved.value.status == 200 and self.captured_result(approved.value)['status'] == 'executed',
                   'UI approval did not execute')
             expect(self.page.locator('.success-banner')).to_be_visible()
         finally:
@@ -873,7 +945,9 @@ with SessionLocal() as session:
             expect(self.page.locator('#bandeja-selected')).to_contain_text(fixture['reference'])
             if action == 'reverse':
                 before_denied = self.e1_proof(pid)
-                denied = self.e1_request(f'/payments/{pid}/reverse', {'reason': 'E1 cashier cannot reverse'})
+                denied = self.e1_direct_request(f'/payments/{pid}/reverse',
+                                                {'reason': 'E1 cashier cannot reverse'},
+                                                'E1_CASHIER_HUMAN_CREDENTIAL', self.get('/me'))
                 self.e1_rejected(denied, (403,), 'PERMISSION_DENIED')
                 check(before_denied == self.e1_proof(pid), 'Denied cashier reversal changed payment/events')
                 row['cashier_reverse_denied'] = denied
@@ -1077,6 +1151,11 @@ with SessionLocal() as session:
                 self.page = browser.new_page(viewport={'width': 1440, 'height': 1100}, timezone_id='America/Lima')
                 self.page.on('request', self.on_request)
                 self.page.on('response', self.on_response)
+                # Completion can outlive its Page association during navigation.
+                self.page.context.on('requestfinished', self.on_request_done)
+                self.page.context.on('requestfailed', self.on_request_done)
+                self.page.route(re.compile(r'/api/backend/.+/(approve|claim|verification-review)$'),
+                                self.on_intent_route)
                 self.page.on('pageerror', lambda error: self.page_errors.append(str(error)))
                 self.go('/aprobaciones' if self.e1 else '/agenda')
                 self.result['initial_sql'] = self.snapshot()

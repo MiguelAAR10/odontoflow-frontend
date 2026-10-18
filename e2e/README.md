@@ -125,7 +125,7 @@ private = {
     'NEXT_PUBLIC_USE_MOCKS': 'false', 'BFF_SESSION_SECRET': secrets.token_urlsafe(48),
     'BFF_ACCESS_CODE': secrets.token_urlsafe(18),
 }
-with (root / 'env').open('x', opener=lambda path, flags: os.open(path, flags, 0o600)) as file:
+with open(root / 'env', 'x', opener=lambda path, flags: os.open(path, flags, 0o600)) as file:
     file.write(''.join(f'{key}={value}\n' for key, value in private.items()))
 ```
 
@@ -166,15 +166,23 @@ exige 409. Compara filas completas en una transacción de lectura consistente an
 y después (propuestas, outbounds, mensajes, movimientos, recibos, derivaciones,
 conversaciones y citas). No suavizar una discrepancia del backend a PASS.
 
+La captura de intenciones usa `route.fetch(max_retries=0)` contra el BFF real y
+`route.fulfill(response=...)` con esa misma respuesta, conservando cuerpo y
+cabeceras antes de que la UI navegue. No genera resultados ni cambia petición,
+clave o estado. El observador de respuestas registra metadatos sin leer cuerpos
+dentro del callback; las aserciones de UI y replay usan el resultado real capturado.
+Referencia: [Route de Playwright](https://playwright.dev/python/docs/api/class-route#route-fetch).
+
 ## Límites
 
 J1–J6 no demuestran WhatsApp, aceptación del paciente, silla reservada ni cobro de un pago:
 Cobranza envía un recordatorio y Backfill entrega una oferta. E1 verifica un pago
 digital ya registrado; no registra un pago nuevo. No certifica todas las
 combinaciones de roles/tenants ni fuerza artificialmente una respuesta de red tardía.
-Los snapshots solo leen SQL; las mutaciones pasan por UI/BFF o herramientas sandbox.
-E1 añade sondas HTTP de identidades desde Python y una fixture IAM local mediante
-el servicio público `set_membership_active`; las credenciales nunca pasan al navegador.
+Los snapshots solo leen SQL. El runner usa UI/BFF y herramientas sandbox.
+E1 añade sondas HTTP y anulaciones por la API real desde Python, con humanos
+autenticados, y una fixture IAM local mediante el servicio público
+`set_membership_active`; las credenciales nunca pasan al navegador.
 La suite se detiene ante el primer fallo y conserva la evidencia disponible.
 
 ## E1 · Ejecución de cobro verificado
@@ -223,7 +231,8 @@ explícitamente. El host debe ser exactamente `127.0.0.1` y el puerto `5434`.
    guardar `e1-other-seed.json` y emitir una credencial humana con permisos de
    pagos/propuestas solo en esa organización. No inventar IDs inexistentes: el
    runner debe demostrar el rechazo sobre recursos que sí existen.
-5. Añadir al env 0600 `E1_OTHER_HUMAN_CREDENTIAL`, `SALES_AGENT_V0_CREDENTIAL`
+5. Añadir al env 0600 `E1_OTHER_HUMAN_CREDENTIAL`, `E1_CASHIER_HUMAN_CREDENTIAL`
+   (Caja de M1), `E1_CONTROL_HUMAN_CREDENTIAL` (humano de control) y `SALES_AGENT_V0_CREDENTIAL`
    (principal agente real), `E1_BACKEND_DIR=/ruta/absoluta/backend` y, si su venv
    no está allí, `E1_BACKEND_PYTHON=/ruta/absoluta/al/python`. Mantener una persona
    administradora/propietaria de control del seed base, con `payments.reverse`,
@@ -251,11 +260,26 @@ cambiar de persona remonta la página y repite sus lecturas. Las anulaciones y
 la preparación en Miraflores también cambian explícitamente a control y restauran
 la persona anterior en `finally`. Recepción solo se selecciona para los rechazos
 y restaura Caja aun si fallan. Las sondas con bearer comprueban `/me`: agente de
-la organización principal, humano de la otra organización. La carrera
-conserva una sesión BFF independiente para control y restaura Caja en el navegador;
-lanza a la vez anulación como control y aprobación como Caja, comprobando ambos
-actores y guardando sus IDs. Las cookies permanecen en memoria y no se escriben
-en la evidencia. También exige 403 y pago intacto si Caja intenta anular.
+la organización principal, humano de la otra organización. La ruta de anulación
+no está expuesta por el BFF (`src/bff/proxy.ts`); las sondas de Caja y las anulaciones
+de control llaman a la API real desde Python con sus respectivas credenciales.
+Cada cliente directo exige un `/me` idéntico al humano seleccionado en el BFF.
+La carrera conserva el cliente API de control independiente, restaura Caja en el
+navegador y lanza a la vez anulación por API y aprobación por la sesión BFF de Caja,
+comprobando ambos actores y guardando sus IDs/transporte. Las credenciales y cookies
+no se incluyen en la evidencia ni pasan al navegador. La denegación de Caja debe ser
+403 `PERMISSION_DENIED` del backend, con pago y eventos intactos.
+Tras cada navegación, el cambio de persona espera `aria-busy=false` en la pantalla
+de selección o el selector lateral antes de decidir cuál usar: «Elige quién eres»
+también aparece mientras carga una sesión ya autenticada. Si usa el menú lateral,
+espera su apertura visible. Tras cargar la identidad espera también que terminen
+las solicitudes del BFF (completadas o fallidas, con 500 ms sin pendientes y límite
+de 30 s) antes de iniciar el cambio. Sus eventos de finalización se observan en
+`BrowserContext` para conservarlos tras navegar; un timeout guarda rutas y tiempos
+de las solicitudes aún pendientes. Mantiene las aserciones de `/me` y de ausencia
+de respuestas tardías de la sesión anterior.
+En Caja, «Conciliación» es un botón del grupo «Espacios de caja» (`aria-pressed`),
+de acuerdo con el componente `Tabs`; el journey lo selecciona con esos roles.
 
 BE-CAJALOC incorporó `locations.read` en la membresía de Lince. El backend filtra
 `/locations`, `/charges/{id}/payments` y la conciliación por ubicaciones autorizadas
@@ -287,7 +311,7 @@ arriba en `/tmp/e1-fe3-demo-ensayo-01`; su `DATABASE_URL` debe ser
 Ejecutar exactamente:
 
 ```bash
-npm --prefix /home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/fe-e1-FE3fix4 run e2e:journeys -- \
+npm --prefix /home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/fe-e1-FE3run run e2e:journeys -- \
   --base http://127.0.0.1:3110 --api http://127.0.0.1:8110 \
   --run-dir /tmp/e1-fe3-demo-ensayo-01 --journeys cobro-verificado \
   --e1-db odontoflow_e1_demo --replay
@@ -296,6 +320,12 @@ npm --prefix /home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/o
 Se puede sustituir `--e1-db odontoflow_e1_demo` por la variable de proceso
 `E1_JOURNEY_DB=odontoflow_e1_demo`. Mantener un RUN_ID/lote nuevo por ensayo;
 no reutilizar una demo ya aprobada ni eliminar su base al terminar.
+
+Si Chromium está instalado fuera del caché predeterminado de Playwright, pasar
+`PLAYWRIGHT_BROWSERS_PATH` al proceso del runner (en este entorno,
+`/tmp/odontoflow-e1-playwright`). Usar el Python que tenga las dependencias del
+journey. Si el ejecutor termina sus procesos hijos al cerrar un comando, mantener
+arranque, preparación, journey y `demo-down.sh` en una misma sesión persistente.
 
 Los JSON se pueden ubicar con `--seed-summary /ruta/absoluta/e1-seed.json` y
 `--other-seed-summary /ruta/absoluta/e1-other-seed.json`. El journey solo consume
