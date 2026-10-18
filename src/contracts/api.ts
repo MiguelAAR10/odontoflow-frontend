@@ -3691,6 +3691,13 @@ export interface components {
             roles: components["schemas"]["MeRole"][];
             /** Permissions */
             permissions: string[];
+            /** Location Permissions */
+            location_permissions: {
+                /** Location Id */
+                location_id: number;
+                /** Permissions */
+                permissions: string[];
+            }[];
         };
         /** MeRole */
         MeRole: {

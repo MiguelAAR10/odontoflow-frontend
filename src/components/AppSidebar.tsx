@@ -80,13 +80,14 @@ function PersonaSwitcher() {
 
 export function AppSidebar({ mobileOpen, collapsed, onNavigate, onToggleCollapse }: { mobileOpen: boolean; collapsed: boolean; onNavigate: () => void; onToggleCollapse: () => void }) {
   const { identity } = usePersona();
-  const { role } = useShellContext();
+  const { role, locationId } = useShellContext();
+  const selectedLocationId = locationId ? Number(locationId) : undefined;
   const sidebar = useRef<HTMLElement>(null);
   useFocusTrap(sidebar, mobileOpen, onNavigate);
   const soundEnabled = useSyncExternalStore(sound.subscribe, () => sound.enabled, () => true);
   const [soundMuted, setSoundMuted] = useState(false);
   useEffect(() => { setSoundMuted(new URLSearchParams(window.location.search).get("sound") === "0"); }, []);
-  const items = getNavigation(role).filter(item => canOpen(identity, item.to));
+  const items = getNavigation(role).filter(item => canOpen(identity, item.to, selectedLocationId));
   return <aside ref={sidebar} tabIndex={-1} id="app-sidebar" className={`app-sidebar ${mobileOpen ? "app-sidebar--open" : ""}`} aria-label="Navegación principal" role={mobileOpen ? "dialog" : undefined} aria-modal={mobileOpen || undefined}>
     <div className="sidebar-heading"><span>{({ dueno: "Dirección", doctor: "Consulta", admin: "Operación" })[role]}</span>
       <button className="shell-icon-button sidebar-collapse" type="button" onClick={onToggleCollapse} aria-label={collapsed ? "Expandir navegación" : "Plegar navegación"} aria-expanded={!collapsed} title="Plegar navegación (⌘B)">{collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}</button>
@@ -94,12 +95,12 @@ export function AppSidebar({ mobileOpen, collapsed, onNavigate, onToggleCollapse
     </div>
     <nav className="sidebar-nav">{items.map(item => <SidebarItem key={item.to} item={item} onNavigate={onNavigate} />)}</nav>
     <div className="sidebar-admin">
-      {canOpen(identity, "/inventario") && <Link href="/inventario" title="Inventario" onClick={onNavigate} className="sidebar-item"><span className="shell-clay" aria-hidden="true"><Boxes size={19} /></span><span>Inventario</span></Link>}
+      {canOpen(identity, "/inventario", selectedLocationId) && <Link href="/inventario" title="Inventario" onClick={onNavigate} className="sidebar-item"><span className="shell-clay" aria-hidden="true"><Boxes size={19} /></span><span>Inventario</span></Link>}
       <details className="shell-more"><summary title="Más secciones"><span aria-hidden="true">•••</span><span>Más secciones</span></summary><nav aria-label="Más secciones">{[
         { to: "/pacientes", label: "Pacientes", icon: Users },
         { to: "/productividad", label: "Productividad", icon: ChartColumn }, { to: "/chat", label: "Chat", icon: MessageCircleMore },
         ...(voiceEnabled ? [{ to: "/asistente", label: "Asistente de voz", icon: Mic }] : []),
-      ].filter(item => canOpen(identity, item.to)).map(item => <Link key={item.to} href={item.to} title={item.label} onClick={onNavigate} className="sidebar-item"><span className="shell-clay" aria-hidden="true"><item.icon size={19} /></span><span>{item.label}</span></Link>)}</nav></details>
+      ].filter(item => canOpen(identity, item.to, selectedLocationId)).map(item => <Link key={item.to} href={item.to} title={item.label} onClick={onNavigate} className="sidebar-item"><span className="shell-clay" aria-hidden="true"><item.icon size={19} /></span><span>{item.label}</span></Link>)}</nav></details>
       <Link className="sidebar-item" href="/configuracion" title="Configuración" onClick={onNavigate}><span className="shell-clay" aria-hidden="true"><Settings size={19} /></span><span>Configuración</span></Link>
       <button className="sidebar-item airi-sound-toggle" type="button" aria-label="Sonido" aria-pressed={soundEnabled} disabled={soundMuted}
         title={soundMuted ? "Silenciado por ?sound=0" : "Sonido"} onClick={() => sound.setEnabled(!soundEnabled)}>
