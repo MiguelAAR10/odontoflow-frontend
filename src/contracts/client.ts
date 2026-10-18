@@ -878,14 +878,28 @@ export async function claimHandoff(handoffId: number, idempotencyKey: string): P
   return { data: response.data, replayed: isReplay(response.headers) };
 }
 
-// E2 O1 boundary. The checked-in generated contract has no /reminders paths.
-// O3: replace these guards with generated-schema aliases and typed http calls
-// after copying the integrator's O2 OpenAPI and running openapi:generate.
-// Until then, fail closed: never call a route absent from the contract.
-function reminderContractPending(): never {
-  throw new ApiError(0, "REMINDERS_CONTRACT_PENDING", "Los recordatorios todavía no están disponibles en esta versión. Recepción puede continuar usando la agenda.");
+// --- E2 reminders (human decisions, future sends) ------------------------------
+export type ReminderCoverage = components["schemas"]["ReminderCoverage"];
+export type ReminderBatchReceipt = components["schemas"]["ReminderBatchReceipt"];
+export type ReminderChangeRequestRead = components["schemas"]["ReminderChangeRequestRead"];
+export type TelegramLinkRead = components["schemas"]["TelegramLinkRead"];
+export type ReminderContactRead = components["schemas"]["ReminderContactRead"];
+
+export async function getReminderCoverage(query: { locationId: number; from: string; to: string }): Promise<ReminderCoverage> {
+  const params: paths["/reminders/coverage"]["get"]["parameters"]["query"] = { location_id: query.locationId, from: query.from, to: query.to };
+  return (await http.get<ReminderCoverage>("/reminders/coverage", { params })).data;
 }
-export async function getReminderCoverage(_query: { locationId?: number; from: string; to: string }): Promise<unknown> { return reminderContractPending(); }
-export async function prepareReminderBatch(_locationId: number, _key: string): Promise<unknown> { return reminderContractPending(); }
-export async function createTelegramReminderLink(_patientId: number, _key: string): Promise<unknown> { return reminderContractPending(); }
-export async function optOutReminderContact(_contactId: number, _key: string): Promise<unknown> { return reminderContractPending(); }
+export async function prepareReminderBatch(locationId: number, key: string): Promise<ReminderBatchReceipt> {
+  const body: components["schemas"]["BatchCreate"] = { location_id: locationId, horizon_hours: 72 };
+  return (await http.post<ReminderBatchReceipt>("/reminders/batches", body, { headers: { "Idempotency-Key": key } })).data;
+}
+export async function createTelegramReminderLink(patientId: number, key: string, locationId?: number): Promise<TelegramLinkRead> {
+  const params: NonNullable<paths["/reminders/contacts/{patient_id}/telegram-link"]["post"]["parameters"]["query"]> = {};
+  if (locationId !== undefined) params.location_id = locationId;
+  return (await http.post<TelegramLinkRead>(`/reminders/contacts/${patientId}/telegram-link`, null, { params, headers: { "Idempotency-Key": key } })).data;
+}
+export async function optOutReminderContact(contactId: number, key: string, locationId?: number): Promise<ReminderContactRead> {
+  const params: NonNullable<paths["/reminders/contacts/{contact_id}/opt-out"]["post"]["parameters"]["query"]> = {};
+  if (locationId !== undefined) params.location_id = locationId;
+  return (await http.post<ReminderContactRead>(`/reminders/contacts/${contactId}/opt-out`, null, { params, headers: { "Idempotency-Key": key } })).data;
+}

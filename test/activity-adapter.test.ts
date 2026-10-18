@@ -59,7 +59,7 @@ const report: ProductivityReport = {
   collection_reminders_approved: 3,
 };
 
-const identity = (permissions: string[]): StaffIdentity => ({ principalType: "human", displayName: "X", organizationName: "ODONTO SMART", roles: [], permissions });
+const identity = (permissions: string[]): StaffIdentity => ({ principalType: "human", displayName: "X", organizationName: "ODONTO SMART", roles: [], permissions, locationPermissions: [] });
 
 describe("FE2 real-mode adapters (mocked axios)", () => {
   let api: typeof import("../src/api");

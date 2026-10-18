@@ -74,6 +74,11 @@ export async function loadClinicLocations(): Promise<Map<number, ClinicLocation>
 export const E2_ACTIVITY_LABEL: Record<string, string> = {
   "appointment.patient_confirmed": "registró la confirmación del paciente",
   "reminder.authorized": "autorizó un recordatorio para su hora",
+  "reminder.sending": "inició un intento de envío de recordatorio",
+  "reminder.failed": "registró un recordatorio no aceptado por Telegram",
+  "reminder.edited": "modificó un recordatorio que requiere nueva autorización",
+  "reminder.authorization_revoked": "revocó la autorización de un recordatorio",
+  "reminder.fake_transport": "registró un envío de prueba sin contactar a Telegram",
   "reminder.accepted": "registró la aceptación de un recordatorio por Telegram",
   "reminder.missed": "registró un recordatorio vencido sin envío",
   "reminder.uncertain": "registró un envío incierto que requiere revisión",

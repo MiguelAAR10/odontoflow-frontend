@@ -1,5 +1,4 @@
-/** E2 presentation adapter. O1 consumes the approved plan; generated transport
- * remains unavailable until the O2 OpenAPI fan-in. No simulated business state. */
+/** E2 presentation over the generated backend contract. No simulated business state. */
 import { z } from "zod";
 import { USE_MOCKS } from "./env";
 import { ApiError, toApiError, getReminderCoverage, prepareReminderBatch, createTelegramReminderLink, optOutReminderContact } from "./contracts/client";
@@ -16,6 +15,9 @@ export const REMINDER_REASON_LABEL: Record<string, string> = {
   confirmed: "El paciente ya confirmó", past_due_at_creation: "Ya había vencido al preparar", appointment_changed: "La cita cambió",
   appointment_cancelled: "La cita fue cancelada", opted_out_before_call: "Baja registrada antes del envío",
   appointment_changed_before_call: "Cita modificada antes del envío",
+  unapproved: "Venció sin autorización", window_expired: "Pasó la ventana de envío", excluded: "Excluido por recepción",
+  lease_expired: "No se pudo confirmar el resultado del envío", transport_error: "No se pudo confirmar la respuesta de Telegram",
+  no_items: "No hay avisos futuros para autorizar", first_due_too_close: "El primer aviso está demasiado cerca para autorizarlo",
 };
 export const reminderReason = (reason: string | null) => reason ? REMINDER_REASON_LABEL[reason] ?? "Requiere revisión en recepción" : null;
 export function reminderDate(iso: string): string {
@@ -37,11 +39,12 @@ const coverage = z.object({
   totals: z.record(z.string(), counters),
   appointments: z.array(z.object({
     appointment_id: id, version: id, patient_confirmed_at: instant.nullable(),
-    contact: z.object({ id: id.optional(), status: z.string(), consent_status: z.string() }).nullable(),
-    items: z.array(z.object({ item_id: id, type: z.string(), due_at: instant, status: z.string(), reason: z.string().nullable() })),
-    open_change_requests: z.array(z.unknown()),
-  })),
-  omissions: z.record(z.string(), z.number().int().nonnegative()),
+    contact: z.object({ contact_id: id, status: z.enum(["linked", "unlinked"]), consent_status: z.enum(["pending", "opted_in", "opted_out"]) }).nullable(),
+    items: z.array(z.object({ item_id: id, type: z.string(), due_at: instant, status: z.string(), reason: z.string().nullable() })).default([]),
+    open_change_requests: z.array(z.object({ id, contact_id: id, source: z.enum(["button", "free_text"]), body: z.string().nullable(), candidate_appointment_ids: z.array(id), appointment_id: id.nullable(), appointment_version: id.nullable() })).default([]),
+  })).default([]),
+  omissions: z.record(z.string(), z.number().int().nonnegative()).default({}),
+  appointments_without_link: z.array(id).default([]),
 });
 function project<S extends z.ZodType>(schema: S, value: unknown): z.output<S> {
   const result = schema.safeParse(value);
@@ -58,31 +61,37 @@ export function toUiReminderCoverage(value: unknown) {
   const data = project(coverage, value);
   const totals = Object.entries(data.totals).map(([type, row]) => ({ type, label: REMINDER_TYPE_LABEL[type] ?? "Otro recordatorio", ...row,
     percentage: row.eligible_due === 0 ? null : 100 * row.accepted_in_window / row.eligible_due }));
-  return { totals, appointments: data.appointments, omissions: data.omissions };
+  return { totals, appointments: data.appointments, omissions: data.omissions, appointmentsWithoutLink: data.appointments_without_link };
 }
 export type ReminderCoverageView = ReturnType<typeof toUiReminderCoverage>;
 
 async function realOnly<T>(operation: () => Promise<T>): Promise<T> {
   if (USE_MOCKS) throw new ApiError(0, "DEMO_UNAVAILABLE", "Los recordatorios de Telegram requieren el modo conectado al backend.");
-  try { return await operation(); } catch (caught) { throw toApiError(caught); }
+  try { return await operation(); } catch (caught) {
+    const error = toApiError(caught);
+    const reason = typeof error.details.reason === "string" ? REMINDER_REASON_LABEL[error.details.reason] : undefined;
+    throw reason ? new ApiError(error.httpStatus, error.code, reason, error.details) : error;
+  }
 }
-export function loadReminderCoverage(query: { locationId?: number; from: string; to: string }) {
+export function loadReminderCoverage(query: { locationId: number; from: string; to: string }) {
   return realOnly(async () => toUiReminderCoverage(await getReminderCoverage(query)));
 }
 export function prepareReminders(locationId: number, key: string) {
   return realOnly(async () => {
-    const receipt = project(z.object({ created: z.boolean(), proposal: z.object({ id }), items: z.array(notice), omissions: z.array(omission), first_due_at: instant }), await prepareReminderBatch(locationId, key));
+    const receipt = await prepareReminderBatch(locationId, key);
+    // Receipt items are persisted records; the exact text/buttons to approve live in the proposal payload.
+    toUiReminderBatch(receipt.proposal.payload);
     return { created: receipt.created, proposalId: receipt.proposal.id, firstDueAt: receipt.first_due_at };
   });
 }
-export function linkTelegramReminders(patientId: number, key: string) {
+export function linkTelegramReminders(patientId: number, key: string, locationId?: number) {
   return realOnly(async () => {
-    const result = project(z.object({ deep_link: z.string().url(), expires_at: instant }), await createTelegramReminderLink(patientId, key));
+    const result = project(z.object({ contact_id: id.nullable(), deep_link: z.string().url(), expires_at: instant }), await createTelegramReminderLink(patientId, key, locationId));
     const url = new URL(result.deep_link);
     if (url.protocol !== "https:" || url.hostname !== "t.me" || url.username || url.password) throw new ApiError(0, "INVALID_TELEGRAM_LINK", "El enlace de Telegram no es válido. Vuelve a solicitarlo.");
-    return { deepLink: result.deep_link, expiresAt: result.expires_at };
+    return { contactId: result.contact_id, deepLink: result.deep_link, expiresAt: result.expires_at };
   });
 }
-export function optOutReminders(contactId: number, key: string) {
-  return realOnly(() => optOutReminderContact(contactId, key));
+export function optOutReminders(contactId: number, key: string, locationId?: number) {
+  return realOnly(() => optOutReminderContact(contactId, key, locationId));
 }

@@ -174,7 +174,7 @@ export function toUiAppointment(
     branch: item.location_name,
     status: toUiStatus(item.state),
     patientConfirmedAt: item.patient_confirmed_at ?? null,
-    ...("version" in item && typeof item.version === "number" ? { version: item.version } : {}),
+    version: item.version,
     leadId: item.lead_id,
     serviceId: item.service_id,
     locationId: item.location_id,
@@ -629,16 +629,37 @@ export function sumPaid(charges: Charge[]): number {
 }
 
 export async function loadCharges(params?: Parameters<typeof listChargesReal>[0]): Promise<Charge[]> {
+  return (await loadCashContext(params)).charges;
+}
+
+/** One screen snapshot: reuse the authorized bulk payment list for both tabs. */
+export async function loadCashContext(params?: Parameters<typeof listChargesReal>[0]): Promise<{
+  charges: Charge[];
+  reconciliation: Payment[];
+}> {
   if (useMocks) {
     const rows = params?.execution_id == null
       ? mockCharges
       : mockCharges.filter((charge) => charge.serviceExecutionId === Number(params.execution_id));
-    return copy(rows);
+    return copy({ charges: rows, reconciliation: pendingDigitalPayments(mockCharges.flatMap(charge => charge.payments)) });
   }
-  const [rows, locations] = await Promise.all([listChargesReal(params), listLocationsReal()]);
+  // GET /payments is tenant/site-scoped by the backend and currently unpaginated.
+  const [rows, locations, payments] = await Promise.all([
+    listChargesReal(params), listLocationsReal(), listAllPaymentsReal(),
+  ]);
   const timeZoneByLocation = new Map(locations.map((location) => [location.id, location.timezone]));
-  const withPayments = await Promise.all(rows.map(async (charge) => [charge, await listPaymentsReal(charge.id)] as const));
-  return withPayments.map(([charge, payments]) => toUiCharge(charge, payments, timeZoneByLocation.get(charge.location_id)));
+  const paymentsByCharge = new Map<number, PaymentRead[]>();
+  for (const payment of payments) {
+    const group = paymentsByCharge.get(payment.charge_id);
+    if (group) group.push(payment);
+    else paymentsByCharge.set(payment.charge_id, [payment]);
+  }
+  // Bulk results are newest first; per-charge history has always used id ASC.
+  for (const group of paymentsByCharge.values()) group.sort((a, b) => a.id - b.id);
+  return {
+    charges: rows.map(charge => toUiCharge(charge, paymentsByCharge.get(charge.id), timeZoneByLocation.get(charge.location_id))),
+    reconciliation: pendingDigitalPayments(payments.map(toUiPayment)),
+  };
 }
 
 export async function loadVisit(visitId: string | number): Promise<Visit> {
@@ -927,6 +948,10 @@ export async function loadAllPayments(params?: {
 export async function loadReconciliationPayments(): Promise<Payment[]> {
   const payments = await loadAllPayments({ verification_status: "unverified" });
   return payments.filter((payment) => isDigitalPaymentMethod(payment.method));
+}
+
+function pendingDigitalPayments(payments: Payment[]): Payment[] {
+  return payments.filter(payment => payment.verificationStatus === "unverified" && isDigitalPaymentMethod(payment.method));
 }
 
 export async function verifyPaymentRecord(

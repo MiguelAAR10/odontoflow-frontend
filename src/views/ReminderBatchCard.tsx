@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Link from "next/link";
 import { Button } from "../components/Button";
 import { reminderDate, reminderReason, REMINDER_TYPE_LABEL } from "../reminders";
 import type { ApprovalItem, ProposalDecision } from "../types";
@@ -17,7 +18,7 @@ export function ReminderBatchCard({ item, now, busy = false, error, onDecide }: 
   const stale = Boolean(error);
   const expired = Date.parse(item.expiresAt) <= now || (data?.firstDueAt ? Date.parse(data.firstDueAt) - 60_000 <= now : true);
   const decide = async (decision: ProposalDecision) => {
-    if (latch.current || busy || item.status !== "pending" || (decision === "approve" && (expired || replaced))) return;
+    if (latch.current || busy || item.status !== "pending" || !item.actions.includes(decision) || (decision === "approve" && (expired || replaced || stale || !data?.items.length))) return;
     latch.current = true;
     setWorking(true);
     try { await onDecide(item, decision); } catch { /* Parent renders the shared error envelope. */ }
@@ -45,6 +46,7 @@ export function ReminderBatchCard({ item, now, busy = false, error, onDecide }: 
       <ol>{data.items.map(row => <li key={row.item_id} style={{ marginBlock: "1rem", overflowWrap: "anywhere" }}>
         <strong>{row.patient_name ?? `Cita #${row.appointment_id}`}</strong>
         <p>Cita #{row.appointment_id} · Versión {row.appointment_version} · {REMINDER_TYPE_LABEL[row.type]}</p>
+        <Link href={`/agenda?appointment=${row.appointment_id}`}>Revisar cita en Agenda</Link>
         <p><time dateTime={row.due_at}>{reminderDate(row.due_at)} (Lima)</time></p>
         <blockquote>{row.text}</blockquote>
         <p>Botones: {row.buttons.join(" · ")}</p>
@@ -56,7 +58,8 @@ export function ReminderBatchCard({ item, now, busy = false, error, onDecide }: 
     {error && <p role="alert" className="form-error">{error}</p>}
     {item.status === "pending" && <div className="form-actions">
       {item.actions.includes("approve") && <Button variant="primary" disabled={!data?.items.length || expired || stale || busy || working} onClick={() => void decide("approve")}>{busy || working ? "Autorizando…" : "Autorizar envíos futuros"}</Button>}
-      {item.actions.includes("decline") && <Button disabled={busy || working} onClick={() => void decide("decline")}>Declinar lote</Button>}
+      {item.actions.includes("decline") && <Button disabled={busy || working} onClick={() => void decide("decline")}>Rechazar lote</Button>}
     </div>}
+    <p><Link href="/agenda">Ver cobertura en Agenda</Link> · <Link href="/agente">Ver decisiones en Rastro</Link></p>
   </article>;
 }

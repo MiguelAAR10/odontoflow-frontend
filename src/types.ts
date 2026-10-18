@@ -450,6 +450,7 @@ export interface StaffIdentity {
   organizationName: string;
   roles: string[];
   permissions: string[];
+  locationPermissions: Array<{ locationId: number; permissions: string[] }>;
 }
 
 export interface PersonaOption {

@@ -1,7 +1,7 @@
 /**
  * Who is acting: the staff persona (chosen via the BFF's `/api/session`) and
  * the backend's own answer to "who am I" (`GET /me`). The UI decides what to
- * show from `permissions` only — role names are labels, never gates.
+ * show from global and location permissions — role names are labels, never gates.
  *
  * Mock mode mirrors the backend's two demo humans (`mockStaff`) in memory and
  * makes no HTTP call.
@@ -42,6 +42,7 @@ export function toStaffIdentity(me: MeRead): StaffIdentity {
     organizationName: me.organization.name,
     roles: me.roles.map((role) => role.name),
     permissions: [...me.permissions],
+    locationPermissions: me.location_permissions.map((grant) => ({ locationId: grant.location_id, permissions: [...grant.permissions] })),
   };
 }
 
@@ -118,6 +119,16 @@ export function hasPermissions(identity: StaffIdentity | null, codes: readonly s
   return codes.every((code) => identity.permissions.includes(code));
 }
 
+/** Navigation may use global grants plus grants at one site. Without a selected
+ * site (Todas), at least one site must satisfy every required permission. */
+export function hasLocationPermissions(identity: StaffIdentity | null, codes: readonly string[], locationId?: number): boolean {
+  if (!identity) return false;
+  if (hasPermissions(identity, codes)) return true;
+  return identity.locationPermissions.some((grant) =>
+    (locationId === undefined || grant.locationId === locationId) &&
+    codes.every((code) => identity.permissions.includes(code) || grant.permissions.includes(code)));
+}
+
 /** Module → the read its page needs first. Modules not listed (Inicio, the
  * design-time prototypes, Configuración preview) need no backend permission. */
 export const MODULE_PERMISSIONS: Readonly<Record<string, readonly string[]>> = {
@@ -131,9 +142,9 @@ export const MODULE_PERMISSIONS: Readonly<Record<string, readonly string[]>> = {
   "/inventario": ["products.read"],
 };
 
-export function canOpen(identity: StaffIdentity | null, path: string): boolean {
+export function canOpen(identity: StaffIdentity | null, path: string, locationId?: number): boolean {
   const required = MODULE_PERMISSIONS[path];
-  return !required || hasPermissions(identity, required);
+  return !required || hasLocationPermissions(identity, required, locationId);
 }
 
 /** ADMIN-01: what Configuración may offer, straight from the backend's grants

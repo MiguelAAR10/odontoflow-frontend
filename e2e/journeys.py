@@ -10,8 +10,10 @@ import os
 from pathlib import Path
 import re
 import shlex
+import socket
 import subprocess
 import sys
+import time
 from datetime import datetime, timezone, timedelta
 from decimal import Decimal
 from statistics import median
@@ -49,20 +51,19 @@ def e1_seed(path):
 
 
 def reminders_seed(path):
-    """Runner manifest, assembled from M1's real IDs; no fabricated patients."""
+    """Read M1's final JSON verbatim; identities and appointments are checked in SQL."""
     seed = json.loads(path.read_text())
-    check(re.fullmatch(r'[A-Za-z0-9_-]{1,32}', seed['run_id']), 'Invalid E2 run_id')
+    check(re.fullmatch(r'[A-Za-z0-9_-]{1,64}', seed['run_id']), 'Invalid E2 run_id')
     check(seed['scenario'] in ('nominal', 'adversarial'), 'Unknown E2 scenario')
-    check(datetime.fromisoformat(seed['now'].replace('Z', '+00:00')).tzinfo is not None,
-          'E2 now must include a timezone')
-    check(type(seed['organization_id']) is int and seed['organization_id'] > 0, 'Missing E2 organization')
-    check(isinstance(seed['persona'], str) and seed['persona'].strip(), 'Missing E2 reception persona')
-    rows = seed['appointments']
-    check(len(rows) == 10 and len({row['appointment_id'] for row in rows}) == 10, 'E2 needs ten distinct appointments')
-    for row in rows:
-        check(all(type(row[key]) is int and row[key] > 0 for key in ('appointment_id', 'location_id', 'patient_id')),
-              'Invalid E2 appointment IDs')
-    check(len({row['location_id'] for row in rows}) == 2, 'E2 needs both sites')
+    ids = seed['appointment_ids']
+    count = 10 if seed['scenario'] == 'nominal' else 9
+    check(len(ids) == count and len(set(ids)) == count and all(type(x) is int and x > 0 for x in ids), 'Unexpected M1 appointment IDs')
+    check(set(seed['appointments_by_label'].values()) == set(ids), 'M1 labels must identify every appointment exactly once')
+    for field in ('location_ids', 'reception_ids'):
+        check(set(seed[field]) == {'Lince', 'Miraflores'} and len(set(seed[field].values())) == 2 and
+              all(type(x) is int and x > 0 for x in seed[field].values()), 'M1 needs two distinct sites/reception people')
+    check(set(seed['contact_ids']) == ({'P'} if count == 10 else {'P', 'R'}), 'Unexpected M1 contacts')
+    check(len(seed['patient_ids']) == (1 if count == 10 else 3), 'Unexpected M1 patients')
     return seed
 
 
@@ -155,13 +156,16 @@ class Journeys:
         if self.e1:
             from sqlalchemy.engine import make_url
             database = make_url(self.env['DATABASE_URL'])
-            check(database.host in ('localhost', '127.0.0.1', '::1') and database.port == 5434 and
-                  database.database == 'odontoflow_test_fe_e1_fe3', 'E1 requires its isolated :5434 FE3 database')
+            check(database.host == '127.0.0.1' and database.port == 5434 and
+                  database.database == args.e1_db and
+                  re.fullmatch(r'[a-z0-9_]{1,63}', args.e1_db) and 'e1' in args.e1_db.split('_'),
+                  'E1 requires the selected isolated E1 database on 127.0.0.1:5434')
             check(self.env.get('NEXT_PUBLIC_USE_MOCKS') == 'false', 'E1 requires NEXT_PUBLIC_USE_MOCKS=false')
             self.seed = e1_seed(args.seed_summary or self.root / 'e1-seed.json')
             self.TABLES.update(payments='payments', reversals='payment_reversals', audit='audit_events')
             if not args.measure_csv:
-                for key in ('BFF_ACCESS_CODE', 'SALES_AGENT_V0_CREDENTIAL', 'E1_OTHER_HUMAN_CREDENTIAL', 'E1_BACKEND_DIR'):
+                for key in ('BFF_ACCESS_CODE', 'SALES_AGENT_V0_CREDENTIAL', 'E1_OTHER_HUMAN_CREDENTIAL',
+                            'E1_CASHIER_HUMAN_CREDENTIAL', 'E1_CONTROL_HUMAN_CREDENTIAL', 'E1_BACKEND_DIR'):
                     check(self.env.get(key), f'Missing E1 fixture setting: {key}')
                 other = e1_seed(args.other_seed_summary or self.root / 'e1-other-seed.json')
                 check(other['organization_id'] != self.seed['organization_id'], 'Other-organization fixture is the same tenant')
@@ -169,12 +173,16 @@ class Journeys:
             from sqlalchemy.engine import make_url
             database = make_url(self.env['DATABASE_URL'])
             check(database.host in ('localhost', '127.0.0.1') and database.port == 5434 and
-                  database.database == 'odontoflow_test_fe_e2_fe1', 'E2 requires its isolated :5434 FE1 database')
+                  re.fullmatch(r'odontoflow_test_fe_e2_fe1(?:_[a-z0-9_]+)?', database.database or ''), 'E2 requires its isolated :5434 FE1 database')
             check(self.env.get('NEXT_PUBLIC_USE_MOCKS') == 'false', 'E2 requires no mocks')
             check(self.env.get('TELEGRAM_TRANSPORT') == 'fake', 'E2 requires fake Telegram transport')
             check(not self.env.get('TELEGRAM_BOT_TOKEN') and not self.env.get('TELEGRAM_WEBHOOK_SECRET'),
                   'E2 Telegram credentials belong only in the process environment, never the run-dir env file')
             self.reminders = reminders_seed(args.seed_summary or self.root / 'recordatorios-seed.json')
+            for key in ('E2_BACKEND_DIR', 'E2_BACKEND_PYTHON', 'E2_NOW', 'E2_LINCE_PERSONA', 'E2_MIRAFLORES_PERSONA'):
+                check(self.env.get(key), f'Missing E2 setting: {key}')
+            check(os.environ.get('TELEGRAM_WEBHOOK_SECRET'), 'Signed E2 updates require a process-only webhook secret')
+            check(datetime.fromisoformat(self.env['E2_NOW']).tzinfo is not None, 'E2_NOW must have a timezone')
             self.TABLES.update(reminders='reminder_items', changes='reminder_change_requests', audit='audit_events')
         self.engine = create_engine(self.env['DATABASE_URL'])
         self.shots = self.root / 'shots'
@@ -184,6 +192,7 @@ class Journeys:
         self.person = None
         self.session_epoch = 0
         self.requests = {}
+        self.pending_backend = set()
         self.inventory = None
         self.page_errors = []
         self.capture_intents = not self.e1
@@ -193,6 +202,8 @@ class Journeys:
         for key, secret in self.env.items():
             if secret and any(word in key for word in ('TOKEN', 'SECRET', 'CODE', 'CREDENTIAL', 'URL', 'HUMANS')):
                 value = value.replace(secret, '[REDACTED]')
+        value = value.replace(os.environ.get('TELEGRAM_WEBHOOK_SECRET') or '\0', '[REDACTED]')
+        value = re.sub(r'https://t\.me/\S+|\b[rc]:[A-Za-z0-9_-]{16,}(?::yes|:no)?', '[REDACTED_TELEGRAM]', value)
         return re.sub(r'postgres(?:ql)?(?:\+\w+)?://\S+', '[REDACTED_DSN]', value)
 
     def sql(self, query, params=None):
@@ -213,6 +224,26 @@ class Journeys:
     def on_request(self, request):
         if '/api/backend/' in request.url:
             self.requests[request] = (self.person, self.session_epoch)
+            self.pending_backend.add(request)
+
+    def on_request_done(self, request):
+        self.pending_backend.discard(request)
+
+    def wait_backend_idle(self):
+        deadline = time.monotonic() + 30
+        quiet_since = None
+        while time.monotonic() < deadline:
+            self.page.wait_for_timeout(50)
+            if self.pending_backend:
+                quiet_since = None
+            elif quiet_since is None:
+                quiet_since = time.monotonic()
+            elif time.monotonic() - quiet_since >= 0.5:
+                return
+        self.result.setdefault('backend_idle_timeouts', []).append({
+            'pending': [{'path': urlsplit(request.url).path, 'timing': request.timing,
+                         'failure': request.failure} for request in self.pending_backend]})
+        check(False, 'Backend reads did not settle before switching persona')
 
     def on_response(self, response):
         if '/api/backend/' not in response.url:
@@ -224,14 +255,33 @@ class Journeys:
                'requested_as': requested_as, 'received_as': self.person,
                'requested_epoch': requested_epoch, 'received_epoch': self.session_epoch}
         self.result['responses'].append(row)
-        if self.capture_intents and request.method == 'POST' and re.search(r'/(approve|claim|verification-review)$', row['path']) and response.status in (200, 201):
-            if response.headers.get('idempotent-replay') != 'true':
+
+    def on_intent_route(self, route):
+        request = route.request
+        if not self.capture_intents or request.method != 'POST':
+            route.continue_()
+            return
+        # Fetch the real BFF response once and preserve its body before the UI
+        # can navigate. A synchronous response listener can lose the body or
+        # block expect_response while waiting for its own response to finish.
+        response = route.fetch(max_retries=0)
+        try:
+            if response.status in (200, 201) and response.headers.get('idempotent-replay') != 'true':
                 key = request.headers.get('idempotency-key')
                 check(key and UUID(key).version == 4, 'Mutation must use UUIDv4')
                 if not any(x['key'] == key for x in self.result['intents']):
-                    self.result['intents'].append({'path': row['path'].removeprefix('/api/backend'),
+                    self.result['intents'].append({'path': urlsplit(request.url).path.removeprefix('/api/backend'),
                                                    'body': request.post_data_json, 'key': key,
                                                    'person': self.person, 'result': response.json()})
+        finally:
+            route.fulfill(response=response)
+
+    def captured_result(self, response):
+        key = response.request.headers.get('idempotency-key')
+        intent = next((item for item in self.result['intents'] if item['key'] == key), None)
+        check(intent is not None and intent['path'] == urlsplit(response.url).path.removeprefix('/api/backend'),
+              'Missing original UI mutation response')
+        return intent['result']
 
     def api(self, path, method='GET', body=None, key=None):
         return self.page.evaluate('''async ({path,method,body,key}) => {
@@ -253,15 +303,28 @@ class Journeys:
         from playwright.sync_api import expect
         if self.person == person:
             return self.get('/me')
+        if self.e2 and self.page.locator('.drawer-backdrop').count():
+            self.page.keyboard.press('Escape')
+            expect(self.page.locator('.drawer-backdrop')).to_have_count(0)
         previous = self.person
-        start = len(self.result['responses'])
-        # Observe before the first action that invalidates the old session.
-        # Epochs also distinguish logout/login of the same named person.
+        # The gate also renders while an existing signed-in session hydrates.
+        # Decide which picker to use only after /me finishes loading.
+        expect(self.page.locator('.persona-menu[aria-busy="false"], '
+                                 '.persona-switcher__trigger[aria-busy="false"]')).to_be_visible()
+        # Identity readiness mounts the page and starts its own reads afterwards.
+        self.wait_backend_idle()
         if self.page.get_by_role('heading', name='Elige quién eres', exact=True).count() == 0:
-            self.page.get_by_role('button', name=re.compile('Cambiar de persona')).click()
+            trigger = self.page.get_by_role('button', name=re.compile('Cambiar de persona'))
+            expect(trigger).to_have_attribute('aria-busy', 'false')
+            trigger.click()
+            expect(self.page.get_by_role('group', name='Cambiar de persona', exact=True)).to_be_visible()
         code = self.page.get_by_label('Código de acceso')
         if code.count():
             code.fill(self.env['BFF_ACCESS_CODE'])
+        # Observe before the first action that invalidates the old session.
+        # Completed hydration reads precede the switch; in-flight reads retain
+        # their original epoch and are still rejected if they finish afterwards.
+        start = len(self.result['responses'])
         self.session_epoch += 1
         self.person = person
         self.page.get_by_role('button', name=re.compile(person)).last.click()
@@ -581,7 +644,8 @@ with SessionLocal() as session:
         key = key or (str(uuid4()) if method == 'POST' else None)
         response = self.api(path, method, body, key)
         self.result['journeys'][E1].setdefault('requests', []).append(
-            {'path': path, 'method': method, 'body': body, 'key': key, 'response': response})
+            {'path': path, 'method': method, 'body': body, 'key': key,
+             'person': self.person, 'response': response})
         return response
 
     def e1_http_session(self):
@@ -595,7 +659,7 @@ with SessionLocal() as session:
                             headers={'Origin': f'{origin.scheme}://{origin.netloc}'})
 
     @contextmanager
-    def e1_control_session(self):
+    def e1_control_session(self, *, permissions=(), restore_path=None):
         previous = self.person
         try:
             me = self.choose(self.env.get('E1_CONTROL_PERSONA', 'Carlos Vega'))
@@ -603,28 +667,54 @@ with SessionLocal() as session:
                   me['principal']['type'] == 'human' and
                   me['principal']['id'] != self.seed['personas']['caja'] and
                   'payments.reverse' in me['permissions'], 'Control human must be authorized to reverse')
+            check(set(permissions) <= set(me['permissions']),
+                  'Control human lacks the required organization-wide read permissions')
             with self.e1_http_session() as control:
                 identity = control.get('/api/backend/me')
                 check(identity.status_code == 200 and identity.json() == me, 'Control BFF identity differs from /me')
                 yield control, me
         finally:
-            self.choose(previous)
+            try:
+                # Leave Dirección/Rastro before restoring a location-only identity:
+                # switching personas remounts the current page and repeats its reads.
+                if restore_path:
+                    self.go(restore_path)
+            finally:
+                self.choose(previous)
 
-    def e1_http_post(self, client, request, principal_id):
-        response = client.post('/api/backend' + request['path'],
+    @contextmanager
+    def e1_backend_session(self, credential_key, expected_me):
+        """Server-side human fixture/probe; verify the same real identity as BFF."""
+        import httpx
+        check(expected_me['principal']['type'] == 'human', 'Backend fixture must use a human')
+        with httpx.Client(base_url=self.args.api.rstrip('/'), timeout=30,
+                          headers={'Authorization': 'Bearer ' + self.env[credential_key]}) as client:
+            identity = client.get('/me')
+            check(identity.status_code == 200 and identity.json() == expected_me,
+                  f'Backend human identity differs from BFF: {credential_key}')
+            yield client
+
+    def e1_http_post(self, client, request, principal_id, prefix='/api/backend'):
+        response = client.post(prefix + request['path'],
                                headers={'Idempotency-Key': request['key']},
                                **({'json': request['body']} if request.get('body') is not None else {}))
         return {'status': response.status_code, 'body': response.json(),
-                'replay': response.headers.get('idempotent-replay'), 'principal_id': principal_id}
+                'replay': response.headers.get('idempotent-replay'), 'principal_id': principal_id,
+                'transport': 'bff' if prefix else 'api'}
+
+    def e1_direct_request(self, path, body, credential_key, expected_me):
+        request = {'path': path, 'key': str(uuid4()), 'body': body}
+        with self.e1_backend_session(credential_key, expected_me) as client:
+            response = self.e1_http_post(client, request, expected_me['principal']['id'], prefix='')
+        self.result['journeys'][E1].setdefault('requests', []).append(
+            {**request, 'method': 'POST', 'person': expected_me['principal']['display_name'], 'response': response})
+        return response
 
     def e1_reverse(self, payment_id):
-        request = {'path': f'/payments/{payment_id}/reverse', 'key': str(uuid4()),
-                   'body': {'reason': 'E1 synthetic stale proposal'}}
-        with self.e1_control_session() as (control, me):
-            response = self.e1_http_post(control, request, me['principal']['id'])
-        self.result['journeys'][E1].setdefault('requests', []).append(
-            {**request, 'method': 'POST', 'response': response})
-        return response
+        with self.e1_control_session() as (_, me):
+            return self.e1_direct_request(f'/payments/{payment_id}/reverse',
+                                          {'reason': 'E1 synthetic stale proposal'},
+                                          'E1_CONTROL_HUMAN_CREDENTIAL', me)
 
     def e1_reversal_race(self, payment_id, proposal):
         requests = [
@@ -632,25 +722,26 @@ with SessionLocal() as session:
              'body': {'reason': 'E1 synthetic race'}},
             {'path': f'/agent/proposals/{proposal["id"]}/approve', 'key': str(uuid4()),
              'body': {'payload_hash': proposal['payload_hash']}}]
-        with self.e1_control_session() as (control, me):
-            self.choose(f'E1 sintético {self.seed["run_id"]} · caja')
-            # Keep the administrator's cookie independent of the browser's switch back to Caja.
-            identity = control.get('/api/backend/me')
-            check(identity.status_code == 200 and identity.json() == me, 'Race lost its independent control identity')
-            with self.e1_http_session() as cashier:
-                identity = cashier.get('/api/backend/me')
-                check(identity.status_code == 200 and
-                      identity.json()['principal']['id'] == self.seed['personas']['caja'], 'Race approver must be M1 Caja')
-                start = Barrier(2)
+        with self.e1_control_session() as (_, me):
+            with self.e1_backend_session('E1_CONTROL_HUMAN_CREDENTIAL', me) as control:
+                self.choose(f'E1 sintético {self.seed["run_id"]} · caja')
+                # The reversal API client keeps its own verified control identity.
+                identity = control.get('/me')
+                check(identity.status_code == 200 and identity.json() == me, 'Race lost its independent control identity')
+                with self.e1_http_session() as cashier:
+                    identity = cashier.get('/api/backend/me')
+                    check(identity.status_code == 200 and
+                          identity.json()['principal']['id'] == self.seed['personas']['caja'], 'Race approver must be M1 Caja')
+                    start = Barrier(2)
 
-                def post(client, request, principal_id):
-                    start.wait(timeout=30)
-                    return self.e1_http_post(client, request, principal_id)
+                    def post(client, request, principal_id, prefix):
+                        start.wait(timeout=30)
+                        return self.e1_http_post(client, request, principal_id, prefix)
 
-                with ThreadPoolExecutor(max_workers=2) as executor:
-                    reversal = executor.submit(post, control, requests[0], me['principal']['id'])
-                    approval = executor.submit(post, cashier, requests[1], self.seed['personas']['caja'])
-                    results = [reversal.result(timeout=35), approval.result(timeout=35)]
+                    with ThreadPoolExecutor(max_workers=2) as executor:
+                        reversal = executor.submit(post, control, requests[0], me['principal']['id'], '')
+                        approval = executor.submit(post, cashier, requests[1], self.seed['personas']['caja'], '/api/backend')
+                        results = [reversal.result(timeout=35), approval.result(timeout=35)]
         self.result['journeys'][E1].setdefault('concurrent_requests', []).append(
             {'requests': requests, 'responses': results})
         return results
@@ -766,16 +857,30 @@ with SessionLocal() as session:
                   proof['payment']['reference'] == fixture['reference'], 'M1 JSON does not match the database')
         name = f'E1 sintético {self.seed["run_id"]} · caja'
         me = self.choose(name)
+        location_permissions = me.get('location_permissions', [])
+        lince_permissions = {code for grant in location_permissions
+                             if grant['location_id'] == self.seed['sedes']['Lince']
+                             for code in grant['permissions']}
+        global_permissions = set(me.get('permissions', []))
+        all_location_permissions = {code for grant in location_permissions
+                                    for code in grant['permissions']}
+        required_permissions = {'locations.read', 'charges.read', 'payments.read',
+                                'payments.manage', 'proposals.read', 'proposals.decide'}
+        forbidden_permissions = {'payments.reverse'}
         check(me['principal']['id'] == self.seed['personas']['caja'] and
-              'payments.manage' in me['permissions'] and 'proposals.decide' in me['permissions'] and
-              'payments.reverse' not in me['permissions'], 'M1 Caja must approve payments without reversal permission')
-        with self.e1_control_session() as (_, control_me):
+              required_permissions <= lince_permissions and
+              not global_permissions and
+              not (forbidden_permissions & (global_permissions | all_location_permissions)),
+              'M1 Caja requires the Lince journey permissions, no global grants or reversal permission')
+        control_reads = ('locations.read', 'payments.read', 'proposals.read')
+        with self.e1_control_session(permissions=control_reads, restore_path='/aprobaciones') as (_, control_me):
             row['actors'] = {'cashier': me, 'reversal_control': control_me}
-        before = self.e1_direction()
-        self.snap(E1, 'direccion-antes')
+            before = self.e1_direction()
+            self.snap(E1, 'direccion-antes')
         payment_id = regular[0]['payment_id']
         self.go('/caja')
-        self.page.get_by_role('tab', name='Conciliación', exact=True).click()
+        self.page.get_by_role('group', name='Espacios de caja', exact=True).get_by_role(
+            'button', name='Conciliación', exact=True).click()
         payment_row = self.page.get_by_role('row').filter(has_text=regular[0]['reference'])
         expect(payment_row).to_be_visible()
         self.snap(E1, 'conciliacion')
@@ -786,7 +891,7 @@ with SessionLocal() as session:
                 payment_row.get_by_role('button', name='Preparar revisión', exact=True).click(click_count=2)
             response = received.value
             check(response.status in (200, 201), f'UI preparation failed: {response.status}')
-            receipt = response.json()
+            receipt = self.captured_result(response)
             proposal = receipt['proposal']
             expect(self.page).to_have_url(re.compile(r'/aprobaciones\?'))
             query = parse_qs(urlsplit(self.page.url).query)
@@ -807,7 +912,7 @@ with SessionLocal() as session:
             with self.page.expect_response(lambda r: r.request.method == 'POST' and
                                            r.url.endswith(f'/proposals/{proposal["id"]}/approve')) as approved:
                 selected.get_by_role('button', name='Aprobar', exact=True).click(click_count=2)
-            check(approved.value.status == 200 and approved.value.json()['status'] == 'executed',
+            check(approved.value.status == 200 and self.captured_result(approved.value)['status'] == 'executed',
                   'UI approval did not execute')
             expect(self.page.locator('.success-banner')).to_be_visible()
         finally:
@@ -820,16 +925,17 @@ with SessionLocal() as session:
         verified = [e for e in proof['events'] if e['action'] == 'payment.verified']
         check(proof['payment']['verification_status'] == 'verified' and len(verified) == 1,
               'UI double approval did not verify exactly once')
-        after = self.e1_direction()
-        amount = int(Decimal(proof['payment']['amount']) * 100)
-        check(after['verified'] == before['verified'] + amount and
-              after['pending'] == before['pending'] - amount and
-              before['verified'] + before['pending'] == after['verified'] + after['pending'],
-              'Direction must move -X/+X while preserving total received')
-        cases['1-2'] = {'before': before, 'after': after, 'proof': proof}
-        self.snap(E1, 'direccion-despues')
-        cases['3'] = self.e1_trail(proposal['id'], payment_id)
-        self.snap(E1, 'rastro')
+        with self.e1_control_session(permissions=control_reads, restore_path='/aprobaciones'):
+            after = self.e1_direction()
+            self.snap(E1, 'direccion-despues')
+            amount = int(Decimal(proof['payment']['amount']) * 100)
+            check(after['verified'] == before['verified'] + amount and
+                  after['pending'] == before['pending'] - amount and
+                  before['verified'] + before['pending'] == after['verified'] + after['pending'],
+                  'Direction must move -X/+X while preserving total received')
+            cases['1-2'] = {'before': before, 'after': after, 'proof': proof}
+            cases['3'] = self.e1_trail(proposal['id'], payment_id)
+            self.snap(E1, 'rastro')
 
         # Two simultaneous preparations with different keys must share one open proposal.
         pid = regular[1]['payment_id']
@@ -879,7 +985,9 @@ with SessionLocal() as session:
             expect(self.page.locator('#bandeja-selected')).to_contain_text(fixture['reference'])
             if action == 'reverse':
                 before_denied = self.e1_proof(pid)
-                denied = self.e1_request(f'/payments/{pid}/reverse', {'reason': 'E1 cashier cannot reverse'})
+                denied = self.e1_direct_request(f'/payments/{pid}/reverse',
+                                                {'reason': 'E1 cashier cannot reverse'},
+                                                'E1_CASHIER_HUMAN_CREDENTIAL', self.get('/me'))
                 self.e1_rejected(denied, (403,), 'PERMISSION_DENIED')
                 check(before_denied == self.e1_proof(pid), 'Denied cashier reversal changed payment/events')
                 row['cashier_reverse_denied'] = denied
@@ -921,16 +1029,25 @@ with SessionLocal() as session:
         pid = regular[5]['payment_id']
         pending = self.e1_prepare(pid)
         before_denied = self.e1_proof(pid)
-        self.choose(f'E1 sintético {self.seed["run_id"]} · recepcion')
         paths = [(f'/payments/{pid}/verify', {}),
                  (f'/agent/proposals/{pending["id"]}/approve', {'payload_hash': pending['payload_hash']}),
                  (f'/agent/proposals/{pending["id"]}/retry', None)]
-        for path, body in paths:
-            self.e1_rejected(self.e1_request(path, body))
+        try:
+            reception = self.choose(f'E1 sintético {self.seed["run_id"]} · recepcion')
+            check(reception['principal']['id'] == self.seed['personas']['recepcion'] and
+                  reception['organization']['id'] == self.seed['organization_id'], 'Wrong M1 Reception identity')
+            for path, body in paths:
+                self.e1_rejected(self.e1_request(path, body))
+        finally:
+            self.choose(name)
         check(before_denied == self.e1_proof(pid), 'Reception changed the payment')
         # Server-side identity probes keep bearer credentials outside the browser and evidence.
         import httpx
         token = self.env['SALES_AGENT_V0_CREDENTIAL']
+        identity = httpx.get(self.args.api.rstrip('/') + '/me',
+                             headers={'Authorization': 'Bearer ' + token}, timeout=30)
+        check(identity.status_code == 200 and identity.json()['principal']['type'] == 'agent' and
+              identity.json()['organization']['id'] == self.seed['organization_id'], 'Wrong denial agent identity')
         for path, body in [(f'/payments/{pid}/verification-review', None), *paths]:
             response = httpx.post(self.args.api.rstrip('/') + path, headers={
                 'Authorization': 'Bearer ' + token, 'Idempotency-Key': str(uuid4())},
@@ -938,18 +1055,20 @@ with SessionLocal() as session:
             check(response.status_code == 403, f'Agent principal must receive 403: {path} HTTP {response.status_code}')
         check(before_denied == self.e1_proof(pid), 'Agent rejection changed the payment')
         cases['8'] = {'payment_id': pid, 'reception_and_agent': '403', 'unchanged': True}
-        self.choose(name)
 
         # The control human prepares the Miraflores fixture; Caja must not read or execute it.
         foreign = next(p for p in fixtures if p['ruta'] == 'otra_sede')
-        self.choose(self.env.get('E1_CONTROL_PERSONA', 'Carlos Vega'))
-        other_location = self.e1_prepare(foreign['payment_id'])
-        self.choose(name)
+        with self.e1_control_session(permissions=('payments.read', 'proposals.read')):
+            other_location = self.e1_prepare(foreign['payment_id'])
         cases['9'] = {'other_location': self.e1_isolation(foreign, other_location)}
         other = e1_seed(self.args.other_seed_summary or self.root / 'e1-other-seed.json')
         check(other['organization_id'] != self.seed['organization_id'], 'Other-organization fixture is the same tenant')
         foreign = other['lotes']['pruebas'][0]
         token = self.env['E1_OTHER_HUMAN_CREDENTIAL']
+        identity = httpx.get(self.args.api.rstrip('/') + '/me',
+                             headers={'Authorization': 'Bearer ' + token}, timeout=30)
+        check(identity.status_code == 200 and identity.json()['principal']['type'] == 'human' and
+              identity.json()['organization']['id'] == other['organization_id'], 'Wrong other-organization human identity')
         response = httpx.post(self.args.api.rstrip('/') + f'/payments/{foreign["payment_id"]}/verification-review',
                               headers={'Authorization': 'Bearer ' + token, 'Idempotency-Key': str(uuid4())}, timeout=30)
         check(response.status_code in (200, 201), 'Other-organization fixture preparation failed')
@@ -1028,100 +1147,367 @@ with SessionLocal() as session:
         self.engine.dispose()
         return int(not result['cumple'])
 
-    def recordatorios(self):
-        """O1's executable preparation/measurement lane; O3 is the certification gate.
+    def e2_webhook(self, payload, *, duplicate=False):
+        """Never persist signed payloads or opaque callback values in evidence."""
+        self.e2_update += 1
+        for _ in range(2 if duplicate else 1):
+            response = self.page.request.post(self.args.api.rstrip('/') + '/integrations/telegram/webhook',
+                headers={'X-Telegram-Bot-Api-Secret-Token': os.environ['TELEGRAM_WEBHOOK_SECRET']},
+                data={**payload, 'update_id': self.e2_update})
+            check(response.status == 200, 'Signed Telegram update failed')
+        return self.e2_update
 
-        Link/consent fixtures and fake-provider projection must come from BE/M1.
-        A partial lane records NOT_RUN and fails, never certifies the missing cases.
+    def e2_reply(self, callback, *, foreign=False, duplicate=False):
+        return self.e2_webhook({'callback_query': {'id': str(uuid4()), 'data': callback,
+            'from': {'id': self.e2_chat + int(foreign)},
+            'message': {'message_id': 1, 'chat': {'id': self.e2_chat + int(foreign), 'type': 'private'}}}}, duplicate=duplicate)
+
+    def e2_text(self, text):
+        return self.e2_webhook({'message': {'message_id': self.e2_update + 1,
+            'from': {'id': self.e2_chat}, 'chat': {'id': self.e2_chat, 'type': 'private'}, 'text': text}})
+
+    def e2_worker(self, instant, *, target=None, phase=None, mutation=None, timeout=False):
+        """Real --once/--now worker, fake provider; private socket observes its buttons.
+
+        No callbacks go through stdout, argv, environment, files or journey JSON.
+        Pauses are process barriers around the actual dispatch boundaries.
         """
-        from playwright.sync_api import expect
-        seed = self.reminders
-        result = self.result['journeys'][E2]
-        result.update(run_id=seed['run_id'], scenario=seed['scenario'],
-                      cases={str(number): 'NOT_RUN' for number in range(1, 13)},
-                      provider_send_count='NOT_VERIFIED', certification='PENDING_O3')
-        contract = self.page.request.get(self.args.api.rstrip('/') + '/openapi.json')
-        check(contract.ok, 'E2 OpenAPI is unavailable')
-        check('/reminders/coverage' in contract.json().get('paths', {}),
-              'O2 OpenAPI fan-in is pending: E2 routes are unavailable')
-        self.choose(seed['persona'])
-        me = self.get('/me')
-        check(me['organization']['id'] == seed['organization_id'], 'E2 persona belongs to another organization')
-        ids = [row['appointment_id'] for row in seed['appointments']]
-        actual = self.sql('SELECT id, patient_id, location_id FROM appointments WHERE id = ANY(:ids)', {'ids': ids})
-        check({(r['id'], r['patient_id'], r['location_id']) for r in actual} ==
-              {(r['appointment_id'], r['patient_id'], r['location_id']) for r in seed['appointments']},
-              'E2 manifest does not match the isolated database')
         backend = Path(self.env['E2_BACKEND_DIR'])
-        python = Path(self.env.get('E2_BACKEND_PYTHON', str(backend / '.venv/bin/python')))
-        check(backend.is_absolute() and python.is_absolute() and python.is_file(), 'Missing absolute E2 backend/worker paths')
-        # O1 does not know BE5's consent callback or BE6's fake-send table shape.
-        # Require actual consent in SQL, never manufacture it in the browser.
-        contacts = self.sql("SELECT patient_id FROM reminder_contacts WHERE organization_id=:org AND status='linked' AND consent_status='opted_in'",
-                            {'org': seed['organization_id']})
-        check({r['patient_id'] for r in contacts} >= {r['patient_id'] for r in seed['appointments']},
-              'O3 prerequisite: link the ten synthetic patients and record consent through the signed Telegram webhook')
-        result['cases']['1'] = 'RUNNING'
-        proposals = []
-        for location in sorted({row['location_id'] for row in seed['appointments']}):
-            self.go('/agenda')
-            self.page.get_by_role('combobox', name='Sede', exact=True).select_option(str(location))
-            prepare = self.page.get_by_role('button', name='Preparar recordatorios', exact=True)
-            with self.page.expect_response(lambda response: response.request.method == 'POST' and
-                                           urlsplit(response.url).path.endswith('/reminders/batches')) as pending:
-                prepare.evaluate('(button) => { button.click(); button.click(); }')
-            response = pending.value
-            check(response.status in (200, 201), 'E2 batch preparation failed')
-            receipt = response.json()
-            proposal = receipt['proposal']
-            proposals.append(proposal['id'])
-            self.page.get_by_role('link', name='Revisar lote en Bandeja', exact=True).click()
-            expect(self.page.get_by_role('article', name='Lote de recordatorios')).to_be_visible()
-            self.snap(E2, f'batch-{location}')
-            # Approval must precede the first due time; stale fixtures fail here.
-            with self.page.expect_response(lambda response: response.request.method == 'POST' and
-                                           urlsplit(response.url).path.endswith(f"/proposals/{proposal['id']}/approve")) as pending:
-                self.page.get_by_role('button', name='Autorizar envíos futuros', exact=True).evaluate(
-                    '(button) => { button.click(); button.click(); }')
-            check(pending.value.status == 200, 'E2 authorization failed')
-            expect(self.page.get_by_role('status').filter(has_text='Envíos futuros autorizados').first).to_be_visible()
-        result['cases']['1'] = 'PASS'
-        due = self.sql('SELECT DISTINCT due_at FROM reminder_items WHERE appointment_id = ANY(:ids) ORDER BY due_at', {'ids': ids})
-        check(due, 'No real reminder due times to run')
-        for row in due:
-            now = (row['due_at'] + timedelta(seconds=1)).isoformat()
-            process = subprocess.run([str(python), '-m', 'app.reminders.worker', '--once', '--now', now],
-                                     cwd=backend, env={**os.environ, **self.env, 'TELEGRAM_TRANSPORT': 'fake'},
-                                     capture_output=True, timeout=60)
-            check(process.returncode == 0, 'E2 fake worker failed; inspect its private process logs')
-        first = datetime.fromisoformat(seed['now'].replace('Z', '+00:00'))
-        query = f"from={quote(first.isoformat())}&to={quote((first + timedelta(days=7)).isoformat())}"
+        python = Path(self.env['E2_BACKEND_PYTHON'])
+        check(backend.is_absolute() and python.is_absolute() and python.is_file(), 'Absolute E2 worker paths required')
+        clock = self.env.get('E2_CLOCK_FILE')
+        if clock:
+            check(Path(clock).is_absolute(), 'E2 clock path must be absolute')
+            Path(clock).write_text(instant.isoformat())
+        program = r'''
+import json, os, socket, sys
+from app.reminders import dispatch
+from app.reminders.telegram import TelegramClient, TelegramResult
+from app.reminders.worker import main
+pipe = socket.socket(fileno=int(sys.argv[1])).makefile('rwb', buffering=0)
+config = json.loads(pipe.readline())
+buttons, active, paused = {}, None, False
+original_start, original_check = dispatch._start_attempt, dispatch._final_check
+original_send = TelegramClient.send_message
+
+def pause(phase, item_id):
+    global paused
+    if not paused and config['phase'] == phase and config['target'] == item_id:
+        paused = True
+        pipe.write(b'{"event":"ready"}\n')
+        assert json.loads(pipe.readline())['resume']
+
+def start(*args, **kwargs):
+    global active
+    pause('before_start', kwargs['item_id'])
+    active = original_start(*args, **kwargs)
+    return active
+
+def final(*args, **kwargs):
+    pause('before_call', kwargs['attempt'].item_id)
+    return original_check(*args, **kwargs)
+
+def send(self, *args, **kwargs):
+    result = original_send(self, *args, **kwargs)
+    if active is not None:
+        buttons[str(active.item_id)] = kwargs.get('reply_markup', {})
+        pause('after_call', active.item_id)
+        if config['timeout'] and config['target'] == active.item_id:
+            result = TelegramResult('uncertain', reason='timeout')
+    return result
+
+dispatch._start_attempt, dispatch._final_check = start, final
+TelegramClient.send_message = send
+code = main(['--once', '--now', config['now']])
+pipe.write((json.dumps({'event':'done', 'code':code, 'buttons':buttons, 'paused':paused})+'\n').encode())
+'''
+        parent, child = socket.socketpair()
+        parent.settimeout(55)
+        process = subprocess.Popen([str(python), '-c', program, str(child.fileno())], cwd=backend,
+            env={**os.environ, **self.env, 'TELEGRAM_TRANSPORT': 'fake'}, pass_fds=(child.fileno(),),
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        child.close()
+        try:
+            with parent, parent.makefile('rwb', buffering=0) as channel:
+                channel.write((json.dumps({'now': instant.isoformat(), 'target': target, 'phase': phase, 'timeout': timeout}) + '\n').encode())
+                while True:
+                    raw = channel.readline()
+                    check(raw, 'Controlled E2 worker ended without a receipt')
+                    data = json.loads(raw)
+                    if data['event'] == 'ready':
+                        check(mutation is not None, 'A dispatch pause requires a mutation')
+                        mutation()
+                        channel.write(b'{"resume":true}\n')
+                    else:
+                        check(data['code'] == 0 and (phase is None or data['paused']), 'E2 dispatch barrier was not reached')
+                        self.e2_buttons.update({int(k): v for k, v in data['buttons'].items()})
+                        break
+            process.communicate(timeout=5)
+            check(process.returncode == 0, 'E2 worker failed (private diagnostics withheld)')
+        finally:
+            if process.poll() is None:
+                process.kill()
+                process.communicate()
+
+    def e2_items(self):
+        return self.sql('SELECT * FROM reminder_items WHERE appointment_id = ANY(:ids) ORDER BY due_at, id', {'ids': self.reminders['appointment_ids']})
+
+    def e2_proof(self):
+        return self.sql("SELECT i.id, i.status, count(a.id) AS calls FROM reminder_items i LEFT JOIN audit_events a "
+            "ON a.organization_id=i.organization_id AND a.entity_type='reminder_item' AND a.entity_id=i.id::text "
+            "AND a.action='reminder.fake_transport' WHERE i.appointment_id=ANY(:ids) GROUP BY i.id ORDER BY i.id",
+            {'ids': self.reminders['appointment_ids']})
+
+    def e2_callback(self, appointment, action='Confirmo'):
+        rows = [r for r in self.e2_items() if r['appointment_id'] == appointment and r['id'] in self.e2_buttons]
+        check(rows, 'No fake delivery buttons for this appointment')
+        markup = self.e2_buttons[rows[-1]['id']]
+        return next(b['callback_data'] for line in markup['inline_keyboard'] for b in line if b['text'] == action)
+
+    def e2_prepare(self, site, approve=True):
+        from playwright.sync_api import expect
+        self.choose(self.env['E2_' + site.upper() + '_PERSONA'])
+        self.go('/agenda')
+        self.page.locator('.agenda-page').get_by_role('combobox', name='Sede', exact=True).select_option(str(self.reminders['location_ids'][site]))
+        with self.page.expect_response(lambda r: r.request.method == 'POST' and urlsplit(r.url).path.endswith('/reminders/batches')) as pending:
+            self.page.get_by_role('button', name='Preparar recordatorios', exact=True).evaluate('(b)=>{b.click();b.click()}')
+        check(pending.value.status in (200, 201), 'E2 preparation failed')
+        receipt = pending.value.json()
+        self.page.get_by_role('link', name='Revisar lote en Bandeja', exact=True).click()
+        expect(self.page.get_by_role('article', name='Lote de recordatorios')).to_be_visible()
+        self.snap(E2, 'batch-' + site + '-' + str(receipt['proposal']['id']))
+        if approve:
+            self.e2_approve(receipt['proposal']['id'])
+        return receipt
+
+    def e2_approve(self, proposal):
+        from playwright.sync_api import expect
+        with self.page.expect_response(lambda r: r.request.method == 'POST' and urlsplit(r.url).path.endswith(f'/proposals/{proposal}/approve')) as pending:
+            self.page.get_by_role('button', name='Autorizar envíos futuros', exact=True).evaluate('(b)=>{b.click();b.click()}')
+        check(pending.value.status == 200, 'E2 authorization failed')
+        expect(self.page.get_by_role('status').filter(has_text='Envíos futuros autorizados').first).to_be_visible()
+
+    def recordatorios(self):
+        from playwright.sync_api import expect
+        seed, result = self.reminders, self.result['journeys'][E2]
+        result.update(run_id=seed['run_id'], scenario=seed['scenario'], cases={str(n): 'NOT_RUN' for n in range(1, 13)}, certification='NOT_RUN')
+        self.e2_buttons, self.e2_update = {}, int(datetime.now(timezone.utc).timestamp() * 1000)
+        self.e2_chat = 800000000 + seed['contact_ids']['P']
+        self.choose(self.env['E2_LINCE_PERSONA'])
+        organization = self.get('/me')['organization']['id']
+        actual = self.sql('SELECT id, patient_id, location_id, organization_id FROM appointments WHERE id=ANY(:ids)', {'ids': seed['appointment_ids']})
+        check(len(actual) == len(seed['appointment_ids']) and all(r['organization_id'] == organization for r in actual) and
+            {r['location_id'] for r in actual} == set(seed['location_ids'].values()) and
+            {r['patient_id'] for r in actual} == set(seed['patient_ids']), 'M1 seed does not match this tenant/database')
+        patient = seed['patient_ids'][0]
+        selected = next(r for r in actual if r['patient_id'] == patient and r['location_id'] == seed['location_ids']['Lince'])
+        self.go('/agenda?appointment=' + str(selected['id']))
+        with self.page.expect_response(lambda r: r.request.method == 'POST' and urlsplit(r.url).path.endswith('/telegram-link')) as pending:
+            self.page.get_by_role('button', name='Crear enlace de vínculo Telegram', exact=True).click()
+        check(pending.value.status == 201, 'Patient link failed')
+        link = pending.value.json()
+        token = parse_qs(urlsplit(link['deep_link']).query)['start'][0]
+        self.e2_text('/start ' + token)
+        self.e2_reply('c:' + token + ':yes')
+        del token, link
+        # Close the drawer before any screenshot: opaque links stay out of evidence.
+        self.go('/agenda')
+        contact = self.sql('SELECT status,consent_status FROM reminder_contacts WHERE id=:id', {'id': seed['contact_ids']['P']})[0]
+        check(contact == {'status': 'linked', 'consent_status': 'opted_in'}, 'Signed link/consent did not persist')
+        result['link_and_consent'] = 'PASS'
+        if seed['scenario'] == 'adversarial':
+            self.e2_adversarial()
+        else:
+            for site in ('Lince', 'Miraflores'):
+                self.e2_prepare(site)
+            result['cases']['1'] = 'PASS'
+            due = sorted({r['due_at'] for r in self.e2_items() if r['status'] == 'authorized'})
+            for index, instant in enumerate(due):
+                self.e2_worker(instant + timedelta(seconds=1))
+                if index in (0, len(due) - 1):
+                    self.e2_worker(instant + timedelta(seconds=1))
+                for row in self.e2_items():
+                    if row['type'] == 'h1' and row['due_at'] == instant and row['status'] == 'accepted':
+                        self.e2_reply(self.e2_callback(row['appointment_id']), duplicate=True)
+            proof = self.e2_proof()
+            check(len(proof) == 30 and all(r['status'] == 'accepted' and r['calls'] == 1 for r in proof), 'Nominal needs 30 accepted notices and one SQL-proven call each')
+            result['cases']['2'] = result['cases']['10'] = 'PASS'
+            confirmed = self.sql('SELECT patient_confirmed_at FROM appointments WHERE id=ANY(:ids)', {'ids': seed['appointment_ids']})
+            check(all(r['patient_confirmed_at'] is not None for r in confirmed), 'Every test confirmation must persist')
+            result['cases']['4'] = 'PASS'
+        result['provider_send_count'] = self.e2_proof()
+        check(all(r['calls'] <= 1 for r in result['provider_send_count']), 'A reminder called the fake provider twice')
+        first = datetime.fromisoformat(self.env['E2_NOW'])
+        last = max((row['due_at'] for row in self.e2_items()), default=first)
+        end = max(first + timedelta(days=7), last + timedelta(days=1))
+        query = f'from={quote((first-timedelta(days=1)).isoformat())}&to={quote(end.isoformat())}'
         totals = {}
-        for location in sorted({row['location_id'] for row in seed['appointments']}):
-            data = self.get(f'/reminders/coverage?location_id={location}&{query}')
-            for kind, counts in data['totals'].items():
-                bucket = totals.setdefault(kind, {'eligible_due': 0, 'accepted_in_window': 0, 'missed': 0, 'late': 0, 'uncertain': 0, 'failed': 0})
-                for name in bucket:
-                    bucket[name] += counts[name]
-            self.go('/agenda')
-            self.page.get_by_role('combobox', name='Sede', exact=True).select_option(str(location))
+        for site, location in seed['location_ids'].items():
+            self.choose(self.env['E2_' + site.upper() + '_PERSONA'])
+            coverage = self.get(f'/reminders/coverage?location_id={location}&{query}')
+            for kind, counts in coverage['totals'].items():
+                bucket = totals.setdefault(kind, {key: 0 for key in counts})
+                for key, value in counts.items(): bucket[key] += value
+            self.go('/agenda?appointment=' + str(next(r['id'] for r in actual if r['location_id'] == location)))
             self.page.reload(wait_until='networkidle')
             expect(self.page.get_by_role('region', name='Cobertura de recordatorios')).to_be_visible()
-            self.snap(E2, f'coverage-{location}')
+            if seed['scenario'] == 'nominal':
+                expect(self.page.get_by_text('Paciente confirmó', exact=False).first).to_be_visible()
+            self.snap(E2, 'coverage-' + site)
         for counts in totals.values():
-            counts['percentage'] = (100 * counts['accepted_in_window'] / counts['eligible_due']) if counts['eligible_due'] else None
+            counts['percentage'] = 100 * counts['accepted_in_window'] / counts['eligible_due'] if counts['eligible_due'] else None
         result['coverage_by_type'] = totals
-        accepted = sum(row['accepted_in_window'] for row in totals.values())
-        eligible = sum(row['eligible_due'] for row in totals.values())
-        result.update(accepted_in_window=accepted, eligible_due=eligible,
-                      percentage=100 * accepted / eligible if eligible else None, proposal_ids=proposals)
+        result['accepted_in_window'] = accepted = sum(x['accepted_in_window'] for x in totals.values())
+        result['eligible_due'] = eligible = sum(x['eligible_due'] for x in totals.values())
+        result['percentage'] = 100 * accepted / eligible if eligible else None
         if seed['scenario'] == 'nominal':
-            check(eligible == accepted == 30, 'Nominal E2 must be 30/30; do not remove missed notices from the denominator')
-            result['cases']['2'] = 'PASS'
-        # No certification until O3 adds the backend's real fake-call projection,
-        # signed webhook callbacks, clock scenarios and races. Do not count an
-        # accepted reminder row as proof of one actual provider invocation.
-        check(False, 'O3 pending: signed patient replies, adversarial cases 3-9/11, and per-notice SQL fake-send count have not run')
+            check(accepted == eligible == 30, 'HTTP coverage must measure 30/30 at the controlled clock; configure E2_CLOCK_FILE in the isolated API')
+        if seed['scenario'] == 'nominal':
+            with self.page.expect_response(lambda r: r.request.method == 'POST' and urlsplit(r.url).path.endswith('/opt-out')) as pending:
+                self.page.get_by_role('button', name='Registrar baja de recordatorios en toda la clínica', exact=True).evaluate('(b)=>{b.click();b.click()}')
+            check(pending.value.status == 200 and pending.value.json()['id'] == seed['contact_ids']['P'], 'Manual opt-out did not use canonical contact_id')
+            result['manual_opt_out'] = 'PASS'
+        self.go('/agente')
+        self.page.locator('.activity-page').get_by_role('combobox', name='Sede', exact=True).select_option(str(seed['location_ids']['Miraflores']))
+        expect(self.page.get_by_text('registró la aceptación de un recordatorio por Telegram', exact=False).first).to_be_visible()
+        self.snap(E2, 'rastro')
+        # Record remaining acceptance explicitly; partial adversarial runs cannot certify H1.
+        required = ('3', '4', '5', '6', '7', '8', '9', '11') if seed['scenario'] == 'adversarial' else ('1', '2', '4', '10')
+        check(all(result['cases'][case] == 'PASS' for case in required), 'E2 acceptance still has unverified cases')
+        result['certification'] = 'PASS_' + seed['scenario'].upper()
+
+    def e2_reschedule_available(self, appointment_id):
+        appointment = self.get('/appointments/' + str(appointment_id))
+        window_start = datetime.fromisoformat(appointment['start_utc']) + timedelta(minutes=1)
+        available = self.api('/slots/query', 'POST', {
+            'service_id': appointment['service_id'], 'location_id': appointment['location_id'],
+            'window_start': window_start.isoformat(), 'window_end': (window_start + timedelta(days=14)).isoformat(),
+        })
+        check(available['status'] == 200, f"Availability endpoint rejected the seeded reception: HTTP {available['status']}")
+        slots = sorted((slot for slot in available['body'] if slot['practitioner_id'] == appointment['practitioner_id']),
+                       key=lambda slot: slot['start'])
+        check(slots, 'No available slot for the existing practitioner; never invent a reschedule time')
+        chosen = slots[0]
+        moved = self.api('/appointments/' + str(appointment_id) + '/reschedule', 'POST', {'new_start': chosen['start']}, str(uuid4()))
+        check(moved['status'] == 200, f"Available-slot reschedule failed: HTTP {moved['status']}")
+        self.result['journeys'][E2].setdefault('reschedules', []).append({
+            'appointment_id': appointment_id, 'previous_start': appointment['start_utc'],
+            'new_start': chosen['start'], 'practitioner_id': chosen['practitioner_id'], 'source': '/slots/query'})
+        return self.get('/appointments/' + str(appointment_id))
+
+    def e2_adversarial(self):
+        """Exercise stale decisions, missed sends, replies and dispatch races via real APIs."""
+        from playwright.sync_api import expect
+        seed, result = self.reminders, self.result['journeys'][E2]
+        labels = seed['appointments_by_label']
+        self.choose(self.env['E2_MIRAFLORES_PERSONA'])
+        pending_link = self.api(f"/reminders/contacts/{seed['patient_ids'][2]}/telegram-link?location_id={seed['location_ids']['Miraflores']}", 'POST', None, str(uuid4()))
+        check(pending_link['status'] == 201, 'Pending-consent patient link failed')
+        raw = parse_qs(urlsplit(pending_link['body']['deep_link']).query)['start'][0]
+        original_chat = self.e2_chat
+        try:
+            self.e2_chat += 10000
+            self.e2_text('/start ' + raw)
+        finally:
+            self.e2_chat = original_chat
+        del raw, pending_link
+        old = self.e2_prepare('Lince', approve=False)
+        candidate = old['items'][0]
+        changed = self.api('/reminders/items/' + str(candidate['id']), 'PATCH',
+            {'expected_revision': candidate['revision'], 'excluded': True, 'reason': 'Prueba E2 de revisión humana'}, str(uuid4()))
+        check(changed['status'] == 200, 'E2 reminder edit failed')
+        with self.page.expect_response(lambda r: r.request.method == 'POST' and urlsplit(r.url).path.endswith('/approve')) as pending:
+            self.page.get_by_role('button', name='Autorizar envíos futuros', exact=True).click()
+        check(pending.value.status == 409 and pending.value.json()['error']['code'] == 'PROPOSAL_SUPERSEDED', 'Old batch must be superseded')
+        expect(self.page.get_by_text('Reemplazada:', exact=False).first).to_be_visible()
+        result['cases']['9'] = 'PASS'
+        self.e2_prepare('Lince', approve=False)
+        self.e2_prepare('Miraflores')
+        result['cases']['1'] = 'PASS'
+        before_day = sorted({r['due_at'] for r in self.e2_items() if r['due_at'] >= datetime.fromisoformat(self.env['E2_NOW']) and (r['type'] == 'd1' or r['appointment_id'] == labels['late-created'])})
+        for instant in before_day:
+            self.e2_worker(instant + timedelta(seconds=1))
+        check(any(r['status'] == 'missed' for r in self.e2_items() if r['appointment_id'] == labels['leave-undecided-missed']), 'Unapproved due reminders must be missed')
+        result['cases']['3'] = 'PASS'
+        confirm_id, change_id = labels['optout-miraflores-one'], labels['optout-miraflores-two']
+        callback = self.e2_callback(confirm_id)
+        self.e2_reply(callback, foreign=True)
+        check(self.get('/appointments/' + str(confirm_id))['patient_confirmed_at'] is None, 'Forwarded button changed an appointment')
+        self.e2_reply(callback)
+        fixed = self.get('/appointments/' + str(confirm_id))
+        self.e2_reply(callback)
+        check(self.get('/appointments/' + str(confirm_id)) == fixed, 'Used button had a second effect')
+        result['cases']['6'] = 'PASS'
+        self.e2_reply(self.e2_callback(change_id, 'Quiero cambiar'))
+        self.e2_text('Necesito revisar mis horarios')
+        requests = self.get('/reminders/change-requests?location_id=' + str(seed['location_ids']['Miraflores']))
+        check(any(r['source'] == 'button' and r['appointment_id'] == change_id for r in requests) and
+              any(r['source'] == 'free_text' and r['appointment_id'] is None and len(r['candidate_appointment_ids']) >= 2 for r in requests), 'Change requests lost their exact/candidate scope')
+        self.go('/agenda?appointment=' + str(change_id))
+        self.page.reload(wait_until='networkidle')
+        expect(self.page.get_by_text('Solicitud de cambio abierta para recepción.', exact=False).first).to_be_visible()
+        expect(self.page.get_by_text('ninguna ha sido elegida', exact=False).first).to_be_visible()
+        self.snap(E2, 'change-request')
+        result['cases']['5'] = 'PASS'
+        self.e2_prepare('Lince')
+        merged = next(r for r in self.e2_items() if r['appointment_id'] == labels['merged-0930'] and r['type'] == 'h1')
+        self.e2_worker(merged['due_at'] + timedelta(seconds=1), target=merged['id'], timeout=True)
+        self.e2_worker(merged['due_at'] + timedelta(seconds=1))
+        check(next(r for r in self.e2_items() if r['id'] == merged['id'])['status'] == 'uncertain', 'Timeout must remain uncertain without resend')
+        cancel = next(r for r in self.e2_items() if r['appointment_id'] == labels['cancel-approved-batch'] and r['type'] == 'h09')
+        self.choose(self.env['E2_LINCE_PERSONA'])
+        def cancel_now():
+            response = self.api('/appointments/' + str(cancel['appointment_id']) + '/cancel', 'POST', {}, str(uuid4()))
+            check(response['status'] == 200, 'Cancellation at dispatch barrier failed')
+        self.e2_worker(cancel['due_at'] + timedelta(seconds=1), target=cancel['id'], phase='before_call', mutation=cancel_now)
+        check(next(r for r in self.e2_proof() if r['id'] == cancel['id'])['calls'] == 0, 'Cancelled reminder reached provider')
+        original = labels['confirm-reschedule-old-button']
+        callback = self.e2_callback(original)
+        self.e2_reply(callback)
+        appointment = self.get('/appointments/' + str(original))
+        check(appointment['patient_confirmed_at'], 'Patient confirmation not visible')
+        self.e2_reschedule_available(original)
+        self.e2_reply(callback)
+        current = self.get('/appointments/' + str(original))
+        check(current['version'] > appointment['version'] and current['patient_confirmed_at'] is None, 'Old-version button survived reschedule')
+        # Exact M1 availability may offer only next week's interval. Move the
+        # two opt-out appointments to their own real slots as well, so the final
+        # BAJA still precedes two future Miraflores sends after the new confirmation.
+        new_start = datetime.fromisoformat(current['start_utc'])
+        if new_start - datetime.fromisoformat(appointment['start_utc']) > timedelta(days=3):
+            self.choose(self.env['E2_MIRAFLORES_PERSONA'])
+            self.e2_reschedule_available(confirm_id)
+            self.e2_reschedule_available(change_id)
+            for instant in sorted({r['due_at'] for r in self.e2_items() if r['status'] == 'authorized'}):
+                self.e2_worker(instant + timedelta(seconds=1))
+            clock = self.env.get('E2_CLOCK_FILE')
+            check(clock and Path(clock).is_absolute(), 'A future reschedule requires the isolated API clock')
+            Path(clock).write_text((new_start - timedelta(days=2)).isoformat())
+            self.e2_prepare('Lince')
+            self.e2_prepare('Miraflores')
+        else:
+            self.e2_prepare('Lince')
+        due = sorted({r['due_at'] for r in self.e2_items() if r['status'] == 'authorized'})
+        baja = next(r for r in self.e2_items() if r['appointment_id'] == confirm_id and r['type'] == 'h1' and r['status'] == 'authorized')
+        self.choose(self.env['E2_LINCE_PERSONA'])
+        for instant in due:
+            if instant < baja['due_at']:
+                self.e2_worker(instant + timedelta(seconds=1))
+                if any(r['appointment_id'] == original and r['status'] == 'accepted' and r['appointment_version'] == current['version'] for r in self.e2_items()):
+                    updated = self.get('/appointments/' + str(original))
+                    if updated['patient_confirmed_at'] is None: self.e2_reply(self.e2_callback(original), duplicate=True)
+        check(self.get('/appointments/' + str(original))['patient_confirmed_at'], 'New-version confirmation did not persist')
+        result['cases']['7'] = 'PASS'
+        self.e2_worker(baja['due_at'] + timedelta(seconds=1), target=baja['id'], phase='before_call', mutation=lambda: self.e2_text('BAJA'))
+        for instant in due:
+            if instant >= baja['due_at']:
+                self.e2_worker(instant + timedelta(seconds=1))
+                self.e2_worker(instant + timedelta(seconds=1))
+        check(next(r for r in self.e2_proof() if r['id'] == baja['id'])['calls'] == 0, 'BAJA at dispatch barrier reached provider')
+        check(all(r['status'] != 'accepted' for r in self.e2_items() if r['appointment_id'] in (labels['unlinked-Q'], labels['pending-consent-R'])), 'Missing consent/link allowed a send')
+        check(any(r['status'] == 'suppressed' and r['type'] == 'h09' for r in self.e2_items() if r['appointment_id'] == confirm_id), 'Confirmation must suppress h09')
+        check(self.get('/appointments/' + str(original))['patient_confirmed_at'], 'New-version confirmation did not persist')
+        result['cases']['4'] = result['cases']['8'] = result['cases']['10'] = result['cases']['11'] = 'PASS'
 
     def replay(self):
         before = self.snapshot()
@@ -1168,8 +1554,13 @@ with SessionLocal() as session:
                 self.page = browser.new_page(viewport={'width': 1440, 'height': 1100}, timezone_id='America/Lima')
                 self.page.on('request', self.on_request)
                 self.page.on('response', self.on_response)
+                # Completion can outlive its Page association during navigation.
+                self.page.context.on('requestfinished', self.on_request_done)
+                self.page.context.on('requestfailed', self.on_request_done)
+                self.page.route(re.compile(r'/api/backend/.+/(approve|claim|verification-review)$'),
+                                self.on_intent_route)
                 self.page.on('pageerror', lambda error: self.page_errors.append(str(error)))
-                self.go('/agenda')
+                self.go('/aprobaciones' if self.e1 else '/agenda')
                 self.result['initial_sql'] = self.snapshot()
                 for journey in selected:
                     self.result['journeys'][journey] = {'result': 'FAIL', 'shots': []}
@@ -1183,7 +1574,9 @@ with SessionLocal() as session:
                         self.snap(journey, 'error')
                         failed = True
                         break
-                if self.args.replay and not failed:
+                e2_proof = self.result['journeys'].get(E2, {})
+                effects_verified = self.e2 and e2_proof.get('accepted_in_window') == e2_proof.get('eligible_due') == 30 and e2_proof.get('manual_opt_out') == 'PASS'
+                if self.args.replay and (not failed or effects_verified):
                     try:
                         self.replay()
                         self.result['replay']['result'] = 'PASS'
@@ -1211,7 +1604,7 @@ with SessionLocal() as session:
                 ids['handoff_id'] = row['handoff']['id']
             print(f"{journey} | {row['result']} | {json.dumps(ids)} {row.get('error', '')}")
         if self.args.replay:
-            print('REPLAY | FAIL | ' + self.result['replay'].get('error', 'Not run') if failed else 'REPLAY | PASS (misma clave/cuerpo; nueva clave rechazada; SQL idéntico)')
+            print('REPLAY | PASS (misma clave/cuerpo; nueva clave rechazada; SQL idéntico)' if self.result['replay'].get('result') == 'PASS' else 'REPLAY | FAIL | ' + self.result['replay'].get('error', 'Not run'))
         self.engine.dispose()
         return int(failed)
 
@@ -1224,6 +1617,8 @@ def main():
                         'http://127.0.0.1:' + os.environ.get('API_PORT', '8120')))
     parser.add_argument('--run-dir', type=Path, required=True)
     parser.add_argument('--journeys', default='J1,J2,J3,J4,J5,J6')
+    parser.add_argument('--e1-db', default=os.environ.get('E1_JOURNEY_DB', 'odontoflow_test_fe_e1_fe3'),
+                        help='Expected isolated E1 database; default: E1_JOURNEY_DB or odontoflow_test_fe_e1_fe3')
     parser.add_argument('--replay', action='store_true')
     parser.add_argument('--seed-summary', type=Path, help='M1 JSON; default: <run-dir>/e1-seed.json')
     parser.add_argument('--other-seed-summary', type=Path, help='M1 JSON for another organization; default: <run-dir>/e1-other-seed.json')
@@ -1242,9 +1637,9 @@ def main():
                 check(not args.measure_csv, 'E2 does not use E1 measurement CSV')
                 seed = reminders_seed(args.seed_summary or args.run_dir / 'recordatorios-seed.json')
                 print(json.dumps({'mode': 'DRY_RUN', 'journey': E2, 'run_id': seed['run_id'],
-                                  'scenario': seed['scenario'], 'appointment_ids': [row['appointment_id'] for row in seed['appointments']],
+                                  'scenario': seed['scenario'], 'appointment_ids': seed['appointment_ids'],
                                   'cases': {str(number): 'NOT_RUN' for number in range(1, 13)},
-                                  'certification': 'PENDING_O3'}, indent=2))
+                                  'certification': 'NOT_RUN'}, indent=2))
                 return 0
             check(args.journeys == E1 and not args.measure_csv, '--dry-run selects one E1 or E2 journey')
             seed = e1_seed(args.seed_summary or args.run_dir / 'e1-seed.json')
