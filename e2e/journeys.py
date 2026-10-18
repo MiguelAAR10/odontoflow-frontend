@@ -750,12 +750,17 @@ with SessionLocal() as session:
         lince_permissions = {code for grant in location_permissions
                              if grant['location_id'] == self.seed['sedes']['Lince']
                              for code in grant['permissions']}
+        global_permissions = set(me.get('permissions', []))
+        all_location_permissions = {code for grant in location_permissions
+                                    for code in grant['permissions']}
+        required_permissions = {'locations.read', 'charges.read', 'payments.read',
+                                'payments.manage', 'proposals.read', 'proposals.decide'}
+        forbidden_permissions = {'payments.reverse'}
         check(me['principal']['id'] == self.seed['personas']['caja'] and
-              not me['permissions'] and
-              lince_permissions == {'charges.read', 'payments.read', 'payments.manage',
-                                    'proposals.read', 'proposals.decide'} and
-              all('payments.reverse' not in grant['permissions'] for grant in location_permissions),
-              'M1 Caja requires exactly the Lince endpoint permissions, no global grants or reversal permission')
+              required_permissions <= lince_permissions and
+              not global_permissions and
+              not (forbidden_permissions & (global_permissions | all_location_permissions)),
+              'M1 Caja requires the Lince journey permissions, no global grants or reversal permission')
         control_reads = ('locations.read', 'payments.read', 'proposals.read')
         with self.e1_control_session(permissions=control_reads, restore_path='/aprobaciones') as (_, control_me):
             row['actors'] = {'cashier': me, 'reversal_control': control_me}

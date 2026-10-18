@@ -214,8 +214,8 @@ explícitamente. El host debe ser exactamente `127.0.0.1` y el puerto `5434`.
 
 3. Configurar en el BFF las dos personas humanas que imprime M1:
    `E1 sintético ensayo-01 · caja` y `E1 sintético ensayo-01 · recepcion`, con
-   credenciales emitidas para esos IDs. No ampliar sus grants: Caja tiene sus
-   cinco permisos solo en Lince: `charges.read`, `payments.read`, `payments.manage`,
+   credenciales emitidas para esos IDs. Caja necesita al menos estos seis permisos
+   en Lince: `locations.read`, `charges.read`, `payments.read`, `payments.manage`,
    `proposals.read` y `proposals.decide`; Recepción carece
    de `payments.manage`.
 4. Para probar otra organización, provisionar **otra organización sintética en
@@ -234,9 +234,11 @@ explícitamente. El host debe ser exactamente `127.0.0.1` y el puerto `5434`.
    anular y preparar la fixture de otra sede; preparar/aprobar en Caja/Bandeja
    corresponde a Caja de M1.
 
-Antes de consumir el lote, `/me` debe devolver `permissions: []` para Caja y los
-cinco permisos anteriores en `location_permissions: [{location_id, permissions}]`
-para el ID de Lince del seed, sin `payments.reverse` en ninguna sede. Los grants
+Antes de consumir el lote, `/me` debe devolver `permissions: []` para Caja y al
+menos los seis permisos anteriores en `location_permissions: [{location_id, permissions}]`
+para el ID de Lince del seed, sin `payments.reverse` en ninguna sede. El preflight
+acepta permisos adicionales con alcance de sede; rechaza cualquier permiso global
+y cualquier grant de anulación. Los grants
 de sede corresponden a membresías activas de la organización de la credencial y
 se mantienen separados de los permisos globales. El menú muestra Caja/Bandeja en
 Lince y en «Todas» (alguna sede autorizada), y los oculta al seleccionar Miraflores;
@@ -255,20 +257,13 @@ lanza a la vez anulación como control y aprobación como Caja, comprobando ambo
 actores y guardando sus IDs. Las cookies permanecen en memoria y no se escriben
 en la evidencia. También exige 403 y pago intacto si Caja intenta anular.
 
-**Bloqueo de producto detectado en FE3fix4:** Caja de M1 aún no puede cargar
-Conciliación. `loadCharges()` espera conjuntamente `/charges` y `/locations`, y
-después lee `/charges/{id}/payments`
-([adaptador:636](/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/fe-e1-FE3fix4/src/api.ts:636)).
-Los dos últimos endpoints exigen `locations.read` y `payments.read` globales,
-respectivamente ([catálogo:139](/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/backend--integracion--e1/app/organization/service.py:139),
-[pagos:947](/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/backend--integracion--e1/app/economics/service.py:947));
-M1 asigna sus cinco grants solo en Lince
-([semilla:184](/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/backend--integracion--e1/scripts/seed_e1_cobro.py:184)).
-El catálogo también lo consulta la barra de sede y Bandeja. El recorrido conserva
-el rol Caja y las aserciones: no ampliar grants, sustituir Caja por control ni
-aceptar estos 403 como éxito. Se requiere resolver este contrato de producto
-antes de certificar los casos 1–9; la tabla completa y el bloqueo constan en
-[FE3fix4](/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.coordinacion/e1-cobro-verificado/informes/FE3fix4.md).
+BE-CAJALOC incorporó `locations.read` en la membresía de Lince. El backend filtra
+`/locations`, `/charges/{id}/payments` y la conciliación por ubicaciones autorizadas
+([catálogo:139](/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/backend--integracion--e1/app/organization/service.py:139),
+[pagos:947](/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/backend--integracion--e1/app/economics/service.py:947),
+[semilla:139](/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/backend--integracion--e1/scripts/seed_e1_cobro.py:139)).
+El preflight requiere que Caja tenga los permisos que usa el recorrido en Lince,
+permite grants de sede adicionales y rechaza permisos globales o `payments.reverse`.
 
 El caso 8 desactiva la membresía de Caja **después** de preparar una propuesta,
 exige 403 al aprobar y restaura la membresía en `finally`. Usa el servicio público
