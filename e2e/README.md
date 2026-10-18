@@ -166,6 +166,13 @@ exige 409. Compara filas completas en una transacción de lectura consistente an
 y después (propuestas, outbounds, mensajes, movimientos, recibos, derivaciones,
 conversaciones y citas). No suavizar una discrepancia del backend a PASS.
 
+La captura de intenciones usa `route.fetch(max_retries=0)` contra el BFF real y
+`route.fulfill(response=...)` con esa misma respuesta, conservando cuerpo y
+cabeceras antes de que la UI navegue. No genera resultados ni cambia petición,
+clave o estado. El observador de respuestas registra metadatos sin leer cuerpos
+dentro del callback; las aserciones de UI y replay usan el resultado real capturado.
+Referencia: [Route de Playwright](https://playwright.dev/python/docs/api/class-route#route-fetch).
+
 ## Límites
 
 J1–J6 no demuestran WhatsApp, aceptación del paciente, silla reservada ni cobro de un pago:

@@ -214,14 +214,33 @@ class Journeys:
                'requested_as': requested_as, 'received_as': self.person,
                'requested_epoch': requested_epoch, 'received_epoch': self.session_epoch}
         self.result['responses'].append(row)
-        if self.capture_intents and request.method == 'POST' and re.search(r'/(approve|claim|verification-review)$', row['path']) and response.status in (200, 201):
-            if response.headers.get('idempotent-replay') != 'true':
+
+    def on_intent_route(self, route):
+        request = route.request
+        if not self.capture_intents or request.method != 'POST':
+            route.continue_()
+            return
+        # Fetch the real BFF response once and preserve its body before the UI
+        # can navigate. A synchronous response listener can lose the body or
+        # block expect_response while waiting for its own response to finish.
+        response = route.fetch(max_retries=0)
+        try:
+            if response.status in (200, 201) and response.headers.get('idempotent-replay') != 'true':
                 key = request.headers.get('idempotency-key')
                 check(key and UUID(key).version == 4, 'Mutation must use UUIDv4')
                 if not any(x['key'] == key for x in self.result['intents']):
-                    self.result['intents'].append({'path': row['path'].removeprefix('/api/backend'),
+                    self.result['intents'].append({'path': urlsplit(request.url).path.removeprefix('/api/backend'),
                                                    'body': request.post_data_json, 'key': key,
                                                    'person': self.person, 'result': response.json()})
+        finally:
+            route.fulfill(response=response)
+
+    def captured_result(self, response):
+        key = response.request.headers.get('idempotency-key')
+        intent = next((item for item in self.result['intents'] if item['key'] == key), None)
+        check(intent is not None and intent['path'] == urlsplit(response.url).path.removeprefix('/api/backend'),
+              'Missing original UI mutation response')
+        return intent['result']
 
     def api(self, path, method='GET', body=None, key=None):
         return self.page.evaluate('''async ({path,method,body,key}) => {
@@ -809,7 +828,7 @@ with SessionLocal() as session:
                 payment_row.get_by_role('button', name='Preparar revisión', exact=True).click(click_count=2)
             response = received.value
             check(response.status in (200, 201), f'UI preparation failed: {response.status}')
-            receipt = response.json()
+            receipt = self.captured_result(response)
             proposal = receipt['proposal']
             expect(self.page).to_have_url(re.compile(r'/aprobaciones\?'))
             query = parse_qs(urlsplit(self.page.url).query)
@@ -830,7 +849,7 @@ with SessionLocal() as session:
             with self.page.expect_response(lambda r: r.request.method == 'POST' and
                                            r.url.endswith(f'/proposals/{proposal["id"]}/approve')) as approved:
                 selected.get_by_role('button', name='Aprobar', exact=True).click(click_count=2)
-            check(approved.value.status == 200 and approved.value.json()['status'] == 'executed',
+            check(approved.value.status == 200 and self.captured_result(approved.value)['status'] == 'executed',
                   'UI approval did not execute')
             expect(self.page.locator('.success-banner')).to_be_visible()
         finally:
@@ -1109,6 +1128,8 @@ with SessionLocal() as session:
                 self.page.on('response', self.on_response)
                 self.page.on('requestfinished', self.on_request_done)
                 self.page.on('requestfailed', self.on_request_done)
+                self.page.route(re.compile(r'/api/backend/.+/(approve|claim|verification-review)$'),
+                                self.on_intent_route)
                 self.page.on('pageerror', lambda error: self.page_errors.append(str(error)))
                 self.go('/aprobaciones' if self.e1 else '/agenda')
                 self.result['initial_sql'] = self.snapshot()
