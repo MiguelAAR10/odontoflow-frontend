@@ -184,10 +184,18 @@ integrar BE1a, BE1b, BE2, M1 y FE2. Un dry run no acredita los casos reales ni
 cierra E1. No usar el dispatcher ni ejecutar J1–J6 en la misma corrida.
 
 En este worktree, usar exclusivamente PostgreSQL `127.0.0.1:5434`, usuario y
-contraseña `odontoflow`, base nueva `odontoflow_test_fe_e1_fe3`. Crearla antes de
-migrar; abortar si existe. El dueño del ensayo la elimina al terminar, después de
-archivar la evidencia. No arrancar/detener contenedores ni usar una base compartida.
-El runner no crea bases, migra, siembra ni arranca servicios.
+contraseña `odontoflow`, base nueva `odontoflow_test_fe_e1_fe3` por defecto. Crearla
+antes de migrar; abortar si existe. El dueño del ensayo la elimina al terminar,
+después de archivar la evidencia. No arrancar/detener contenedores ni usar una base
+compartida. El runner no crea bases, migra, siembra ni arranca servicios.
+
+`--e1-db` selecciona explícitamente la base esperada y prevalece sobre la variable
+de proceso `E1_JOURNEY_DB`; sin ambas se conserva `odontoflow_test_fe_e1_fe3`.
+El nombre debe coincidir con `DATABASE_URL` del env privado: la opción no cambia
+la conexión ni el stack. Solo se admiten nombres de 1–63 caracteres en minúsculas,
+dígitos y `_`, con `e1` como segmento separado por `_`. Se rechazan `odontoflow`,
+`odontoflow_test` y cualquier nombre sin ese marcador, incluso si se seleccionan
+explícitamente. El host debe ser exactamente `127.0.0.1` y el puerto `5434`.
 
 1. Preparar el stack aislado y el env privado como arriba, con
    `DATABASE_URL=postgresql+psycopg://odontoflow:odontoflow@127.0.0.1:5434/odontoflow_test_fe_e1_fe3`,
@@ -243,6 +251,25 @@ npm --prefix /ruta/absoluta/frontend run e2e:journeys -- \
   --base http://127.0.0.1:3120 --api http://127.0.0.1:8120 \
   --run-dir /ruta/absoluta/ensayo-01 --journeys cobro-verificado --replay
 ```
+
+Para la demo de
+`/home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.coordinacion/e1-cobro-verificado/scripts/demo-up.sh`,
+los puertos son 3110/8110 y la base aislada es `odontoflow_e1_demo`. Con el stack
+ya preparado y un lote M1 nuevo, guardar el env 0600 y las fixtures descritas
+arriba en `/tmp/e1-fe3-demo-ensayo-01`; su `DATABASE_URL` debe ser
+`postgresql+psycopg://odontoflow:odontoflow@127.0.0.1:5434/odontoflow_e1_demo`.
+Ejecutar exactamente:
+
+```bash
+npm --prefix /home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/fe-e1-FE3fix run e2e:journeys -- \
+  --base http://127.0.0.1:3110 --api http://127.0.0.1:8110 \
+  --run-dir /tmp/e1-fe3-demo-ensayo-01 --journeys cobro-verificado \
+  --e1-db odontoflow_e1_demo --replay
+```
+
+Se puede sustituir `--e1-db odontoflow_e1_demo` por la variable de proceso
+`E1_JOURNEY_DB=odontoflow_e1_demo`. Mantener un RUN_ID/lote nuevo por ensayo;
+no reutilizar una demo ya aprobada ni eliminar su base al terminar.
 
 Los JSON se pueden ubicar con `--seed-summary /ruta/absoluta/e1-seed.json` y
 `--other-seed-summary /ruta/absoluta/e1-other-seed.json`. El journey solo consume

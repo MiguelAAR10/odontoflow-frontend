@@ -135,8 +135,10 @@ class Journeys:
         if self.e1:
             from sqlalchemy.engine import make_url
             database = make_url(self.env['DATABASE_URL'])
-            check(database.host in ('localhost', '127.0.0.1', '::1') and database.port == 5434 and
-                  database.database == 'odontoflow_test_fe_e1_fe3', 'E1 requires its isolated :5434 FE3 database')
+            check(database.host == '127.0.0.1' and database.port == 5434 and
+                  database.database == args.e1_db and
+                  re.fullmatch(r'[a-z0-9_]{1,63}', args.e1_db) and 'e1' in args.e1_db.split('_'),
+                  'E1 requires the selected isolated E1 database on 127.0.0.1:5434')
             check(self.env.get('NEXT_PUBLIC_USE_MOCKS') == 'false', 'E1 requires NEXT_PUBLIC_USE_MOCKS=false')
             self.seed = e1_seed(args.seed_summary or self.root / 'e1-seed.json')
             self.TABLES.update(payments='payments', reversals='payment_reversals', audit='audit_events')
@@ -1097,6 +1099,8 @@ def main():
                         'http://127.0.0.1:' + os.environ.get('API_PORT', '8120')))
     parser.add_argument('--run-dir', type=Path, required=True)
     parser.add_argument('--journeys', default='J1,J2,J3,J4,J5,J6')
+    parser.add_argument('--e1-db', default=os.environ.get('E1_JOURNEY_DB', 'odontoflow_test_fe_e1_fe3'),
+                        help='Expected isolated E1 database; default: E1_JOURNEY_DB or odontoflow_test_fe_e1_fe3')
     parser.add_argument('--replay', action='store_true')
     parser.add_argument('--seed-summary', type=Path, help='M1 JSON; default: <run-dir>/e1-seed.json')
     parser.add_argument('--other-seed-summary', type=Path, help='M1 JSON for another organization; default: <run-dir>/e1-other-seed.json')
