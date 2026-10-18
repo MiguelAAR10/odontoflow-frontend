@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { AppSidebar } from "../src/components/AppSidebar";
 
-const model = vi.hoisted(() => ({ identity: { principalType: "human", displayName: "Asistente", organizationName: "Clínica", roles: [], permissions: ["products.read"] as string[] } }));
+const model = vi.hoisted(() => ({ identity: { principalType: "human", displayName: "Asistente", organizationName: "Clínica", roles: [], permissions: ["products.read"] as string[], locationPermissions: [] } }));
 vi.mock("../src/components/PersonaContext", () => ({ usePersona: () => model, PersonaPicker: () => null }));
 vi.mock("../src/components/shell/ShellContext", () => ({ useShellContext: () => ({ role: "admin" }) }));
 vi.mock("next/navigation", () => ({ usePathname: () => "/home" }));

@@ -332,12 +332,12 @@ export const mockStaff: Array<{ key: string; role: string; me: MeRead }> = [
   {
     key: "secretaria",
     role: "secretaria",
-    me: { principal: { id: 2, type: "human", display_name: "Lucía Ramos" }, organization: { id: 1, name: "ODONTO SMART" }, roles: [{ code: "staff-secretaria", name: "Secretaria" }], permissions: SECRETARIA_PERMISSIONS },
+    me: { principal: { id: 2, type: "human", display_name: "Lucía Ramos" }, organization: { id: 1, name: "ODONTO SMART" }, roles: [{ code: "staff-secretaria", name: "Secretaria" }], permissions: SECRETARIA_PERMISSIONS, location_permissions: [] },
   },
   {
     key: "administrador",
     role: "administrador",
-    me: { principal: { id: 3, type: "human", display_name: "Carlos Vega" }, organization: { id: 1, name: "ODONTO SMART" }, roles: [{ code: "staff-administrador", name: "Administrador" }], permissions: ADMINISTRADOR_PERMISSIONS },
+    me: { principal: { id: 3, type: "human", display_name: "Carlos Vega" }, organization: { id: 1, name: "ODONTO SMART" }, roles: [{ code: "staff-administrador", name: "Administrador" }], permissions: ADMINISTRADOR_PERMISSIONS, location_permissions: [] },
   },
 ];
 

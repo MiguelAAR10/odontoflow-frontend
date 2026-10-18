@@ -11,7 +11,7 @@ export const task: TaskOut = {
   context: { appointment: null, patient: null, restricted: false },
   delivery: { channel: "whatsapp", state: "not_configured", reason: "staff_channel_not_linked" },
 };
-const identity: StaffIdentity = { principalId: 42, principalType: "human", displayName: "Profesional autorizado", organizationName: "Clínica", roles: [], permissions: [] };
+const identity: StaffIdentity = { principalId: 42, principalType: "human", displayName: "Profesional autorizado", organizationName: "Clínica", roles: [], permissions: [], locationPermissions: [] };
 
 describe("delegated task adapter", () => {
   let api: typeof import("../src/api");
