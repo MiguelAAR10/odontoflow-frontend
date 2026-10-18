@@ -58,8 +58,8 @@ describe("Caja: vista en modo real", () => {
       let data: unknown = [];
       if (config.url === "/charges") data = [{ ...initialCharge, ...(posted === 1 ? { paid: "150.00", outstanding: "100.00" } : posted === 2 ? { paid: "250.00", outstanding: "0.00" } : {}) }];
       else if (config.url === "/locations") data = [{ id: 2, name: "Jesús María", timezone: "America/Lima", is_active: true }];
-      else if (config.url === "/charges/7/payments") data = payments;
-      else if (config.url !== "/payments") throw new Error(`Unexpected GET ${config.url}`);
+      else if (config.url === "/payments") data = payments;
+      else throw new Error(`Unexpected GET ${config.url}`);
       return { status: 200, statusText: "OK", headers: new AxiosHeaders(), config, data };
     };
     await act(async () => { view = create(createElement(CashPage)); });
@@ -73,6 +73,99 @@ describe("Caja: vista en modo real", () => {
 
   const ok = (config: InternalAxiosRequestConfig) => ({ status: 201, statusText: "Created", headers: new AxiosHeaders(), config, data: { ...payment, amount: String(JSON.parse(config.data).amount) } });
   const event = { preventDefault() {} };
+
+  it("comparte una carga acotada entre Caja y Conciliación con 500 cargos sin cambiar filas ni totales", async () => {
+    const charges = Array.from({ length: 500 }, (_, index) => ({
+      ...initialCharge, id: index + 1, patient_name: `Paciente ${index + 1}`,
+      paid: "125.00", outstanding: "125.00",
+    }));
+    const payments = charges.flatMap((charge) => [
+      { ...payment, id: charge.id * 2 - 1, charge_id: charge.id, amount: "100.00",
+        method: charge.id % 2 ? "yape" : "efectivo", reference: `OP-${charge.id}` },
+      { ...payment, id: charge.id * 2, charge_id: charge.id, amount: "25.00", verification_status: "verified" },
+    ]).reverse();
+    const requests: string[] = [];
+    client.http.defaults.adapter = async config => {
+      requests.push(config.url!);
+      let data: unknown;
+      if (config.url === "/charges") data = charges;
+      else if (config.url === "/locations") data = [{ id: 2, name: "Jesús María", timezone: "America/Lima", is_active: true }];
+      else if (config.url === "/payments") data = payments.filter(row =>
+        !config.params?.verification_status || row.verification_status === config.params.verification_status);
+      else if (/^\/charges\/\d+\/payments$/.test(config.url!)) {
+        const chargeId = Number(config.url!.split("/")[2]);
+        data = payments.filter(row => row.charge_id === chargeId).sort((a, b) => a.id - b.id);
+      } else throw new Error(`Unexpected request ${config.url}`);
+      return { status: 200, statusText: "OK", headers: new AxiosHeaders(), config, data };
+    };
+    await act(async () => { view = create(createElement(CashPage)); });
+    const screen = view!;
+    const rows = () => screen.root.findByType("tbody").findAllByType("tr");
+    const kpis = () => screen.root.findAllByProps({ className: "kpi-card__copy" })
+      .map(node => node.findByType("strong").children.join(""));
+    expect(rows()).toHaveLength(500);
+    expect(kpis()).toEqual(["S/ 12,500.00", "S/ 50,000.00", "S/ 62,500.00", "500"]);
+    expect(rows().map(row => row.findAllByType("strong")[0]!.children.join("")))
+      .toEqual(charges.map(charge => charge.patient_name));
+    const clickTab = async (label: string) => act(async () => {
+      screen.root.findAllByType("button").find(button => button.children.includes(label))!.props.onClick();
+    });
+    await clickTab("Conciliación");
+    expect(rows()).toHaveLength(250);
+    expect(rows().map(row => row.findByProps({ className: "table-context" }).findByType("strong").children.join("")))
+      .toEqual(charges.filter(charge => charge.id % 2).reverse().map(charge => charge.patient_name));
+    expect(requests.length).toBeLessThanOrEqual(5);
+    expect(requests).toHaveLength(3);
+    expect(requests.filter(url => url === "/payments")).toHaveLength(1);
+    expect(requests.some(url => /^\/charges\/\d+\/payments$/.test(url))).toBe(false);
+    const initialRequestCount = requests.length;
+    await clickTab("Cobros");
+    expect(rows()).toHaveLength(500);
+    expect(kpis()).toEqual(["S/ 12,500.00", "S/ 50,000.00", "S/ 62,500.00", "500"]);
+    await clickTab("Conciliación");
+    expect(rows()).toHaveLength(250);
+    expect(requests).toHaveLength(initialRequestCount);
+  });
+
+  it("permite reintentar un error del listado y comparte la petición en curso al cambiar de pestaña", async () => {
+    let fail = true;
+    let release!: () => void;
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    const get = vi.fn(async (config: InternalAxiosRequestConfig) => {
+      let data: unknown;
+      if (config.url === "/charges") data = [initialCharge];
+      else if (config.url === "/locations") data = [{ id: 2, name: "Jesús María", timezone: "America/Lima", is_active: true }];
+      else if (config.url === "/payments") {
+        if (fail) throw new AxiosError("Too Many Requests", "ERR_BAD_REQUEST", config, undefined, {
+          status: 429, statusText: "Too Many Requests", headers: new AxiosHeaders(), config,
+          data: { error: { code: "RATE_LIMITED", message: "Intenta nuevamente más tarde." } },
+        });
+        await gate;
+        data = [{ ...payment, method: "yape", reference: "OP-RETRY" }];
+      } else throw new Error(`Unexpected GET ${config.url}`);
+      return { status: 200, statusText: "OK", headers: new AxiosHeaders(), config, data };
+    });
+    client.http.defaults.adapter = get;
+    await act(async () => { view = create(createElement(CashPage)); });
+    const screen = view!;
+    expect(text(screen.toJSON())).toContain("Intenta nuevamente más tarde.");
+    expect(get).toHaveBeenCalledTimes(3);
+    const click = async (label: string) => act(async () => {
+      screen.root.findAllByType("button").find(button => button.children.includes(label))!.props.onClick();
+    });
+    fail = false;
+    await click("Reintentar");
+    await click("Conciliación");
+    expect(get).toHaveBeenCalledTimes(6);
+    await act(async () => { release(); });
+    expect(screen.root.findByType("tbody").findAllByType("tr")).toHaveLength(1);
+    expect(text(screen.toJSON())).toContain("OP-RETRY");
+    await click("Cobros");
+    expect(get).toHaveBeenCalledTimes(6);
+    expect(screen.root.findAllByProps({ className: "kpi-card__copy" })
+      .map(node => node.findByType("strong").children.join("")))
+      .toEqual(["S/ 0.00", "S/ 50.00", "S/ 150.00", "1"]);
+  });
 
   it("envía el cobro con Idempotency-Key, muestra Pago registrado y refresca el saldo del backend", async () => {
     const post = vi.fn(async (config: InternalAxiosRequestConfig) => ok(config));
