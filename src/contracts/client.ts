@@ -877,3 +877,15 @@ export async function claimHandoff(handoffId: number, idempotencyKey: string): P
   const response = await http.post<HandoffRead>(`/handoffs/${handoffId}/claim`, null, { headers: { "Idempotency-Key": idempotencyKey } });
   return { data: response.data, replayed: isReplay(response.headers) };
 }
+
+// E2 O1 boundary. The checked-in generated contract has no /reminders paths.
+// O3: replace these guards with generated-schema aliases and typed http calls
+// after copying the integrator's O2 OpenAPI and running openapi:generate.
+// Until then, fail closed: never call a route absent from the contract.
+function reminderContractPending(): never {
+  throw new ApiError(0, "REMINDERS_CONTRACT_PENDING", "Los recordatorios todavía no están disponibles en esta versión. Recepción puede continuar usando la agenda.");
+}
+export async function getReminderCoverage(_query: { locationId?: number; from: string; to: string }): Promise<unknown> { return reminderContractPending(); }
+export async function prepareReminderBatch(_locationId: number, _key: string): Promise<unknown> { return reminderContractPending(); }
+export async function createTelegramReminderLink(_patientId: number, _key: string): Promise<unknown> { return reminderContractPending(); }
+export async function optOutReminderContact(_contactId: number, _key: string): Promise<unknown> { return reminderContractPending(); }

@@ -332,3 +332,74 @@ las tres aprobaciones cumplen el replay, pero repetir el claim con una clave nue
 y el mismo humano devuelve 200 y crea otro `command_receipts` (9 → 10 en el ensayo).
 La suite devuelve FAIL; requiere resolver ese comportamiento en backend antes de
 certificar los dos ensayos con exit 0. Se mantiene la exigencia de 409 del brief.
+
+## E2 · Recordatorios Telegram · entrega O1
+
+FE1 deja la presentación y las pruebas contra §2 del plan aprobado. El OpenAPI
+actual aún no tiene `/reminders/*`: el transporte falla con
+`REMINDERS_CONTRACT_PENDING` sin llamar rutas inexistentes; en mocks responde
+`DEMO_UNAVAILABLE`. En O3, copiar el OpenAPI **generado por el integrador**, ejecutar
+`openapi:generate`, y sustituir los cuatro guardas de `src/contracts/client.ts`
+por funciones con tipos generados. No editar `src/contracts/api.ts` a mano.
+
+El journey `recordatorios` tiene una fase ejecutable de preparación, autorización,
+despacho con reloj y cobertura. **Su gate permanece PENDING_O3 y sale 1** incluso
+si mide 30/30: faltan el vínculo/consentimiento y las respuestas mediante updates
+firmados, los escenarios adversariales y contar las llamadas del transporte falso
+por aviso en SQL. No certifica H1 ni marca esos casos como PASS. Completar esa fase
+cuando BE5/BE6/M1 publiquen sus fixtures y la proyección de llamadas falsas.
+
+Usar un stack aislado con PostgreSQL `127.0.0.1:5434`, base
+`odontoflow_test_fe_e2_fe1` creada para este ensayo y eliminada al terminar,
+frontend `3120`, backend `8120`, `NEXT_PUBLIC_USE_MOCKS=false` y
+`TELEGRAM_TRANSPORT=fake` en el servidor **y** el worker. Nunca iniciar o detener
+contenedores. Sembrar un `--run-id` nuevo con `seed_e2_recordatorios.py
+--scenario nominal|adversarial --now <t0>`. No reutilizar un lote consumido.
+
+El env privado 0600 del run-dir incluye `DATABASE_URL`, `APP_ENV=development`,
+`NEXT_PUBLIC_USE_MOCKS=false`, `TELEGRAM_TRANSPORT=fake`, `BFF_ACCESS_CODE`,
+`E2_BACKEND_DIR` absoluto y opcionalmente `E2_BACKEND_PYTHON`. El token del bot y
+el secreto del webhook van **solo en el entorno del proceso**, nunca en ese archivo,
+la evidencia o los logs. No usar chats reales. Los enlaces y callback_data deben
+permanecer en memoria durante O3, sin incluirlos en screenshots ni snapshots.
+
+Hasta conocer el formato de salida de M1, el runner usa un manifiesto explícito
+`<run-dir>/recordatorios-seed.json` (o `--seed-summary` absoluto), construido con
+los IDs reales que M1 produjo. No es un esquema atribuido a M1:
+
+```json
+{
+  "run_id": "ensayo-e2-nuevo",
+  "scenario": "nominal",
+  "now": "2026-10-19T12:00:00Z",
+  "organization_id": 1,
+  "persona": "Nombre de recepción sintética configurada en el BFF",
+  "appointments": [
+    {"appointment_id": 1, "location_id": 1, "patient_id": 1}
+  ]
+}
+```
+
+Debe contener exactamente diez citas distintas en las dos sedes. El ejemplo es
+solo de forma; completarlo con los diez IDs de M1, nunca con IDs inventados. El
+runner contrasta los IDs/pacientes/sedes contra SQL y `/me`. La fase ejecutable
+actual requiere los vínculos con consentimiento ya registrados por las APIs del
+backend; no los fabrica ni modifica SQL para simular consentimiento.
+
+```bash
+python3 /ruta/absoluta/frontend/e2e/journeys.py \
+  --run-dir /ruta/absoluta/ensayo-e2 --journeys recordatorios --dry-run
+npm --prefix /ruta/absoluta/frontend run e2e:journeys -- \
+  --base http://127.0.0.1:3120 --api http://127.0.0.1:8120 \
+  --run-dir /ruta/absoluta/ensayo-e2 --journeys recordatorios --replay
+```
+
+El dry run rotula los doce casos `NOT_RUN`; valida solo el manifiesto. La corrida
+nominal requiere 30/30 aceptados en ventana. El adversarial debe informar su
+porcentaje real incluyendo `missed`, `late`, `failed` e `uncertain` en el
+denominador elegible, y comprobar ❌3, ✅4, ✅5, ❌6, ❌7, ❌8, ❌9 y ❌11 por navegador
+o API. Conservar omisiones y fusiones con motivo fuera del denominador. Una fila
+`accepted` o un único evento de auditoría no demuestran por sí solos una única
+llamada al proveedor; la certificación requiere el conteo de la tabla del
+transporte falso de BE6. Queda pendiente en O3 adaptar el manifiesto al JSON final
+de M1 y habilitar replay solo después de completar todas las aserciones.

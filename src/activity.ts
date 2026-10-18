@@ -71,6 +71,23 @@ export async function loadClinicLocations(): Promise<Map<number, ClinicLocation>
 
 // --- Actividad --------------------------------------------------------------------
 
+export const E2_ACTIVITY_LABEL: Record<string, string> = {
+  "appointment.patient_confirmed": "registró la confirmación del paciente",
+  "reminder.authorized": "autorizó un recordatorio para su hora",
+  "reminder.accepted": "registró la aceptación de un recordatorio por Telegram",
+  "reminder.missed": "registró un recordatorio vencido sin envío",
+  "reminder.uncertain": "registró un envío incierto que requiere revisión",
+  "reminder.invalidated": "invalidó un recordatorio por un cambio en la cita",
+  "reminder.suppressed": "suprimió un recordatorio",
+  "reminder.reply_received": "registró la respuesta del paciente",
+  "reminder.reply_rejected": "rechazó un botón que ya no es válido",
+  "reminder_batch.expired": "cerró un lote de recordatorios vencido",
+  "reminder_contact.opted_in": "registró el consentimiento para recordatorios",
+  "reminder_contact.opted_out": "registró la baja de recordatorios en toda la clínica",
+  "reminder_change_request.opened": "abrió una solicitud de cambio para recepción",
+  "reminder_change_request.resolved": "resolvió una solicitud de cambio",
+};
+
 const ACTOR_KINDS: readonly ActorKind[] = ["human", "agent", "integration", "system"];
 /** Agent principals are named `airy-<agent_key>` by the backend. */
 const AGENT_PRINCIPAL = /^airy-([a-z_]+)$/;
@@ -89,10 +106,10 @@ export function toUiActivityItem(item: ActivityItem, locations: ReadonlyMap<numb
   // `summary` is "<actor_display_name> <verb>" for a templated action and
   // "<actor_display_name>: <action>" otherwise (app/observability/activity.py).
   const prefix = `${item.actor_display_name} `;
-  const verb = item.summary.startsWith(prefix) ? item.summary.slice(prefix.length) : null;
+  const verb = E2_ACTIVITY_LABEL[item.action] ?? (item.summary.startsWith(prefix) ? item.summary.slice(prefix.length) : null);
   const actorLabel = actorKind === "agent"
     ? agentLabel ? `El agente de ${agentLabel}` : `El agente ${item.actor_display_name}`
-    : item.actor_display_name;
+    : actorKind === "integration" && item.actor_display_name === "airi-telegram" ? "Telegram de la clínica" : item.actor_display_name;
   const location = item.location_id == null ? undefined : locations.get(item.location_id);
   return {
     key: `${item.source}:${item.id}`,

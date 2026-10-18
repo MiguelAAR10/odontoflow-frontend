@@ -12,7 +12,7 @@ import re
 import shlex
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from decimal import Decimal
 from statistics import median
 from threading import Barrier
@@ -22,7 +22,8 @@ from zoneinfo import ZoneInfo
 
 
 E1 = 'cobro-verificado'
-JOURNEYS = ('J1', 'J2', 'J3', 'J4', 'J5', 'J6', E1)
+E2 = 'recordatorios'
+JOURNEYS = ('J1', 'J2', 'J3', 'J4', 'J5', 'J6', E1, E2)
 
 
 def e1_seed(path):
@@ -44,6 +45,24 @@ def e1_seed(path):
     for route in ('manual', 'airi'):
         check(len([r for r in seed['lotes']['medicion'] if r['ruta'] == route]) == 10,
               'M1 needs 10 manual and 10 AIRI measurement payments')
+    return seed
+
+
+def reminders_seed(path):
+    """Runner manifest, assembled from M1's real IDs; no fabricated patients."""
+    seed = json.loads(path.read_text())
+    check(re.fullmatch(r'[A-Za-z0-9_-]{1,32}', seed['run_id']), 'Invalid E2 run_id')
+    check(seed['scenario'] in ('nominal', 'adversarial'), 'Unknown E2 scenario')
+    check(datetime.fromisoformat(seed['now'].replace('Z', '+00:00')).tzinfo is not None,
+          'E2 now must include a timezone')
+    check(type(seed['organization_id']) is int and seed['organization_id'] > 0, 'Missing E2 organization')
+    check(isinstance(seed['persona'], str) and seed['persona'].strip(), 'Missing E2 reception persona')
+    rows = seed['appointments']
+    check(len(rows) == 10 and len({row['appointment_id'] for row in rows}) == 10, 'E2 needs ten distinct appointments')
+    for row in rows:
+        check(all(type(row[key]) is int and row[key] > 0 for key in ('appointment_id', 'location_id', 'patient_id')),
+              'Invalid E2 appointment IDs')
+    check(len({row['location_id'] for row in rows}) == 2, 'E2 needs both sites')
     return seed
 
 
@@ -131,6 +150,7 @@ class Journeys:
         check(args.measure_csv is not None or not (self.root / 'journeys.json').exists(),
               'Use a new RUN_ID, not an existing journey run')
         self.e1 = E1 in args.journeys.split(',') or args.measure_csv is not None
+        self.e2 = E2 in args.journeys.split(',')
         self.TABLES = dict(self.TABLES)
         if self.e1:
             from sqlalchemy.engine import make_url
@@ -145,6 +165,17 @@ class Journeys:
                     check(self.env.get(key), f'Missing E1 fixture setting: {key}')
                 other = e1_seed(args.other_seed_summary or self.root / 'e1-other-seed.json')
                 check(other['organization_id'] != self.seed['organization_id'], 'Other-organization fixture is the same tenant')
+        if self.e2:
+            from sqlalchemy.engine import make_url
+            database = make_url(self.env['DATABASE_URL'])
+            check(database.host in ('localhost', '127.0.0.1') and database.port == 5434 and
+                  database.database == 'odontoflow_test_fe_e2_fe1', 'E2 requires its isolated :5434 FE1 database')
+            check(self.env.get('NEXT_PUBLIC_USE_MOCKS') == 'false', 'E2 requires no mocks')
+            check(self.env.get('TELEGRAM_TRANSPORT') == 'fake', 'E2 requires fake Telegram transport')
+            check(not self.env.get('TELEGRAM_BOT_TOKEN') and not self.env.get('TELEGRAM_WEBHOOK_SECRET'),
+                  'E2 Telegram credentials belong only in the process environment, never the run-dir env file')
+            self.reminders = reminders_seed(args.seed_summary or self.root / 'recordatorios-seed.json')
+            self.TABLES.update(reminders='reminder_items', changes='reminder_change_requests', audit='audit_events')
         self.engine = create_engine(self.env['DATABASE_URL'])
         self.shots = self.root / 'shots'
         self.shots.mkdir(exist_ok=True)
@@ -997,6 +1028,101 @@ with SessionLocal() as session:
         self.engine.dispose()
         return int(not result['cumple'])
 
+    def recordatorios(self):
+        """O1's executable preparation/measurement lane; O3 is the certification gate.
+
+        Link/consent fixtures and fake-provider projection must come from BE/M1.
+        A partial lane records NOT_RUN and fails, never certifies the missing cases.
+        """
+        from playwright.sync_api import expect
+        seed = self.reminders
+        result = self.result['journeys'][E2]
+        result.update(run_id=seed['run_id'], scenario=seed['scenario'],
+                      cases={str(number): 'NOT_RUN' for number in range(1, 13)},
+                      provider_send_count='NOT_VERIFIED', certification='PENDING_O3')
+        contract = self.page.request.get(self.args.api.rstrip('/') + '/openapi.json')
+        check(contract.ok, 'E2 OpenAPI is unavailable')
+        check('/reminders/coverage' in contract.json().get('paths', {}),
+              'O2 OpenAPI fan-in is pending: E2 routes are unavailable')
+        self.choose(seed['persona'])
+        me = self.get('/me')
+        check(me['organization']['id'] == seed['organization_id'], 'E2 persona belongs to another organization')
+        ids = [row['appointment_id'] for row in seed['appointments']]
+        actual = self.sql('SELECT id, patient_id, location_id FROM appointments WHERE id = ANY(:ids)', {'ids': ids})
+        check({(r['id'], r['patient_id'], r['location_id']) for r in actual} ==
+              {(r['appointment_id'], r['patient_id'], r['location_id']) for r in seed['appointments']},
+              'E2 manifest does not match the isolated database')
+        backend = Path(self.env['E2_BACKEND_DIR'])
+        python = Path(self.env.get('E2_BACKEND_PYTHON', str(backend / '.venv/bin/python')))
+        check(backend.is_absolute() and python.is_absolute() and python.is_file(), 'Missing absolute E2 backend/worker paths')
+        # O1 does not know BE5's consent callback or BE6's fake-send table shape.
+        # Require actual consent in SQL, never manufacture it in the browser.
+        contacts = self.sql("SELECT patient_id FROM reminder_contacts WHERE organization_id=:org AND status='linked' AND consent_status='opted_in'",
+                            {'org': seed['organization_id']})
+        check({r['patient_id'] for r in contacts} >= {r['patient_id'] for r in seed['appointments']},
+              'O3 prerequisite: link the ten synthetic patients and record consent through the signed Telegram webhook')
+        result['cases']['1'] = 'RUNNING'
+        proposals = []
+        for location in sorted({row['location_id'] for row in seed['appointments']}):
+            self.go('/agenda')
+            self.page.get_by_role('combobox', name='Sede', exact=True).select_option(str(location))
+            prepare = self.page.get_by_role('button', name='Preparar recordatorios', exact=True)
+            with self.page.expect_response(lambda response: response.request.method == 'POST' and
+                                           urlsplit(response.url).path.endswith('/reminders/batches')) as pending:
+                prepare.evaluate('(button) => { button.click(); button.click(); }')
+            response = pending.value
+            check(response.status in (200, 201), 'E2 batch preparation failed')
+            receipt = response.json()
+            proposal = receipt['proposal']
+            proposals.append(proposal['id'])
+            self.page.get_by_role('link', name='Revisar lote en Bandeja', exact=True).click()
+            expect(self.page.get_by_role('article', name='Lote de recordatorios')).to_be_visible()
+            self.snap(E2, f'batch-{location}')
+            # Approval must precede the first due time; stale fixtures fail here.
+            with self.page.expect_response(lambda response: response.request.method == 'POST' and
+                                           urlsplit(response.url).path.endswith(f"/proposals/{proposal['id']}/approve")) as pending:
+                self.page.get_by_role('button', name='Autorizar envíos futuros', exact=True).evaluate(
+                    '(button) => { button.click(); button.click(); }')
+            check(pending.value.status == 200, 'E2 authorization failed')
+            expect(self.page.get_by_role('status').filter(has_text='Envíos futuros autorizados').first).to_be_visible()
+        result['cases']['1'] = 'PASS'
+        due = self.sql('SELECT DISTINCT due_at FROM reminder_items WHERE appointment_id = ANY(:ids) ORDER BY due_at', {'ids': ids})
+        check(due, 'No real reminder due times to run')
+        for row in due:
+            now = (row['due_at'] + timedelta(seconds=1)).isoformat()
+            process = subprocess.run([str(python), '-m', 'app.reminders.worker', '--once', '--now', now],
+                                     cwd=backend, env={**os.environ, **self.env, 'TELEGRAM_TRANSPORT': 'fake'},
+                                     capture_output=True, timeout=60)
+            check(process.returncode == 0, 'E2 fake worker failed; inspect its private process logs')
+        first = datetime.fromisoformat(seed['now'].replace('Z', '+00:00'))
+        query = f"from={quote(first.isoformat())}&to={quote((first + timedelta(days=7)).isoformat())}"
+        totals = {}
+        for location in sorted({row['location_id'] for row in seed['appointments']}):
+            data = self.get(f'/reminders/coverage?location_id={location}&{query}')
+            for kind, counts in data['totals'].items():
+                bucket = totals.setdefault(kind, {'eligible_due': 0, 'accepted_in_window': 0, 'missed': 0, 'late': 0, 'uncertain': 0, 'failed': 0})
+                for name in bucket:
+                    bucket[name] += counts[name]
+            self.go('/agenda')
+            self.page.get_by_role('combobox', name='Sede', exact=True).select_option(str(location))
+            self.page.reload(wait_until='networkidle')
+            expect(self.page.get_by_role('region', name='Cobertura de recordatorios')).to_be_visible()
+            self.snap(E2, f'coverage-{location}')
+        for counts in totals.values():
+            counts['percentage'] = (100 * counts['accepted_in_window'] / counts['eligible_due']) if counts['eligible_due'] else None
+        result['coverage_by_type'] = totals
+        accepted = sum(row['accepted_in_window'] for row in totals.values())
+        eligible = sum(row['eligible_due'] for row in totals.values())
+        result.update(accepted_in_window=accepted, eligible_due=eligible,
+                      percentage=100 * accepted / eligible if eligible else None, proposal_ids=proposals)
+        if seed['scenario'] == 'nominal':
+            check(eligible == accepted == 30, 'Nominal E2 must be 30/30; do not remove missed notices from the denominator')
+            result['cases']['2'] = 'PASS'
+        # No certification until O3 adds the backend's real fake-call projection,
+        # signed webhook callbacks, clock scenarios and races. Do not count an
+        # accepted reminder row as proof of one actual provider invocation.
+        check(False, 'O3 pending: signed patient replies, adversarial cases 3-9/11, and per-notice SQL fake-send count have not run')
+
     def replay(self):
         before = self.snapshot()
         results = []
@@ -1030,6 +1156,7 @@ with SessionLocal() as session:
         from playwright.sync_api import sync_playwright
         selected = self.args.journeys.split(',')
         check(all(x in JOURNEYS for x in selected), 'Unknown journey')
+        check(E2 not in selected or selected == [E2], 'Run E2 alone with its fresh isolated seed')
         check(E1 not in selected or selected == [E1], 'Run E1 alone with its fresh M1 pruebas batch')
         if 'J3' in selected and 'J1' not in selected:
             selected.append('J1')
@@ -1111,7 +1238,15 @@ def main():
         for path in (args.seed_summary, args.other_seed_summary, args.measure_csv):
             check(path is None or path.is_absolute(), 'E1 input paths must be absolute')
         if args.dry_run:
-            check(args.journeys == E1 and not args.measure_csv, '--dry-run selects cobro-verificado alone')
+            if args.journeys == E2:
+                check(not args.measure_csv, 'E2 does not use E1 measurement CSV')
+                seed = reminders_seed(args.seed_summary or args.run_dir / 'recordatorios-seed.json')
+                print(json.dumps({'mode': 'DRY_RUN', 'journey': E2, 'run_id': seed['run_id'],
+                                  'scenario': seed['scenario'], 'appointment_ids': [row['appointment_id'] for row in seed['appointments']],
+                                  'cases': {str(number): 'NOT_RUN' for number in range(1, 13)},
+                                  'certification': 'PENDING_O3'}, indent=2))
+                return 0
+            check(args.journeys == E1 and not args.measure_csv, '--dry-run selects one E1 or E2 journey')
             seed = e1_seed(args.seed_summary or args.run_dir / 'e1-seed.json')
             print(json.dumps({'mode': 'DRY_RUN', 'journey': E1, 'run_id': seed['run_id'],
                               'pruebas_ids': [r['payment_id'] for r in seed['lotes']['pruebas']],

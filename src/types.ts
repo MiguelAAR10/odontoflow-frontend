@@ -50,6 +50,8 @@ export interface Appointment {
   startUtc?: string;
   endUtc?: string;
   timeZone?: string;
+  patientConfirmedAt?: string | null;
+  version?: number;
 }
 
 /** A recorded payment against a charge (PaymentRead mapped). */
@@ -413,7 +415,7 @@ export interface ApprovalItem {
   key: string;
   source: ApprovalSource;
   id: number;
-  kind: InboxKind;
+  kind: InboxKind | "reminder_batch";
   category: ApprovalCategory;
   categoryLabel: string;
   agentLabel: string | null;
@@ -435,6 +437,7 @@ export interface ApprovalItem {
   errorCode: string | null;
   /** Backend presentation for kinds whose decision needs the full AIRI card. */
   card?: Card;
+  reminderBatch?: import("./reminders").ReminderBatchView;
 }
 
 export type ProposalDecision = "approve" | "decline";
