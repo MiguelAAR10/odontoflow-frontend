@@ -22,6 +22,8 @@ import { AgentLabel } from "../catalog/AgentLabel";
 import { Badge } from "../components/Badge";
 import { Button } from "../components/Button";
 import { usePersona } from "../components/PersonaContext";
+import { useShellContext } from "../components/shell/ShellContext";
+import { hasLocationPermissions } from "../session";
 import type { ActivityEntry, ActorKind, AgentRunEntry, ClinicLocation, Tone } from "../types";
 import type { AgentRunKey } from "../contracts/client";
 
@@ -37,10 +39,12 @@ export function ActivityPage() {
 
 function RealActivityPage() {
   const { identity, loading } = usePersona();
+  const { locationId } = useShellContext();
   // null until the catalog read settles, so the feed is read once with sede names.
   const [locations, setLocations] = useState<Map<number, ClinicLocation> | null>(null);
   const human = identity?.principalType === "human";
-  const allowed = hasPermissions(identity, ["proposals.read"]);
+  const allowed = hasLocationPermissions(identity, ["proposals.read"], locationId ? Number(locationId) : undefined);
+  const canReadRuns = hasPermissions(identity, ["proposals.read"]);
 
   useEffect(() => {
     let active = true;
@@ -58,7 +62,7 @@ function RealActivityPage() {
       : !allowed ? <p className="approvals-notice" role="note">Tu rol no permite ver la actividad de la clínica.</p>
       : <div className="activity-layout">
         <ActivityFeed locations={locations} />
-        <RunHistory />
+        {canReadRuns && <RunHistory />}
       </div>}
   </section>;
 }

@@ -235,3 +235,13 @@ describe("FE2 real-mode adapters (mocked axios)", () => {
     });
   });
 });
+
+it("renders every E2 event in Spanish even when the backend summary contains its raw code", async () => {
+  const { E2_ACTIVITY_LABEL, toUiActivityItem, activitySentence } = await import("../src/activity");
+  for (const action of Object.keys(E2_ACTIVITY_LABEL)) {
+    const entry = toUiActivityItem(row({ action, summary: `Recepción: ${action}`, actor_kind: "human", actor_display_name: "Recepción", agent_key: null }), LOCATIONS);
+    expect(activitySentence(entry)).toContain("Recepción ");
+    expect(activitySentence(entry)).not.toContain(action);
+    expect(entry.locationName).toBe("ODONTO SMART Lince");
+  }
+});

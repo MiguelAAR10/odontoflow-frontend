@@ -877,3 +877,29 @@ export async function claimHandoff(handoffId: number, idempotencyKey: string): P
   const response = await http.post<HandoffRead>(`/handoffs/${handoffId}/claim`, null, { headers: { "Idempotency-Key": idempotencyKey } });
   return { data: response.data, replayed: isReplay(response.headers) };
 }
+
+// --- E2 reminders (human decisions, future sends) ------------------------------
+export type ReminderCoverage = components["schemas"]["ReminderCoverage"];
+export type ReminderBatchReceipt = components["schemas"]["ReminderBatchReceipt"];
+export type ReminderChangeRequestRead = components["schemas"]["ReminderChangeRequestRead"];
+export type TelegramLinkRead = components["schemas"]["TelegramLinkRead"];
+export type ReminderContactRead = components["schemas"]["ReminderContactRead"];
+
+export async function getReminderCoverage(query: { locationId: number; from: string; to: string }): Promise<ReminderCoverage> {
+  const params: paths["/reminders/coverage"]["get"]["parameters"]["query"] = { location_id: query.locationId, from: query.from, to: query.to };
+  return (await http.get<ReminderCoverage>("/reminders/coverage", { params })).data;
+}
+export async function prepareReminderBatch(locationId: number, key: string): Promise<ReminderBatchReceipt> {
+  const body: components["schemas"]["BatchCreate"] = { location_id: locationId, horizon_hours: 72 };
+  return (await http.post<ReminderBatchReceipt>("/reminders/batches", body, { headers: { "Idempotency-Key": key } })).data;
+}
+export async function createTelegramReminderLink(patientId: number, key: string, locationId?: number): Promise<TelegramLinkRead> {
+  const params: NonNullable<paths["/reminders/contacts/{patient_id}/telegram-link"]["post"]["parameters"]["query"]> = {};
+  if (locationId !== undefined) params.location_id = locationId;
+  return (await http.post<TelegramLinkRead>(`/reminders/contacts/${patientId}/telegram-link`, null, { params, headers: { "Idempotency-Key": key } })).data;
+}
+export async function optOutReminderContact(contactId: number, key: string, locationId?: number): Promise<ReminderContactRead> {
+  const params: NonNullable<paths["/reminders/contacts/{contact_id}/opt-out"]["post"]["parameters"]["query"]> = {};
+  if (locationId !== undefined) params.location_id = locationId;
+  return (await http.post<ReminderContactRead>(`/reminders/contacts/${contactId}/opt-out`, null, { params, headers: { "Idempotency-Key": key } })).data;
+}

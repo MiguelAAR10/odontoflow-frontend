@@ -104,7 +104,7 @@ export async function proxyToBackend(
 // --- guard: what the browser may reach, and as whom ----------------------------
 
 export interface BrowserRoute {
-  method: "GET" | "POST";
+  method: "GET" | "POST" | "PATCH";
   /** Backend path without the leading slash; `:id` matches one id segment. */
   path: string;
 }
@@ -139,6 +139,12 @@ export const BROWSER_ROUTES: readonly BrowserRoute[] = [
   { method: "POST", path: "appointments/:id/cancel" },
   { method: "POST", path: "scheduling/appointment-proposals/confirm" },
   { method: "POST", path: "scheduling/appointment-proposals/decline" },
+  { method: "GET", path: "reminders/coverage" },
+  { method: "POST", path: "reminders/batches" },
+  { method: "POST", path: "reminders/contacts/:id/telegram-link" },
+  { method: "POST", path: "reminders/contacts/:id/opt-out" },
+  { method: "PATCH", path: "reminders/items/:id" },
+  { method: "GET", path: "reminders/change-requests" },
   { method: "GET", path: "visits" },
   { method: "POST", path: "visits" },
   { method: "GET", path: "visits/:id" },

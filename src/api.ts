@@ -173,6 +173,8 @@ export function toUiAppointment(
     doctor: item.practitioner_name,
     branch: item.location_name,
     status: toUiStatus(item.state),
+    patientConfirmedAt: item.patient_confirmed_at ?? null,
+    version: item.version,
     leadId: item.lead_id,
     serviceId: item.service_id,
     locationId: item.location_id,
@@ -1498,3 +1500,5 @@ export {
   toStaffIdentity,
   type PersonaSession,
 } from "./session";
+
+export { loadReminderCoverage, prepareReminders, linkTelegramReminders, optOutReminders } from "./reminders";

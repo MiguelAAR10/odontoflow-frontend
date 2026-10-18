@@ -415,3 +415,85 @@ las tres aprobaciones cumplen el replay, pero repetir el claim con una clave nue
 y el mismo humano devuelve 200 y crea otro `command_receipts` (9 → 10 en el ensayo).
 La suite devuelve FAIL; requiere resolver ese comportamiento en backend antes de
 certificar los dos ensayos con exit 0. Se mantiene la exigencia de 409 del brief.
+
+## E2 · Recordatorios Telegram · O3
+
+El snapshot se copia del fan-in backend y `src/contracts/api.ts` se regenera con
+`openapi:generate`. Los clientes usan tipos generados; en modo mock todas las
+operaciones de recordatorios devuelven `DEMO_UNAVAILABLE`.
+
+El BFF permite exclusivamente las seis rutas E2 autorizadas: GET cobertura,
+POST lotes, POST vínculo, POST baja, PATCH aviso y GET solicitudes de cambio.
+Exige identidad humana y origen válido en las mutaciones; `/internal/*`, el
+webhook y las demás operaciones de recordatorios siguen fuera del navegador.
+El contrato del integrador con BE8 (`b6dbf91`) está copiado y regenerado. Cobertura proyecta
+`contact.contact_id`; el recibo del vínculo proyecta `contact_id` nullable. Agenda
+usa ese identificador para la baja manual, sin requerir antes una solicitud de
+cambio y sin sustituirlo por `patient_id`. El ensayo nominal prueba esa baja al
+terminar los treinta envíos y medir su cobertura.
+
+Preparar un stack aislado en development, sin mocks, frontend 3120 y backend 8120.
+La base exclusiva es `odontoflow_test_fe_e2_fe1` o ese prefijo con un sufijo único,
+siempre en `127.0.0.1:5434`; no tocar contenedores ni bases existentes. Sembrar con
+`seed_e2_recordatorios.py --run-id <nuevo> --scenario nominal|adversarial --now <t0>`.
+Usar una base nueva por escenario. Toda la persistencia, incluida memoria, apunta
+a esa única base. Conservar bases y evidencia para revisión; no borrarlas en el runner.
+
+Guardar el JSON final de M1 sin transformar en `<run-dir>/recordatorios-seed.json`
+o indicarlo con `--seed-summary /ruta/absoluta/seed.json`. Se validan
+`appointment_ids`, `appointments_by_label`, `patient_ids`, `contact_ids`,
+`location_ids` y `reception_ids`: diez citas nominales de P; nueve adversariales
+con P/Q/R. No volver a escribir nombres, citas ni personas en otro manifiesto.
+
+El env privado 0600 del run-dir contiene `DATABASE_URL`, `APP_ENV=development`,
+`NEXT_PUBLIC_USE_MOCKS=false`, `TELEGRAM_TRANSPORT=fake`, `BFF_ACCESS_CODE`,
+`E2_BACKEND_DIR`, `E2_BACKEND_PYTHON` (ambos absolutos), `E2_NOW` (el mismo t0 de
+M1 con zona), `E2_LINCE_PERSONA` y `E2_MIRAFLORES_PERSONA` (nombres reales del
+selector BFF para los humanos de M1). El backend usa `TELEGRAM_BOT_USERNAME`
+ficticio. `TELEGRAM_WEBHOOK_SECRET` se comparte entre API y runner exclusivamente
+por el entorno del proceso; no se necesita `TELEGRAM_BOT_TOKEN` con transporte falso.
+Nunca poner secretos de Telegram en env del run-dir, archivos, capturas o logs.
+
+El runner vincula a P desde su cita y manda Start/consentimiento al webhook firmado;
+observa los botones del worker por un socket privado en memoria. Ejecuta el worker
+real `--once --now` con su transporte falso y conserva el registro SQL
+`audit_events.action=reminder.fake_transport` para contar llamadas por aviso. Los
+enlaces y callbacks nunca se escriben en la evidencia.
+
+Para que la cobertura HTTP mida los vencimientos futuros simulados, el stack de
+prueba debe inyectar el mismo reloj en cobertura y preparación/aprobación, además
+de las respuestas si se comprueba caducidad. `E2_CLOCK_FILE`, absoluto, permite al
+runner publicar el instante antes de cada tick; **no es una opción del servidor de
+producción**. El arnés local debe conectar ese archivo con las funciones de reloj
+del backend, exclusivamente en development con transporte falso y base de prueba.
+Sin esa inyección, el worker puede registrar aceptación futura pero cobertura
+excluirá todavía esos vencimientos; el journey exige 30/30 y fallará honestamente.
+
+```bash
+python3 /ruta/absoluta/frontend/e2e/journeys.py \
+  --run-dir /ruta/absoluta/ensayo-e2 --journeys recordatorios --dry-run
+npm --prefix /ruta/absoluta/frontend run e2e:journeys -- \
+  --base http://127.0.0.1:3120 --api http://127.0.0.1:8120 \
+  --run-dir /ruta/absoluta/ensayo-e2 --journeys recordatorios --replay
+```
+
+El dry run valida solo el JSON y deja los doce casos `NOT_RUN`. La corrida nominal
+exige 30 llamadas únicas, 30 aceptaciones en ventana y confirmaciones persistidas.
+La rama adversarial contiene revisión de tarjeta reemplazada, vencidos sin aprobar,
+solicitudes exactas y de texto libre, botones ajenos/usados/viejos, reprogramación,
+BAJA y cancelación pausadas antes de la llamada, y timeout sin reenvío. Las acciones
+de cancelación/reprogramación necesitan un humano con esos permisos y
+`availability.read` en su sede, incluidos en la siembra de BE7/BE8. Esta rama
+consulta `/slots/query`, selecciona un horario devuelto para el mismo profesional
+y permanece sin certificar hasta completar la corrida. BE8 permite consultar
+disponibilidad con el permiso de la sede; el runner no amplía grants. Si el horario disponible
+cae la semana siguiente, el recorrido mueve también las dos citas de la baja a
+sus propios horarios disponibles y prepara lotes nuevos antes de sus vencimientos,
+para mantener BAJA al final del escenario. La pantalla Rastro admite ahora
+`proposals.read` en la sede seleccionada o en alguna sede autorizada en «Todas»,
+igual que la navegación. Las corridas requieren el permiso global. El journey
+completo debe ejecutarse contra el integrador con BE8 o posterior.
+
+`journeys.json` informa casos ejecutados, cobertura real por tipo y conteo SQL por
+aviso. No convertir un caso `NOT_RUN` o un dry run en PASS. El adversarial debe
+informar su porcentaje real sin quitar `missed`, `uncertain` ni fallos del denominador.

@@ -54,7 +54,7 @@ describe("toUiStatus", () => {
     const row: AppointmentListItem = {
       id: 1, lead_id: 2, service_id: 3, practitioner_id: 4, location_id: 5,
       start_utc: "2026-10-05T14:00:00Z", end_utc: "2026-10-05T14:30:00Z",
-      state, lead_name: "Paciente prueba", service_name: "Evaluación",
+      state, version: 1, lead_name: "Paciente prueba", service_name: "Evaluación",
       practitioner_name: "Dra. Prueba", location_name: "Sede prueba",
     };
     expect(toUiAppointment(row, new Map([[5, "America/Lima"]])).status).toBe(label);
@@ -99,4 +99,17 @@ describe("toApiError", () => {
     const mapped = toApiError({ isAxiosError: true, response: undefined });
     expect(mapped.code).toBe("NETWORK");
   });
+});
+
+it("preserves patient confirmation separately from reservation state and never invents an appointment version", () => {
+  const row = { id: 9, lead_id: 2, service_id: 3, practitioner_id: 4, location_id: 5,
+    start_utc: "2026-10-20T14:00:00Z", end_utc: "2026-10-20T14:30:00Z", state: "confirmed",
+    lead_name: "Paciente sintético", service_name: "Evaluación", practitioner_name: "Profesional", location_name: "Lince",
+    patient_confirmed_at: "2026-10-19T15:00:00Z", version: 2 };
+  const mapped = toUiAppointment(row, new Map());
+  expect(mapped.status).toBe("Confirmada");
+  expect(mapped.patientConfirmedAt).toBe(row.patient_confirmed_at);
+  expect(mapped.version).toBe(2);
+  const rescheduled = { ...row, patient_confirmed_at: null, version: 3 };
+  expect(toUiAppointment(rescheduled, new Map()).patientConfirmedAt).toBeNull();
 });

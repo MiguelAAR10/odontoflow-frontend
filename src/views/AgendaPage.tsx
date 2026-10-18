@@ -27,6 +27,10 @@ import {
   getLocations,
   getSlots,
   loadAgenda,
+  loadReminderCoverage,
+  prepareReminders,
+  linkTelegramReminders,
+  optOutReminders,
   newIdempotencyKey,
   rescheduleReal,
   toApiError,
@@ -48,6 +52,8 @@ import { useShellContext } from "../components/shell/ShellContext";
 import { Card as CatalogCard } from "../catalog/Card";
 import type { DemoAgendaData } from "../agui/sim/gaps";
 import { TaskDelegationDraft } from "./TaskDelegationDraft";
+import { getSessionVersion } from "../contracts/client";
+import { reminderDate, reminderReason, REMINDER_STATUS_LABEL, REMINDER_TYPE_LABEL, type ReminderCoverageView } from "../reminders";
 
 const LIMA = "America/Lima";
 const APPOINTMENT_KINDS = [
@@ -328,6 +334,7 @@ function AgendaManagement({ appointmentId, conversationId }: { appointmentId?: n
   const [now, setNow] = useState(() => new Date().toISOString());
   useEffect(() => { const timer = window.setInterval(() => setNow(new Date().toISOString()), 30_000); return () => window.clearInterval(timer); }, []);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [reminderCoverage, setReminderCoverage] = useState<ReminderCoverageView | null>(null);
   const [selected, setSelected] = useState<Appointment | null>(null);
   const [detail, setDetail] = useState<AppointmentListItem | null>(null);
   const [attendanceAppointment, setAttendanceAppointment] = useState<Appointment | null>(null);
@@ -391,6 +398,7 @@ function AgendaManagement({ appointmentId, conversationId }: { appointmentId?: n
   const refresh = useCallback(async (): Promise<Appointment[]> => {
     const isCurrent = agendaRequests.current.begin();
     setLoading(true);
+    setReminderCoverage(null);
     setError("");
     try {
       const rows = useMocks
@@ -643,6 +651,8 @@ function AgendaManagement({ appointmentId, conversationId }: { appointmentId?: n
           </div>
         </div>
 
+        {!loading && <AgendaReminders key={`${locationFilter}:${weekWindow.from}`} locationId={locationFilter === "all" ? undefined : Number(locationFilter)} from={agendaWeekReadWindow(selectedDate, calendarTimeZone).from} to={agendaWeekReadWindow(selectedDate, calendarTimeZone).to} onCoverage={setReminderCoverage} />}
+
         {error && <div className="form-error agenda-error" role="alert">{error}<Button compact onClick={() => void refresh()}>Reintentar</Button></div>}
 
         {loading ? (
@@ -706,7 +716,8 @@ function AgendaManagement({ appointmentId, conversationId }: { appointmentId?: n
           {durationMinutes(detailStart, detailEnd) && <div><span>Duración</span><strong>{durationMinutes(detailStart, detailEnd)} min</strong></div>}
           <div><span>Sede</span><strong>{detail?.location_name ?? selected.branch}</strong></div>
           <div><span>Odontólogo</span><strong>{detail?.practitioner_name ?? selected.doctor}</strong></div>
-          <div><span>Estado</span><Badge tone={statusTone(detailState)}>{detailState}</Badge></div>
+          <div><span>Estado de la reserva</span><Badge tone={statusTone(detailState)}>{detailState}</Badge></div>
+          <ReminderAppointmentDetails key={selected.id} appointment={detail ? toUiAppointment(detail, new Map(locations.map(site => [site.id, site.timezone]))) : selected} coverage={reminderCoverage} />
           {error && <div className="form-error" role="alert">{error}</div>}
           <div className="form-actions appointment-detail__actions">
             <Button onClick={closeDetail}>Cerrar</Button>
@@ -757,11 +768,146 @@ function AgendaManagement({ appointmentId, conversationId }: { appointmentId?: n
         <div className="confirmation-message appointment-cancel-confirmation">
           <XCircle size={52} aria-hidden="true" />
           <h3>¿Cancelar esta cita?</h3>
-          <p>Se liberará el horario de la cita seleccionada. Esta acción solo cambia el estado de la cita.</p>
+          <p>Se liberará el horario de la cita seleccionada. Los avisos pendientes de esta versión de la cita quedarán invalidados.</p>
           {error && <div className="form-error" role="alert">{error}</div>}
           <div className="form-actions"><Button onClick={() => setCancelOpen(false)} disabled={busy}>Mantener cita</Button><Button variant="danger" onClick={() => void submitCancel()} disabled={busy}>{busy ? "Cancelando…" : "Cancelar cita"}</Button></div>
         </div>
       </Modal>
     </div>
   );
+}
+
+
+/** A focused appointment reloads its own coverage even with no page site filter. */
+export function ReminderAppointmentDetails({ appointment, coverage }: { appointment: Appointment; coverage: ReminderCoverageView | null }) {
+  const [loaded, setLoaded] = useState<{ id: string; version: number | undefined; data: ReminderCoverageView } | null>(null);
+  const [error, setError] = useState("");
+  const reads = useRef(createLatestRequest());
+  const currentCoverage = coverage?.appointments.some(row => String(row.appointment_id) === appointment.id && (appointment.version === undefined || row.version === appointment.version));
+  useEffect(() => {
+    const current = reads.current.begin();
+    setError("");
+    if (currentCoverage || !appointment.locationId || !appointment.startUtc) return () => reads.current.invalidate();
+    const start = Date.parse(appointment.startUtc);
+    if (!Number.isFinite(start)) return () => reads.current.invalidate();
+    void loadReminderCoverage({ locationId: appointment.locationId, from: new Date(start - 2 * 86_400_000).toISOString(), to: new Date(start + 86_400_000).toISOString() })
+      .then(data => { if (current()) setLoaded({ id: appointment.id, version: appointment.version, data }); })
+      .catch(caught => { if (current()) setError(toApiError(caught).message); });
+    return () => reads.current.invalidate();
+  }, [appointment.id, appointment.version, appointment.locationId, appointment.startUtc, currentCoverage]);
+  const resolved = currentCoverage ? coverage : loaded?.id === appointment.id && loaded.version === appointment.version ? loaded.data : null;
+  return <>
+    {error && <p role="alert" className="form-error">{error}</p>}
+    <ReminderAppointmentStatus appointment={appointment} coverage={resolved} />
+    <ReminderContactActions appointment={appointment} coverage={resolved} />
+  </>;
+}
+
+/** Coverage comes from a fresh read, never from a preparation receipt. */
+export function ReminderAppointmentStatus({ appointment, coverage }: { appointment: Appointment; coverage: ReminderCoverageView | null }) {
+  const stored = coverage?.appointments.find(row => String(row.appointment_id) === appointment.id);
+  const row = stored && (appointment.version === undefined || stored.version === appointment.version) ? stored : undefined;
+  const confirmedAt = stored && !row ? null : row ? row.patient_confirmed_at : appointment.patientConfirmedAt;
+  return <section aria-label="Recordatorios de la cita">
+    <h3>Recordatorios y respuesta del paciente</h3>
+    <p>{confirmedAt ? <>Paciente confirmó · <time dateTime={confirmedAt}>{reminderDate(confirmedAt)} (Lima)</time></> : "Sin confirmación del paciente"}</p>
+    {row?.open_change_requests.length ? <>
+      <p role="status">Solicitud de cambio abierta para recepción. La cita conserva su horario.</p>
+      <ul aria-label="Solicitudes del paciente">{row.open_change_requests.map(request => <li key={request.id}>
+        {request.source === "button" ? `Solicitud para la cita #${request.appointment_id}, versión ${request.appointment_version}.` : "Texto libre: recepción debe revisar las citas candidatas; ninguna ha sido elegida."}
+        {request.body && <blockquote>{request.body}</blockquote>}
+        {request.source === "free_text" && request.candidate_appointment_ids.map(id => <p key={id}><Link href={`/agenda?appointment=${id}`}>Revisar cita candidata #{id}</Link></p>)}
+      </li>)}</ul>
+    </> : null}
+    {row ? <ul>{row.items.map(item => <li key={item.item_id}>{REMINDER_TYPE_LABEL[item.type] ?? "Recordatorio"} · {reminderDate(item.due_at)} (Lima): {REMINDER_STATUS_LABEL[item.status] ?? "Requiere revisión"}{item.reason ? ` · ${reminderReason(item.reason)}` : ""}</li>)}</ul> : <p>Estado de avisos no disponible. Actualiza la cobertura.</p>}
+  </section>;
+}
+
+export function AgendaReminders({ locationId, from, to, onCoverage }: {
+  locationId: number | undefined; from: string; to: string; onCoverage: (coverage: ReminderCoverageView | null) => void;
+}) {
+  const [coverage, setCoverage] = useState<ReminderCoverageView | null>(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [prepared, setPrepared] = useState<{ proposalId: number; firstDueAt: string } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const read = useRef(createLatestRequest());
+  const intent = useRef<{ key: string; busy: boolean } | null>(null);
+  const load = useCallback(async () => {
+    const current = read.current.begin();
+    setLoading(true); setError(""); setCoverage(null); onCoverage(null);
+    if (locationId === undefined) { setLoading(false); return; }
+    try {
+      const data = await loadReminderCoverage({ locationId, from, to });
+      if (current()) { setCoverage(data); onCoverage(data); }
+    } catch (caught) { if (current()) setError(toApiError(caught).message); }
+    finally { if (current()) setLoading(false); }
+  }, [locationId, from, to, onCoverage]);
+  useEffect(() => { void load(); return () => read.current.invalidate(); }, [load]);
+  const prepare = async () => {
+    if (locationId === undefined || intent.current?.busy) return;
+    const currentSession = getSessionVersion();
+    const pending = intent.current ?? { key: newIdempotencyKey(), busy: false };
+    pending.busy = true; intent.current = pending; setBusy(true); setError("");
+    try {
+      const receipt = await prepareReminders(locationId, pending.key);
+      if (getSessionVersion() !== currentSession) return;
+      setPrepared(receipt); intent.current = null;
+      await load();
+    } catch (caught) { if (getSessionVersion() === currentSession) setError(toApiError(caught).message); }
+    finally { pending.busy = false; if (getSessionVersion() === currentSession) setBusy(false); }
+  };
+  return <section role="region" className="approvals-section" aria-label="Cobertura de recordatorios" aria-busy={loading || busy}>
+    <h2>Recordatorios de Telegram</h2>
+    <p>Hora Lima. La aceptación de Telegram no acredita lectura del paciente.</p>
+    <div className="form-actions"><Button disabled={locationId === undefined || busy} onClick={() => void prepare()}>{busy ? "Preparando…" : "Preparar recordatorios"}</Button><Button disabled={locationId === undefined || loading} onClick={() => void load()}>Actualizar cobertura</Button></div>
+    {locationId === undefined && <p>Elige una sede para preparar su lote y consultar la cobertura.</p>}
+    {prepared && <p role="status">Lote listo para revisión. Primer envío {reminderDate(prepared.firstDueAt)} (Lima). <Link href={`/aprobaciones?proposal=agent_proposal:${prepared.proposalId}`}>Revisar lote en Bandeja</Link></p>}
+    {loading && <p role="status">Consultando cobertura…</p>}
+    {error && <p className="form-error" role="alert">{error}</p>}
+    {coverage && <>
+      <dl>{coverage.totals.map(row => <div key={row.type}><dt>{row.label}</dt><dd>{row.accepted_in_window}/{row.eligible_due} aceptados en ventana · {row.percentage === null ? "Sin avisos debidos elegibles" : `${row.percentage.toLocaleString("es-PE", { maximumFractionDigits: 1 })} %`} · {row.missed} vencidos sin envío · {row.late} tardíos · {row.uncertain} inciertos · {row.failed} no aceptados</dd></div>)}</dl>
+      {Object.entries(coverage.omissions).length ? <ul aria-label="Omisiones de cobertura">{Object.entries(coverage.omissions).map(([reason, count]) => <li key={reason}>{reminderReason(reason)}: {count}</li>)}</ul> : null}
+      {coverage.appointmentsWithoutLink.length ? <p>Citas sin vínculo de Telegram: {coverage.appointmentsWithoutLink.map((id, index) => <span key={id}>{index ? ", " : ""}<Link href={`/agenda?appointment=${id}`}>Cita #{id}</Link></span>)}</p> : null}
+    </>}
+  </section>;
+}
+
+export function ReminderContactActions({ appointment, coverage }: { appointment: Appointment; coverage: ReminderCoverageView | null }) {
+  const row = coverage?.appointments.find(row => String(row.appointment_id) === appointment.id);
+  const [link, setLink] = useState<{ contactId: number | null; deepLink: string; expiresAt: string } | null>(null);
+  const contactId = row?.contact?.contact_id ?? link?.contactId;
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const intent = useRef<{ action: string; key: string; busy: boolean } | null>(null);
+  const session = useRef(getSessionVersion());
+  useEffect(() => { session.current = getSessionVersion(); return () => { session.current = -1; }; }, []);
+  const act = async (action: "link" | "stop") => {
+    if (intent.current?.busy) return;
+    const pending = intent.current?.action === action ? intent.current : { action, key: newIdempotencyKey(), busy: false };
+    pending.busy = true; intent.current = pending; setBusy(true); setError("");
+    const current = () => session.current === getSessionVersion();
+    try {
+      if (action === "link" && appointment.patientId) {
+        const result = await linkTelegramReminders(Number(appointment.patientId), pending.key, appointment.locationId);
+        if (current()) setLink(result);
+      } else if (action === "stop" && contactId) {
+        await optOutReminders(contactId, pending.key, appointment.locationId);
+        if (current()) { setLink(null); setMessage("Baja registrada en toda la clínica. Actualiza la cobertura para ver los avisos suprimidos."); }
+      } else return;
+      if (current()) intent.current = null;
+    } catch (caught) { if (current()) setError(toApiError(caught).message); }
+    finally { pending.busy = false; if (current()) setBusy(false); }
+  };
+  return <section aria-label="Vínculo de Telegram">
+    <h3>Telegram del paciente</h3>
+    <p>{message || row?.contact?.consent_status === "opted_out" ? "Baja registrada en toda la clínica" : row?.contact?.consent_status === "opted_in" ? "Consentimiento registrado" : "Se requiere vínculo y consentimiento del paciente"}</p>
+    <p>El paciente puede escribir BAJA en Telegram para detener los recordatorios en todas las sedes.</p>
+    {appointment.patientId ? <Button disabled={busy} onClick={() => void act("link")}>Crear enlace de vínculo Telegram</Button> : <p>Vincula primero la cita con un paciente para habilitar Telegram.</p>}
+    {link && <p><a href={link.deepLink} target="_blank" rel="noopener noreferrer" referrerPolicy="no-referrer">Abrir vínculo en Telegram</a> · Vence {reminderDate(link.expiresAt)} (Lima). El paciente debe aceptar los recordatorios.</p>}
+    {contactId && !message && row?.contact?.consent_status !== "opted_out" ? <Button variant="danger" disabled={busy} onClick={() => void act("stop")}>Registrar baja de recordatorios en toda la clínica</Button> : null}
+    {message && <p role="status">{message}</p>}
+    {error && <p role="alert" className="form-error">{error}</p>}
+  </section>;
 }

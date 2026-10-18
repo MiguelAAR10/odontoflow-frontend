@@ -26,9 +26,10 @@ import { Badge } from "../components/Badge";
 import { Button } from "../components/Button";
 import { usePersona } from "../components/PersonaContext";
 import { Tabs } from "../components/Tabs";
+import { ReminderBatchCard } from "./ReminderBatchCard";
 import type { AgentRunResult, ApprovalItem, ApprovalStatus, ProposalDecision, RunnableAgent, StaffIdentity, Tone } from "../types";
 import { createLatestRequest } from "../session";
-import { getSessionVersion } from "../contracts/client";
+import { getSessionVersion, toApiError } from "../contracts/client";
 
 /**
  * Bandeja: everything the agents propose, with its evidence, in one place.
@@ -203,6 +204,8 @@ function InboxSection({ reloadToken, onSummary, focusedKey, focusedStatus }: { r
   const headingRef = useRef<HTMLHeadingElement>(null);
   const reads = useRef(createLatestRequest());
   const currentStatus = useRef(status);
+  const decisionIntents = useRef(new Map<string, DecisionIntent>());
+  const deciding = useRef(new Set<string>());
   const focusStatusResolved = useRef(false);
   const now = useNow();
 
@@ -264,12 +267,15 @@ function InboxSection({ reloadToken, onSummary, focusedKey, focusedStatus }: { r
   };
 
   const decide = async (item: ApprovalItem, decision: ProposalDecision) => {
+    if (deciding.current.has(item.key)) return;
+    deciding.current.add(item.key);
     const identityVersion = getSessionVersion();
     const isCurrent = () => identityVersion === getSessionVersion() && currentStatus.current === status;
     // Repeating the same decision after a failure is a retry of the same
     // intent and reuses its Idempotency-Key; a different decision is new.
-    const previous = decisions[item.key];
-    const intent = previous?.intent.decision === decision ? previous.intent : beginDecision(item, decision);
+    const previous = decisionIntents.current.get(item.key);
+    const intent = previous?.decision === decision ? previous : beginDecision(item, decision);
+    decisionIntents.current.set(item.key, intent);
     setDecisions((state) => ({ ...state, [item.key]: { intent, busy: true, error: null } }));
     try {
       const { item: settled, replayed } = await decideInboxItem(item, intent);
@@ -279,6 +285,7 @@ function InboxSection({ reloadToken, onSummary, focusedKey, focusedStatus }: { r
         delete next[item.key];
         return next;
       });
+      decisionIntents.current.delete(item.key);
       setAnnouncement(decisionAnnouncement(settled, decision, replayed));
       if (settled.status !== status) {
         setItems((rows) => rows.filter((row) => row.key !== item.key));
@@ -288,10 +295,12 @@ function InboxSection({ reloadToken, onSummary, focusedKey, focusedStatus }: { r
       }
     } catch (caught) {
       if (!isCurrent()) return;
-      const error = describeApprovalError(caught, item.source);
+      const error = item.kind === "reminder_batch" && toApiError(caught).code === "PROPOSAL_SUPERSEDED"
+        ? { message: "Reemplazada: la cita o los avisos cambiaron. Vuelve a cargar y revisa un lote nuevo.", reload: true }
+        : describeApprovalError(caught, item.source);
       setDecisions((state) => ({ ...state, [item.key]: { intent, busy: false, error } }));
       throw new Error(error.message);
-    }
+    } finally { deciding.current.delete(item.key); }
   };
 
   const presentation = items.map(item => ({ ...toCard(item), kind: item.kind }));
@@ -330,6 +339,7 @@ function InboxSection({ reloadToken, onSummary, focusedKey, focusedStatus }: { r
 
 function decisionAnnouncement(item: ApprovalItem, decision: ProposalDecision, replayed: boolean): string {
   const replay = replayed ? " Ya estaba registrado; no se repitió." : "";
+  if (item.kind === "reminder_batch" && decision === "approve" && ["approved", "executed"].includes(item.status)) return `Envíos futuros autorizados. Consulta la cobertura en Agenda.${replay}`;
   if (decision === "decline") return `Declinada: ${item.headline}.${replay}`;
   if (item.status === "executed") return `Aprobada y ejecutada: ${item.headline}.${item.outcome ? ` ${item.outcome}.` : ""}${replay}`;
   if (item.status === "failed") return `Aprobada, pero no se pudo ejecutar: ${item.headline}.${item.errorCode ? ` Código ${item.errorCode}.` : ""}`;
@@ -352,14 +362,14 @@ function ApprovalCard({ item, now, decision, onDecide, onReload }: {
     <div className="bandeja-detail-meta"><Badge tone={badge.tone}>{badge.label}</Badge>
       {pending && <span>{lapsed ? "Pasó el plazo para aprobar" : `Vence en ${formatDuration(new Date(item.expiresAt).getTime() - now)}`}</span>}
     </div>
-    <LegacyInboxCard card={toCard(item)} status={decision?.busy ? "loading" : pending ? "pending" : item.status === "declined" ? "rejected" : item.status === "failed" ? "error" : "done"}
+    {item.kind === "reminder_batch" ? <ReminderBatchCard item={item} now={now} busy={decision?.busy ?? false} error={decision?.error?.message ?? null} onDecide={onDecide} /> : <LegacyInboxCard card={toCard(item)} status={decision?.busy ? "loading" : pending ? "pending" : item.status === "declined" ? "rejected" : item.status === "failed" ? "error" : "done"}
       loadingReason={decision?.busy ? "approval" : null}
       {...(canApprove ? { onApprove: () => onDecide(item, "approve") } : {})}
       {...(canDecline ? { onAlternative: () => onDecide(item, "decline") } : {})}
-      error={decision?.error?.message ?? null} />
+      error={decision?.error?.message ?? null} />}
     {pending && !item.actions.length && <p className="field-note">Tu rol no puede decidir esta propuesta.</p>}
     {item.decidedBy && <p className="field-note">Decidió {item.decidedBy}</p>}
-    {item.errorCode && <p className="form-error">Código {item.errorCode}</p>}
+    {item.errorCode && item.kind !== "reminder_batch" && <p className="form-error">Código {item.errorCode}</p>}
     {decision?.error && <Button compact icon={RotateCcw} onClick={decision.error.reload ? onReload : () => void onDecide(item, decision.intent.decision).catch(() => {})}>{decision.error.reload ? "Volver a cargar" : "Reintentar"}</Button>}
   </>;
 }

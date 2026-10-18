@@ -91,3 +91,44 @@ describe("Bandeja real uses existing transport", () => {
     await act(async () => reopened.unmount());
   });
 });
+
+
+describe("E2 reminder batch in the real inbox", () => {
+  async function reminder(): Promise<ApprovalItem> {
+    const { toUiReminderBatch } = await import("../src/reminders");
+    return { ...item, kind: "reminder_batch", category: "cita", headline: "Autorizar 1 recordatorios · Lince",
+      detail: "Al aprobar, AIRI enviará cada aviso en su hora. Nada sale ahora.",
+      reminderBatch: toUiReminderBatch({ location_id: 1, items: [{ item_id: 1, appointment_id: 2, appointment_version: 3,
+        type: "d1", due_at: "2026-12-01T14:00:00Z", window_end: "2026-12-01T14:05:00Z", text: "Clínica · Lince · gestionar cita", buttons: ["Confirmo", "Quiero cambiar"] }], omissions: [] }) };
+  }
+  it("double click makes one request and a network retry reuses its original intent", async () => {
+    const row = await reminder();
+    const intent = { itemKey: row.key, decision: "approve", idempotencyKey: "reminder-intent" };
+    stubs.begin.mockReturnValue(intent);
+    let reject!: (error: Error) => void;
+    stubs.decide.mockImplementationOnce(() => new Promise((_resolve, fail) => { reject = fail; }))
+      .mockResolvedValueOnce({ item: { ...row, status: "executed", actions: [] }, replayed: false });
+    const renderer = await render([row]);
+    await act(async () => { const click = button(renderer, "Autorizar envíos futuros").props.onClick; click(); click(); });
+    expect(stubs.decide).toHaveBeenCalledTimes(1);
+    await act(async () => reject(new Error("Conexión interrumpida")));
+    await act(async () => button(renderer, "Reintentar").props.onClick());
+    expect(stubs.begin).toHaveBeenCalledTimes(1);
+    expect(stubs.decide.mock.calls.map(call => call[1])).toEqual([intent, intent]);
+    expect(text(renderer)).toContain("Envíos futuros autorizados");
+    expect(text(renderer)).not.toContain("Aprobada y ejecutada");
+    await act(async () => renderer.unmount());
+  });
+  it("explains a superseded reminder without exposing its backend error code", async () => {
+    const { ApiError } = await import("../src/contracts/client");
+    const row = await reminder();
+    stubs.begin.mockReturnValue({ itemKey: row.key, decision: "approve", idempotencyKey: "stale-reminder" });
+    stubs.decide.mockRejectedValue(new ApiError(409, "PROPOSAL_SUPERSEDED", "The proposal is out of date"));
+    const renderer = await render([row]);
+    await act(async () => button(renderer, "Autorizar envíos futuros").props.onClick());
+    expect(text(renderer)).toContain("Reemplazada: la cita o los avisos cambiaron");
+    expect(text(renderer)).not.toContain("PROPOSAL_SUPERSEDED");
+    expect(button(renderer, "Volver a cargar")).toBeDefined();
+    await act(async () => renderer.unmount());
+  });
+});

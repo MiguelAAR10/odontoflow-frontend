@@ -213,6 +213,67 @@ describe("D · route allowlist", () => {
   });
 
   it.each([
+    ["GET", "reminders/coverage?location_id=2&from=2026-10-18T05%3A00%3A00Z&to=2026-10-25T05%3A00%3A00Z"],
+    ["POST", "reminders/batches"],
+    ["POST", "reminders/contacts/7/telegram-link?location_id=2"],
+    ["POST", "reminders/contacts/8/opt-out?location_id=2"],
+    ["PATCH", "reminders/items/9"],
+    ["GET", "reminders/change-requests?location_id=2&status=open"],
+  ])("forwards E2 %s /%s with the human identity, query and intent", async (method, path) => {
+    const fetchMock = upstream();
+    const response = await handleBackendRequest(
+      request(path, { method, cookie: personaCookie("secretaria"), headers: { "idempotency-key": "e2-user-intent" } }),
+      segments(path), options(fetchMock),
+    );
+    expect(response.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0]![0]).toBe(`http://backend.test/${path}`);
+    const forwarded = fetchMock.mock.calls[0]![1]!;
+    expect(forwarded.method).toBe(method);
+    expect(bearer(fetchMock)).toBe("Bearer ofk_lucia");
+    expect(new Headers(forwarded.headers).get("idempotency-key")).toBe("e2-user-intent");
+    if (method !== "GET") expect(new TextDecoder().decode(forwarded.body as ArrayBuffer)).toBe("{}");
+  });
+
+  it.each([
+    ["POST", "reminders/batches"],
+    ["POST", "reminders/contacts/7/telegram-link"],
+    ["POST", "reminders/contacts/8/opt-out"],
+    ["PATCH", "reminders/items/9"],
+  ])("requires a signed human and same origin for E2 %s /%s", async (method, path) => {
+    for (const [init, status, code] of [
+      [{}, 401, "PERSONA_REQUIRED"],
+      [{ cookie: personaCookie("secretaria"), origin: null }, 403, "BFF_FORBIDDEN_ORIGIN"],
+      [{ cookie: personaCookie("secretaria"), origin: "http://evil.test" }, 403, "BFF_FORBIDDEN_ORIGIN"],
+    ] as const) {
+      const fetchMock = upstream();
+      const response = await handleBackendRequest(request(path, { method, ...init }), segments(path), options(fetchMock));
+      expect(response.status).toBe(status);
+      expect(await errorCode(response)).toBe(code);
+      expect(fetchMock).not.toHaveBeenCalled();
+    }
+  });
+
+  it.each([
+    ["GET", "reminders/batches"],
+    ["POST", "reminders/coverage"],
+    ["GET", "reminders/contacts/7/telegram-link"],
+    ["GET", "reminders/contacts/8/opt-out"],
+    ["GET", "reminders/contacts/8/telegram-consent"],
+    ["POST", "reminders/items/9"],
+    ["DELETE", "reminders/items/9"],
+    ["POST", "reminders/change-requests/9/resolve"],
+    ["PATCH", "reminders/items/9/extra"],
+    ["POST", "integrations/telegram/webhook"],
+    ["POST", "internal/reminders/tick"],
+  ])("keeps unapproved E2 operation %s /%s outside the browser", async (method, path) => {
+    const fetchMock = upstream();
+    const response = await handleBackendRequest(request(path, { method, cookie: personaCookie("secretaria") }), segments(path), options(fetchMock));
+    expect(response.status).toBe(403);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it.each([
     ["POST", "practitioners"],
     ["POST", "capabilities"],
     ["POST", "availability-rules"],
@@ -323,8 +384,9 @@ describe("D · route allowlist", () => {
     expect(response.headers.get("idempotent-replay")).toBe("true");
   });
 
-  it("the allowlist only names GET and POST routes", () => {
-    expect(new Set(BROWSER_ROUTES.map((route) => route.method))).toEqual(new Set(["GET", "POST"]));
+  it("permits PATCH only for reminder item edits alongside the existing GET and POST routes", () => {
+    expect(new Set(BROWSER_ROUTES.map((route) => route.method))).toEqual(new Set(["GET", "POST", "PATCH"]));
+    expect(BROWSER_ROUTES.filter(route => route.method === "PATCH")).toEqual([{ method: "PATCH", path: "reminders/items/:id" }]);
   });
 });
 

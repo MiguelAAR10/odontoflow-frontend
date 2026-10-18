@@ -14,6 +14,7 @@ import { z } from "zod";
 import { CardSchema, type Card } from "./agui/card";
 import { envelopeFor, type ApprovalEnvelope } from "./agui/sim/schema";
 import { USE_MOCKS } from "./env";
+import { reminderDate, toUiReminderBatch } from "./reminders";
 import {
   ApiError,
   approveProposal,
@@ -22,6 +23,7 @@ import {
   declineAppointmentProposal,
   declineProposal,
   getAiriCard,
+  getAppointment,
   getInboxProposal,
   listEligiblePractitioners,
   listInbox,
@@ -101,9 +103,11 @@ export interface InboxCatalogNames {
   locations: Map<number, { name: string; timezone: string }>;
   services: Map<number, string>;
   practitioners: Map<number, string>;
+  appointmentPatients?: Map<number, string>;
 }
 
-const CATEGORY: Record<InboxItem["kind"], ApprovalCategory> = {
+const CATEGORY: Record<InboxItem["kind"] | "reminder_batch", ApprovalCategory> = {
+  reminder_batch: "cita",
   delegation: "tarea",
   appointment_confirm_batch: "cita",
   appointments_reassign: "cita",
@@ -128,6 +132,7 @@ export const CATEGORY_LABEL: Record<ApprovalCategory, string> = {
 
 function outcomeFor(item: InboxItem): string | null {
   if (item.status === "failed") return "No se pudo ejecutar";
+  if (String(item.kind) === "reminder_batch" && ["approved", "executed"].includes(item.status)) return "Envíos futuros autorizados; consulta su estado en Agenda";
   const ref = asRecord(item.result_ref);
   switch (ref?.type) {
     case "outbound_message": return "Mensaje en cola de envío";
@@ -255,9 +260,15 @@ function appointmentPresentation(item: InboxItem, names: Partial<InboxCatalogNam
 export function toUiInboxItem(item: InboxItem, names?: Partial<InboxCatalogNames>): ApprovalItem {
   const location = item.location_id == null ? undefined : names?.locations?.get(item.location_id);
   const timeZone = location?.timezone ?? DEFAULT_TIME_ZONE;
-  const category = CATEGORY[item.kind];
+  const isReminder = String(item.kind) === "reminder_batch";
+  const reminderBatch = isReminder ? toUiReminderBatch(item.payload, names?.appointmentPatients) : undefined;
+  const category = isReminder ? "cita" : CATEGORY[item.kind];
   const presentation =
-    category === "tarea" ? null : category === "cobranza" ? collectionPresentation(item)
+    reminderBatch ? {
+      headline: `Autorizar ${plural(reminderBatch.items.length, "recordatorio", "recordatorios")} · ${location?.name ?? "Sede de la cita"}`,
+      detail: `Primer envío ${reminderBatch.firstDueAt ? reminderDate(reminderBatch.firstDueAt) : "no disponible"} (Lima). Al aprobar, AIRI enviará cada aviso en su hora. Nada sale ahora.`,
+      facts: [...fact("Sede", location?.name ?? null), ...fact("Avisos", String(reminderBatch.items.length)), ...fact("Primer envío", reminderBatch.firstDueAt ? reminderDate(reminderBatch.firstDueAt) : null), ...fact("Omitidos", String(reminderBatch.omissions.length))], message: null,
+    } : category === "tarea" ? null : category === "cobranza" ? collectionPresentation(item)
       : category === "inventario" ? inventoryPresentation(item)
         : category === "lista_espera" ? waitlistPresentation(item, timeZone)
           : appointmentPresentation(item, names, timeZone, location?.name ?? null);
@@ -284,6 +295,7 @@ export function toUiInboxItem(item: InboxItem, names?: Partial<InboxCatalogNames
     decidedBy: item.decided_by?.display_name ?? null,
     outcome: outcomeFor(item),
     errorCode: item.error_code,
+    ...(reminderBatch ? { reminderBatch } : {}),
   };
 }
 
@@ -298,6 +310,8 @@ export interface InboxPageView {
  * never to an invented one. */
 async function resolveNames(items: InboxItem[]): Promise<InboxCatalogNames> {
   const names: InboxCatalogNames = { locations: new Map(), services: new Map(), practitioners: new Map() };
+  const reminderIds = [...new Set(items.filter(item => String(item.kind) === "reminder_batch").flatMap(item => toUiReminderBatch(item.payload).items.map(row => row.appointment_id)))];
+  const patientReads = Promise.allSettled(reminderIds.map(id => getAppointment(id)));
   const bookings = items.filter((item) => item.source === "appointment_proposal");
   const pairs = [...new Map(bookings.flatMap((item) => {
     const serviceId = asNumber(item.payload.service_id);
@@ -312,6 +326,14 @@ async function resolveNames(items: InboxItem[]): Promise<InboxCatalogNames> {
   if (services?.status === "fulfilled") for (const row of services.value) names.services.set(row.id, row.name);
   for (const result of eligible) {
     if (result.status === "fulfilled") for (const row of result.value) names.practitioners.set(row.id, row.display_name);
+  }
+  names.appointmentPatients = new Map();
+  for (const result of await patientReads) {
+    if (result.status === "fulfilled") {
+      const row = result.value;
+      const name = row.patient_name ?? row.lead_name;
+      if (name) names.appointmentPatients.set(row.id, name);
+    }
   }
   return names;
 }
@@ -383,6 +405,7 @@ export interface DecisionResult {
 export async function decideInboxItem(item: ApprovalItem, intent: DecisionIntent): Promise<DecisionResult> {
   if (intent.itemKey !== item.key) throw new Error("The decision intent belongs to another item.");
   if (item.status !== "pending") throw new ApiError(409, "PROPOSAL_NOT_PENDING", "Esta propuesta ya fue revisada. Vuelve a cargar la bandeja.");
+  if (USE_MOCKS && item.kind === "reminder_batch") throw new ApiError(0, "DEMO_UNAVAILABLE", "Los recordatorios de Telegram requieren el modo conectado al backend.");
   if (USE_MOCKS) return mockDecide(item, intent);
   const keep = (next: ApprovalItem): ApprovalItem => ({ ...next, locationName: item.locationName ?? next.locationName, facts: next.facts.length ? next.facts : item.facts });
 
@@ -501,7 +524,8 @@ export async function runAgentNow(agent: RunnableAgent, idempotencyKey: string):
 
 // --- mock mode: mirrors the backend rules -------------------------------------------
 
-const KIND_PERMISSION: Record<InboxItem["kind"], string> = {
+const KIND_PERMISSION: Record<InboxItem["kind"] | "reminder_batch", string> = {
+  reminder_batch: "deliveries.create",
   delegation: "proposals.decide",
   appointment_confirm_batch: "deliveries.create",
   appointments_reassign: "appointments.reschedule",
