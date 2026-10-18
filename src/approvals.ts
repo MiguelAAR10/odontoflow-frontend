@@ -352,7 +352,7 @@ export async function loadProposalRecord(id: number): Promise<InboxItem> {
 
 async function presentInboxItem(item: InboxItem, names?: Partial<InboxCatalogNames>): Promise<ApprovalItem> {
   const view = toUiInboxItem(item, names);
-  if (item.kind !== "delegation" && item.kind !== "inventory_count") return view;
+  if (item.kind !== "delegation" && item.kind !== "inventory_count" && item.kind !== "payment_verify") return view;
   const card = CardSchema.parse(await getAiriCard(item.id));
   if (card.proposal_id !== item.id || card.payload_hash !== item.payload_hash) {
     throw new ApiError(409, "PROPOSAL_CHANGED", "La propuesta cambió; vuelve a cargar la bandeja.");
@@ -506,7 +506,7 @@ const KIND_PERMISSION: Record<InboxItem["kind"], string> = {
   appointment_confirm_batch: "deliveries.create",
   appointments_reassign: "appointments.reschedule",
   reschedule_reply: "deliveries.create",
-  payment_verify: "payments.verify",
+  payment_verify: "payments.manage",
   collection_reminder: "deliveries.create",
   collection_follow_up: "follow_ups.create",
   inventory_transfer: "movements.create",

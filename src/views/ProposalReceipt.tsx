@@ -9,6 +9,7 @@ const labels: Record<InboxItem["status"], string> = {
   declined: "Declinada",
   expired: "Vencida",
   superseded: "Reemplazada",
+  undone: "Revertida",
 };
 
 /** A replay can return a proposal already decided by somebody else. */

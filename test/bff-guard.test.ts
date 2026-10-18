@@ -195,6 +195,23 @@ describe("D · route allowlist", () => {
     expect(fetchMock.mock.calls[0]![0]).toBe("http://backend.test/agent/proposals/3/approve");
   });
 
+  it("forwards payment verification reviews with the human bearer and idempotency key", async () => {
+    const fetchMock = upstream();
+    const path = "payments/7/verification-review";
+    const response = await handleBackendRequest(
+      request(path, { method: "POST", cookie: personaCookie("secretaria"), headers: { "idempotency-key": "k-review-1" } }),
+      segments(path), options(fetchMock),
+    );
+    expect(response.status).toBe(200);
+    expect(fetchMock.mock.calls[0]![0]).toBe("http://backend.test/payments/7/verification-review");
+    const headers = new Headers(fetchMock.mock.calls[0]![1]!.headers);
+    expect(headers.get("authorization")).toBe("Bearer ofk_lucia");
+    expect(headers.get("idempotency-key")).toBe("k-review-1");
+    expect(isRouteAllowed("GET", segments(path))).toBe(false);
+    expect(isRouteAllowed("POST", segments(`${path}/extra`))).toBe(false);
+    expect(isRouteAllowed("POST", segments("payments/7"))).toBe(false);
+  });
+
   it.each([
     ["POST", "practitioners"],
     ["POST", "capabilities"],
