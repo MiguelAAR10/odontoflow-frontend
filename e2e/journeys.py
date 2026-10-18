@@ -12,6 +12,7 @@ import re
 import shlex
 import subprocess
 import sys
+import time
 from datetime import datetime, timezone
 from decimal import Decimal
 from statistics import median
@@ -155,6 +156,7 @@ class Journeys:
         self.person = None
         self.session_epoch = 0
         self.requests = {}
+        self.pending_backend = set()
         self.inventory = None
         self.page_errors = []
         self.capture_intents = not self.e1
@@ -184,6 +186,23 @@ class Journeys:
     def on_request(self, request):
         if '/api/backend/' in request.url:
             self.requests[request] = (self.person, self.session_epoch)
+            self.pending_backend.add(request)
+
+    def on_request_done(self, request):
+        self.pending_backend.discard(request)
+
+    def wait_backend_idle(self):
+        deadline = time.monotonic() + 30
+        quiet_since = None
+        while time.monotonic() < deadline:
+            self.page.wait_for_timeout(50)
+            if self.pending_backend:
+                quiet_since = None
+            elif quiet_since is None:
+                quiet_since = time.monotonic()
+            elif time.monotonic() - quiet_since >= 0.5:
+                return
+        check(False, 'Backend reads did not settle before switching persona')
 
     def on_response(self, response):
         if '/api/backend/' not in response.url:
@@ -225,14 +244,24 @@ class Journeys:
         if self.person == person:
             return self.get('/me')
         previous = self.person
-        start = len(self.result['responses'])
-        # Observe before the first action that invalidates the old session.
-        # Epochs also distinguish logout/login of the same named person.
+        # The gate also renders while an existing signed-in session hydrates.
+        # Decide which picker to use only after /me finishes loading.
+        expect(self.page.locator('.persona-menu[aria-busy="false"], '
+                                 '.persona-switcher__trigger[aria-busy="false"]')).to_be_visible()
+        # Identity readiness mounts the page and starts its own reads afterwards.
+        self.wait_backend_idle()
         if self.page.get_by_role('heading', name='Elige quién eres', exact=True).count() == 0:
-            self.page.get_by_role('button', name=re.compile('Cambiar de persona')).click()
+            trigger = self.page.get_by_role('button', name=re.compile('Cambiar de persona'))
+            expect(trigger).to_have_attribute('aria-busy', 'false')
+            trigger.click()
+            expect(self.page.get_by_role('group', name='Cambiar de persona', exact=True)).to_be_visible()
         code = self.page.get_by_label('Código de acceso')
         if code.count():
             code.fill(self.env['BFF_ACCESS_CODE'])
+        # Observe before the first action that invalidates the old session.
+        # Completed hydration reads precede the switch; in-flight reads retain
+        # their original epoch and are still rejected if they finish afterwards.
+        start = len(self.result['responses'])
         self.session_epoch += 1
         self.person = person
         self.page.get_by_role('button', name=re.compile(person)).last.click()
@@ -768,7 +797,8 @@ with SessionLocal() as session:
             self.snap(E1, 'direccion-antes')
         payment_id = regular[0]['payment_id']
         self.go('/caja')
-        self.page.get_by_role('tab', name='Conciliación', exact=True).click()
+        self.page.get_by_role('group', name='Espacios de caja', exact=True).get_by_role(
+            'button', name='Conciliación', exact=True).click()
         payment_row = self.page.get_by_role('row').filter(has_text=regular[0]['reference'])
         expect(payment_row).to_be_visible()
         self.snap(E1, 'conciliacion')
@@ -1077,6 +1107,8 @@ with SessionLocal() as session:
                 self.page = browser.new_page(viewport={'width': 1440, 'height': 1100}, timezone_id='America/Lima')
                 self.page.on('request', self.on_request)
                 self.page.on('response', self.on_response)
+                self.page.on('requestfinished', self.on_request_done)
+                self.page.on('requestfailed', self.on_request_done)
                 self.page.on('pageerror', lambda error: self.page_errors.append(str(error)))
                 self.go('/aprobaciones' if self.e1 else '/agenda')
                 self.result['initial_sql'] = self.snapshot()

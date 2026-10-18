@@ -125,7 +125,7 @@ private = {
     'NEXT_PUBLIC_USE_MOCKS': 'false', 'BFF_SESSION_SECRET': secrets.token_urlsafe(48),
     'BFF_ACCESS_CODE': secrets.token_urlsafe(18),
 }
-with (root / 'env').open('x', opener=lambda path, flags: os.open(path, flags, 0o600)) as file:
+with open(root / 'env', 'x', opener=lambda path, flags: os.open(path, flags, 0o600)) as file:
     file.write(''.join(f'{key}={value}\n' for key, value in private.items()))
 ```
 
@@ -256,6 +256,15 @@ conserva una sesión BFF independiente para control y restaura Caja en el navega
 lanza a la vez anulación como control y aprobación como Caja, comprobando ambos
 actores y guardando sus IDs. Las cookies permanecen en memoria y no se escriben
 en la evidencia. También exige 403 y pago intacto si Caja intenta anular.
+Tras cada navegación, el cambio de persona espera `aria-busy=false` en la pantalla
+de selección o el selector lateral antes de decidir cuál usar: «Elige quién eres»
+también aparece mientras carga una sesión ya autenticada. Si usa el menú lateral,
+espera su apertura visible. Tras cargar la identidad espera también que terminen
+las solicitudes del BFF (completadas o fallidas, con 500 ms sin pendientes y límite
+de 30 s) antes de iniciar el cambio. Mantiene las aserciones de `/me` y de ausencia
+de respuestas tardías de la sesión anterior.
+En Caja, «Conciliación» es un botón del grupo «Espacios de caja» (`aria-pressed`),
+de acuerdo con el componente `Tabs`; el journey lo selecciona con esos roles.
 
 BE-CAJALOC incorporó `locations.read` en la membresía de Lince. El backend filtra
 `/locations`, `/charges/{id}/payments` y la conciliación por ubicaciones autorizadas
@@ -287,7 +296,7 @@ arriba en `/tmp/e1-fe3-demo-ensayo-01`; su `DATABASE_URL` debe ser
 Ejecutar exactamente:
 
 ```bash
-npm --prefix /home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/fe-e1-FE3fix4 run e2e:journeys -- \
+npm --prefix /home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/odontoflow/.worktrees/fe-e1-FE3run run e2e:journeys -- \
   --base http://127.0.0.1:3110 --api http://127.0.0.1:8110 \
   --run-dir /tmp/e1-fe3-demo-ensayo-01 --journeys cobro-verificado \
   --e1-db odontoflow_e1_demo --replay
@@ -296,6 +305,12 @@ npm --prefix /home/miguel/projects/MiguelAR10-Builder/AI-Edge-Runners/products/o
 Se puede sustituir `--e1-db odontoflow_e1_demo` por la variable de proceso
 `E1_JOURNEY_DB=odontoflow_e1_demo`. Mantener un RUN_ID/lote nuevo por ensayo;
 no reutilizar una demo ya aprobada ni eliminar su base al terminar.
+
+Si Chromium está instalado fuera del caché predeterminado de Playwright, pasar
+`PLAYWRIGHT_BROWSERS_PATH` al proceso del runner (en este entorno,
+`/tmp/odontoflow-e1-playwright`). Usar el Python que tenga las dependencias del
+journey. Si el ejecutor termina sus procesos hijos al cerrar un comando, mantener
+arranque, preparación, journey y `demo-down.sh` en una misma sesión persistente.
 
 Los JSON se pueden ubicar con `--seed-summary /ruta/absoluta/e1-seed.json` y
 `--other-seed-summary /ruta/absoluta/e1-other-seed.json`. El journey solo consume
