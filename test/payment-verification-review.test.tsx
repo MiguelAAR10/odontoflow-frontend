@@ -2,7 +2,7 @@ import { createElement, type ReactNode } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { AxiosError, AxiosHeaders, type InternalAxiosRequestConfig } from "axios";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import type { PaymentRead, PaymentVerificationReviewReceipt } from "../src/contracts/client";
+import type { ChargeFollowUpRead, PaymentRead, PaymentVerificationReviewReceipt } from "../src/contracts/client";
 import { cardFixture } from "./proposal-card.fixture";
 
 vi.mock("../src/components/useFocusTrap", () => ({ useFocusTrap: () => {} }));
@@ -202,6 +202,88 @@ describe("Preparar revisión: Caja con adaptador y cliente reales", () => {
     expect(content()).toContain("OP-MIRAFLORES");
     expect(content()).not.toContain("OP-123");
     expect(get).toHaveBeenCalledTimes(3);
+  });
+
+  it("conserva contexto, historial y acciones de Cobranza de ambas sedes al filtrar Caja", async () => {
+    const charges = [charge, { ...charge, id: 22, location_id: 3, location_name: "Miraflores",
+      patient_name: "Paciente Miraflores", practitioner_id: 2, practitioner_name: "Doctora Miraflores" }];
+    const payments = [payment, { ...payment, id: 8, charge_id: 22, reference: "OP-MIRAFLORES" }];
+    let followUps: ChargeFollowUpRead[] = charges.map(row => ({
+      id: row.id + 100, charge_id: row.id, next_follow_up_on: "2099-01-01", note: "Contactar paciente",
+      state: "open", opened_at: payment.paid_at, closed_at: null, close_reason: null,
+      charge_amount: row.amount, charge_paid: row.paid, charge_outstanding: row.outstanding,
+      is_active_case: true, patient_id: row.patient_id, patient_name: row.patient_name,
+      service_id: row.service_id, service_name: row.service_name,
+      location_id: row.location_id, location_name: row.location_name,
+    }));
+    const post = vi.fn((config: InternalAxiosRequestConfig) => {
+      const current = followUps.find(row => config.url?.startsWith(`/follow-ups/${row.id}/`));
+      if (!current) throw new Error(`Unexpected POST ${config.url}`);
+      const saved: ChargeFollowUpRead = config.url!.endsWith("/reschedule")
+        ? { ...current, ...JSON.parse(config.data) }
+        : { ...current, state: "closed", closed_at: payment.paid_at, close_reason: "closed_by_operator", is_active_case: false };
+      followUps = followUps.map(row => row.id === saved.id ? saved : row);
+      return saved;
+    });
+    const requests: string[] = [];
+    client.http.defaults.adapter = async config => {
+      requests.push(config.url!);
+      let data: unknown;
+      if (config.method === "post") data = post(config);
+      else if (config.url === "/charges") data = charges;
+      else if (config.url === "/payments") data = payments;
+      else if (config.url === "/locations") data = charges.map(row => ({ id: row.location_id, name: row.location_name, timezone: "America/Lima", is_active: true }));
+      else if (config.url === "/follow-ups") data = followUps.filter(row => row.is_active_case);
+      else throw new Error(`Unexpected endpoint ${config.url}`);
+      return { status: 200, statusText: "OK", headers: new AxiosHeaders(), config, data };
+    };
+    await act(async () => { view = create(createElement(CashPage)); });
+    await click("Cobranza");
+    const rows = () => view!.root.findByType("tbody").findAllByType("tr");
+    const assertCollections = () => {
+      expect(rows()).toHaveLength(2);
+      rows().forEach((row, index) => {
+        const cells = row.findAllByType("td");
+        expect(cells[1]!.findByType("strong").children.join("")).toBe(charges[index]!.location_name);
+        expect(cells[1]!.findByType("small").children.join("")).toBe(charges[index]!.practitioner_name);
+        expect(cells[4]!.findAllByType("span").some(node => node.children.includes("Yape") && node.children.includes("S/ 120.00"))).toBe(true);
+        expect(row.findAllByType("button").map(button => button.children.join(""))).toEqual(["Cobrar", "Reprogramar", "Cerrar"]);
+      });
+    };
+    assertCollections();
+    const requestCount = requests.length;
+    for (const locationId of ["", "3", "2"]) {
+      shell.locationId = locationId;
+      await act(async () => { view!.update(createElement(CashPage)); });
+      assertCollections();
+    }
+    expect(requests).toHaveLength(requestCount);
+
+    await click("Cobrar", 1);
+    expect(view!.root.findByProps({ role: "dialog" }).findByType("h2").children.join("")).toBe("Cobrar cargo #22");
+    expect(content()).toContain("OP-MIRAFLORES");
+    expect(view!.root.findByProps({ name: "amount" }).props.value).toBe("130");
+    await click("Cancelar");
+
+    await click("Reprogramar", 1);
+    expect(view!.root.findByProps({ role: "dialog" }).findByType("h2").children.join("")).toBe("Reprogramar seguimiento");
+    await act(async () => { view!.root.findByProps({ type: "date" }).props.onChange({ target: { value: "2099-01-02" } }); });
+    await act(async () => { await view!.root.findByType("form").props.onSubmit({ preventDefault() {} }); });
+    expect(post.mock.calls[0]![0].url).toBe("/follow-ups/122/reschedule");
+    expect(JSON.parse(post.mock.calls[0]![0].data)).toEqual({ next_follow_up_on: "2099-01-02", note: "Contactar paciente" });
+    expect(followUps[1]!.next_follow_up_on).toBe("2099-01-02");
+    await act(async () => { view!.root.findByProps({ "aria-label": "Cerrar modal" }).props.onClick(); });
+
+    await click("Cerrar", 1);
+    expect(view!.root.findByProps({ role: "dialog" }).findByType("h2").children.join("")).toBe("Cerrar seguimiento");
+    await act(async () => { await view!.root.findByType("form").props.onSubmit({ preventDefault() {} }); });
+    expect(post.mock.calls.map(([config]) => config.url)).toEqual(["/follow-ups/122/reschedule", "/follow-ups/122/close"]);
+    expect(JSON.parse(post.mock.calls[1]![0].data)).toEqual({ note: "Contactar paciente" });
+    const keys = post.mock.calls.map(([config]) => config.headers.get("Idempotency-Key"));
+    expect(keys.every(key => typeof key === "string" && key.length > 0)).toBe(true);
+    expect(keys[0]).not.toBe(keys[1]);
+    expect(rows()).toHaveLength(1);
+    expect(content()).toContain("Seguimiento cerrado; el saldo permanece pendiente.");
   });
 
   it("explica el pago con tarjeta sin referencia junto a Pagado, sin ofrecer verificarlo", async () => {

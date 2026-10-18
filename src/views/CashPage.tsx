@@ -502,10 +502,11 @@ function CashManagement({ focusedPaymentId, initialLocationId }: CashFocus = {})
     }
   };
 
+  // Collections keeps all authorized sites, so its context uses the full snapshot.
   const collectionsRows = useMemo(() => followUps.map((followUp) => {
-    const charge = charges.find((item) => item.id === String(followUp.chargeId));
+    const charge = loadedCharges.find((item) => item.id === String(followUp.chargeId));
     return { ...followUp, practitionerId: charge?.practitionerId, practitionerName: charge?.practitionerName };
-  }), [charges, followUps]);
+  }), [loadedCharges, followUps]);
 
   const chargeColumns: Column<Charge>[] = [
     { key: "patient", header: "Paciente", width: "19%", render: (charge) => <span className="person-cell"><span><strong>{charge.patientName}</strong><small>{charge.serviceName} · Cargo #{charge.id}</small></span></span> },
@@ -532,8 +533,8 @@ function CashManagement({ focusedPaymentId, initialLocationId }: CashFocus = {})
     { key: "context", header: "Atención", render: (row) => <span className="table-context"><strong>{row.locationName}</strong><small>{row.practitionerName ?? "Odontólogo no proyectado"}</small></span> },
     { key: "amount", header: "Monto / saldo", render: (row) => <span className="table-context"><strong>{money(row.chargeAmount)}</strong><small>Saldo {money(row.chargeOutstanding)}</small></span> },
     { key: "promise", header: "Próximo contacto", render: (row) => <span className="table-context"><strong>{formatCalendarDate(row.nextFollowUpOn)}</strong><small>{row.note ?? "Sin nota"}</small></span> },
-    { key: "history", header: "Historial", render: (row) => { const charge = charges.find((item) => item.id === String(row.chargeId)); return charge ? <span className="badge-stack">{charge.payments.map((payment) => <Badge key={payment.id} tone={methodTone(payment.method)}>{PAYMENT_METHOD_LABEL[payment.method]} · {money(payment.amount)}</Badge>)}</span> : <span className="text-muted">Sin pagos</span>; } },
-    { key: "actions", header: "", render: (row) => { const charge = charges.find((item) => item.id === String(row.chargeId)); return <span className="row-actions">{charge && <Button compact variant="primary" onClick={() => openCharge(charge)}>Cobrar</Button>}<Button compact onClick={() => charge && openFollowUpModal(charge, "reschedule", row)}>Reprogramar</Button><Button compact variant="danger" onClick={() => charge && openFollowUpModal(charge, "close", row)}>Cerrar</Button></span>; } },
+    { key: "history", header: "Historial", render: (row) => { const charge = loadedCharges.find((item) => item.id === String(row.chargeId)); return charge ? <span className="badge-stack">{charge.payments.map((payment) => <Badge key={payment.id} tone={methodTone(payment.method)}>{PAYMENT_METHOD_LABEL[payment.method]} · {money(payment.amount)}</Badge>)}</span> : <span className="text-muted">Sin pagos</span>; } },
+    { key: "actions", header: "", render: (row) => { const charge = loadedCharges.find((item) => item.id === String(row.chargeId)); return <span className="row-actions">{charge && <Button compact variant="primary" onClick={() => openCharge(charge)}>Cobrar</Button>}<Button compact onClick={() => charge && openFollowUpModal(charge, "reschedule", row)}>Reprogramar</Button><Button compact variant="danger" onClick={() => charge && openFollowUpModal(charge, "close", row)}>Cerrar</Button></span>; } },
   ];
 
   const reconciliationColumns: Column<Payment>[] = [
